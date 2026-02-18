@@ -6,6 +6,7 @@ import "./styles/app.css"; // 引入面板样式
 export default class PDFMindMapPlugin extends Plugin {
   private panelEl: HTMLElement | null = null;
   private vueApp: any = null;
+  private isResizing = false;
 
   async onload() {
     // 1. 注册顶栏按钮
@@ -42,9 +43,15 @@ export default class PDFMindMapPlugin extends Plugin {
       render: () => h(App, { plugin: this }),
     });
     this.vueApp.mount(this.panelEl);
+
+    // 3. 添加拖动调整宽度功能
+    this.setupResize();
   }
 
   private closePanel() {
+    // 移除拖动事件监听
+    this.removeResizeListeners();
+
     if (this.vueApp) {
       this.vueApp.unmount(); // 卸载 Vue 应用
       this.vueApp = null;
@@ -52,6 +59,65 @@ export default class PDFMindMapPlugin extends Plugin {
     if (this.panelEl) {
       this.panelEl.remove(); // 从 DOM 中移除元素
       this.panelEl = null;
+    }
+  }
+
+  // 设置拖动调整宽度
+  private setupResize() {
+    if (!this.panelEl) return;
+
+    const panel = this.panelEl;
+    let startX = 0;
+    let startWidth = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      // 只在左侧边缘 6px 范围内触发
+      const rect = panel.getBoundingClientRect();
+      if (e.clientX - rect.left > 10) return;
+
+      // 如果是全屏模式，不允许调整
+      if (panel.classList.contains('fullscreen')) return;
+
+      this.isResizing = true;
+      startX = e.clientX;
+      startWidth = rect.width;
+      panel.classList.add('resizing');
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!this.isResizing) return;
+
+      const deltaX = startX - e.clientX; // 向左拖动增加宽度
+      const newWidth = startWidth + deltaX;
+
+      // 限制最小和最大宽度
+      const minWidth = 400;
+      const maxWidth = window.innerWidth * 0.95;
+
+      if (newWidth >= minWidth && newWidth <= maxWidth) {
+        panel.style.width = `${newWidth}px`;
+      }
+    };
+
+    const onMouseUp = () => {
+      this.isResizing = false;
+      panel.classList.remove('resizing');
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    // 保存引用以便清理
+    (panel as any)._resizeHandler = onMouseDown;
+    panel.addEventListener('mousedown', onMouseDown);
+  }
+
+  private removeResizeListeners() {
+    if (this.panelEl && (this.panelEl as any)._resizeHandler) {
+      this.panelEl.removeEventListener('mousedown', (this.panelEl as any)._resizeHandler);
     }
   }
 
