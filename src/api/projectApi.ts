@@ -1,5 +1,5 @@
 // src/api/projectApi.ts
-import { postApi, getPluginData, setPluginData } from './siyuanApi';
+import { postApi, getPluginData, setPluginData, getCurrentDocId, checkDocExists } from './siyuanApi';
 import type { PDFProject, ProjectListItem, ProjectStorage, ProjectPdf } from '../types/project';
 import type { PDFAnnotation } from '../types/annotaion';
 
@@ -122,23 +122,22 @@ export async function createProject(options: {
   await saveProjectStorageAsync(storage);
   console.log('[createProject] 项目已保存:', project.name);
 
-  // 异步创建标注文档（不阻塞）
-  createAnnotationDocument(project).then(docId => {
+  // 同步创建标注文档（等待完成）
+  try {
+    const docId = await createAnnotationDocument(project);
     if (docId) {
       project.annotationDocId = docId;
       // 更新存储
-      if (cachedStorage) {
-        const projIndex = cachedStorage.projects.findIndex(p => p.id === project.id);
-        if (projIndex !== -1) {
-          cachedStorage.projects[projIndex].annotationDocId = docId;
-          saveProjectStorageAsync(cachedStorage);
-        }
+      const projIndex = cachedStorage.projects.findIndex(p => p.id === project.id);
+      if (projIndex !== -1) {
+        cachedStorage.projects[projIndex].annotationDocId = docId;
+        await saveProjectStorageAsync(cachedStorage);
       }
       console.log('[createProject] 标注文档创建成功:', docId);
     }
-  }).catch(e => {
+  } catch (e: any) {
     console.warn('[createProject] 标注文档创建失败，项目已保存:', e.message);
-  });
+  }
 
   return project;
 }
@@ -386,19 +385,24 @@ export function updateProjectPdf(
  * 更新项目
  */
 export function updateProject(projectId: string, updates: Partial<PDFProject>): PDFProject | null {
-  const storage = getProjectStorage();
-  const index = storage.projects.findIndex(p => p.id === projectId);
+  if (!cachedStorage) {
+    console.warn('[updateProject] 缓存为空');
+    return null;
+  }
+  
+  const index = cachedStorage.projects.findIndex(p => p.id === projectId);
   
   if (index === -1) return null;
   
-  storage.projects[index] = {
-    ...storage.projects[index],
+  cachedStorage.projects[index] = {
+    ...cachedStorage.projects[index],
     ...updates,
     updated: Date.now()
   };
   
-  saveProjectStorage(storage);
-  return storage.projects[index];
+  // 异步保存到思源
+  saveProjectStorageAsync(cachedStorage);
+  return cachedStorage.projects[index];
 }
 
 /**
@@ -490,34 +494,53 @@ async function getNotebookId(docId: string): Promise<string | null> {
 }
 
 /**
- * 保存标注到项目文档
+ * 保存标注到指定的思源笔记文档
+ * @param project 项目
+ * @param annotation 标注
+ * @param targetDocId 目标文档ID（可选，如果不提供则尝试获取当前文档）
  */
 export async function saveAnnotationToProject(
   project: PDFProject,
-  annotation: PDFAnnotation
-): Promise<string | null> {
-  // 如果没有文档ID，尝试创建
-  if (!project.annotationDocId) {
-    const docId = await createAnnotationDocument(project);
-    if (docId) {
-      project.annotationDocId = docId;
-      updateProject(project.id, { annotationDocId: docId });
-    } else {
-      console.warn('[saveAnnotationToProject] 无法创建标注文档，仅保存到本地');
-      return null;
-    }
+  annotation: PDFAnnotation,
+  targetDocId?: string
+): Promise<{ blockId: string | null; error?: string }> {
+  console.log('[saveAnnotationToProject] 开始保存标注, 项目:', project.name, '目标文档:', targetDocId);
+  
+  // 使用传入的目标文档ID，或者尝试获取当前文档
+  let docId = targetDocId || getCurrentDocId();
+  console.log('[saveAnnotationToProject] 文档ID:', docId);
+  
+  if (!docId) {
+    console.warn('[saveAnnotationToProject] 未找到目标文档');
+    return { 
+      blockId: null, 
+      error: '请先选择一个目标文档，在工具栏中选择要保存到的思源笔记文档' 
+    };
+  }
+  
+  // 检查文档是否存在
+  const exists = await checkDocExists(docId);
+  if (!exists) {
+    console.warn('[saveAnnotationToProject] 文档不存在:', docId);
+    return { 
+      blockId: null, 
+      error: '目标文档不存在或已被删除，请重新选择' 
+    };
   }
 
   try {
     // 构建标注的 Markdown
     const markdown = buildAnnotationMarkdown(annotation);
+    console.log('[saveAnnotationToProject] 目标文档:', docId, 'Markdown 内容:', markdown.substring(0, 100) + '...');
     
     // 追加到文档
     const result = await postApi<any>('/api/block/appendBlock', {
       dataType: 'markdown',
       data: markdown,
-      parentID: project.annotationDocId
+      parentID: docId
     });
+
+    console.log('[saveAnnotationToProject] API 返回:', result);
 
     let blockId: string | null = null;
     
@@ -532,28 +555,33 @@ export async function saveAnnotationToProject(
     }
 
     if (blockId) {
+      console.log('[saveAnnotationToProject] 标注保存成功，blockId:', blockId);
       // 更新项目的标注数量
       updateProject(project.id, { 
         annotationCount: (project.annotationCount || 0) + 1 
       });
+    } else {
+      console.warn('[saveAnnotationToProject] 未获取到 blockId');
     }
 
-    return blockId;
+    return { blockId };
   } catch (e: any) {
     console.error('[saveAnnotationToProject] 保存失败:', e);
-    return null;
+    return { 
+      blockId: null, 
+      error: `保存失败: ${e.message || '未知错误'}` 
+    };
   }
 }
 
 /**
- * 构建标注的 Markdown 内容
+ * 构建标注的 Markdown 内容（不含书名页码信息）
  */
 function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
   const rectString = annotation.rect.join(',');
   const fileAnnotationRef = `assets/${annotation.pdfName}?path=${annotation.pdfPath}&page=${annotation.page}&rect=${encodeURIComponent(rectString)}`;
   
   let markdown = '';
-  const sourceMarker = `<small>📖 《${annotation.pdfName}》第${annotation.page}页</small>`;
   
   if (annotation.isImage && annotation.imagePath) {
     const imagePath = annotation.imagePath.startsWith('/data/') 
@@ -563,42 +591,42 @@ function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
     
     switch (annotation.level) {
       case 'title':
-        markdown = `\n${imageMarkdown}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"}`;
+        markdown = `\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"`;
         break;
       case 'h1':
-        markdown = `\n# 图片摘录\n${imageMarkdown}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"}`;
+        markdown = `\n# 图片摘录\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"`;
         break;
       case 'h2':
-        markdown = `\n## 图片摘录\n${imageMarkdown}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"}`;
+        markdown = `\n## 图片摘录\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"`;
         break;
       case 'h3':
-        markdown = `\n### 图片摘录\n${imageMarkdown}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"}`;
+        markdown = `\n### 图片摘录\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"`;
         break;
       default:
-        markdown = `\n${imageMarkdown}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level || 'text'}" custom-image="true" custom-page="${annotation.page}"}`;
+        markdown = `\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level || 'text'}" custom-image="true" custom-page="${annotation.page}"`;
     }
   } else {
     switch (annotation.level) {
       case 'title':
-        markdown = `\n${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
+        markdown = `\n${annotation.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"`;
         break;
       case 'h1':
-        markdown = `\n# ${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
+        markdown = `\n# ${annotation.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"`;
         break;
       case 'h2':
-        markdown = `\n## ${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
+        markdown = `\n## ${annotation.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"`;
         break;
       case 'h3':
-        markdown = `\n### ${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
+        markdown = `\n### ${annotation.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"`;
         break;
       case 'h4':
-        markdown = `\n#### ${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
+        markdown = `\n#### ${annotation.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"`;
         break;
       case 'h5':
-        markdown = `\n##### ${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
+        markdown = `\n##### ${annotation.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"`;
         break;
       default:
-        markdown = `\n**${annotation.text}**\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level || 'text'}" custom-page="${annotation.page}"}`;
+        markdown = `\n**${annotation.text}**\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level || 'text'}" custom-page="${annotation.page}"`;
     }
   }
 

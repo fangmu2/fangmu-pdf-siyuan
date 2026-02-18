@@ -4,7 +4,7 @@
     <!-- 头部 -->
     <div class="list-header">
       <div class="header-title">
-        <span>📝 标注列表</span>
+        <span class="title-text">标注列表</span>
         <span class="count-badge">{{ annotations.length }}</span>
       </div>
 
@@ -13,93 +13,135 @@
         <button
           v-if="annotations.length > 0"
           @click="exportMarkdown"
-          class="b3-button b3-button--outline"
+          class="action-btn"
           title="导出为Markdown"
         >
-          <svg><use xlink:href="#iconDownload"></use></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
         </button>
         <button
           @click="refresh"
-          class="b3-button b3-button--outline"
+          class="action-btn"
           title="刷新"
         >
-          <svg><use xlink:href="#iconRefresh"></use></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
         </button>
       </div>
-    </div>
-
-    <!-- 分组选择 -->
-    <div class="group-selector">
-      <label>显示模式：</label>
-      <select v-model="groupBy" class="b3-select">
-        <option value="hierarchy">层级结构</option>
-        <option value="color">按颜色</option>
-        <option value="page">按页码</option>
-      </select>
     </div>
 
     <!-- 标注列表 -->
     <div class="list-body">
       <div v-if="loading" class="loading-tip">
-        <div class="b3-spin"></div>
+        <div class="spinner"></div>
         <span>加载中...</span>
       </div>
 
       <div v-else-if="annotations.length === 0" class="empty-tip">
-        <span class="empty-icon">📭</span>
-        <span>暂无标注</span>
-        <span class="hint">在PDF中选择文本并高亮，标注会自动显示在这里</span>
+        <div class="empty-icon">📝</div>
+        <div class="empty-title">暂无标注</div>
+        <div class="empty-hint">在 PDF 中选择文本或图片<br>标注会自动显示在这里</div>
       </div>
 
-      <div v-else class="markdown-preview">
+      <div v-else class="annotation-items">
         <template v-for="(ann, index) in sortedAnnotations" :key="ann.id">
           <!-- 标题级别 -->
           <div
             v-if="ann.level && ann.level !== 'text' && !ann.isImage"
-            class="md-heading"
-            :class="`md-${ann.level}`"
+            class="annotation-item heading-item"
+            :class="[`heading-${ann.level}`, `color-accent-${ann.color}`]"
             @click="handleClick(ann)"
+            @dblclick="handleDoubleClick(ann)"
           >
-            <span class="md-prefix">{{ getLevelPrefix(ann.level) }}</span>
-            <span class="md-heading-text">{{ ann.text }}</span>
-            <span class="md-actions">
-              <button @click.stop="editAnnotation(ann)" title="编辑">✏️</button>
-              <button @click.stop="deleteAnnotation(ann)" title="删除">🗑️</button>
-            </span>
+            <div class="heading-marker">{{ getHeadingMarker(ann.level) }}</div>
+            <div class="heading-content">
+              <div class="heading-text">{{ ann.text }}</div>
+            </div>
+            <div class="item-actions">
+              <button class="icon-btn" @click.stop="editAnnotation(ann)" title="编辑">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+              <button class="icon-btn delete" @click.stop="deleteAnnotation(ann)" title="删除">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- 图片标注 -->
           <div
             v-else-if="ann.isImage"
-            class="md-image-block"
+            class="annotation-item image-item"
+            :class="`color-accent-${ann.color}`"
             @click="handleClick(ann)"
+            @dblclick="handleDoubleClick(ann)"
           >
-            <img 
-              v-if="ann.imagePath && imageStatus[ann.id] !== 'error'" 
-              :src="getImageUrl(ann.imagePath)" 
-              class="md-image"
-              @load="handleImageLoad(ann.id)"
-              @error="handleImageError($event, ann)"
-            />
-            <div v-else class="md-image-error">📷 图片加载失败</div>
-            <span class="md-actions">
-              <button @click.stop="editAnnotation(ann)" title="编辑">✏️</button>
-              <button @click.stop="deleteAnnotation(ann)" title="删除">🗑️</button>
-            </span>
+            <div class="image-wrapper">
+              <img 
+                v-if="ann.imagePath && imageStatus[ann.id] !== 'error'" 
+                :src="getImageUrl(ann.imagePath)" 
+                class="excerpt-image"
+                @load="handleImageLoad(ann.id)"
+                @error="handleImageError($event, ann)"
+              />
+              <div v-else class="image-placeholder">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                  <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                </svg>
+                <span>图片加载失败</span>
+              </div>
+            </div>
+            <div class="item-footer">
+              <div class="item-actions">
+                <button class="icon-btn" @click.stop="editAnnotation(ann)" title="编辑">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+                </button>
+                <button class="icon-btn delete" @click.stop="deleteAnnotation(ann)" title="删除">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- 正文标注 -->
           <div
             v-else-if="ann.text"
-            class="md-paragraph"
+            class="annotation-item text-item"
+            :class="`color-accent-${ann.color}`"
             @click="handleClick(ann)"
+            @dblclick="handleDoubleClick(ann)"
           >
-            <div class="md-text" :class="`color-${ann.color}`">{{ ann.text }}</div>
-            <div v-if="ann.note" class="md-note">💡 {{ ann.note }}</div>
-            <span class="md-actions">
-              <button @click.stop="editAnnotation(ann)" title="编辑">✏️</button>
-              <button @click.stop="deleteAnnotation(ann)" title="删除">🗑️</button>
-            </span>
+            <div class="text-marker"></div>
+            <div class="text-content">
+              <div class="text-body">{{ ann.text }}</div>
+              <div v-if="ann.note" class="text-note">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+                </svg>
+                {{ ann.note }}
+              </div>
+            </div>
+            <div class="item-actions">
+              <button class="icon-btn" @click.stop="editAnnotation(ann)" title="编辑">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+              <button class="icon-btn delete" @click.stop="deleteAnnotation(ann)" title="删除">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </template>
       </div>
@@ -109,10 +151,11 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
-import type { PDFAnnotation, AnnotationColor, AnnotationGroup, AnnotationLevel } from '../types/annotaion';
+import type { PDFAnnotation, AnnotationColor, AnnotationLevel } from '../types/annotaion';
 import { ANNOTATION_LEVELS } from '../types/annotaion';
 import { deleteAnnotation as deleteAnnotationApi } from '../api/annotationApi';
 import { generateMarkdown } from '../utils/markdownGenerator';
+import { getKernelBase } from '../api/siyuanApi';
 
 const props = defineProps<{
   annotations: PDFAnnotation[];
@@ -125,49 +168,27 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const groupBy = ref<'hierarchy' | 'color' | 'page'>('hierarchy');
-
-// 图片加载状态: 'loading' | 'loaded' | 'error'
+// 图片加载状态
 const imageStatus = reactive<Record<string, 'loading' | 'loaded' | 'error'>>({});
 
-// 颜色到十六进制的映射
-const COLOR_HEX: Record<AnnotationColor, string> = {
-  red: '#ff6b6b',
-  yellow: '#ffd93d',
-  green: '#6bcb77',
-  blue: '#4d96ff',
-  purple: '#9b59b6'
-};
-
-const getColorHex = (color: AnnotationColor) => COLOR_HEX[color];
-
-// 获取图片URL
+// 获取图片URL - 使用内核端口 6806
 const getImageUrl = (imagePath: string): string => {
-  // 动态获取思源内核地址
-  let kernelBase = "http://127.0.0.1:6806";
-  if ((window as any).siyuan?.config?.system?.kernelAddr) {
-    kernelBase = (window as any).siyuan.config.system.kernelAddr;
-  }
+  const kernelBase = getKernelBase();
   
-  // 处理路径格式
   let path = imagePath;
   if (path.startsWith('/data/')) {
-    path = path.slice(6); // 移除 /data/ 前缀
+    path = path.slice(6);
   }
   
-  // 使用 assets 静态资源路径
   if (path.startsWith('assets/')) {
     return `${kernelBase}/${path}`;
   }
   
-  // 使用 getFile API 获取文件
-  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent(path)}`;
+  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent('/data/' + path)}`;
 };
 
 // 图片加载错误处理
 const handleImageError = (e: Event, ann: PDFAnnotation) => {
-  const target = e.target as HTMLImageElement;
-  target.style.display = 'none';
   imageStatus[ann.id] = 'error';
 };
 
@@ -176,123 +197,34 @@ const handleImageLoad = (annId: string) => {
   imageStatus[annId] = 'loaded';
 };
 
-// 获取级别标签
-const getLevelLabel = (level: AnnotationLevel): string => {
-  const found = ANNOTATION_LEVELS.find(l => l.value === level);
-  return found ? found.label : '';
+// 获取标题标记
+const getHeadingMarker = (level: AnnotationLevel): string => {
+  const markers: Record<string, string> = {
+    'title': '¶',
+    'h1': 'H1',
+    'h2': 'H2',
+    'h3': 'H3',
+    'h4': 'H4',
+    'h5': 'H5'
+  };
+  return markers[level] || '>';
 };
 
-// 获取级别前缀（markdown格式）
-const getLevelPrefix = (level: AnnotationLevel): string => {
-  const found = ANNOTATION_LEVELS.find(l => l.value === level);
-  return found ? found.prefix : '';
-};
-
-// 排序后的标注（按页码+创建时间）
+// 排序后的标注
 const sortedAnnotations = computed<PDFAnnotation[]>(() => {
   return [...props.annotations].sort((a, b) => {
-    // 先按页码排序
     if (a.page !== b.page) return a.page - b.page;
-    // 同页按创建时间排序
     return a.created - b.created;
   });
 });
 
-// 分组标注
-const groupedAnnotations = computed<AnnotationGroup[]>(() => {
-  const groups: AnnotationGroup[] = [];
-  const groupMap = new Map<string, PDFAnnotation[]>();
-
-  if (groupBy.value === 'hierarchy') {
-    // 层级结构模式：按创建时间排序，保持文档阅读顺序
-    const sorted = [...props.annotations].sort((a, b) => {
-      // 先按页码排序
-      if (a.page !== b.page) return a.page - b.page;
-      // 同页按创建时间排序
-      return a.created - b.created;
-    });
-    
-    return [{
-      title: '',
-      annotations: sorted
-    }];
-  }
-
-  // 分组
-  for (const ann of props.annotations) {
-    let key: string;
-    let title: string;
-
-    if (groupBy.value === 'color') {
-      key = ann.color;
-      title = getColorLabel(ann.color);
-    } else {
-      key = `page-${ann.page}`;
-      title = `第 ${ann.page} 页`;
-    }
-
-    const group = groupMap.get(key) || [];
-    group.push(ann);
-    groupMap.set(key, group);
-  }
-
-  // 转换为数组
-  for (const [key, items] of groupMap) {
-    let title: string;
-
-    if (groupBy.value === 'color') {
-      title = getColorLabel(key as AnnotationColor);
-    } else {
-      const pageNum = parseInt(key.replace('page-', ''));
-      title = `第 ${pageNum} 页`;
-    }
-
-    groups.push({
-      title,
-      color: groupBy.value === 'color' ? key as AnnotationColor : undefined,
-      page: groupBy.value === 'page' ? parseInt(key.replace('page-', '')) : undefined,
-      annotations: items.sort((a, b) => a.created - b.created)
-    });
-  }
-
-  // 排序
-  if (groupBy.value === 'color') {
-    const colorOrder: AnnotationColor[] = ['red', 'green', 'blue', 'yellow', 'purple'];
-    groups.sort((a, b) => colorOrder.indexOf(a.color!) - colorOrder.indexOf(b.color!));
-  } else if (groupBy.value === 'page') {
-    groups.sort((a, b) => a.page! - b.page!);
-  }
-
-  return groups;
-});
-
-// 颜色标签
-function getColorLabel(color: AnnotationColor): string {
-  const labels: Record<AnnotationColor, string> = {
-    red: '🔴 关键内容',
-    yellow: '🟡 普通高亮',
-    green: '🟢 重要概念',
-    blue: '🔵 方法/数据',
-    purple: '🟣 评论/思考'
-  };
-  return labels[color];
-}
-
-// 格式化时间
-function formatTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-
-  if (diff < 60000) return '刚刚';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-}
-
-// 点击标注
+// 单击标注
 const handleClick = (ann: PDFAnnotation) => {
+  // 单击不做跳转，只高亮
+};
+
+// 双击跳转
+const handleDoubleClick = (ann: PDFAnnotation) => {
   emit('annotation-click', ann);
 };
 
@@ -319,14 +251,13 @@ const deleteAnnotation = async (ann: PDFAnnotation) => {
 // 导出Markdown
 const exportMarkdown = () => {
   const markdown = generateMarkdown(props.annotations, {
-    groupBy: groupBy.value,
+    groupBy: 'hierarchy',
     includeNotes: true,
     includeLocation: true
   });
 
-  // 复制到剪贴板
   navigator.clipboard.writeText(markdown).then(() => {
-    alert('Markdown已复制到剪贴板！');
+    alert('Markdown 已复制到剪贴板！');
   }).catch(err => {
     console.error('复制失败:', err);
     alert('复制失败');
@@ -344,7 +275,8 @@ const refresh = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--b3-theme-background);
+  background: var(--b3-theme-background);
+  font-size: 14px;
 }
 
 .list-header {
@@ -360,7 +292,12 @@ const refresh = () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: bold;
+}
+
+.title-text {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--b3-theme-on-surface);
 }
 
 .count-badge {
@@ -369,6 +306,7 @@ const refresh = () => {
   color: white;
   border-radius: 10px;
   font-size: 11px;
+  font-weight: 500;
 }
 
 .header-actions {
@@ -376,19 +314,28 @@ const refresh = () => {
   gap: 4px;
 }
 
-.group-selector {
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--b3-border-color);
+.action-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  background: var(--b3-theme-surface);
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.action-btn:hover {
+  background: var(--b3-theme-surface-light);
 }
 
 .list-body {
   flex: 1;
   overflow: auto;
+  padding: 12px;
 }
 
 .loading-tip,
@@ -398,245 +345,231 @@ const refresh = () => {
   align-items: center;
   justify-content: center;
   height: 200px;
-  gap: 8px;
+  gap: 12px;
   color: var(--b3-theme-on-surface-light);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--b3-theme-surface-light);
+  border-top-color: var(--b3-theme-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .empty-icon {
-  font-size: 32px;
+  font-size: 40px;
+  opacity: 0.5;
 }
 
-.hint {
-  font-size: 11px;
+.empty-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--b3-theme-on-surface);
+}
+
+.empty-hint {
+  font-size: 12px;
   text-align: center;
-  padding: 0 20px;
+  opacity: 0.6;
+  line-height: 1.6;
 }
 
-/* Markdown 预览样式 */
-.markdown-preview {
-  padding: 16px;
-  line-height: 1.8;
+/* 标注项通用样式 */
+.annotation-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.md-heading {
+.annotation-item {
   position: relative;
-  padding: 8px 0;
+  padding: 10px 12px;
+  background: var(--b3-theme-surface);
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
-  border-radius: 4px;
-  padding-right: 60px;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
 }
 
-.md-heading:hover {
+.annotation-item:hover {
   background: var(--b3-theme-surface-light);
 }
 
-.md-heading:hover .md-actions {
+.annotation-item:hover .item-actions {
   opacity: 1;
 }
 
-.md-prefix {
-  color: var(--b3-theme-primary);
-  margin-right: 4px;
-  font-weight: bold;
+/* 颜色主题 */
+.color-accent-red { border-left-color: #ef4444; }
+.color-accent-yellow { border-left-color: #f59e0b; }
+.color-accent-green { border-left-color: #10b981; }
+.color-accent-blue { border-left-color: #3b82f6; }
+.color-accent-purple { border-left-color: #8b5cf6; }
+
+/* 标题项样式 */
+.heading-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.md-heading-text {
-  font-weight: bold;
+.heading-marker {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--b3-theme-primary);
+  background: var(--b3-theme-primary-light);
+  border-radius: 4px;
+}
+
+.heading-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.heading-text {
+  font-weight: 600;
+  line-height: 1.5;
   color: var(--b3-theme-on-background);
 }
 
-.md-title {
-  font-size: 20px;
-  padding: 12px 0;
-  border-bottom: 2px solid var(--b3-theme-primary);
-  margin-bottom: 16px;
+.heading-title .heading-text { font-size: 17px; }
+.heading-h1 .heading-text { font-size: 16px; }
+.heading-h2 .heading-text { font-size: 15px; }
+.heading-h3 .heading-text { font-size: 14px; }
+.heading-h4 .heading-text { font-size: 13px; }
+.heading-h5 .heading-text { font-size: 13px; }
+
+/* 文本项样式 */
+.text-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.md-title .md-heading-text {
-  font-size: 20px;
+.text-marker {
+  flex-shrink: 0;
+  width: 3px;
+  height: 100%;
+  min-height: 24px;
+  background: var(--b3-theme-primary-light);
+  border-radius: 2px;
+  margin-top: 2px;
 }
 
-.md-h1 {
-  font-size: 18px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--b3-border-color);
+.text-content {
+  flex: 1;
+  min-width: 0;
 }
 
-.md-h1 .md-heading-text {
-  font-size: 18px;
-}
-
-.md-h2 {
-  font-size: 16px;
-  margin-top: 16px;
-  margin-bottom: 8px;
-  padding-left: 8px;
-  border-left: 3px solid var(--b3-theme-primary);
-}
-
-.md-h2 .md-heading-text {
-  font-size: 16px;
-}
-
-.md-h3 {
-  font-size: 15px;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  padding-left: 16px;
-}
-
-.md-h3 .md-heading-text {
-  font-size: 15px;
-}
-
-.md-h4 {
-  font-size: 14px;
-  margin-top: 10px;
-  margin-bottom: 4px;
-  padding-left: 24px;
-}
-
-.md-h4 .md-heading-text {
-  font-size: 14px;
-}
-
-.md-h5 {
-  font-size: 13px;
-  margin-top: 8px;
-  margin-bottom: 4px;
-  padding-left: 32px;
-}
-
-.md-h5 .md-heading-text {
-  font-size: 13px;
-}
-
-.md-paragraph {
-  position: relative;
-  padding: 6px 60px 6px 40px;
-  margin: 4px 0;
-  cursor: pointer;
-  transition: background 0.2s;
-  border-radius: 4px;
-}
-
-.md-paragraph::before {
-  content: '›';
-  position: absolute;
-  left: 20px;
-  color: var(--b3-theme-on-surface-light);
-  font-size: 12px;
-}
-
-.md-paragraph:hover {
-  background: var(--b3-theme-surface-light);
-}
-
-.md-paragraph:hover .md-actions {
-  opacity: 1;
-}
-
-.md-text {
-  font-size: 14px;
-  line-height: 1.8;
+.text-body {
+  line-height: 1.7;
   color: var(--b3-theme-on-background);
   word-break: break-word;
 }
 
-.md-text.color-red {
-  border-left: 3px solid #ff6b6b;
-  padding-left: 8px;
-}
-
-.md-text.color-yellow {
-  border-left: 3px solid #ffd93d;
-  padding-left: 8px;
-}
-
-.md-text.color-green {
-  border-left: 3px solid #6bcb77;
-  padding-left: 8px;
-}
-
-.md-text.color-blue {
-  border-left: 3px solid #4d96ff;
-  padding-left: 8px;
-}
-
-.md-text.color-purple {
-  border-left: 3px solid #9b59b6;
-  padding-left: 8px;
-}
-
-.md-note {
+.text-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--b3-theme-surface-light);
+  border-radius: 6px;
   font-size: 12px;
   color: var(--b3-theme-on-surface-light);
-  margin-top: 4px;
-  padding: 4px 8px;
+  line-height: 1.5;
+}
+
+.text-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.5;
+}
+
+/* 图片项样式 */
+.image-item {
+  padding: 8px;
+}
+
+.image-wrapper {
+  margin-bottom: 8px;
+  border-radius: 6px;
+  overflow: hidden;
   background: var(--b3-theme-surface-light);
-  border-radius: 4px;
 }
 
-.md-image-block {
-  position: relative;
-  padding: 8px 0;
-  margin: 8px 0;
-  cursor: pointer;
-  transition: background 0.2s;
-  border-radius: 4px;
-  padding-right: 60px;
-}
-
-.md-image-block:hover {
-  background: var(--b3-theme-surface-light);
-}
-
-.md-image-block:hover .md-actions {
-  opacity: 1;
-}
-
-.md-image {
-  max-width: 100%;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.md-image-error {
+.excerpt-image {
   width: 100%;
-  height: 80px;
-  background: var(--b3-theme-surface-light);
-  border-radius: 4px;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+}
+
+.image-placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100px;
+  gap: 8px;
   color: var(--b3-theme-on-surface-light);
+  opacity: 0.5;
 }
 
-.md-actions {
+.image-placeholder span {
+  font-size: 12px;
+}
+
+.item-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 4px;
+}
+
+/* 操作按钮 */
+.item-actions {
   position: absolute;
   right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 8px;
   display: flex;
   gap: 4px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
 }
 
-.md-actions button {
-  background: var(--b3-theme-surface);
-  border: 1px solid var(--b3-border-color);
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
   border-radius: 4px;
-  padding: 2px 6px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-surface);
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
-.md-actions button:hover {
-  background: var(--b3-theme-primary-light);
+.icon-btn:hover {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-primary);
+}
+
+.icon-btn.delete:hover {
+  color: #ef4444;
 }
 </style>

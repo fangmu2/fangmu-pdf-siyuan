@@ -197,6 +197,188 @@ export async function getPluginData<T = any>(key: string): Promise<T | null> {
   }
 }
 
+// 缓存的当前文档ID（用户打开PDF前所在的文档）
+let cachedCurrentDocId: string | null = null;
+
+/**
+ * 更新缓存的当前文档ID
+ * 在用户打开PDF插件或进行其他操作前调用
+ */
+export function updateCachedDocId(): string | null {
+  const docId = fetchCurrentDocId();
+  if (docId) {
+    cachedCurrentDocId = docId;
+    console.log('[updateCachedDocId] 已缓存当前文档ID:', docId);
+  }
+  return docId;
+}
+
+/**
+ * 获取缓存的文档ID
+ */
+export function getCachedDocId(): string | null {
+  return cachedCurrentDocId;
+}
+
+/**
+ * 实时获取当前文档ID（内部函数）
+ */
+function fetchCurrentDocId(): string | null {
+  try {
+    const siyuan = (window as any).siyuan;
+    
+    // 方式1: 从编辑器 protyle 获取（桌面端）
+    if (siyuan?.editor?.protyle) {
+      const protyle = siyuan.editor.protyle;
+      
+      // 尝试多种可能的路径获取 rootID
+      const docId = protyle.block?.rootID 
+        || protyle.options?.rootId 
+        || protyle.wysiwyg?.element?.dataset?.rootid
+        || protyle.element?.dataset?.rootid
+        || protyle.doc?.id;
+      
+      if (docId) {
+        console.log('[fetchCurrentDocId] 从编辑器protyle获取:', docId);
+        return docId;
+      }
+      
+      // 尝试从 protyle.block 获取
+      if (protyle.block?.parentElement) {
+        const rootId = protyle.block.parentElement.dataset?.rootid;
+        if (rootId) {
+          console.log('[fetchCurrentDocId] 从block父元素获取:', rootId);
+          return rootId;
+        }
+      }
+    }
+    
+    // 方式2: 移动端编辑器
+    if (siyuan?.mobile?.editor?.protyle) {
+      const mobileProtyle = siyuan.mobile.editor.protyle;
+      const docId = mobileProtyle.block?.rootID 
+        || mobileProtyle.element?.dataset?.rootid;
+      if (docId) {
+        console.log('[fetchCurrentDocId] 从移动端编辑器获取:', docId);
+        return docId;
+      }
+    }
+    
+    // 方式3: 从DOM获取当前焦点的编辑器
+    const focusedProtyle = document.querySelector('.protyle:focus-within, .protyle-wysiwyg:focus-within') as HTMLElement;
+    if (focusedProtyle) {
+      const container = focusedProtyle.closest('.protyle') as HTMLElement;
+      if (container?.dataset?.rootid) {
+        console.log('[fetchCurrentDocId] 从焦点DOM获取:', container.dataset.rootid);
+        return container.dataset.rootid;
+      }
+    }
+    
+    // 方式4: 获取页面上第一个可见的编辑器
+    const visibleProtyle = document.querySelector('.protyle[data-rootid]') as HTMLElement;
+    if (visibleProtyle?.dataset?.rootid) {
+      console.log('[fetchCurrentDocId] 从可见DOM获取:', visibleProtyle.dataset.rootid);
+      return visibleProtyle.dataset.rootid;
+    }
+    
+    // 方式5: 从 protyle-wysiwyg 元素获取
+    const wysiwyg = document.querySelector('.protyle-wysiwyg[data-doc-type]') as HTMLElement;
+    if (wysiwyg) {
+      const container = wysiwyg.closest('.protyle') as HTMLElement;
+      if (container?.dataset?.rootid) {
+        console.log('[fetchCurrentDocId] 从wysiwyg获取:', container.dataset.rootid);
+        return container.dataset.rootid;
+      }
+    }
+    
+    console.log('[fetchCurrentDocId] 未找到当前文档');
+    return null;
+  } catch (e) {
+    console.error('[fetchCurrentDocId] 获取失败:', e);
+    return null;
+  }
+}
+
+/**
+ * 获取当前选中的文档ID
+ * 优先返回缓存的文档ID，如果没有缓存则实时获取
+ */
+export function getCurrentDocId(): string | null {
+  // 优先使用缓存的文档ID
+  if (cachedCurrentDocId) {
+    console.log('[getCurrentDocId] 使用缓存的文档ID:', cachedCurrentDocId);
+    return cachedCurrentDocId;
+  }
+  // 如果没有缓存，尝试实时获取
+  return fetchCurrentDocId();
+}
+
+/**
+ * 检查文档是否存在
+ */
+export async function checkDocExists(docId: string): Promise<boolean> {
+  try {
+    const result = await postApi<{ root_id: string }[]>('/api/query/sql', {
+      stmt: `SELECT root_id FROM blocks WHERE root_id = '${docId}' LIMIT 1`
+    });
+    return result && result.length > 0;
+  } catch (e) {
+    console.error('[checkDocExists] 检查失败:', e);
+    return false;
+  }
+}
+
+/**
+ * 搜索思源笔记中的文档
+ * @param keyword 搜索关键词
+ * @returns 文档列表
+ */
+export async function searchSiyuanDocs(keyword: string): Promise<{ id: string; name: string; box: string; hpath: string }[]> {
+  try {
+    const kernelBase = getKernelBase();
+    let stmt: string;
+    
+    if (keyword && keyword.trim()) {
+      // 模糊搜索
+      stmt = `SELECT root_id as id, content as name, box, hpath FROM blocks 
+              WHERE type = 'd' AND content LIKE '%${keyword.replace(/'/g, "''")}%' 
+              ORDER BY updated DESC LIMIT 20`;
+    } else {
+      // 获取最近更新的文档
+      stmt = `SELECT root_id as id, content as name, box, hpath FROM blocks 
+              WHERE type = 'd' 
+              ORDER BY updated DESC LIMIT 20`;
+    }
+    
+    const result = await postApi<{ id: string; name: string; box: string; hpath: string }[]>('/api/query/sql', {
+      stmt
+    });
+    
+    console.log('[searchSiyuanDocs] 搜索结果:', result?.length || 0, '个文档');
+    return result || [];
+  } catch (e) {
+    console.error('[searchSiyuanDocs] 搜索失败:', e);
+    return [];
+  }
+}
+
+/**
+ * 获取指定文档所在的笔记本ID
+ */
+export async function getDocNotebookId(docId: string): Promise<string | null> {
+  try {
+    const result = await postApi<{ box: string }[]>('/api/query/sql', {
+      stmt: `SELECT box FROM blocks WHERE root_id = '${docId}' LIMIT 1`
+    });
+    if (result && result.length > 0) {
+      return result[0].box;
+    }
+  } catch (e) {
+    console.error('[getDocNotebookId] 获取失败:', e);
+  }
+  return null;
+}
+
 /**
  * 设置插件持久化数据（使用文件存储）
  * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下

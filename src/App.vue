@@ -171,6 +171,25 @@
         </select>
       </div>
 
+      <!-- 目标文档选择 -->
+      <div class="toolbar-section doc-section" v-if="currentProject">
+        <label class="level-label">目标:</label>
+        <div class="doc-input-wrapper">
+          <input 
+            v-model="targetDocSearch"
+            class="doc-search-input b3-text-field"
+            placeholder="输入搜索文档..."
+            list="doc-list"
+            @input="onDocSearchInput"
+            @change="onDocSelect"
+          />
+          <datalist id="doc-list">
+            <option v-for="doc in targetDocOptions" :key="doc.id" :value="doc.name" :data-id="doc.id" />
+          </datalist>
+          <button v-if="targetDoc" @click="clearTargetDoc" class="clear-btn" title="清除">✕</button>
+        </div>
+      </div>
+
       <!-- 摘录模式切换 -->
       <div class="toolbar-section mode-section" v-if="currentProject">
         <button 
@@ -324,7 +343,7 @@ import type { Plugin } from 'siyuan';
 import PDFViewer from './components/PDFViewer.vue';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationEditor from './components/AnnotationEditor.vue';
-import { uploadFileToAssets } from './api/siyuanApi';
+import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs } from './api/siyuanApi';
 import {
   createProject,
   addPdfToProject,
@@ -391,6 +410,56 @@ const selectedPage = ref(1);
 const selectedRect = ref<[number, number, number, number] | null>(null);
 const creatingAnnotation = ref(false);
 const pendingTitleLevel = ref<AnnotationLevel | null>(null);
+
+// 目标文档选择
+interface SiyuanDoc {
+  id: string;
+  name: string;
+  box: string;
+  hpath: string;
+}
+const targetDoc = ref<SiyuanDoc | null>(null);
+const targetDocSearch = ref('');
+const targetDocOptions = ref<SiyuanDoc[]>([]);
+let docSearchTimer: ReturnType<typeof setTimeout> | null = null;
+
+// 搜索文档（防抖）
+const onDocSearchInput = () => {
+  if (docSearchTimer) clearTimeout(docSearchTimer);
+  docSearchTimer = setTimeout(async () => {
+    try {
+      const results = await searchSiyuanDocs(targetDocSearch.value);
+      targetDocOptions.value = results;
+    } catch (e) {
+      console.error('[onDocSearchInput] 搜索失败:', e);
+    }
+  }, 300);
+};
+
+// 选择文档
+const onDocSelect = () => {
+  const doc = targetDocOptions.value.find(d => d.name === targetDocSearch.value);
+  if (doc) {
+    targetDoc.value = doc;
+    console.log('[onDocSelect] 已选择目标文档:', doc.name, doc.id);
+  }
+};
+
+// 清除选择
+const clearTargetDoc = () => {
+  targetDoc.value = null;
+  targetDocSearch.value = '';
+};
+
+// 加载文档列表
+const loadDocOptions = async () => {
+  try {
+    const results = await searchSiyuanDocs('');
+    targetDocOptions.value = results;
+  } catch (e) {
+    console.error('[loadDocOptions] 加载文档列表失败:', e);
+  }
+};
 
 // 拖拽调整大小
 const isResizing = ref(false);
@@ -797,15 +866,22 @@ const handleImageSelected = async (data: {
       updated: Date.now()
     };
     
-    try {
-      const blockId = await saveAnnotationToProject(currentProject.value, newAnnotation);
-      newAnnotation.blockId = blockId;
-    } catch (e) {
-      console.warn('保存到思源文档失败:', e);
+    const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
+    if (result.blockId) {
+      newAnnotation.blockId = result.blockId;
+      console.log('[handleImageSelected] 标注已保存到思源文档:', result.blockId);
+    } else if (result.error) {
+      alert(result.error);
+      creatingAnnotation.value = false;
+      return;
+    } else {
+      console.warn('[handleImageSelected] 保存到思源文档失败，仅保存到本地');
     }
     
+    // 只添加到缓存，不重复 push
     addAnnotationToCache(currentProject.value.id, newAnnotation);
-    annotations.value.push(newAnnotation);
+    // 更新当前显示的标注列表
+    annotations.value = [...annotations.value, newAnnotation];
     
   } catch (error: any) {
     console.error('创建图片摘录失败:', error);
@@ -840,16 +916,22 @@ const createAnnotationFromSelection = async () => {
       updated: Date.now()
     };
 
-    try {
-      const blockId = await saveAnnotationToProject(currentProject.value, newAnnotation);
-      newAnnotation.blockId = blockId;
-      console.log('标注已保存到思源文档:', blockId);
-    } catch (e) {
-      console.warn('保存到思源文档失败:', e);
+    const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
+    if (result.blockId) {
+      newAnnotation.blockId = result.blockId;
+      console.log('[createAnnotation] 标注已保存到思源文档:', result.blockId);
+    } else if (result.error) {
+      alert(result.error);
+      creatingAnnotation.value = false;
+      return;
+    } else {
+      console.warn('[createAnnotation] 保存到思源文档失败，仅保存到本地');
     }
 
+    // 只添加到缓存，不重复 push
     addAnnotationToCache(currentProject.value.id, newAnnotation);
-    annotations.value.push(newAnnotation);
+    // 更新当前显示的标注列表
+    annotations.value = [...annotations.value, newAnnotation];
     
     selectedText.value = '';
     selectedRect.value = null;
@@ -912,14 +994,28 @@ watch(currentPage, () => {
   }
 });
 
+// 定时更新缓存的文档ID（每3秒检查一次）
+let docIdUpdateTimer: ReturnType<typeof setInterval> | null = null;
+
 // 初始化
 onMounted(async () => {
   await loadProjects();
+  // 初始化时缓存当前文档ID
+  updateCachedDocId();
+  // 定时更新缓存的文档ID
+  docIdUpdateTimer = setInterval(() => {
+    updateCachedDocId();
+  }, 3000);
+  // 加载文档列表
+  loadDocOptions();
 });
 
 // 卸载时保存
 onUnmounted(() => {
   saveCurrentState();
+  if (docIdUpdateTimer) {
+    clearInterval(docIdUpdateTimer);
+  }
 });
 </script>
 
@@ -1171,6 +1267,58 @@ onUnmounted(() => {
 .level-label {
   font-size: 12px;
   color: var(--b3-theme-on-surface-light);
+}
+
+.level-select {
+  padding: 4px 8px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+  font-size: 13px;
+  min-width: 100px;
+}
+
+/* 目标文档选择器 */
+.doc-section {
+  position: relative;
+}
+
+.doc-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.doc-search-input {
+  width: 180px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+}
+
+.doc-search-input:focus {
+  outline: none;
+  border-color: var(--b3-theme-primary);
+}
+
+.clear-btn {
+  padding: 2px 6px;
+  font-size: 12px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-surface-light);
+  cursor: pointer;
+}
+
+.clear-btn:hover {
+  background: var(--b3-theme-error);
+  color: white;
+  border-color: var(--b3-theme-error);
 }
 
 .level-select {
