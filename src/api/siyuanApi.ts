@@ -4,7 +4,7 @@
  * 获取思源内核地址
  * 思源的内核端口可能会变化，需要动态获取
  */
-function getKernelBase(): string {
+export function getKernelBase(): string {
   // 尝试多种方式获取正确的内核地址
   // 方式1: 从 window.siyuan 获取
   if ((window as any).siyuan?.config?.system?.kernelAddr) {
@@ -117,31 +117,39 @@ export function toAssetUrl(path: string): string {
 export async function getFileAsBlob(path: string): Promise<Blob> {
   const kernelBase = getKernelBase();
   
-  // 处理路径：/api/file/getFile 的 path 参数是相对于 data 目录的
-  let apiPath = path;
-  if (apiPath.startsWith("/data/")) {
-    apiPath = apiPath.slice(6); // 移除 "/data/" 前缀
-  } else if (apiPath.startsWith("data/")) {
-    apiPath = apiPath.slice(5); // 移除 "data/" 前缀
-  } else if (apiPath.startsWith("/")) {
-    apiPath = apiPath.slice(1); // 移除开头的 "/"
+  // 提取文件名
+  let fileName = path;
+  if (path.includes('/')) {
+    fileName = path.split('/').pop() || path;
   }
 
-  console.log(`[getFileAsBlob] 原始路径: ${path}, 处理后路径: ${apiPath}`);
+  // 直接通过静态资源路径访问文件
+  // 思源的 assets 文件可以通过 /assets/xxx.pdf 直接访问
+  const assetUrl = `${kernelBase}/assets/${fileName}`;
+  
+  console.log(`[getFileAsBlob] 原始路径: ${path}, 静态资源URL: ${assetUrl}`);
 
-  const res = await fetch(`${kernelBase}/api/file/getFile`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ path: apiPath }),
-  });
+  const res = await fetch(assetUrl);
   
   if (!res.ok) {
     throw new Error(`获取文件失败: ${res.status} ${res.statusText}`);
   }
   
-  return await res.blob();
+  const blob = await res.blob();
+  
+  // 验证是否是有效的 PDF 文件
+  if (blob.size === 0) {
+    throw new Error('获取的文件为空');
+  }
+  
+  // 检查文件类型，如果不是 PDF，可能是错误响应
+  if (blob.type && !blob.type.includes('pdf') && !blob.type.includes('octet-stream')) {
+    console.warn(`[getFileAsBlob] 文件类型可能不正确: ${blob.type}`);
+  }
+  
+  console.log(`[getFileAsBlob] 获取成功, 大小: ${blob.size} bytes, 类型: ${blob.type}`);
+  
+  return blob;
 }
 
 /**

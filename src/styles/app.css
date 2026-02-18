@@ -1,0 +1,92 @@
+/* src/styles/app.css */
+
+/* 定义插件面板的全局容器样式 */
+#plugin-pdf-mindmap-panel {
+  position: fixed; /* 固定定位 */
+  top: 0;
+  right: 0; /* 从右侧滑出 */
+  width: 600px; /* 初始宽度 */
+  min-width: 400px; /* 最小宽度 */
+  max-width: 95vw; /* 最大宽度 */
+  height: 100vh; /* 占满全屏高度 */
+  z-index: 999; /* 确保在思源主界面之上 */
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15); /* 左侧阴影，增加立体感 */
+  border-left: 1px solid var(--b3-border-color); /* 边框线 */
+  /* 动画效果：从右侧滑入 */
+  animation: slideIn 0.3s ease-out forwards;
+  transition: width 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 左侧拖动调整宽度的手柄 */
+#plugin-pdf-mindmap-panel::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+}
+
+#plugin-pdf-mindmap-panel::before:hover {
+  background: var(--b3-theme-primary-light);
+}
+
+/* 拖动时的样式 */
+#plugin-pdf-mindmap-panel.resizing {
+  transition: none;
+  user-select: none;
+}
+
+/* 全屏模式 */
+#plugin-pdf-mindmap-panel.fullscreen {
+  width: 100vw !important;
+  left: 0;
+  min-width: unset;
+}
+
+/* 定义滑入动画 */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%); /* 初始位置在屏幕右侧外 */
+  }
+  to {
+    transform: translateX(0); /* 最终位置 */
+  }
+}
+
+/* PDF 文本选择层样式 */
+.pdf-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  line-height: 1;
+  -webkit-text-size-adjust: none;
+  -moz-text-size-adjust: none;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.pdf-text-layer span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+/* 选中文本样式 */
+.pdf-text-layer ::selection {
+  background: rgba(0, 120, 255, 0.4) !important;
+}
+
+.pdf-text-layer ::-moz-selection {
+  background: rgba(0, 120, 255, 0.4) !important;
+}

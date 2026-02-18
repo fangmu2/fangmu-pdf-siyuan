@@ -5,9 +5,16 @@
     <div class="panel-header">
       <div class="header-title">
         <span>PDF 思维导图摘录</span>
-        <span class="version-badge">v0.2.0</span>
+        <span class="version-badge">v0.3.0</span>
       </div>
       <div class="header-actions">
+        <button
+          @click="showProjectManager = !showProjectManager"
+          class="b3-button b3-button--outline"
+          title="项目管理"
+        >
+          📚 项目
+        </button>
         <button
           @click="toggleFullscreen"
           class="b3-button b3-button--outline"
@@ -28,23 +35,135 @@
       </div>
     </div>
 
+    <!-- 项目管理面板 -->
+    <div v-if="showProjectManager" class="project-manager-overlay" @click.self="showProjectManager = false">
+      <div class="project-manager-panel">
+        <div class="panel-title">
+          <span>📚 项目管理</span>
+          <button @click="showProjectManager = false" class="b3-button b3-button--outline b3-button--small">✕</button>
+        </div>
+        <div class="project-list">
+          <div v-if="projects.length === 0" class="no-projects">
+            <p>暂无项目，请导入 PDF 文件创建新项目</p>
+          </div>
+          <div 
+            v-for="proj in projects" 
+            :key="proj.id" 
+            class="project-item"
+            :class="{ active: currentProject?.id === proj.id }"
+          >
+            <div class="project-info" @click="switchProject(proj.id)">
+              <div class="project-name">{{ proj.name }}</div>
+              <div class="project-meta">
+                <span>📚 {{ proj.pdfCount }}本PDF</span>
+                <span>📝 {{ proj.annotationCount }}条标注</span>
+                <span>{{ formatDate(proj.updated) }}</span>
+              </div>
+              <!-- PDF列表 -->
+              <div v-if="proj.pdfNames.length > 0" class="project-pdfs">
+                <div v-for="(name, idx) in proj.pdfNames" :key="idx" class="pdf-tag">
+                  📄 {{ name }}
+                </div>
+              </div>
+            </div>
+            <div class="project-actions">
+              <button 
+                @click.stop="addPdfToProjectDialog(proj.id)"
+                class="b3-button b3-button--outline b3-button--small"
+                title="添加PDF"
+              >
+                +PDF
+              </button>
+              <button 
+                @click.stop="deleteProjectConfirm(proj)" 
+                class="b3-button b3-button--outline b3-button--small delete-btn"
+                title="删除项目"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="panel-footer">
+          <button @click="showNewProjectDialog" class="b3-button b3-button--primary">
+            + 新建项目
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新建项目对话框 -->
+    <div v-if="newProjectDialog.visible" class="dialog-overlay" @click.self="newProjectDialog.visible = false">
+      <div class="dialog-panel">
+        <div class="dialog-header">新建项目</div>
+        <div class="dialog-body">
+          <div class="form-group">
+            <label>项目名称：</label>
+            <input 
+              v-model="newProjectDialog.name" 
+              type="text" 
+              class="b3-text-field"
+              placeholder="例如：MySQL学习笔记"
+            />
+          </div>
+          <div class="form-group">
+            <label>导入第一个PDF：</label>
+            <button @click="selectPdfForNewProject" class="b3-button b3-button--outline">
+              {{ newProjectDialog.pdfName || '选择PDF文件' }}
+            </button>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button @click="newProjectDialog.visible = false" class="b3-button b3-button--outline">取消</button>
+          <button 
+            @click="createNewProject" 
+            class="b3-button b3-button--primary"
+            :disabled="!newProjectDialog.name || !newProjectDialog.pdfPath"
+          >
+            创建
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 工具栏 -->
     <div class="toolbar">
-      <!-- PDF选择 -->
-      <div class="toolbar-section">
+      <!-- 当前项目信息 + PDF切换 -->
+      <div class="toolbar-section project-section">
         <button
-          @click="triggerFileSelect"
+          v-if="currentProject"
+          @click="triggerAddPdf"
+          class="b3-button b3-button--outline"
+          title="添加PDF到当前项目"
+        >
+          + PDF
+        </button>
+        <button
+          v-else
+          @click="showNewProjectDialog"
           class="b3-button b3-button--outline"
           :disabled="uploading"
         >
-          {{ uploading ? '导入中...' : '选择 PDF' }}
+          {{ uploading ? '导入中...' : '+ 新项目' }}
         </button>
-        <span v-if="pdfPath" class="pdf-name">{{ getFileName(pdfPath) }}</span>
+        
+        <!-- PDF切换下拉框 -->
+        <div v-if="currentProject && currentProject.pdfs.length > 0" class="pdf-switcher">
+          <select 
+            v-model="currentPdfId" 
+            class="pdf-select b3-select"
+            @change="onPdfSwitch"
+          >
+            <option v-for="pdf in currentProject.pdfs" :key="pdf.id" :value="pdf.id">
+              📄 {{ pdf.name }}
+            </option>
+          </select>
+        </div>
       </div>
 
-      <!-- 标注级别选择 - 移到工具栏 -->
-      <div class="toolbar-section level-section" v-if="pdfPath">
-        <label class="level-label">标注级别:</label>
+      <!-- 标注级别选择 -->
+      <div class="toolbar-section level-section" v-if="currentProject">
+        <label class="level-label">级别:</label>
         <select v-model="currentLevel" class="level-select b3-select">
           <option v-for="level in ANNOTATION_LEVELS" :key="level.value" :value="level.value">
             {{ level.label }}
@@ -53,7 +172,7 @@
       </div>
 
       <!-- 摘录模式切换 -->
-      <div class="toolbar-section mode-section" v-if="pdfPath">
+      <div class="toolbar-section mode-section" v-if="currentProject">
         <button 
           @click="extractMode = 'text'"
           class="b3-button"
@@ -95,11 +214,11 @@
     <!-- 主体区域 -->
     <div class="panel-body" :class="viewMode">
       <!-- PDF预览区 -->
-      <div class="pdf-area" v-if="pdfPath" :style="{ width: `calc(100% - ${annotationWidth}px)` }">
+      <div class="pdf-area" v-if="currentPdf" :style="{ width: `calc(100% - ${annotationWidth}px)` }">
         <PDFViewer
-          :pdf-path="pdfPath"
+          :pdf-path="currentPdf.path"
           :current-page="currentPage"
-          :annotations="annotations"
+          :annotations="currentPdfAnnotations"
           :highlight-annotation="highlightAnnotation"
           :extract-mode="extractMode"
           @loaded="handlePdfLoaded"
@@ -114,20 +233,22 @@
         <div class="welcome-content">
           <div class="welcome-icon">📄</div>
           <h2>欢迎使用 PDF 思维导图摘录</h2>
-          <p>请选择一个 PDF 文件开始</p>
-          <button @click="triggerFileSelect" class="b3-button b3-button--primary">
-            选择 PDF 文件
+          <p>创建项目，导入多本PDF，统一管理标注</p>
+          <button @click="showNewProjectDialog" class="b3-button b3-button--primary">
+            创建新项目
           </button>
-          <!-- 显示最近的 PDF -->
-          <div v-if="recentPdfs.length > 0" class="recent-pdfs">
-            <p>最近的文件:</p>
+          <!-- 显示最近的项目 -->
+          <div v-if="projects.length > 0" class="recent-pdfs">
+            <p>最近的项目:</p>
             <div 
-              v-for="pdf in recentPdfs" 
-              :key="pdf.path" 
+              v-for="proj in projects.slice(0, 5)" 
+              :key="proj.id" 
               class="recent-pdf-item"
-              @click="loadRecentPdf(pdf)"
+              @click="switchProject(proj.id)"
             >
-              {{ pdf.name }}
+              <span class="project-icon">📚</span>
+              <span class="project-title">{{ proj.name }}</span>
+              <span class="project-pdf-count">{{ proj.pdfCount }}本</span>
             </div>
           </div>
         </div>
@@ -135,7 +256,7 @@
 
       <!-- 可拖拽分隔条 -->
       <div 
-        v-if="pdfPath && viewMode === 'split'" 
+        v-if="currentPdf && viewMode === 'split'" 
         class="resize-handle"
         @mousedown="startResize"
       >
@@ -143,7 +264,11 @@
       </div>
 
       <!-- 标注列表区 -->
-      <div class="annotation-area" v-if="pdfPath || annotations.length > 0" :style="{ width: `${annotationWidth}px` }">
+      <div class="annotation-area" v-if="currentProject" :style="{ width: `${annotationWidth}px` }">
+        <div class="annotation-header">
+          <span>📝 标注列表</span>
+          <span class="annotation-count">{{ annotations.length }}条</span>
+        </div>
         <AnnotationList
           :annotations="annotations"
           :loading="loadingAnnotations"
@@ -154,7 +279,7 @@
       </div>
     </div>
 
-    <!-- 文本选择提示 - 简化为只有创建和取消按钮 -->
+    <!-- 文本选择提示 -->
     <div v-if="selectedText" class="selection-toast">
       <span class="selected-text">已选择: "{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</span>
       <span class="level-hint">→ {{ getLevelLabel(currentLevel) }}</span>
@@ -182,30 +307,6 @@
       @saved="handleAnnotationSaved"
     />
 
-    <!-- 标题输入对话框 -->
-    <div v-if="titleInputDialog.visible" class="title-input-overlay" @click.self="cancelTitleInput">
-      <div class="title-input-dialog">
-        <div class="dialog-header">
-          <span>输入{{ getLevelLabel(titleInputDialog.level) }}内容</span>
-        </div>
-        <div class="dialog-body">
-          <input
-            ref="titleInputRef"
-            v-model="titleInputDialog.text"
-            type="text"
-            class="title-input b3-text-field"
-            :placeholder="`请输入${getLevelLabel(titleInputDialog.level)}的文字内容`"
-            @keyup.enter="confirmTitleInput"
-            @keyup.escape="cancelTitleInput"
-          />
-        </div>
-        <div class="dialog-footer">
-          <button @click="cancelTitleInput" class="b3-button b3-button--outline">取消</button>
-          <button @click="confirmTitleInput" class="b3-button b3-button--primary">确定</button>
-        </div>
-      </div>
-    </div>
-
     <!-- 隐藏的文件选择框 -->
     <input
       ref="fileInput"
@@ -218,129 +319,92 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue';
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue';
 import type { Plugin } from 'siyuan';
 import PDFViewer from './components/PDFViewer.vue';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationEditor from './components/AnnotationEditor.vue';
-import { uploadFileToAssets, postApi } from './api/siyuanApi';
-import { getAnnotationsForPdf, createAnnotation } from './api/annotationApi';
+import { uploadFileToAssets } from './api/siyuanApi';
+import {
+  createProject,
+  addPdfToProject,
+  getAllProjects,
+  getCurrentProject,
+  getCurrentPdf,
+  switchProject as switchProjectApi,
+  switchProjectPdf,
+  updateProject,
+  updateProjectPdf,
+  deleteProject as deleteProjectApi,
+  getProjectAnnotations,
+  saveProjectAnnotations,
+  addAnnotationToCache,
+  saveAnnotationToProject
+} from './api/projectApi';
 import type { PDFAnnotation, AnnotationLevel, ExtractMode } from './types/annotaion';
 import { ANNOTATION_LEVELS } from './types/annotaion';
-
-const STORAGE_KEY = 'pdf-mindmap-state';
-const ANNOTATIONS_STORAGE_PREFIX = 'pdf-annotations-';
-const MAX_RECENT_PDFS = 5;
+import type { PDFProject, ProjectListItem, ProjectPdf } from './types/project';
 
 const props = defineProps<{ plugin: Plugin }>();
 
-// 状态
-const pdfPath = ref('');
-const pdfName = ref('');
+// 项目管理状态
+const projects = ref<ProjectListItem[]>([]);
+const currentProject = ref<PDFProject | null>(null);
+const currentPdfId = ref<string | null>(null);
+const showProjectManager = ref(false);
+
+// 新建项目对话框
+const newProjectDialog = ref({
+  visible: false,
+  name: '',
+  pdfPath: '',
+  pdfName: ''
+});
+
+// 文件选择模式
+let fileSelectMode: 'newProject' | 'addPdf' | 'none' = 'none';
+let addTargetProjectId: string | null = null;
+
+// PDF 状态
 const currentPage = ref(1);
 const totalPages = ref(0);
 const fileInput = ref<HTMLInputElement>();
 const uploading = ref(false);
 const loadingAnnotations = ref(false);
 const annotations = ref<PDFAnnotation[]>([]);
+
+// UI 状态
 const highlightAnnotation = ref<PDFAnnotation | null>(null);
 const editingAnnotation = ref<PDFAnnotation | null>(null);
 const editorVisible = ref(false);
 const viewMode = ref<'split' | 'list'>('split');
 const isFullscreen = ref(false);
+const annotationWidth = ref(360);
+const currentLevel = ref<AnnotationLevel>('text');
+const extractMode = ref<ExtractMode>('text');
+
+// 文本选择状态
 const selectedText = ref('');
 const selectedPage = ref(1);
 const selectedRect = ref<[number, number, number, number] | null>(null);
 const creatingAnnotation = ref(false);
-const currentLevel = ref<AnnotationLevel>('text');
-const extractMode = ref<ExtractMode>('text');
-const recentPdfs = ref<Array<{ path: string; name: string }>>([]);
-const annotationWidth = ref(360);
-
-// 待处理的标题级别（用于图片模式选择标题后切换到文字模式）
 const pendingTitleLevel = ref<AnnotationLevel | null>(null);
 
-// 标题输入对话框状态
-const titleInputRef = ref<HTMLInputElement>();
-const titleInputDialog = ref<{
-  visible: boolean;
-  level: AnnotationLevel;
-  text: string;
-  callback: ((text: string) => void) | null;
-}>({
-  visible: false,
-  level: 'text',
-  text: '',
-  callback: null
-});
-
-// 显示标题输入对话框
-const showTitleInputDialog = (level: AnnotationLevel): Promise<string | null> => {
-  return new Promise((resolve) => {
-    titleInputDialog.value = {
-      visible: true,
-      level,
-      text: '',
-      callback: (text: string) => resolve(text)
-    };
-    // 延迟聚焦输入框
-    setTimeout(() => {
-      titleInputRef.value?.focus();
-    }, 100);
-  });
-};
-
-// 确认标题输入
-const confirmTitleInput = () => {
-  const text = titleInputDialog.value.text.trim();
-  if (text && titleInputDialog.value.callback) {
-    titleInputDialog.value.callback(text);
-  }
-  titleInputDialog.value.visible = false;
-};
-
-// 取消标题输入
-const cancelTitleInput = () => {
-  if (titleInputDialog.value.callback) {
-    titleInputDialog.value.callback('');
-  }
-  titleInputDialog.value.visible = false;
-};
-
-// 拖拽调整大小相关
+// 拖拽调整大小
 const isResizing = ref(false);
 
-const startResize = (e: MouseEvent) => {
-  isResizing.value = true;
-  document.addEventListener('mousemove', handleResize);
-  document.addEventListener('mouseup', stopResize);
-  document.body.style.cursor = 'col-resize';
-  document.body.style.userSelect = 'none';
-};
+// 当前PDF
+const currentPdf = computed(() => {
+  if (!currentProject.value) return null;
+  if (!currentPdfId.value) return currentProject.value.pdfs[0] || null;
+  return currentProject.value.pdfs.find(p => p.id === currentPdfId.value) || currentProject.value.pdfs[0] || null;
+});
 
-const handleResize = (e: MouseEvent) => {
-  if (!isResizing.value) return;
-  
-  const container = document.querySelector('.panel-body') as HTMLElement;
-  if (!container) return;
-  
-  const containerRect = container.getBoundingClientRect();
-  const newWidth = containerRect.right - e.clientX;
-  
-  // 限制最小和最大宽度
-  if (newWidth >= 280 && newWidth <= 600) {
-    annotationWidth.value = newWidth;
-  }
-};
-
-const stopResize = () => {
-  isResizing.value = false;
-  document.removeEventListener('mousemove', handleResize);
-  document.removeEventListener('mouseup', stopResize);
-  document.body.style.cursor = '';
-  document.body.style.userSelect = '';
-  saveState();
-};
+// 当前PDF的标注
+const currentPdfAnnotations = computed(() => {
+  if (!currentPdf.value) return [];
+  return annotations.value.filter(a => a.pdfPath === currentPdf.value!.path);
+});
 
 // 获取级别标签
 const getLevelLabel = (level: AnnotationLevel): string => {
@@ -348,116 +412,129 @@ const getLevelLabel = (level: AnnotationLevel): string => {
   return found ? found.label : '正文标注';
 };
 
-// 生成本地标注数据的存储键
-const getAnnotationsStorageKey = (path: string): string => {
-  const fileName = path.split('/').pop() || '';
-  return ANNOTATIONS_STORAGE_PREFIX + fileName.replace(/[^a-zA-Z0-9]/g, '_');
+// 格式化日期
+const formatDate = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+  
+  return date.toLocaleDateString();
 };
 
-// 保存标注数据到 localStorage
-const saveAnnotationsLocal = () => {
-  if (!pdfPath.value) return;
-  const key = getAnnotationsStorageKey(pdfPath.value);
-  localStorage.setItem(key, JSON.stringify(annotations.value));
+// 加载项目列表
+const loadProjects = () => {
+  projects.value = getAllProjects();
+  const current = getCurrentProject();
+  if (current) {
+    currentProject.value = current;
+    const pdf = getCurrentPdf(current);
+    if (pdf) {
+      currentPdfId.value = pdf.id;
+      currentPage.value = pdf.currentPage;
+      totalPages.value = pdf.totalPages;
+    }
+    annotations.value = getProjectAnnotations(current.id);
+  }
 };
 
-// 从 localStorage 加载标注数据
-const loadAnnotationsLocal = (): PDFAnnotation[] | null => {
-  if (!pdfPath.value) return null;
-  const key = getAnnotationsStorageKey(pdfPath.value);
-  const saved = localStorage.getItem(key);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error('加载本地标注失败:', e);
+// 切换项目
+const switchProject = (projectId: string) => {
+  // 先保存当前项目状态
+  saveCurrentState();
+
+  const proj = switchProjectApi(projectId);
+  if (proj) {
+    currentProject.value = proj;
+    const pdf = getCurrentPdf(proj);
+    if (pdf) {
+      currentPdfId.value = pdf.id;
+      currentPage.value = pdf.currentPage;
+      totalPages.value = pdf.totalPages;
+    } else {
+      currentPdfId.value = null;
+      totalPages.value = 0;
+      currentPage.value = 1;
+    }
+    annotations.value = getProjectAnnotations(proj.id);
+    showProjectManager.value = false;
+  }
+};
+
+// PDF切换
+const onPdfSwitch = () => {
+  if (!currentProject.value || !currentPdfId.value) return;
+  
+  // 保存当前PDF状态
+  if (currentPdf.value) {
+    updateProjectPdf(currentProject.value.id, currentPdf.value.id, {
+      currentPage: currentPage.value,
+      totalPages: totalPages.value
+    });
+  }
+  
+  // 切换PDF
+  const proj = switchProjectPdf(currentProject.value.id, currentPdfId.value);
+  if (proj) {
+    currentProject.value = proj;
+    const pdf = getCurrentPdf(proj);
+    if (pdf) {
+      currentPage.value = pdf.currentPage;
+      totalPages.value = pdf.totalPages;
     }
   }
-  return null;
 };
 
-// 保存状态到 localStorage
-const saveState = () => {
-  const state = {
-    pdfPath: pdfPath.value,
-    pdfName: pdfName.value,
-    currentPage: currentPage.value,
-    viewMode: viewMode.value,
-    currentLevel: currentLevel.value,
-    extractMode: extractMode.value,
-    annotationWidth: annotationWidth.value,
-    recentPdfs: recentPdfs.value
+// 保存当前状态
+const saveCurrentState = () => {
+  if (currentProject.value && currentPdf.value) {
+    updateProjectPdf(currentProject.value.id, currentPdf.value.id, {
+      currentPage: currentPage.value,
+      totalPages: totalPages.value
+    });
+    updateProject(currentProject.value.id, {
+      annotationCount: annotations.value.length
+    });
+    saveProjectAnnotations(currentProject.value.id, annotations.value);
+  }
+};
+
+// 显示新建项目对话框
+const showNewProjectDialog = () => {
+  newProjectDialog.value = {
+    visible: true,
+    name: '',
+    pdfPath: '',
+    pdfName: ''
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  saveAnnotationsLocal();
 };
 
-// 从 localStorage 加载状态
-const loadState = () => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const state = JSON.parse(saved);
-      recentPdfs.value = state.recentPdfs || [];
-      currentLevel.value = state.currentLevel || 'text';
-      extractMode.value = state.extractMode || 'text';
-      annotationWidth.value = state.annotationWidth || 360;
-      
-      if (state.pdfPath) {
-        pdfPath.value = state.pdfPath;
-        pdfName.value = state.pdfName || getFileName(state.pdfPath);
-        currentPage.value = state.currentPage || 1;
-        viewMode.value = state.viewMode || 'split';
-        
-        // 先加载本地标注
-        const localAnnotations = loadAnnotationsLocal();
-        if (localAnnotations && localAnnotations.length > 0) {
-          annotations.value = localAnnotations;
-          console.log('从本地加载了', localAnnotations.length, '条标注');
-        }
-      }
-    }
-  } catch (e) {
-    console.error('加载状态失败:', e);
-  }
-};
-
-// 添加到最近文件列表
-const addToRecentPdfs = (path: string, name: string) => {
-  const filtered = recentPdfs.value.filter(p => p.path !== path);
-  recentPdfs.value = [{ path, name }, ...filtered].slice(0, MAX_RECENT_PDFS);
-  saveState();
-};
-
-// 加载最近的 PDF
-const loadRecentPdf = async (pdf: { path: string; name: string }) => {
-  pdfPath.value = pdf.path;
-  pdfName.value = pdf.name;
-  currentPage.value = 1;
-  
-  // 加载本地标注
-  const localAnnotations = loadAnnotationsLocal();
-  if (localAnnotations && localAnnotations.length > 0) {
-    annotations.value = localAnnotations;
-  }
-  
-  saveState();
-};
-
-// 全屏切换
-const toggleFullscreen = () => {
-  isFullscreen.value = !isFullscreen.value;
-  const panel = document.getElementById('plugin-pdf-mindmap-panel');
-  if (panel) {
-    panel.classList.toggle('fullscreen', isFullscreen.value);
-  }
-};
-
-// 文件选择
-const triggerFileSelect = () => {
+// 为新项目选择PDF
+const selectPdfForNewProject = () => {
+  fileSelectMode = 'newProject';
   fileInput.value?.click();
 };
 
+// 添加PDF到项目对话框
+const addPdfToProjectDialog = (projectId: string) => {
+  addTargetProjectId = projectId;
+  fileSelectMode = 'addPdf';
+  fileInput.value?.click();
+};
+
+// 向当前项目添加PDF
+const triggerAddPdf = () => {
+  if (!currentProject.value) return;
+  addTargetProjectId = currentProject.value.id;
+  fileSelectMode = 'addPdf';
+  fileInput.value?.click();
+};
+
+// 文件选择处理
 const handleFileChange = async (e: Event) => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -466,21 +543,38 @@ const handleFileChange = async (e: Event) => {
   uploading.value = true;
 
   try {
+    // 上传文件到思源
     const result = await uploadFileToAssets(file);
-    pdfPath.value = result.path;
-    pdfName.value = result.name;  // 使用实际文件名（包含时间戳）
-    currentPage.value = 1;
-
-    addToRecentPdfs(result.path, result.name);
-
-    // 加载本地标注
-    const localAnnotations = loadAnnotationsLocal();
-    if (localAnnotations && localAnnotations.length > 0) {
-      annotations.value = localAnnotations;
-    } else {
-      // 尝试从思源加载标注
-      await loadAnnotations();
+    
+    if (fileSelectMode === 'newProject') {
+      // 为新项目记录PDF信息
+      newProjectDialog.value.pdfPath = result.path;
+      newProjectDialog.value.pdfName = result.name;
+    } else if (fileSelectMode === 'addPdf') {
+      // 添加到现有项目
+      const projectId = addTargetProjectId || currentProject.value?.id;
+      if (projectId) {
+        const pdf = await addPdfToProject(projectId, {
+          pdfPath: result.path,
+          pdfName: result.name
+        });
+        
+        if (pdf) {
+          // 刷新项目数据
+          loadProjects();
+          
+          // 如果添加到当前项目，切换到新PDF
+          if (currentProject.value?.id === projectId) {
+            currentPdfId.value = pdf.id;
+            currentPage.value = 1;
+            totalPages.value = 0;
+          }
+        }
+      }
+      addTargetProjectId = null;
     }
+    
+    fileSelectMode = 'none';
   } catch (error) {
     console.error('导入失败:', error);
     alert('导入失败，请查看控制台');
@@ -490,31 +584,73 @@ const handleFileChange = async (e: Event) => {
   }
 };
 
-// 加载标注（从思源）
-const loadAnnotations = async () => {
-  if (!pdfPath.value) return;
+// 创建新项目
+const createNewProject = async () => {
+  if (!newProjectDialog.value.name || !newProjectDialog.value.pdfPath) return;
+  
+  uploading.value = true;
+  
+  try {
+    const project = await createProject({
+      name: newProjectDialog.value.name,
+      pdfPath: newProjectDialog.value.pdfPath,
+      pdfName: newProjectDialog.value.pdfName
+    });
 
-  loadingAnnotations.value = true;
+    currentProject.value = project;
+    currentPdfId.value = project.currentPdfId;
+    currentPage.value = 1;
+    totalPages.value = 0;
+    annotations.value = [];
+    
+    loadProjects();
+    newProjectDialog.value.visible = false;
+    showProjectManager.value = false;
+    
+    console.log('[createNewProject] 创建项目成功:', project);
+  } catch (error) {
+    console.error('创建项目失败:', error);
+    alert('创建项目失败，请查看控制台');
+  } finally {
+    uploading.value = false;
+  }
+};
+
+// 删除项目确认
+const deleteProjectConfirm = async (proj: ProjectListItem) => {
+  if (!confirm(`确定删除项目「${proj.name}」？\n\n这将删除：\n- ${proj.pdfCount}个PDF文件关联\n- ${proj.annotationCount}条标注数据\n- 标注文档\n\n此操作不可撤销！`)) {
+    return;
+  }
 
   try {
-    const anns = await getAnnotationsForPdf(pdfPath.value);
-    annotations.value = anns;
+    await deleteProjectApi(proj.id);
+    loadProjects();
     
-    // 保存到本地
-    saveAnnotationsLocal();
-    
-    console.log(`加载了 ${anns.length} 条标注`);
-  } catch (error) {
-    console.error('加载标注失败:', error);
-  } finally {
-    loadingAnnotations.value = false;
+    if (currentProject.value?.id === proj.id) {
+      currentProject.value = null;
+      currentPdfId.value = null;
+      annotations.value = [];
+      totalPages.value = 0;
+      currentPage.value = 1;
+    }
+  } catch (error: any) {
+    console.error('删除项目失败:', error);
+    alert(`删除失败: ${error.message || '未知错误'}`);
   }
+};
+
+// 加载标注
+const loadAnnotations = async () => {
+  if (!currentProject.value) return;
+  annotations.value = getProjectAnnotations(currentProject.value.id);
 };
 
 // PDF加载完成
 const handlePdfLoaded = (numPages: number) => {
   totalPages.value = numPages;
-  console.log(`PDF加载完成，共 ${numPages} 页`);
+  if (currentProject.value && currentPdf.value) {
+    updateProjectPdf(currentProject.value.id, currentPdf.value.id, { totalPages: numPages });
+  }
 };
 
 // 页码变化
@@ -524,21 +660,26 @@ const handlePageChange = (page: number) => {
 
 // 翻页
 const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
+  if (currentPage.value > 1) currentPage.value--;
 };
 
 const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
+  if (currentPage.value < totalPages.value) currentPage.value++;
 };
 
 // 点击标注
 const handleAnnotationClick = (ann: PDFAnnotation) => {
   highlightAnnotation.value = ann;
-  currentPage.value = ann.page;
+  // 切换到标注所属的PDF
+  if (currentProject.value) {
+    const pdf = currentProject.value.pdfs.find(p => p.path === ann.pdfPath);
+    if (pdf && pdf.id !== currentPdfId.value) {
+      currentPdfId.value = pdf.id;
+      currentPage.value = ann.page;
+    } else {
+      currentPage.value = ann.page;
+    }
+  }
 };
 
 // 编辑标注
@@ -552,20 +693,23 @@ const handleAnnotationSaved = () => {
   loadAnnotations();
 };
 
+// 全屏切换
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value;
+  const panel = document.getElementById('plugin-pdf-mindmap-panel');
+  if (panel) {
+    panel.classList.toggle('fullscreen', isFullscreen.value);
+  }
+};
+
 // 切换视图
 const toggleView = () => {
   viewMode.value = viewMode.value === 'split' ? 'list' : 'split';
-  saveState();
-};
-
-// 获取文件名
-const getFileName = (path: string) => {
-  return path.split('/').pop() || path;
 };
 
 // 关闭面板
 const handleClose = () => {
-  saveState();
+  saveCurrentState();
   (props.plugin as any).closePanel();
 };
 
@@ -574,7 +718,6 @@ const handleTextSelected = (data: { text: string; page: number; rect: [number, n
   selectedText.value = data.text;
   selectedPage.value = data.page;
   selectedRect.value = data.rect;
-  console.log(`选择了文本: ${data.text}, 页码: ${data.page}, 级别: ${currentLevel.value}`);
 };
 
 // 处理图片选择
@@ -583,130 +726,61 @@ const handleImageSelected = async (data: {
   pdfRect: [number, number, number, number];
   page: number 
 }) => {
-  console.log('选择了图片区域:', data);
+  if (!currentProject.value || !currentPdf.value) return;
   
-  if (!pdfPath.value) return;
-  
-  // 如果选择的是标题级别，自动切换到文字模式
   if (currentLevel.value !== 'text') {
-    // 保存当前级别
     const savedLevel = currentLevel.value;
-    
-    // 提示用户
-    alert(`已选择"${getLevelLabel(savedLevel)}"，请使用文字模式选择文本内容。\n将自动切换到文字摘录模式...`);
-    
-    // 切换到文字模式
+    alert(`已选择"${getLevelLabel(savedLevel)}"，请使用文字模式选择文本内容。`);
     extractMode.value = 'text';
-    
-    // 保存切换前的级别，等文字选择完成后恢复
     pendingTitleLevel.value = savedLevel;
-    
     return;
   }
   
-  // 正文标注：保存图片
   creatingAnnotation.value = true;
   
   try {
-    // 获取PDF canvas截图
     const pdfViewerEl = document.querySelector('.pdf-viewer-container') as HTMLElement;
     const canvas = pdfViewerEl?.querySelector('.pdf-canvas') as HTMLCanvasElement;
     
-    if (!canvas) {
-      throw new Error('找不到PDF画布');
-    }
+    if (!canvas) throw new Error('找不到PDF画布');
     
-    // 获取canvas的实际像素尺寸和CSS尺寸
-    const canvasPixelWidth = canvas.width;
-    const canvasPixelHeight = canvas.height;
-    const canvasCssWidth = canvas.offsetWidth;
-    const canvasCssHeight = canvas.offsetHeight;
+    const scaleX = canvas.width / canvas.offsetWidth;
+    const scaleY = canvas.height / canvas.offsetHeight;
     
-    // 计算从CSS像素到Canvas像素的缩放比例
-    const scaleX = canvasPixelWidth / canvasCssWidth;
-    const scaleY = canvasPixelHeight / canvasCssHeight;
-    
-    // 从canvas上裁剪选中区域（canvasRect是CSS坐标）
-    const sourceX = data.canvasRect.x * scaleX;
-    const sourceY = data.canvasRect.y * scaleY;
-    const sourceWidth = data.canvasRect.width * scaleX;
-    const sourceHeight = data.canvasRect.height * scaleY;
-    
-    console.log('截图参数:', {
-      canvasSize: { w: canvasPixelWidth, h: canvasPixelHeight },
-      cssSize: { w: canvasCssWidth, h: canvasCssHeight },
-      scale: { x: scaleX, y: scaleY },
-      source: { x: sourceX, y: sourceY, w: sourceWidth, h: sourceHeight },
-      pdfRect: data.pdfRect
-    });
-    
-    // 创建临时canvas用于裁剪
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = Math.max(1, Math.round(sourceWidth));
-    tempCanvas.height = Math.max(1, Math.round(sourceHeight));
+    tempCanvas.width = Math.max(1, Math.round(data.canvasRect.width * scaleX));
+    tempCanvas.height = Math.max(1, Math.round(data.canvasRect.height * scaleY));
     const ctx = tempCanvas.getContext('2d');
     
-    if (!ctx) {
-      throw new Error('无法创建画布上下文');
-    }
+    if (!ctx) throw new Error('无法创建画布上下文');
     
-    // 绘制裁剪区域
     ctx.drawImage(
       canvas,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      0,
-      0,
+      data.canvasRect.x * scaleX,
+      data.canvasRect.y * scaleY,
+      data.canvasRect.width * scaleX,
+      data.canvasRect.height * scaleY,
+      0, 0,
       tempCanvas.width,
       tempCanvas.height
     );
     
-    // 转换为Blob
     const blob = await new Promise<Blob>((resolve, reject) => {
-      tempCanvas.toBlob((b) => {
-        if (b) resolve(b);
-        else reject(new Error('无法创建图片'));
-      }, 'image/png');
+      tempCanvas.toBlob(b => b ? resolve(b) : reject(new Error('无法创建图片')), 'image/png');
     });
     
-    // 生成文件名
-    const timestamp = Date.now();
-    const fileName = `pdf-excerpt-${timestamp}.png`;
+    const fileName = `pdf-excerpt-${Date.now()}.png`;
     const file = new File([blob], fileName, { type: 'image/png' });
-    
-    console.log('准备上传图片:', fileName, '大小:', blob.size);
-    
-    // 上传到思源
     const uploadResult = await uploadFileToAssets(file);
-    console.log('图片上传成功:', uploadResult);
     
-    // 使用PDF坐标（从PDFViewer转换好的）
-    const pdfRect = data.pdfRect;
-    
-    // 保存标注到思源 - 图片标注不保存文字
-    await createAnnotation({
-      text: '',  // 图片标注不需要文字
-      pdfPath: pdfPath.value,
-      pdfName: pdfName.value || getFileName(pdfPath.value),
-      page: data.page,
-      rect: pdfRect,
-      color: 'yellow',
-      level: 'text',
-      isImage: true,
-      imagePath: uploadResult.path
-    });
-    
-    // 保存到本地标注列表
     const newAnnotation: PDFAnnotation = {
       id: `ann-${Date.now()}`,
       blockId: '',
-      pdfPath: pdfPath.value,
-      pdfName: pdfName.value || getFileName(pdfPath.value),
+      pdfPath: currentPdf.value.path,
+      pdfName: currentPdf.value.name,
       page: data.page,
-      rect: pdfRect,
-      text: '',  // 图片标注不需要文字
+      rect: data.pdfRect,
+      text: '',
       note: '',
       color: 'yellow',
       level: 'text',
@@ -716,14 +790,19 @@ const handleImageSelected = async (data: {
       updated: Date.now()
     };
     
-    annotations.value.push(newAnnotation);
-    saveAnnotationsLocal();
+    try {
+      const blockId = await saveAnnotationToProject(currentProject.value, newAnnotation);
+      newAnnotation.blockId = blockId;
+    } catch (e) {
+      console.warn('保存到思源文档失败:', e);
+    }
     
-    console.log('图片摘录创建成功:', newAnnotation);
+    addAnnotationToCache(currentProject.value.id, newAnnotation);
+    annotations.value.push(newAnnotation);
     
   } catch (error: any) {
     console.error('创建图片摘录失败:', error);
-    alert(`创建图片摘录失败: ${error.message || '未知错误'}`);
+    alert(`创建失败: ${error.message || '未知错误'}`);
   } finally {
     creatingAnnotation.value = false;
   }
@@ -731,35 +810,21 @@ const handleImageSelected = async (data: {
 
 // 从选择创建标注
 const createAnnotationFromSelection = async () => {
-  if (!selectedText.value || !pdfPath.value) return;
+  if (!selectedText.value || !currentProject.value || !currentPdf.value) return;
 
   creatingAnnotation.value = true;
 
   try {
-    const rect: [number, number, number, number] = selectedRect.value || [0, 0, 100, 20];
-    
-    // 检查是否有待处理的标题级别（从图片模式切换过来的）
+    const rect = selectedRect.value || [0, 0, 100, 20];
     const annotationLevel = pendingTitleLevel.value || currentLevel.value;
 
-    // 创建标注到思源
-    await createAnnotation({
-      text: selectedText.value,
-      pdfPath: pdfPath.value,
-      pdfName: pdfName.value || getFileName(pdfPath.value),
-      page: selectedPage.value,
-      rect: rect,
-      color: 'yellow',
-      level: annotationLevel
-    });
-
-    // 同时保存到本地
     const newAnnotation: PDFAnnotation = {
       id: `ann-${Date.now()}`,
       blockId: '',
-      pdfPath: pdfPath.value,
-      pdfName: pdfName.value || getFileName(pdfPath.value),
+      pdfPath: currentPdf.value.path,
+      pdfName: currentPdf.value.name,
       page: selectedPage.value,
-      rect: rect,
+      rect,
       text: selectedText.value,
       note: '',
       color: 'yellow',
@@ -767,30 +832,30 @@ const createAnnotationFromSelection = async () => {
       created: Date.now(),
       updated: Date.now()
     };
-    
-    annotations.value.push(newAnnotation);
-    saveAnnotationsLocal();
-    
-    console.log('本地标注已添加:', newAnnotation);
-    console.log('当前标注列表:', annotations.value);
 
-    // 清除选择
+    try {
+      const blockId = await saveAnnotationToProject(currentProject.value, newAnnotation);
+      newAnnotation.blockId = blockId;
+      console.log('标注已保存到思源文档:', blockId);
+    } catch (e) {
+      console.warn('保存到思源文档失败:', e);
+    }
+
+    addAnnotationToCache(currentProject.value.id, newAnnotation);
+    annotations.value.push(newAnnotation);
+    
     selectedText.value = '';
     selectedRect.value = null;
     window.getSelection()?.removeAllRanges();
 
-    // 如果有待处理的标题级别，说明是从图片模式切换过来的
-    // 创建完成后切换回图片模式
     if (pendingTitleLevel.value) {
-      console.log('标注创建完成，切换回图片模式');
       pendingTitleLevel.value = null;
       extractMode.value = 'image';
     }
 
-    console.log('标注创建成功');
   } catch (error: any) {
     console.error('创建标注失败:', error);
-    alert(`创建标注失败: ${error.message || '未知错误'}`);
+    alert(`创建失败: ${error.message || '未知错误'}`);
   } finally {
     creatingAnnotation.value = false;
   }
@@ -802,36 +867,52 @@ const cancelSelection = () => {
   selectedRect.value = null;
   window.getSelection()?.removeAllRanges();
   
-  // 如果有待处理的标题级别，切换回图片模式
   if (pendingTitleLevel.value) {
     pendingTitleLevel.value = null;
     extractMode.value = 'image';
   }
 };
 
-// 监听PDF路径变化
-watch(pdfPath, () => {
-  // 不自动加载，因为我们在 loadState 中已经处理
-});
+// 拖拽调整大小
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true;
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', stopResize);
+  document.body.style.cursor = 'col-resize';
+};
+
+const handleResize = (e: MouseEvent) => {
+  if (!isResizing.value) return;
+  const container = document.querySelector('.panel-body') as HTMLElement;
+  if (!container) return;
+  const newWidth = container.getBoundingClientRect().right - e.clientX;
+  if (newWidth >= 280 && newWidth <= 600) {
+    annotationWidth.value = newWidth;
+  }
+};
+
+const stopResize = () => {
+  isResizing.value = false;
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', stopResize);
+  document.body.style.cursor = '';
+};
 
 // 监听页码变化
 watch(currentPage, () => {
-  saveState();
-});
-
-// 监听标注级别变化
-watch(currentLevel, () => {
-  saveState();
+  if (currentProject.value && currentPdf.value) {
+    updateProjectPdf(currentProject.value.id, currentPdf.value.id, { currentPage: currentPage.value });
+  }
 });
 
 // 初始化
 onMounted(() => {
-  loadState();
+  loadProjects();
 });
 
-// 卸载时保存状态
+// 卸载时保存
 onUnmounted(() => {
-  saveState();
+  saveCurrentState();
 });
 </script>
 
@@ -873,6 +954,160 @@ onUnmounted(() => {
   gap: 4px;
 }
 
+/* 项目管理面板 */
+.project-manager-overlay,
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.project-manager-panel,
+.dialog-panel {
+  background: var(--b3-theme-surface);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 550px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-title,
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--b3-border-color);
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.project-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.no-projects {
+  text-align: center;
+  padding: 40px;
+  color: var(--b3-theme-on-surface-light);
+}
+
+.project-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 8px;
+  border: 1px solid var(--b3-border-color);
+}
+
+.project-item:hover {
+  background: var(--b3-theme-background);
+}
+
+.project-item.active {
+  background: var(--b3-theme-primary-light);
+  border-color: var(--b3-theme-primary);
+}
+
+.project-info {
+  flex: 1;
+}
+
+.project-name {
+  font-weight: 500;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.project-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--b3-theme-on-surface-light);
+  margin-bottom: 8px;
+}
+
+.project-pdfs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pdf-tag {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: var(--b3-theme-background);
+  border-radius: 3px;
+  color: var(--b3-theme-on-surface-light);
+}
+
+.project-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.delete-btn:hover {
+  background: var(--b3-card-error-background);
+  color: var(--b3-card-error-color);
+}
+
+.panel-footer,
+.dialog-footer {
+  padding: 16px;
+  border-top: 1px solid var(--b3-border-color);
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dialog-body {
+  padding: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--b3-theme-on-surface);
+}
+
+.b3-text-field {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+  font-size: 14px;
+}
+
+.b3-text-field:focus {
+  outline: none;
+  border-color: var(--b3-theme-primary);
+}
+
+/* 工具栏 */
 .toolbar {
   display: flex;
   justify-content: space-between;
@@ -888,6 +1123,26 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.project-section {
+  flex: 1;
+  min-width: 200px;
+}
+
+.pdf-switcher {
+  flex: 1;
+  max-width: 300px;
+}
+
+.pdf-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+  font-size: 13px;
 }
 
 .level-section {
@@ -918,17 +1173,7 @@ onUnmounted(() => {
   background: var(--b3-theme-background);
   color: var(--b3-theme-on-background);
   font-size: 13px;
-  cursor: pointer;
   min-width: 100px;
-}
-
-.pdf-name {
-  font-size: 13px;
-  color: var(--b3-theme-on-surface-light);
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .page-info {
@@ -937,6 +1182,7 @@ onUnmounted(() => {
   text-align: center;
 }
 
+/* 主体区域 */
 .panel-body {
   flex: 1;
   display: flex;
@@ -982,10 +1228,7 @@ onUnmounted(() => {
   background: var(--b3-border-color);
 }
 
-.resize-handle:hover .resize-line {
-  background: var(--b3-theme-primary);
-}
-
+/* 欢迎页 */
 .welcome-area {
   flex: 1;
   display: flex;
@@ -1023,23 +1266,57 @@ onUnmounted(() => {
 }
 
 .recent-pdf-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 12px;
   margin: 4px 0;
   background: var(--b3-theme-surface);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
-  transition: background 0.2s;
 }
 
 .recent-pdf-item:hover {
   background: var(--b3-theme-primary-light);
 }
 
+.project-icon {
+  font-size: 18px;
+}
+
+.project-title {
+  flex: 1;
+}
+
+.project-pdf-count {
+  font-size: 12px;
+  color: var(--b3-theme-on-surface-light);
+}
+
+/* 标注区域 */
 .annotation-area {
   flex-shrink: 0;
   min-width: 280px;
   max-width: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.annotation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--b3-border-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.annotation-count {
+  font-size: 12px;
+  color: var(--b3-theme-on-surface-light);
+  font-weight: normal;
 }
 
 .panel-body.list .annotation-area {
@@ -1048,6 +1325,7 @@ onUnmounted(() => {
   max-width: none;
 }
 
+/* 选择提示 */
 .selection-toast {
   position: fixed;
   bottom: 20px;
@@ -1085,61 +1363,5 @@ onUnmounted(() => {
 .b3-button--small {
   padding: 4px 12px;
   font-size: 12px;
-}
-
-/* 标题输入对话框样式 */
-.title-input-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.title-input-dialog {
-  background: var(--b3-theme-surface);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  min-width: 320px;
-  max-width: 90vw;
-}
-
-.dialog-header {
-  padding: 16px;
-  border-bottom: 1px solid var(--b3-border-color);
-  font-weight: bold;
-  font-size: 15px;
-}
-
-.dialog-body {
-  padding: 16px;
-}
-
-.title-input {
-  width: 100%;
-  padding: 8px 12px;
-  font-size: 14px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-background);
-}
-
-.title-input:focus {
-  outline: none;
-  border-color: var(--b3-theme-primary);
-}
-
-.dialog-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--b3-border-color);
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 </style>
