@@ -5,7 +5,7 @@
     <div class="panel-header">
       <div class="header-title">
         <span>PDF 思维导图摘录</span>
-        <span class="version-badge">v0.3.0</span>
+        <span class="version-badge">v0.6.0</span>
       </div>
       <div class="header-actions">
         <button
@@ -46,9 +46,9 @@
           <div v-if="projects.length === 0" class="no-projects">
             <p>暂无项目，请导入 PDF 文件创建新项目</p>
           </div>
-          <div 
-            v-for="proj in projects" 
-            :key="proj.id" 
+          <div
+            v-for="proj in projects"
+            :key="proj.id"
             class="project-item"
             :class="{ active: currentProject?.id === proj.id }"
           >
@@ -67,15 +67,15 @@
               </div>
             </div>
             <div class="project-actions">
-              <button 
+              <button
                 @click.stop="addPdfToProjectDialog(proj.id)"
                 class="b3-button b3-button--outline b3-button--small"
                 title="添加PDF"
               >
                 +PDF
               </button>
-              <button 
-                @click.stop="deleteProjectConfirm(proj)" 
+              <button
+                @click.stop="deleteProjectConfirm(proj)"
                 class="b3-button b3-button--outline b3-button--small delete-btn"
                 title="删除项目"
               >
@@ -99,9 +99,9 @@
         <div class="dialog-body">
           <div class="form-group">
             <label>项目名称：</label>
-            <input 
-              v-model="newProjectDialog.name" 
-              type="text" 
+            <input
+              v-model="newProjectDialog.name"
+              type="text"
               class="b3-text-field"
               placeholder="例如：MySQL学习笔记"
             />
@@ -115,8 +115,8 @@
         </div>
         <div class="dialog-footer">
           <button @click="newProjectDialog.visible = false" class="b3-button b3-button--outline">取消</button>
-          <button 
-            @click="createNewProject" 
+          <button
+            @click="createNewProject"
             class="b3-button b3-button--primary"
             :disabled="!newProjectDialog.name || !newProjectDialog.pdfPath"
           >
@@ -146,11 +146,11 @@
         >
           {{ uploading ? '导入中...' : '+ 新项目' }}
         </button>
-        
+
         <!-- PDF切换下拉框 -->
         <div v-if="currentProject && currentProject.pdfs.length > 0" class="pdf-switcher">
-          <select 
-            v-model="currentPdfId" 
+          <select
+            v-model="currentPdfId"
             class="pdf-select b3-select"
             @change="onPdfSwitch"
           >
@@ -175,7 +175,7 @@
       <div class="toolbar-section doc-section" v-if="currentProject">
         <label class="level-label">目标:</label>
         <div class="doc-input-wrapper">
-          <input 
+          <input
             v-model="targetDocSearch"
             class="doc-search-input b3-text-field"
             placeholder="输入搜索文档..."
@@ -192,7 +192,7 @@
 
       <!-- 摘录模式切换 -->
       <div class="toolbar-section mode-section" v-if="currentProject">
-        <button 
+        <button
           @click="extractMode = 'text'"
           class="b3-button"
           :class="extractMode === 'text' ? 'b3-button--primary' : 'b3-button--outline'"
@@ -200,7 +200,7 @@
         >
           📝 文字
         </button>
-        <button 
+        <button
           @click="extractMode = 'image'"
           class="b3-button"
           :class="extractMode === 'image' ? 'b3-button--primary' : 'b3-button--outline'"
@@ -259,9 +259,9 @@
           <!-- 显示最近的项目 -->
           <div v-if="projects.length > 0" class="recent-pdfs">
             <p>最近的项目:</p>
-            <div 
-              v-for="proj in projects.slice(0, 5)" 
-              :key="proj.id" 
+            <div
+              v-for="proj in projects.slice(0, 5)"
+              :key="proj.id"
               class="recent-pdf-item"
               @click="switchProject(proj.id)"
             >
@@ -274,8 +274,8 @@
       </div>
 
       <!-- 可拖拽分隔条 -->
-      <div 
-        v-if="currentPdf && viewMode === 'split'" 
+      <div
+        v-if="currentPdf && viewMode === 'split'"
         class="resize-handle"
         @mousedown="startResize"
       >
@@ -302,15 +302,15 @@
     <div v-if="selectedText" class="selection-toast">
       <span class="selected-text">已选择: "{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</span>
       <span class="level-hint">→ {{ getLevelLabel(currentLevel) }}</span>
-      <button 
-        @click="createAnnotationFromSelection" 
+      <button
+        @click="createAnnotationFromSelection"
         class="b3-button b3-button--primary b3-button--small"
         :disabled="creatingAnnotation"
       >
         {{ creatingAnnotation ? '创建中...' : '创建标注' }}
       </button>
-      <button 
-        @click="cancelSelection" 
+      <button
+        @click="cancelSelection"
         class="b3-button b3-button--outline b3-button--small"
         :disabled="creatingAnnotation"
       >
@@ -488,12 +488,12 @@ const formatDate = (timestamp: number): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-  
+
   if (diff < 60000) return '刚刚';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
   if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
-  
+
   return date.toLocaleDateString();
 };
 
@@ -501,7 +501,7 @@ const formatDate = (timestamp: number): string => {
 const loadProjects = async () => {
   // 先初始化存储（从思源加载数据）
   await initProjectStorage();
-  
+
   projects.value = getAllProjects();
   const current = getCurrentProject();
   if (current) {
@@ -544,7 +544,7 @@ const switchProject = async (projectId: string) => {
 // PDF切换
 const onPdfSwitch = () => {
   if (!currentProject.value || !currentPdfId.value) return;
-  
+
   // 保存当前PDF状态
   if (currentPdf.value) {
     updateProjectPdf(currentProject.value.id, currentPdf.value.id, {
@@ -552,7 +552,7 @@ const onPdfSwitch = () => {
       totalPages: totalPages.value
     });
   }
-  
+
   // 切换PDF
   const proj = switchProjectPdf(currentProject.value.id, currentPdfId.value);
   if (proj) {
@@ -621,7 +621,7 @@ const handleFileChange = async (e: Event) => {
   try {
     // 上传文件到思源
     const result = await uploadFileToAssets(file);
-    
+
     if (fileSelectMode === 'newProject') {
       // 为新项目记录PDF信息
       newProjectDialog.value.pdfPath = result.path;
@@ -634,11 +634,11 @@ const handleFileChange = async (e: Event) => {
           pdfPath: result.path,
           pdfName: result.name
         });
-        
+
         if (pdf) {
           // 刷新项目数据
           await loadProjects();
-          
+
           // 如果添加到当前项目，切换到新PDF
           if (currentProject.value?.id === projectId) {
             currentPdfId.value = pdf.id;
@@ -649,7 +649,7 @@ const handleFileChange = async (e: Event) => {
       }
       addTargetProjectId = null;
     }
-    
+
     fileSelectMode = 'none';
   } catch (error) {
     console.error('导入失败:', error);
@@ -663,9 +663,9 @@ const handleFileChange = async (e: Event) => {
 // 创建新项目
 const createNewProject = async () => {
   if (!newProjectDialog.value.name || !newProjectDialog.value.pdfPath) return;
-  
+
   uploading.value = true;
-  
+
   try {
     const project = await createProject({
       name: newProjectDialog.value.name,
@@ -678,11 +678,11 @@ const createNewProject = async () => {
     currentPage.value = 1;
     totalPages.value = 0;
     annotations.value = [];
-    
+
     loadProjects();
     newProjectDialog.value.visible = false;
     showProjectManager.value = false;
-    
+
     console.log('[createNewProject] 创建项目成功:', project);
   } catch (error) {
     console.error('创建项目失败:', error);
@@ -701,7 +701,7 @@ const deleteProjectConfirm = async (proj: ProjectListItem) => {
   try {
     await deleteProjectApi(proj.id);
     loadProjects();
-    
+
     if (currentProject.value?.id === proj.id) {
       currentProject.value = null;
       currentPdfId.value = null;
@@ -797,13 +797,13 @@ const handleTextSelected = (data: { text: string; page: number; rect: [number, n
 };
 
 // 处理图片选择
-const handleImageSelected = async (data: { 
-  canvasRect: { x: number; y: number; width: number; height: number }; 
+const handleImageSelected = async (data: {
+  canvasRect: { x: number; y: number; width: number; height: number };
   pdfRect: [number, number, number, number];
-  page: number 
+  page: number
 }) => {
   if (!currentProject.value || !currentPdf.value) return;
-  
+
   if (currentLevel.value !== 'text') {
     const savedLevel = currentLevel.value;
     alert(`已选择"${getLevelLabel(savedLevel)}"，请使用文字模式选择文本内容。`);
@@ -811,25 +811,25 @@ const handleImageSelected = async (data: {
     pendingTitleLevel.value = savedLevel;
     return;
   }
-  
+
   creatingAnnotation.value = true;
-  
+
   try {
     const pdfViewerEl = document.querySelector('.pdf-viewer-container') as HTMLElement;
     const canvas = pdfViewerEl?.querySelector('.pdf-canvas') as HTMLCanvasElement;
-    
+
     if (!canvas) throw new Error('找不到PDF画布');
-    
+
     const scaleX = canvas.width / canvas.offsetWidth;
     const scaleY = canvas.height / canvas.offsetHeight;
-    
+
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = Math.max(1, Math.round(data.canvasRect.width * scaleX));
     tempCanvas.height = Math.max(1, Math.round(data.canvasRect.height * scaleY));
     const ctx = tempCanvas.getContext('2d');
-    
+
     if (!ctx) throw new Error('无法创建画布上下文');
-    
+
     ctx.drawImage(
       canvas,
       data.canvasRect.x * scaleX,
@@ -840,15 +840,15 @@ const handleImageSelected = async (data: {
       tempCanvas.width,
       tempCanvas.height
     );
-    
+
     const blob = await new Promise<Blob>((resolve, reject) => {
       tempCanvas.toBlob(b => b ? resolve(b) : reject(new Error('无法创建图片')), 'image/png');
     });
-    
+
     const fileName = `pdf-excerpt-${Date.now()}.png`;
     const file = new File([blob], fileName, { type: 'image/png' });
     const uploadResult = await uploadFileToAssets(file);
-    
+
     const newAnnotation: PDFAnnotation = {
       id: `ann-${Date.now()}`,
       blockId: '',
@@ -865,7 +865,7 @@ const handleImageSelected = async (data: {
       created: Date.now(),
       updated: Date.now()
     };
-    
+
     const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
     if (result.blockId) {
       newAnnotation.blockId = result.blockId;
@@ -877,12 +877,12 @@ const handleImageSelected = async (data: {
     } else {
       console.warn('[handleImageSelected] 保存到思源文档失败，仅保存到本地');
     }
-    
+
     // 只添加到缓存，不重复 push
     addAnnotationToCache(currentProject.value.id, newAnnotation);
     // 更新当前显示的标注列表
     annotations.value = [...annotations.value, newAnnotation];
-    
+
   } catch (error: any) {
     console.error('创建图片摘录失败:', error);
     alert(`创建失败: ${error.message || '未知错误'}`);
@@ -932,7 +932,7 @@ const createAnnotationFromSelection = async () => {
     addAnnotationToCache(currentProject.value.id, newAnnotation);
     // 更新当前显示的标注列表
     annotations.value = [...annotations.value, newAnnotation];
-    
+
     selectedText.value = '';
     selectedRect.value = null;
     window.getSelection()?.removeAllRanges();
@@ -955,7 +955,7 @@ const cancelSelection = () => {
   selectedText.value = '';
   selectedRect.value = null;
   window.getSelection()?.removeAllRanges();
-  
+
   if (pendingTitleLevel.value) {
     pendingTitleLevel.value = null;
     extractMode.value = 'image';
