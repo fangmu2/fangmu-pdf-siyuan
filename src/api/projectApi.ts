@@ -1,9 +1,9 @@
 // src/api/projectApi.ts
-import { postApi, getKernelBase } from './siyuanApi';
+import { postApi, getPluginData, setPluginData } from './siyuanApi';
 import type { PDFProject, ProjectListItem, ProjectStorage, ProjectPdf } from '../types/project';
 import type { PDFAnnotation } from '../types/annotaion';
 
-const PROJECTS_STORAGE_KEY = 'pdf-projects';
+const PROJECTS_STORAGE_KEY = 'pdf-projects-v3';  // 版本号，使用思源持久化存储
 const ANNOTATIONS_DOC_PREFIX = 'pdf-annotations-';
 
 /**
@@ -14,13 +14,14 @@ function generateId(): string {
 }
 
 /**
- * 获取项目存储
+ * 获取项目存储（使用思源持久化存储）
  */
-function getProjectStorage(): ProjectStorage {
+async function getProjectStorageAsync(): Promise<ProjectStorage> {
   try {
-    const saved = localStorage.getItem(PROJECTS_STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
+    const saved = await getPluginData<ProjectStorage>(PROJECTS_STORAGE_KEY);
+    if (saved && Array.isArray(saved.projects)) {
+      console.log('[getProjectStorageAsync] 从思源加载项目数据:', saved.projects.length, '个项目');
+      return saved;
     }
   } catch (e) {
     console.error('读取项目存储失败:', e);
@@ -29,10 +30,50 @@ function getProjectStorage(): ProjectStorage {
 }
 
 /**
+ * 保存项目存储（使用思源持久化存储）
+ */
+async function saveProjectStorageAsync(storage: ProjectStorage): Promise<void> {
+  try {
+    const success = await setPluginData(PROJECTS_STORAGE_KEY, storage);
+    if (success) {
+      console.log('[saveProjectStorageAsync] 已保存到思源:', storage.projects.length, '个项目');
+    }
+  } catch (e) {
+    console.error('保存项目存储失败:', e);
+  }
+}
+
+// 本地缓存（内存中），用于快速访问
+let cachedStorage: ProjectStorage | null = null;
+
+/**
+ * 获取项目存储（带缓存）
+ */
+function getProjectStorage(): ProjectStorage {
+  if (cachedStorage) {
+    return cachedStorage;
+  }
+  // 同步方法只能返回默认值，需要异步加载
+  return { projects: [], currentProjectId: null };
+}
+
+/**
+ * 初始化存储（应用启动时调用）
+ */
+export async function initProjectStorage(): Promise<ProjectStorage> {
+  cachedStorage = await getProjectStorageAsync();
+  return cachedStorage;
+}
+
+/**
  * 保存项目存储
  */
 function saveProjectStorage(storage: ProjectStorage): void {
-  localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(storage));
+  cachedStorage = storage;
+  // 异步保存到思源
+  saveProjectStorageAsync(storage).catch(e => {
+    console.error('异步保存失败:', e);
+  });
 }
 
 /**
@@ -43,7 +84,12 @@ export async function createProject(options: {
   pdfPath: string;
   pdfName: string;
 }): Promise<PDFProject> {
-  const storage = getProjectStorage();
+  // 确保数据已加载
+  if (!cachedStorage) {
+    cachedStorage = await getProjectStorageAsync();
+  }
+  
+  const storage = cachedStorage;
 
   // 创建PDF条目
   const pdfId = generateId();
@@ -67,18 +113,32 @@ export async function createProject(options: {
     updated: Date.now()
   };
 
-  // 创建对应的标注文档
-  try {
-    const docId = await createAnnotationDocument(project);
-    project.annotationDocId = docId;
-    console.log('[createProject] 创建标注文档成功:', docId);
-  } catch (e) {
-    console.error('[createProject] 创建标注文档失败:', e);
-  }
-
+  // 先保存项目
   storage.projects.unshift(project);
   storage.currentProjectId = project.id;
-  saveProjectStorage(storage);
+  
+  // 更新缓存并保存到思源
+  cachedStorage = storage;
+  await saveProjectStorageAsync(storage);
+  console.log('[createProject] 项目已保存:', project.name);
+
+  // 异步创建标注文档（不阻塞）
+  createAnnotationDocument(project).then(docId => {
+    if (docId) {
+      project.annotationDocId = docId;
+      // 更新存储
+      if (cachedStorage) {
+        const projIndex = cachedStorage.projects.findIndex(p => p.id === project.id);
+        if (projIndex !== -1) {
+          cachedStorage.projects[projIndex].annotationDocId = docId;
+          saveProjectStorageAsync(cachedStorage);
+        }
+      }
+      console.log('[createProject] 标注文档创建成功:', docId);
+    }
+  }).catch(e => {
+    console.warn('[createProject] 标注文档创建失败，项目已保存:', e.message);
+  });
 
   return project;
 }
@@ -90,18 +150,26 @@ export async function addPdfToProject(
   projectId: string, 
   options: { pdfPath: string; pdfName: string }
 ): Promise<ProjectPdf | null> {
-  const storage = getProjectStorage();
+  // 确保数据已加载
+  if (!cachedStorage || cachedStorage.projects.length === 0) {
+    cachedStorage = await getProjectStorageAsync();
+  }
+  
+  const storage = cachedStorage;
   const project = storage.projects.find(p => p.id === projectId);
   
-  if (!project) return null;
+  if (!project) {
+    console.error('[addPdfToProject] 找不到项目:', projectId);
+    return null;
+  }
   
   // 检查是否已存在相同路径的PDF
   const existing = project.pdfs.find(p => p.path === options.pdfPath);
   if (existing) {
-    // 切换到已存在的PDF
     project.currentPdfId = existing.id;
     project.updated = Date.now();
-    saveProjectStorage(storage);
+    cachedStorage = storage;
+    await saveProjectStorageAsync(storage);
     return existing;
   }
 
@@ -119,54 +187,108 @@ export async function addPdfToProject(
   project.pdfs.push(newPdf);
   project.currentPdfId = pdfId;
   project.updated = Date.now();
-  saveProjectStorage(storage);
+  
+  // 更新缓存并保存
+  cachedStorage = storage;
+  await saveProjectStorageAsync(storage);
+  
+  console.log('[addPdfToProject] 添加成功:', options.pdfName, '到项目', projectId);
 
   return newPdf;
 }
 
 /**
+ * 获取可用的笔记本ID
+ */
+async function getAvailableNotebookId(): Promise<string | null> {
+  try {
+    // 使用 /api/notebook/lsNotebooks 获取笔记本列表
+    const result = await postApi<any>('/api/notebook/lsNotebooks', {});
+    
+    // 处理不同的返回格式
+    let notebooks: any[] = [];
+    if (Array.isArray(result)) {
+      notebooks = result;
+    } else if (result && Array.isArray(result.notebooks)) {
+      notebooks = result.notebooks;
+    } else if (result && Array.isArray(result.data)) {
+      notebooks = result.data;
+    }
+    
+    // 找到第一个可用的笔记本
+    for (const nb of notebooks) {
+      // 检查笔记本是否有效（可能是对象或字符串）
+      if (typeof nb === 'string') {
+        return nb;
+      } else if (nb && (nb.id || nb.box || nb.uuid)) {
+        return nb.id || nb.box || nb.uuid;
+      }
+    }
+    
+    // 如果没有找到，尝试使用默认笔记本
+    console.warn('[getAvailableNotebookId] 未找到可用笔记本，尝试使用默认');
+    return null;
+  } catch (e) {
+    console.error('[getAvailableNotebookId] 获取笔记本失败:', e);
+    return null;
+  }
+}
+
+/**
  * 创建标注文档
  */
-async function createAnnotationDocument(project: PDFProject): Promise<string> {
-  const kernelBase = getKernelBase();
-  
-  // 获取笔记本列表，使用第一个笔记本
-  const notebooks = await postApi<{ id: string; name: string }[]>('/api/notebook/lsNotebooks', {});
-  if (!notebooks || notebooks.length === 0) {
-    throw new Error('没有可用的笔记本');
-  }
-  
-  const notebookId = notebooks[0].id;
-  const docName = `${project.name}-标注`;
-  
-  // 创建文档
-  const result = await postApi<{ rootId?: string }[]>('/api/filetree/createDocWithMd', {
-    notebook: notebookId,
-    path: `/` + docName,
-    markdown: `# ${project.name} 标注列表\n\n> 创建时间: ${new Date().toLocaleString()}\n\n---\n\n`
-  });
-
-  // 从返回结果中获取文档ID
-  let docId: string | undefined;
-  if (Array.isArray(result) && result.length > 0) {
-    docId = result[0]?.rootId;
-  }
-
-  if (!docId) {
-    // 尝试通过路径查询文档ID
-    const docs = await postApi<{ root_id: string }[]>('/api/query/sql', {
-      stmt: `SELECT root_id FROM blocks WHERE box = '${notebookId}' AND content LIKE '%${project.name}%标注%' AND type = 'd' ORDER BY created DESC LIMIT 1`
-    });
-    if (docs && docs.length > 0) {
-      docId = docs[0].root_id;
+async function createAnnotationDocument(project: PDFProject): Promise<string | null> {
+  try {
+    const notebookId = await getAvailableNotebookId();
+    
+    if (!notebookId) {
+      console.warn('[createAnnotationDocument] 无法获取笔记本ID，跳过文档创建');
+      return null;
     }
-  }
+    
+    const docName = `${project.name}-标注`;
+    
+    // 创建文档
+    const result = await postApi<any>('/api/filetree/createDocWithMd', {
+      notebook: notebookId,
+      path: `/` + docName,
+      markdown: `# ${project.name} 标注列表\n\n> 创建时间: ${new Date().toLocaleString()}\n\n---\n\n`
+    });
 
-  if (!docId) {
-    throw new Error('无法获取创建的文档ID');
-  }
+    // 从返回结果中获取文档ID
+    let docId: string | null = null;
+    
+    if (result) {
+      // 尝试多种格式
+      if (result.rootId || result.root_id) {
+        docId = result.rootId || result.root_id;
+      } else if (Array.isArray(result) && result[0]) {
+        docId = result[0].rootId || result[0].root_id;
+      } else if (result.data && (result.data.rootId || result.data.root_id)) {
+        docId = result.data.rootId || result.data.root_id;
+      }
+    }
 
-  return docId;
+    if (!docId) {
+      // 尝试通过路径查询文档ID
+      try {
+        const docs = await postApi<{ root_id: string }[]>('/api/query/sql', {
+          stmt: `SELECT root_id FROM blocks WHERE box = '${notebookId}' AND content LIKE '%${project.name}%' AND type = 'd' ORDER BY created DESC LIMIT 1`
+        });
+        if (docs && docs.length > 0) {
+          docId = docs[0].root_id;
+        }
+      } catch (e) {
+        console.warn('[createAnnotationDocument] 查询文档ID失败:', e);
+      }
+    }
+
+    console.log('[createAnnotationDocument] 创建结果:', { docId, notebookId });
+    return docId;
+  } catch (e: any) {
+    console.error('[createAnnotationDocument] 创建失败:', e);
+    return null;
+  }
 }
 
 /**
@@ -291,7 +413,6 @@ export function removePdfFromProject(projectId: string, pdfId: string): PDFProje
   const pdfIndex = project.pdfs.findIndex(p => p.id === pdfId);
   if (pdfIndex === -1) return null;
   
-  // 至少保留一个PDF
   if (project.pdfs.length <= 1) {
     console.warn('[removePdfFromProject] 项目至少需要一个PDF');
     return null;
@@ -299,7 +420,6 @@ export function removePdfFromProject(projectId: string, pdfId: string): PDFProje
   
   project.pdfs.splice(pdfIndex, 1);
   
-  // 如果移除的是当前PDF，切换到第一个
   if (project.currentPdfId === pdfId) {
     project.currentPdfId = project.pdfs[0]?.id || null;
   }
@@ -344,7 +464,6 @@ export async function deleteProject(projectId: string): Promise<boolean> {
   // 从项目列表中移除
   storage.projects.splice(index, 1);
   
-  // 如果删除的是当前项目，切换到第一个项目
   if (storage.currentProjectId === projectId) {
     storage.currentProjectId = storage.projects.length > 0 ? storage.projects[0].id : null;
   }
@@ -356,14 +475,18 @@ export async function deleteProject(projectId: string): Promise<boolean> {
 /**
  * 获取文档所在的笔记本ID
  */
-async function getNotebookId(docId: string): Promise<string> {
-  const blocks = await postApi<{ box: string }[]>('/api/query/sql', {
-    stmt: `SELECT box FROM blocks WHERE root_id = '${docId}' LIMIT 1`
-  });
-  if (blocks && blocks.length > 0) {
-    return blocks[0].box;
+async function getNotebookId(docId: string): Promise<string | null> {
+  try {
+    const blocks = await postApi<{ box: string }[]>('/api/query/sql', {
+      stmt: `SELECT box FROM blocks WHERE root_id = '${docId}' LIMIT 1`
+    });
+    if (blocks && blocks.length > 0) {
+      return blocks[0].box;
+    }
+  } catch (e) {
+    console.error('[getNotebookId] 查询失败:', e);
   }
-  return '';
+  return null;
 }
 
 /**
@@ -372,47 +495,54 @@ async function getNotebookId(docId: string): Promise<string> {
 export async function saveAnnotationToProject(
   project: PDFProject,
   annotation: PDFAnnotation
-): Promise<string> {
-  // 确保 annotationDocId 存在
+): Promise<string | null> {
+  // 如果没有文档ID，尝试创建
   if (!project.annotationDocId) {
-    try {
-      const docId = await createAnnotationDocument(project);
+    const docId = await createAnnotationDocument(project);
+    if (docId) {
       project.annotationDocId = docId;
       updateProject(project.id, { annotationDocId: docId });
-    } catch (e) {
-      console.error('[saveAnnotationToProject] 创建文档失败:', e);
-      throw new Error('无法创建标注文档');
+    } else {
+      console.warn('[saveAnnotationToProject] 无法创建标注文档，仅保存到本地');
+      return null;
     }
   }
 
-  // 构建标注的 Markdown
-  const markdown = buildAnnotationMarkdown(annotation);
-  
-  // 追加到文档
-  const result = await postApi<{ doOperations?: Array<{ action: string; id: string }>; id?: string }[]>('/api/block/appendBlock', {
-    dataType: 'markdown',
-    data: markdown,
-    parentID: project.annotationDocId
-  });
+  try {
+    // 构建标注的 Markdown
+    const markdown = buildAnnotationMarkdown(annotation);
+    
+    // 追加到文档
+    const result = await postApi<any>('/api/block/appendBlock', {
+      dataType: 'markdown',
+      data: markdown,
+      parentID: project.annotationDocId
+    });
 
-  let blockId: string | undefined;
-  if (Array.isArray(result) && result.length > 0) {
-    const ops = result[0]?.doOperations;
-    if (ops && ops.length > 0) {
-      blockId = ops[0]?.id;
+    let blockId: string | null = null;
+    
+    if (result) {
+      if (result.doOperations && result.doOperations[0]?.id) {
+        blockId = result.doOperations[0].id;
+      } else if (Array.isArray(result) && result[0]?.doOperations?.[0]?.id) {
+        blockId = result[0].doOperations[0].id;
+      } else if (result.id) {
+        blockId = result.id;
+      }
     }
+
+    if (blockId) {
+      // 更新项目的标注数量
+      updateProject(project.id, { 
+        annotationCount: (project.annotationCount || 0) + 1 
+      });
+    }
+
+    return blockId;
+  } catch (e: any) {
+    console.error('[saveAnnotationToProject] 保存失败:', e);
+    return null;
   }
-
-  if (!blockId) {
-    throw new Error('创建标注块失败');
-  }
-
-  // 更新项目的标注数量
-  updateProject(project.id, { 
-    annotationCount: (project.annotationCount || 0) + 1 
-  });
-
-  return blockId;
 }
 
 /**
@@ -423,12 +553,9 @@ function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
   const fileAnnotationRef = `assets/${annotation.pdfName}?path=${annotation.pdfPath}&page=${annotation.page}&rect=${encodeURIComponent(rectString)}`;
   
   let markdown = '';
-  
-  // 来源PDF标记
   const sourceMarker = `<small>📖 《${annotation.pdfName}》第${annotation.page}页</small>`;
   
   if (annotation.isImage && annotation.imagePath) {
-    // 图片摘录
     const imagePath = annotation.imagePath.startsWith('/data/') 
       ? annotation.imagePath.slice(6) 
       : annotation.imagePath;
@@ -451,7 +578,6 @@ function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
         markdown = `\n${imageMarkdown}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level || 'text'}" custom-image="true" custom-page="${annotation.page}"}`;
     }
   } else {
-    // 文字摘录
     switch (annotation.level) {
       case 'title':
         markdown = `\n${annotation.text}\n${sourceMarker}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-page="${annotation.page}"}`;
@@ -489,15 +615,25 @@ function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
   return markdown;
 }
 
+// 标注数据缓存（内存中）
+const annotationsCache: Map<string, PDFAnnotation[]> = new Map();
+
 /**
- * 获取项目的所有标注（从本地缓存）
+ * 获取项目的所有标注（使用思源持久化存储）
  */
-export function getProjectAnnotations(projectId: string): PDFAnnotation[] {
+export async function getProjectAnnotationsAsync(projectId: string): Promise<PDFAnnotation[]> {
+  // 先检查内存缓存
+  if (annotationsCache.has(projectId)) {
+    return annotationsCache.get(projectId)!;
+  }
+  
   const key = `${ANNOTATIONS_DOC_PREFIX}${projectId}`;
   try {
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      return JSON.parse(saved);
+    const saved = await getPluginData<PDFAnnotation[]>(key);
+    if (saved && Array.isArray(saved)) {
+      annotationsCache.set(projectId, saved);
+      console.log('[getProjectAnnotationsAsync] 加载标注:', projectId, saved.length, '条');
+      return saved;
     }
   } catch (e) {
     console.error('加载标注缓存失败:', e);
@@ -506,11 +642,35 @@ export function getProjectAnnotations(projectId: string): PDFAnnotation[] {
 }
 
 /**
- * 保存项目的所有标注到本地缓存
+ * 保存项目的所有标注（使用思源持久化存储）
+ */
+export async function saveProjectAnnotationsAsync(projectId: string, annotations: PDFAnnotation[]): Promise<void> {
+  const key = `${ANNOTATIONS_DOC_PREFIX}${projectId}`;
+  try {
+    annotationsCache.set(projectId, annotations);
+    await setPluginData(key, annotations);
+    console.log('[saveProjectAnnotationsAsync] 保存标注:', projectId, annotations.length, '条');
+  } catch (e) {
+    console.error('保存标注缓存失败:', e);
+  }
+}
+
+/**
+ * 同步版本（使用内存缓存，用于快速访问）
+ */
+export function getProjectAnnotations(projectId: string): PDFAnnotation[] {
+  return annotationsCache.get(projectId) || [];
+}
+
+/**
+ * 保存项目的所有标注到本地缓存（同步版本，后台异步持久化）
  */
 export function saveProjectAnnotations(projectId: string, annotations: PDFAnnotation[]): void {
-  const key = `${ANNOTATIONS_DOC_PREFIX}${projectId}`;
-  localStorage.setItem(key, JSON.stringify(annotations));
+  annotationsCache.set(projectId, annotations);
+  // 异步保存到思源
+  saveProjectAnnotationsAsync(projectId, annotations).catch(e => {
+    console.error('异步保存标注失败:', e);
+  });
 }
 
 /**

@@ -339,7 +339,9 @@ import {
   getProjectAnnotations,
   saveProjectAnnotations,
   addAnnotationToCache,
-  saveAnnotationToProject
+  saveAnnotationToProject,
+  initProjectStorage,
+  getProjectAnnotationsAsync
 } from './api/projectApi';
 import type { PDFAnnotation, AnnotationLevel, ExtractMode } from './types/annotaion';
 import { ANNOTATION_LEVELS } from './types/annotaion';
@@ -427,7 +429,10 @@ const formatDate = (timestamp: number): string => {
 };
 
 // 加载项目列表
-const loadProjects = () => {
+const loadProjects = async () => {
+  // 先初始化存储（从思源加载数据）
+  await initProjectStorage();
+  
   projects.value = getAllProjects();
   const current = getCurrentProject();
   if (current) {
@@ -438,12 +443,13 @@ const loadProjects = () => {
       currentPage.value = pdf.currentPage;
       totalPages.value = pdf.totalPages;
     }
-    annotations.value = getProjectAnnotations(current.id);
+    // 异步加载标注
+    annotations.value = await getProjectAnnotationsAsync(current.id);
   }
 };
 
 // 切换项目
-const switchProject = (projectId: string) => {
+const switchProject = async (projectId: string) => {
   // 先保存当前项目状态
   saveCurrentState();
 
@@ -460,7 +466,8 @@ const switchProject = (projectId: string) => {
       totalPages.value = 0;
       currentPage.value = 1;
     }
-    annotations.value = getProjectAnnotations(proj.id);
+    // 异步加载标注
+    annotations.value = await getProjectAnnotationsAsync(proj.id);
     showProjectManager.value = false;
   }
 };
@@ -561,7 +568,7 @@ const handleFileChange = async (e: Event) => {
         
         if (pdf) {
           // 刷新项目数据
-          loadProjects();
+          await loadProjects();
           
           // 如果添加到当前项目，切换到新PDF
           if (currentProject.value?.id === projectId) {
@@ -906,8 +913,8 @@ watch(currentPage, () => {
 });
 
 // 初始化
-onMounted(() => {
-  loadProjects();
+onMounted(async () => {
+  await loadProjects();
 });
 
 // 卸载时保存

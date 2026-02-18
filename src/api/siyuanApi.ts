@@ -162,3 +162,72 @@ export async function listAssetsFiles(): Promise<string[]> {
 
   return data.files || [];
 }
+
+/**
+ * 获取插件持久化数据（使用文件存储）
+ * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下
+ */
+export async function getPluginData<T = any>(key: string): Promise<T | null> {
+  const kernelBase = getKernelBase();
+  try {
+    // 使用文件 API 读取数据
+    const res = await fetch(`${kernelBase}/api/file/getFile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ path: `/data/storage/petal/plugin-sample-vite-vue/${key}.json` }),
+    });
+
+    if (!res.ok) {
+      console.log('[getPluginData] 文件不存在或读取失败:', key);
+      return null;
+    }
+
+    const text = await res.text();
+    if (text) {
+      const data = JSON.parse(text);
+      console.log('[getPluginData] 加载成功:', key);
+      return data as T;
+    }
+    return null;
+  } catch (e) {
+    console.log('[getPluginData] 数据不存在或解析失败:', key, e);
+    return null;
+  }
+}
+
+/**
+ * 设置插件持久化数据（使用文件存储）
+ * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下
+ */
+export async function setPluginData<T>(key: string, value: T): Promise<boolean> {
+  const kernelBase = getKernelBase();
+  try {
+    // 使用 FormData 存储文件
+    const content = JSON.stringify(value, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const file = new File([blob], `${key}.json`, { type: 'application/json' });
+
+    const formData = new FormData();
+    formData.append("path", `/data/storage/petal/plugin-sample-vite-vue/${key}.json`);
+    formData.append("file", file);
+
+    const res = await fetch(`${kernelBase}/api/file/putFile`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const json = await res.json();
+    if (json.code === 0) {
+      console.log('[setPluginData] 保存成功:', key);
+      return true;
+    } else {
+      console.error('[setPluginData] 保存失败:', json.msg);
+      return false;
+    }
+  } catch (e) {
+    console.error('[setPluginData] 保存数据失败:', e);
+    return false;
+  }
+}
