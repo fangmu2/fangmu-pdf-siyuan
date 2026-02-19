@@ -244,6 +244,7 @@
           @page-change="handlePageChange"
           @text-selected="handleTextSelected"
           @image-selected="handleImageSelected"
+          @annotation-delete="handleAnnotationDelete"
         />
       </div>
 
@@ -344,6 +345,7 @@ import PDFViewer from './components/PDFViewer.vue';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationEditor from './components/AnnotationEditor.vue';
 import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs } from './api/siyuanApi';
+import { deleteAnnotation as deleteAnnotationApi } from './api/annotationApi';
 import {
   createProject,
   addPdfToProject,
@@ -767,6 +769,36 @@ const handleAnnotationEdit = (ann: PDFAnnotation) => {
 // 标注保存完成
 const handleAnnotationSaved = () => {
   loadAnnotations();
+};
+
+// 删除标注
+const handleAnnotationDelete = async (ann: PDFAnnotation) => {
+  if (!currentProject.value) return;
+  
+  if (!confirm(`确定要删除这条标注吗？\n\n"${ann.text.substring(0, 50)}${ann.text.length > 50 ? '...' : ''}"`)) {
+    return;
+  }
+
+  try {
+    // 如果有 blockId，删除思源中的块
+    if (ann.blockId) {
+      await deleteAnnotationApi(ann.blockId);
+    }
+    
+    // 从本地列表中移除
+    annotations.value = annotations.value.filter(a => a.id !== ann.id);
+    
+    // 更新项目存储
+    saveProjectAnnotations(currentProject.value.id, annotations.value);
+    updateProject(currentProject.value.id, {
+      annotationCount: annotations.value.length
+    });
+    
+    console.log('[handleAnnotationDelete] 删除成功:', ann.id);
+  } catch (error: any) {
+    console.error('删除标注失败:', error);
+    alert(`删除失败: ${error.message || '未知错误'}`);
+  }
 };
 
 // 全屏切换

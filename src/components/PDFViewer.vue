@@ -19,7 +19,7 @@
       <!-- 标注高亮层 -->
       <canvas ref="annotationCanvasRef" class="annotation-canvas"></canvas>
       <!-- 文本选择层 -->
-      <div ref="textLayerRef" class="pdf-text-layer"></div>
+      <div ref="textLayerRef" class="pdf-text-layer" @click="handleAnnotationClick"></div>
       <!-- 图片框选层 -->
       <div 
         v-if="extractMode === 'image'"
@@ -77,6 +77,7 @@ const emit = defineEmits<{
     pdfRect: [number, number, number, number];
     page: number 
   }): void;
+  (e: 'annotation-delete', annotation: PDFAnnotation): void;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement>();
@@ -123,6 +124,13 @@ const currentPageAnnotations = computed(() => {
   if (!props.annotations) return [];
   return props.annotations.filter(ann => ann.page === props.currentPage);
 });
+
+// 选中的标注
+const selectedAnnotation = ref<PDFAnnotation | null>(null);
+
+// 当前 viewport 缓存（用于坐标转换）
+let currentViewport: any = null;
+let currentPdfToCanvasScale = 1;
 
 // 加载PDF
 const loadPdf = async () => {
@@ -210,6 +218,9 @@ const drawAnnotations = (viewport: any) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
+  // 缓存 viewport 用于点击检测
+  currentViewport = viewport;
+
   // 清除之前的内容
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -219,8 +230,8 @@ const drawAnnotations = (viewport: any) => {
   }
 
   // 获取缩放比例
-  const pdfToCanvasScale = canvas.width / viewport.viewBox[2];
-  console.log('[drawAnnotations] 缩放比例:', pdfToCanvasScale);
+  currentPdfToCanvasScale = canvas.width / viewport.viewBox[2];
+  console.log('[drawAnnotations] 缩放比例:', currentPdfToCanvasScale);
 
   for (const ann of currentPageAnnotations.value) {
     const [x1, y1, x2, y2] = ann.rect;
@@ -230,24 +241,36 @@ const drawAnnotations = (viewport: any) => {
     // PDF坐标转换到Canvas坐标
     // PDF坐标系：左下角为原点，Y轴向上
     // Canvas坐标系：左上角为原点，Y轴向下
-    const canvasX = x1 * pdfToCanvasScale;
-    const canvasY = (viewport.viewBox[3] - y2) * pdfToCanvasScale; // y2 是底部，需要翻转
-    const canvasWidth = (x2 - x1) * pdfToCanvasScale;
-    const canvasHeight = (y2 - y1) * pdfToCanvasScale;
+    const canvasX = x1 * currentPdfToCanvasScale;
+    const canvasY = (viewport.viewBox[3] - y2) * currentPdfToCanvasScale; // y2 是底部，需要翻转
+    const canvasWidth = (x2 - x1) * currentPdfToCanvasScale;
+    const canvasHeight = (y2 - y1) * currentPdfToCanvasScale;
 
     console.log('[drawAnnotations] Canvas坐标:', { canvasX, canvasY, canvasWidth, canvasHeight });
 
     // 获取颜色
     const colors = LEVEL_COLORS[ann.level] || ANNOTATION_COLORS[ann.color] || ANNOTATION_COLORS.yellow;
 
+    // 是否选中
+    const isSelected = selectedAnnotation.value?.id === ann.id;
+
     // 绘制高亮矩形
-    ctx.fillStyle = colors.fill;
+    ctx.fillStyle = isSelected ? colors.fill.replace('0.3', '0.5') : colors.fill;
     ctx.fillRect(canvasX, canvasY, canvasWidth, canvasHeight);
 
-    // 绘制边框
+    // 绘制边框 - 选中的标注边框更粗
     ctx.strokeStyle = colors.stroke;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = isSelected ? 4 : 2;
     ctx.strokeRect(canvasX, canvasY, canvasWidth, canvasHeight);
+
+    // 如果选中，绘制选中指示
+    if (isSelected) {
+      ctx.setLineDash([5, 3]);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(canvasX + 2, canvasY + 2, canvasWidth - 4, canvasHeight - 4);
+      ctx.setLineDash([]);
+    }
 
     // 如果是标题级别，绘制角标
     if (ann.level && ann.level !== 'text') {
@@ -269,6 +292,69 @@ const drawAnnotations = (viewport: any) => {
   }
   
   console.log('[drawAnnotations] 绘制完成');
+};
+
+// 处理标注点击选择
+const handleAnnotationClick = (e: MouseEvent) => {
+  // 图片模式下不处理
+  if (props.extractMode === 'image') return;
+  
+  const canvas = annotationCanvasRef.value;
+  if (!canvas || !currentViewport) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+  console.log('[handleAnnotationClick] 点击坐标:', { x, y });
+
+  // 查找点击位置对应的标注
+  let foundAnnotation: PDFAnnotation | null = null;
+
+  for (const ann of currentPageAnnotations.value) {
+    const [x1, y1, x2, y2] = ann.rect;
+    
+    // PDF坐标转换到Canvas坐标
+    const canvasX = x1 * currentPdfToCanvasScale;
+    const canvasY = (currentViewport.viewBox[3] - y2) * currentPdfToCanvasScale;
+    const canvasWidth = (x2 - x1) * currentPdfToCanvasScale;
+    const canvasHeight = (y2 - y1) * currentPdfToCanvasScale;
+
+    // 检查点击是否在标注区域内
+    if (x >= canvasX && x <= canvasX + canvasWidth &&
+        y >= canvasY && y <= canvasY + canvasHeight) {
+      foundAnnotation = ann;
+      break;
+    }
+  }
+
+  if (foundAnnotation) {
+    // 如果点击的是已选中的标注，取消选中
+    if (selectedAnnotation.value?.id === foundAnnotation.id) {
+      selectedAnnotation.value = null;
+    } else {
+      selectedAnnotation.value = foundAnnotation;
+    }
+    console.log('[handleAnnotationClick] 选中标注:', selectedAnnotation.value?.text);
+    
+    // 重绘标注以显示选中状态
+    drawAnnotations(currentViewport);
+  } else {
+    // 点击空白区域，取消选中
+    if (selectedAnnotation.value) {
+      selectedAnnotation.value = null;
+      drawAnnotations(currentViewport);
+    }
+  }
+};
+
+// 处理键盘删除
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Delete' && selectedAnnotation.value) {
+    console.log('[handleKeyDown] 删除标注:', selectedAnnotation.value.text);
+    emit('annotation-delete', selectedAnnotation.value);
+    selectedAnnotation.value = null;
+  }
 };
 
 // 处理文本选择
@@ -453,6 +539,7 @@ watch(() => props.annotations, (newAnnotations) => {
 onMounted(() => {
   loadPdf();
   document.addEventListener('mouseup', handleTextSelection);
+  document.addEventListener('keydown', handleKeyDown);
 });
 
 onBeforeUnmount(() => {
@@ -463,6 +550,7 @@ onBeforeUnmount(() => {
     URL.revokeObjectURL(currentBlobUrl);
   }
   document.removeEventListener('mouseup', handleTextSelection);
+  document.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 

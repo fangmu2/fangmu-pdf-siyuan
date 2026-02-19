@@ -125,7 +125,9 @@ function groupAnnotations(
   if (groupBy === 'color') {
     const colorOrder: AnnotationColor[] = ['red', 'green', 'blue', 'yellow', 'purple'];
     groups.sort((a, b) => {
-      return colorOrder.indexOf(a.color!) - colorOrder.indexOf(b.color!);
+      const colorA = a.color || 'yellow';
+      const colorB = b.color || 'yellow';
+      return colorOrder.indexOf(colorA) - colorOrder.indexOf(colorB);
     });
   } else if (groupBy === 'page') {
     groups.sort((a, b) => a.page! - b.page!);
