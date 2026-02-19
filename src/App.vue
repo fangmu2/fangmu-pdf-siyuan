@@ -5,7 +5,7 @@
     <div class="panel-header">
       <div class="header-title">
         <span>PDF 思维导图摘录</span>
-        <span class="version-badge">v0.6.0</span>
+        <span class="version-badge">v0.0.7</span>
       </div>
       <div class="header-actions">
         <button
@@ -774,7 +774,7 @@ const handleAnnotationSaved = () => {
 // 删除标注
 const handleAnnotationDelete = async (ann: PDFAnnotation) => {
   if (!currentProject.value) return;
-  
+
   if (!confirm(`确定要删除这条标注吗？\n\n"${ann.text.substring(0, 50)}${ann.text.length > 50 ? '...' : ''}"`)) {
     return;
   }
@@ -784,16 +784,16 @@ const handleAnnotationDelete = async (ann: PDFAnnotation) => {
     if (ann.blockId) {
       await deleteAnnotationApi(ann.blockId);
     }
-    
+
     // 从本地列表中移除
     annotations.value = annotations.value.filter(a => a.id !== ann.id);
-    
+
     // 更新项目存储
     saveProjectAnnotations(currentProject.value.id, annotations.value);
     updateProject(currentProject.value.id, {
       annotationCount: annotations.value.length
     });
-    
+
     console.log('[handleAnnotationDelete] 删除成功:', ann.id);
   } catch (error: any) {
     console.error('删除标注失败:', error);
