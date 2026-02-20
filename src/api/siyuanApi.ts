@@ -338,24 +338,36 @@ export async function searchSiyuanDocs(keyword: string): Promise<{ id: string; n
     const kernelBase = getKernelBase();
     let stmt: string;
     
-    if (keyword && keyword.trim()) {
-      // 模糊搜索
-      stmt = `SELECT root_id as id, content as name, box, hpath FROM blocks 
-              WHERE type = 'd' AND content LIKE '%${keyword.replace(/'/g, "''")}%' 
-              ORDER BY updated DESC LIMIT 20`;
+    // 转义单引号防止 SQL 注入
+    const escapedKeyword = keyword ? keyword.replace(/'/g, "''").trim() : '';
+    
+    if (escapedKeyword) {
+      // 模糊搜索 - 同时搜索文档标题和内容
+      stmt = `SELECT DISTINCT root_id as id, 
+              (SELECT content FROM blocks b2 WHERE b2.root_id = b.root_id AND type = 'd' LIMIT 1) as name, 
+              box, hpath 
+              FROM blocks b
+              WHERE type = 'd' 
+              AND (content LIKE '%${escapedKeyword}%' OR hpath LIKE '%${escapedKeyword}%')
+              ORDER BY updated DESC LIMIT 30`;
     } else {
       // 获取最近更新的文档
       stmt = `SELECT root_id as id, content as name, box, hpath FROM blocks 
               WHERE type = 'd' 
-              ORDER BY updated DESC LIMIT 20`;
+              ORDER BY updated DESC LIMIT 30`;
     }
+    
+    console.log('[searchSiyuanDocs] 执行查询:', stmt);
     
     const result = await postApi<{ id: string; name: string; box: string; hpath: string }[]>('/api/query/sql', {
       stmt
     });
     
-    console.log('[searchSiyuanDocs] 搜索结果:', result?.length || 0, '个文档');
-    return result || [];
+    // 过滤掉空结果
+    const filteredResult = (result || []).filter(doc => doc.id && doc.name);
+    
+    console.log('[searchSiyuanDocs] 搜索结果:', filteredResult.length, '个文档');
+    return filteredResult;
   } catch (e) {
     console.error('[searchSiyuanDocs] 搜索失败:', e);
     return [];

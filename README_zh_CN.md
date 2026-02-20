@@ -1,151 +1,119 @@
-# Siyuan Plugin Template - Vite & Vue3
+# PDF 思维导图摘录
+当前为未完整测试的beta版本,请谨慎下载和使用
 
-[English](./README.md)
+一个PDF 标注摘录与思维导图生成工具(思维导图功能暂未开发)，帮助你高效地从 PDF 文档中提取知识并组织成结构化笔记。
 
-> 本例同 [siyuan/plugin-sample](https://github.com/siyuan-note/plugin-sample).
+## ✨ 核心功能
 
-1. 使用 Vite 打包
-2. 使用 Vue3 进行开发
-3. 提供一个github action 模板，能自动生成package.zip并上传到新版本中
-4. 提供自动更新 `plugin.json` 中的 `version` 并发布新版本的脚本。[link](#release-script)
+### 📚 多 PDF 项目管理
+- 创建项目，将多本 PDF 统一管理
+- 支持项目内多 PDF 切换浏览
+- 项目数据持久化存储
 
-> [!NOTE]
->
-> 在开始之前，你需要先安装 [NodeJS](https://nodejs.org/en/download) 和 [pnpm](https://pnpm.io/installation)。
+### 📝 文字摘录
+- 在 PDF 中选择文本，一键创建标注
+- 支持多种标注级别：文档标题、H1-H5 标题、正文标注
+- 标注自动同步保存到思源文档
 
-## 开始
+### 📷 图片摘录
+- 框选 PDF 区域，截取为图片
+- 图片自动上传到思源资源目录
+- 支持添加标注级别和笔记
 
-1. 通过 `Use the template` 按钮，以该仓库为模板创建你自己的项目。
-> [!WARNING]
->
-> 请注意库名和插件名称一致，默认分支必须为 `main`.
+### 🎨 标注管理
+- 标注列表实时显示所有摘录内容
+- 支持按页码排序浏览
+- 点击标注可快速定位到 PDF 对应位置
+- 支持编辑标注内容、添加笔记
 
-> [!WARNING]
->
-> 初次尝试，请不要修改任何内容，直接通过下述方式，成功在思源里加载插件模板以后，再进行调整。
->
-> 例如删除 README_zh_CN.md 也会导致插件加载不成功。
+### ⌨️ 快捷操作
+- **点击标注**：选中标注（高亮显示）
+- **Delete 键**：删除选中的标注
+- 标注删除会同步移除思源中的对应块
 
+## 🚀 使用方法
 
-2. 使用 `git clone` 克隆创建好的仓库。
-3. 使用 `pnpm i` 安装项目所需的依赖。
+### 1. 创建项目
+点击顶部「+ 新项目」按钮，输入项目名称并选择一个 PDF 文件。
 
-4. 复制 `.env.example` 文件并取名为 `.env`，修改其中的 `VITE_SIYUAN_WORKSPACE_PATH` 为你的思源工作空间。
+### 2. 添加 PDF
+在项目管理中可以继续添加更多 PDF 到当前项目。
 
+### 3. 摘录内容
+- **文字模式**：选择工具栏「文字」按钮，在 PDF 中拖选文本
+- **图片模式**：选择工具栏「图片」按钮，在 PDF 中框选区域
 
-> [!TIP]
->
-> 如果你不喜欢将项目打包至工作空间中，可以使用 `软链接` 的方式。
->
-> 直接写入思源空间下，可通过思源的同步功能直接同步至其他设备，而软链接的方式则不会参与同步。
-> 
-> 本模板不提供软链接的具体内容，相关内容可参考 [plugin-sample-vite-svelte](https://github.com/siyuan-note/plugin-sample-vite-svelte)。
-> 
+### 4. 设置级别
+在摘录前，可以在工具栏选择标注级别：
+- 文档标题：将作为目标文档的标题
+- H1-H5：生成对应级别的标题
+- 正文标注：普通文本高亮
 
+### 5. 指定目标文档（可选）
+在「目标」输入框中搜索并选择思源文档，标注将保存到该文档。
 
-5. 使用 `pnpm dev` 启动项目，看到类似下面的内容表示构建成功
+### 6. 管理标注
+- 双击标注列表项可跳转到 PDF 对应位置
+- 点击编辑按钮可修改标注内容和笔记
+- 在 PDF 上点击标注可选中，按 Delete 键删除
 
-  ```
+## 📖 使用场景
 
-  > plugin-sample-vite-vue@0.0.1 dev /path/to/your/plugin-sample-vite-vue
-  > vite build --watch
+### 学术研究
+- 阅读论文时快速摘录关键观点
+- 按标题级别组织文献结构
+- 导出 Markdown 格式笔记
 
-  mode=> production
-  env=> {
-    VITE_SIYUAN_WORKSPACE_PATH: '/path/to/siyuan/workspace',
-  }
+### 知识整理
+- 多本教材统一管理
+- 重要概念分类标注
+- 图片截图保存图表
 
-  Siyuan workspace path is set:
-  /path/to/siyuan/workspace
+### 读书笔记
+- 划线摘录精彩段落
+- 添加个人思考和笔记
+- 生成结构化读书笔记
 
-  Plugin will build to:
-  # ✅ 插件将会构建至下面的位置
-  /path/to/siyuan/workspace/data/plugins/plugin-sample-vite-vue
+## 🎯 特色亮点
 
-  isWatch=> true
-  distDir=> /path/to/siyuan/workspace/data/plugins/plugin-sample-vite-vue
-  vite v6.3.5 building for production...
+1. **无侵入式设计**：标注数据存储在思源文档中，不依赖插件也能查看
+2. **多级标题支持**：直接生成 H1-H5 标题，方便构建文档结构
+3. **双向联动**：PDF 与标注列表实时联动，快速定位
+4. **图片摘录**：支持截图保存 PDF 中的图表、公式等
+5. **项目化管理**：多个 PDF 文件统一管理，适合专题研究
 
-  watching for file changes...
+## ⚙️ 技术实现
 
-  build started...
-  ✓ 26 modules transformed.
-  rendering chunks (1)...LiveReload enabled
-  ../../Siyuan-plugin/data/plugins/plugin-sample-vite-vue/index.css    1.08 kB │ gzip:  0.41 kB
-  ../../Siyuan-plugin/data/plugins/plugin-sample-vite-vue/index.js   198.60 kB │ gzip: 46.59 kB
-  [vite-plugin-static-copy] Copied 7 items.
-  built in 502ms.
-  ```
+- 基于 PDF.js 渲染 PDF 文档
+- 使用 Vue 3 + TypeScript 开发
+- 数据存储在思源文档块属性中
+- 支持思源主题样式适配
 
-   刷新思源，你将会在 `思源 - 设置 - 集市` 中看到名为 `plugin-sample-vite-vue` 的插件。
-   
-6. 启用插件, 并检查 `App.vue` 文件进行开发。
+## 📌 注意事项
 
-   这个文件中包含了一些代码示例。
+1. 首次使用需要先创建项目并导入 PDF
+2. 标注保存需要有效的目标文档（未指定时会尝试保存到最近编辑的文档）
+3. 图片摘录会生成 PNG 文件存储在 assets 目录
+4. 建议定期通过项目管理检查项目状态
 
+## 🔄 更新日志
 
-> [!TIP]
->
-> 更多的插件代码案例，请查看： [siyuan/plugin-sample/src/index.ts](https://github.com/siyuan-note/plugin-sample/blob/main/src/index.ts)
+### v0.0.8
+- 新增：PDF 标注点击选择功能
+- 新增：Delete 键删除选中标注
+- 优化：标注绘制最小高度，避免显示为线条
+- 修复：标注颜色为空时的错误
 
+### v0.0.7
+- 新增：多 PDF 项目管理
+- 新增：图片摘录功能
+- 新增：标注级别分类
+- 优化：UI 交互体验
 
+## 💬 反馈与建议
 
-## 上架集市
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/Wetoria/plugin-sample-vite-vue/issues) 中反馈。
 
-### 使用 Github Action
+## 📄 开源协议
 
-1. 你可以在本地使用插件的版本创建一个名为 `v*` 的 tag。
-2. 将创建好的 tag 推送至 Github。模板项目提供了 Action 脚本自动构建新版本。
-
-
-> [!TIP]
->
-> <div id="release-script"></div>这个项目提供了自动创建 `tag` 并发布新版本的脚本，你可以通过运行 `pnpm release` 创建一个修正版本。
->
-> 你可以通过使用参数 `--mode=manual|patch|minor|major` 设置版本号的调整模式，或者通过 `pnpm release:manual` 的方式直接以特定参数进行发布。
->
-> 完整的命令列表请查看 `package.json` 文件。
-
-
-样例中自带了 github action，可以自动打包发布，请遵循以下操作：
-
-1. 设置项目 `https://github.com/OWNER/REPO/settings/actions` 页面向下划到 Workflow Permissions，打开配置
-
-![img](./asset/action.png)
-
-2. 需要发布版本的时候，push 一个格式为 `v*` 的 tag，github 就会自动打包发布 release（包括 package.zip）
-3. 默认使用保守策略进行 pre-release 发布，如果觉得没有必要，可以更改 release.yml 中的设置：
-
-```yaml
-- name: Release
-    uses: ncipollo/release-action@v1
-    with.
-        allowUpdates: true
-        artifactErrorsFailBuild: true
-        artifacts: 'package.zip'
-        token: ${{ secrets.GITHUB_TOKEN }}
-        prerelease: true # change this to false
-```
-
-### 手动发布
-
-1. 使用 `pnpm build` 构建 `package.zip`
-2. 在 GitHub 上创建一个新的发布，使用插件版本号作为 “Tag version”，示例: https://github.com/siyuan-note/plugin-sample/releases
-3. 上传 package.zip 作为二进制附件
-4. 提交发布
-
-> [!NOTE]
-> 
-> 如果是第一次发布版本，还需要创建一个 PR 到 [Community Bazaar](https://github.com/siyuan-note/bazaar)  社区集市仓库，修改该库的 plugins.json。该文件是所有社区插件库的索引，格式为：
-
-```json
-{
-  "repos": [
-    "username/reponame"
-  ]
-}
-```
-
----
-
-更多有关于插件的信息，请查看： [siyuan/plugin-sample](https://github.com/siyuan-note/plugin-sample).
+MIT License

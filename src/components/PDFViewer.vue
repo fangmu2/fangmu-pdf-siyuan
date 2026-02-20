@@ -100,6 +100,13 @@ let isSelecting = false;
 let selectionStart = { x: 0, y: 0 };
 let selectionDiv: HTMLDivElement | null = null;
 
+// 文本选择防抖
+let lastSelectedText = '';
+let lastSelectionTime = 0;
+
+// 图片选择防抖
+let lastImageSelectTime = 0;
+
 // 标注颜色映射
 const LEVEL_COLORS: Record<string, { fill: string; stroke: string }> = {
   title: { fill: 'rgba(255, 87, 87, 0.3)', stroke: '#ff5757' },      // 红色
@@ -243,8 +250,14 @@ const drawAnnotations = (viewport: any) => {
     // Canvas坐标系：左上角为原点，Y轴向下
     const canvasX = x1 * currentPdfToCanvasScale;
     const canvasY = (viewport.viewBox[3] - y2) * currentPdfToCanvasScale; // y2 是底部，需要翻转
-    const canvasWidth = (x2 - x1) * currentPdfToCanvasScale;
-    const canvasHeight = (y2 - y1) * currentPdfToCanvasScale;
+    let canvasWidth = (x2 - x1) * currentPdfToCanvasScale;
+    let canvasHeight = (y2 - y1) * currentPdfToCanvasScale;
+
+    // 确保最小高度，避免显示为一条线
+    const minCanvasHeight = 10; // 最小10像素高度
+    if (canvasHeight < minCanvasHeight) {
+      canvasHeight = minCanvasHeight;
+    }
 
     console.log('[drawAnnotations] Canvas坐标:', { canvasX, canvasY, canvasWidth, canvasHeight });
 
@@ -361,12 +374,21 @@ const handleKeyDown = (e: KeyboardEvent) => {
 const handleTextSelection = () => {
   // 图片模式下不处理文本选择
   if (props.extractMode === 'image') return;
-  
+
   if (!textLayerRef.value) return;
 
   const selection = window.getSelection();
   if (selection && selection.toString().trim()) {
     const text = selection.toString().trim();
+
+    // 防抖：相同的文本在500ms内不重复发送
+    const now = Date.now();
+    if (text === lastSelectedText && (now - lastSelectionTime) < 500) {
+      return;
+    }
+    lastSelectedText = text;
+    lastSelectionTime = now;
+
     const rect = getSelectionRect(textLayerRef.value);
 
     emit('text-selected', {
@@ -429,7 +451,18 @@ const updateImageSelect = (e: MouseEvent) => {
 // 图片框选 - 结束
 const endImageSelect = (e: MouseEvent) => {
   if (!isSelecting || !selectionDiv || !imageSelectLayerRef.value || !canvasRef.value) return;
-  
+
+  // 防抖：500ms内不重复处理
+  const now = Date.now();
+  if (now - lastImageSelectTime < 500) {
+    console.log('[endImageSelect] 防抖跳过');
+    isSelecting = false;
+    selectionDiv.remove();
+    selectionDiv = null;
+    return;
+  }
+  lastImageSelectTime = now;
+
   isSelecting = false;
   
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
@@ -685,10 +718,12 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  background: var(--b3-theme-surface);
-  border: 1px solid var(--b3-border-color);
+  background: var(--b3-theme-surface, #fff);
+  border: 1px solid var(--b3-border-color, #ddd);
   border-radius: 4px;
-  z-index: 5;
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
 }
 
 .zoom-level {

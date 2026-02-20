@@ -5,7 +5,7 @@
     <div class="panel-header">
       <div class="header-title">
         <span>PDF 思维导图摘录</span>
-        <span class="version-badge">v0.0.7</span>
+        <span class="version-badge">v0.0.8</span>
       </div>
       <div class="header-actions">
         <button
@@ -178,15 +178,18 @@
           <input
             v-model="targetDocSearch"
             class="doc-search-input b3-text-field"
-            placeholder="输入搜索文档..."
+            :placeholder="docSearchLoading ? '搜索中...' : '输入搜索文档...'"
             list="doc-list"
             @input="onDocSearchInput"
             @change="onDocSelect"
+            @focus="onDocFocus"
+            :disabled="docSearchLoading"
           />
           <datalist id="doc-list">
             <option v-for="doc in targetDocOptions" :key="doc.id" :value="doc.name" :data-id="doc.id" />
           </datalist>
           <button v-if="targetDoc" @click="clearTargetDoc" class="clear-btn" title="清除">✕</button>
+          <div v-if="docSearchLoading" class="doc-search-spinner"></div>
         </div>
       </div>
 
@@ -292,9 +295,13 @@
         <AnnotationList
           :annotations="annotations"
           :loading="loadingAnnotations"
+          :cursor-after-id="cursorAfterId"
           @annotation-click="handleAnnotationClick"
           @annotation-edit="handleAnnotationEdit"
           @refresh="loadAnnotations"
+          @merge="handleAnnotationMerge"
+          @unmerge="handleAnnotationUnmerge"
+          @cursor-change="handleCursorChange"
         />
       </div>
     </div>
@@ -413,6 +420,9 @@ const selectedRect = ref<[number, number, number, number] | null>(null);
 const creatingAnnotation = ref(false);
 const pendingTitleLevel = ref<AnnotationLevel | null>(null);
 
+// 插入光标位置（null表示插入到最前面，否则是某个标注ID之后）
+const cursorAfterId = ref<string | null>(null);
+
 // 目标文档选择
 interface SiyuanDoc {
   id: string;
@@ -423,19 +433,30 @@ interface SiyuanDoc {
 const targetDoc = ref<SiyuanDoc | null>(null);
 const targetDocSearch = ref('');
 const targetDocOptions = ref<SiyuanDoc[]>([]);
+const docSearchLoading = ref(false);
 let docSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 搜索文档（防抖）
 const onDocSearchInput = () => {
   if (docSearchTimer) clearTimeout(docSearchTimer);
   docSearchTimer = setTimeout(async () => {
+    docSearchLoading.value = true;
     try {
       const results = await searchSiyuanDocs(targetDocSearch.value);
       targetDocOptions.value = results;
     } catch (e) {
       console.error('[onDocSearchInput] 搜索失败:', e);
+    } finally {
+      docSearchLoading.value = false;
     }
   }, 300);
+};
+
+// 输入框聚焦时重新搜索
+const onDocFocus = () => {
+  if (targetDocOptions.value.length === 0) {
+    onDocSearchInput();
+  }
 };
 
 // 选择文档
@@ -444,6 +465,10 @@ const onDocSelect = () => {
   if (doc) {
     targetDoc.value = doc;
     console.log('[onDocSelect] 已选择目标文档:', doc.name, doc.id);
+    // 选择新文档后重置防抖状态，允许重新创建标注
+    lastCreatedText = '';
+    lastCreatedLevel = '';
+    lastCreatedTime = 0;
   }
 };
 
@@ -801,6 +826,166 @@ const handleAnnotationDelete = async (ann: PDFAnnotation) => {
   }
 };
 
+// 合并标注（将 source 合并到 target 下）
+const handleAnnotationMerge = (sourceId: string, targetId: string) => {
+  if (!currentProject.value) return;
+
+  const sourceIndex = annotations.value.findIndex(a => a.id === sourceId);
+  const targetIndex = annotations.value.findIndex(a => a.id === targetId);
+
+  if (sourceIndex === -1 || targetIndex === -1) {
+    console.error('[handleAnnotationMerge] 找不到标注');
+    return;
+  }
+
+  // 计算新的 sortOrder
+  const siblingsUnderTarget = annotations.value.filter(a => a.parentId === targetId);
+  const maxSortOrder = siblingsUnderTarget.length > 0 
+    ? Math.max(...siblingsUnderTarget.map(a => a.sortOrder || 0)) 
+    : -1;
+
+  // 更新源标注的 parentId 和 sortOrder
+  annotations.value[sourceIndex] = {
+    ...annotations.value[sourceIndex],
+    parentId: targetId,
+    sortOrder: maxSortOrder + 1,
+    updated: Date.now()
+  };
+
+  // 保存
+  saveProjectAnnotations(currentProject.value.id, annotations.value);
+
+  console.log('[handleAnnotationMerge] 合并成功:', sourceId, '->', targetId);
+};
+
+// 取消合并
+const handleAnnotationUnmerge = (annotationId: string) => {
+  if (!currentProject.value) return;
+
+  const index = annotations.value.findIndex(a => a.id === annotationId);
+  if (index === -1) {
+    console.error('[handleAnnotationUnmerge] 找不到标注');
+    return;
+  }
+
+  // 清除 parentId 和 sortOrder
+  annotations.value[index] = {
+    ...annotations.value[index],
+    parentId: null,
+    sortOrder: undefined,
+    updated: Date.now()
+  };
+
+  // 同时取消所有子标注的 parentId
+  annotations.value = annotations.value.map(a => {
+    if (a.parentId === annotationId) {
+      return {
+        ...a,
+        parentId: null,
+        sortOrder: undefined,
+        updated: Date.now()
+      };
+    }
+    return a;
+  });
+
+  // 保存
+  saveProjectAnnotations(currentProject.value.id, annotations.value);
+
+  console.log('[handleAnnotationUnmerge] 取消合并成功:', annotationId);
+};
+
+// 处理光标位置变化
+const handleCursorChange = (afterId: string | null) => {
+  cursorAfterId.value = afterId;
+};
+
+// 在指定位置插入标注
+const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: boolean; reason?: string } => {
+  if (!currentProject.value) return { success: false, reason: '无项目' };
+
+  console.log('[insertAnnotationAtPosition] 开始插入，当前数组长度:', annotations.value.length);
+  console.log('[insertAnnotationAtPosition] 新标注ID:', newAnnotation.id, '文本:', newAnnotation.text?.substring(0, 30));
+  
+  // 直接使用 Vue 响应式数组（单一数据源）
+  const currentAnnotations = annotations.value;
+  
+  // 第一步：去重 - 清理历史数据中可能存在的重复
+  const seenIds = new Set<string>();
+  const deduplicatedAnnotations: PDFAnnotation[] = [];
+  for (const ann of currentAnnotations) {
+    if (!seenIds.has(ann.id)) {
+      seenIds.add(ann.id);
+      deduplicatedAnnotations.push(ann);
+    } else {
+      console.warn('[insertAnnotationAtPosition] 发现历史重复数据，已清理:', ann.id);
+    }
+  }
+  
+  // 第二步：检查新标注ID是否已存在
+  if (seenIds.has(newAnnotation.id)) {
+    console.warn('[insertAnnotationAtPosition] 标注ID已存在，跳过:', newAnnotation.id);
+    return { success: false, reason: '标注ID已存在' };
+  }
+  
+  // 第三步：检查内容重复
+  let isDuplicate = false;
+  if (newAnnotation.isImage && newAnnotation.imagePath) {
+    isDuplicate = deduplicatedAnnotations.some(a => 
+      a.isImage && a.imagePath === newAnnotation.imagePath
+    );
+  } else if (newAnnotation.text) {
+    isDuplicate = deduplicatedAnnotations.some(a => 
+      !a.isImage && 
+      a.text === newAnnotation.text && 
+      a.level === newAnnotation.level &&
+      a.page === newAnnotation.page
+    );
+  }
+  
+  if (isDuplicate) {
+    console.warn('[insertAnnotationAtPosition] 标注已存在，跳过:', 
+      newAnnotation.isImage ? `图片 ${newAnnotation.imagePath}` : newAnnotation.text.substring(0, 30));
+    return { success: false, reason: '该标注已存在，请勿重复创建' };
+  }
+
+  // 第四步：插入新标注
+  let newAnnotations: PDFAnnotation[];
+  
+  if (cursorAfterId.value === null) {
+    newAnnotations = [newAnnotation, ...deduplicatedAnnotations];
+  } else {
+    const targetIndex = deduplicatedAnnotations.findIndex(a => a.id === cursorAfterId.value);
+    if (targetIndex !== -1) {
+      newAnnotations = [
+        ...deduplicatedAnnotations.slice(0, targetIndex + 1),
+        newAnnotation,
+        ...deduplicatedAnnotations.slice(targetIndex + 1)
+      ];
+    } else {
+      newAnnotations = [...deduplicatedAnnotations, newAnnotation];
+    }
+  }
+
+  // 第五步：最终验证 - 确保没有重复ID
+  const finalIds = newAnnotations.map(a => a.id);
+  const finalUniqueIds = new Set(finalIds);
+  if (finalIds.length !== finalUniqueIds.size) {
+    console.error('[insertAnnotationAtPosition] 最终检查发现重复ID，拒绝保存！');
+    return { success: false, reason: '数据异常，请刷新页面后重试' };
+  }
+
+  // 更新光标位置
+  cursorAfterId.value = newAnnotation.id;
+
+  // 更新 Vue 响应式数组并保存
+  annotations.value = newAnnotations;
+  saveProjectAnnotations(currentProject.value.id, newAnnotations);
+  
+  console.log('[insertAnnotationAtPosition] 插入成功，新数组长度:', newAnnotations.length);
+  return { success: true };
+};
+
 // 全屏切换
 const toggleFullscreen = () => {
   isFullscreen.value = !isFullscreen.value;
@@ -828,6 +1013,9 @@ const handleTextSelected = (data: { text: string; page: number; rect: [number, n
   selectedRect.value = data.rect;
 };
 
+// 图片选择处理锁
+let imageSelectLock = false;
+
 // 处理图片选择
 const handleImageSelected = async (data: {
   canvasRect: { x: number; y: number; width: number; height: number };
@@ -835,6 +1023,12 @@ const handleImageSelected = async (data: {
   page: number
 }) => {
   if (!currentProject.value || !currentPdf.value) return;
+
+  // 使用锁防止重复调用
+  if (imageSelectLock) {
+    console.warn('[handleImageSelected] 已有图片选择正在处理中，跳过');
+    return;
+  }
 
   if (currentLevel.value !== 'text') {
     const savedLevel = currentLevel.value;
@@ -844,45 +1038,108 @@ const handleImageSelected = async (data: {
     return;
   }
 
+  // 立即锁定，防止重复调用
+  imageSelectLock = true;
   creatingAnnotation.value = true;
 
   try {
+    // 验证选择区域有效性
+    if (data.canvasRect.width < 5 || data.canvasRect.height < 5) {
+      throw new Error('选择区域太小，请重新选择');
+    }
+
     const pdfViewerEl = document.querySelector('.pdf-viewer-container') as HTMLElement;
     const canvas = pdfViewerEl?.querySelector('.pdf-canvas') as HTMLCanvasElement;
 
-    if (!canvas) throw new Error('找不到PDF画布');
+    if (!canvas) {
+      throw new Error('找不到PDF画布，请等待PDF加载完成');
+    }
+
+    // 确保canvas已经渲染
+    if (canvas.width === 0 || canvas.height === 0) {
+      throw new Error('PDF画布未准备好，请稍后重试');
+    }
 
     const scaleX = canvas.width / canvas.offsetWidth;
     const scaleY = canvas.height / canvas.offsetHeight;
 
+    // 计算实际裁剪区域，确保不越界
+    let cropX = Math.max(0, Math.round(data.canvasRect.x * scaleX));
+    let cropY = Math.max(0, Math.round(data.canvasRect.y * scaleY));
+    let cropWidth = Math.max(1, Math.round(data.canvasRect.width * scaleX));
+    let cropHeight = Math.max(1, Math.round(data.canvasRect.height * scaleY));
+
+    // 确保不超出canvas边界
+    if (cropX + cropWidth > canvas.width) {
+      cropWidth = canvas.width - cropX;
+    }
+    if (cropY + cropHeight > canvas.height) {
+      cropHeight = canvas.height - cropY;
+    }
+
+    // 最终检查
+    if (cropWidth < 1 || cropHeight < 1) {
+      throw new Error('裁剪区域无效，请重新选择');
+    }
+
+    console.log('[handleImageSelected] 裁剪参数:', {
+      canvas: { width: canvas.width, height: canvas.height },
+      crop: { x: cropX, y: cropY, width: cropWidth, height: cropHeight },
+      scale: { x: scaleX, y: scaleY }
+    });
+
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = Math.max(1, Math.round(data.canvasRect.width * scaleX));
-    tempCanvas.height = Math.max(1, Math.round(data.canvasRect.height * scaleY));
+    tempCanvas.width = cropWidth;
+    tempCanvas.height = cropHeight;
     const ctx = tempCanvas.getContext('2d');
 
-    if (!ctx) throw new Error('无法创建画布上下文');
+    if (!ctx) {
+      throw new Error('无法创建画布上下文');
+    }
 
+    // 绘制裁剪区域
     ctx.drawImage(
       canvas,
-      data.canvasRect.x * scaleX,
-      data.canvasRect.y * scaleY,
-      data.canvasRect.width * scaleX,
-      data.canvasRect.height * scaleY,
+      cropX,
+      cropY,
+      cropWidth,
+      cropHeight,
       0, 0,
-      tempCanvas.width,
-      tempCanvas.height
+      cropWidth,
+      cropHeight
     );
 
+    // 转换为Blob
     const blob = await new Promise<Blob>((resolve, reject) => {
-      tempCanvas.toBlob(b => b ? resolve(b) : reject(new Error('无法创建图片')), 'image/png');
+      tempCanvas.toBlob(b => {
+        if (b) {
+          resolve(b);
+        } else {
+          reject(new Error('无法创建图片，可能是画布内容为空'));
+        }
+      }, 'image/png', 0.92);
     });
+
+    // 检查blob大小
+    if (blob.size < 100) {
+      throw new Error('生成的图片太小，可能选择区域无效');
+    }
 
     const fileName = `pdf-excerpt-${Date.now()}.png`;
     const file = new File([blob], fileName, { type: 'image/png' });
+    
+    console.log('[handleImageSelected] 上传图片:', fileName, '大小:', (blob.size / 1024).toFixed(1), 'KB');
+    
     const uploadResult = await uploadFileToAssets(file);
+    
+    if (!uploadResult || !uploadResult.path) {
+      throw new Error('图片上传失败');
+    }
+    
+    console.log('[handleImageSelected] 上传成功:', uploadResult.path);
 
     const newAnnotation: PDFAnnotation = {
-      id: `ann-${Date.now()}`,
+      id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       blockId: '',
       pdfPath: currentPdf.value.path,
       pdfName: currentPdf.value.name,
@@ -898,6 +1155,8 @@ const handleImageSelected = async (data: {
       updated: Date.now()
     };
 
+    console.log('[handleImageSelected] 开始创建标注:', newAnnotation.id);
+
     const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
     if (result.blockId) {
       newAnnotation.blockId = result.blockId;
@@ -910,31 +1169,69 @@ const handleImageSelected = async (data: {
       console.warn('[handleImageSelected] 保存到思源文档失败，仅保存到本地');
     }
 
-    // 只添加到缓存，不重复 push
-    addAnnotationToCache(currentProject.value.id, newAnnotation);
-    // 更新当前显示的标注列表
-    annotations.value = [...annotations.value, newAnnotation];
+    // 在光标位置插入标注
+    const insertResult = insertAnnotationAtPosition(newAnnotation);
+    if (!insertResult.success) {
+      if (insertResult.reason) {
+        alert(insertResult.reason);
+      }
+      return;
+    }
 
   } catch (error: any) {
     console.error('创建图片摘录失败:', error);
     alert(`创建失败: ${error.message || '未知错误'}`);
   } finally {
     creatingAnnotation.value = false;
+    imageSelectLock = false; // 释放锁
   }
 };
 
 // 从选择创建标注
+let lastCreatedText = '';
+let lastCreatedTime = 0;
+let lastCreatedLevel = '';
+let createAnnotationLock = false;  // 创建锁
+
 const createAnnotationFromSelection = async () => {
   if (!selectedText.value || !currentProject.value || !currentPdf.value) return;
 
+  // 使用锁防止重复创建
+  if (createAnnotationLock) {
+    console.warn('[createAnnotationFromSelection] 创建锁已锁定，跳过重复请求');
+    return;
+  }
+
+  // 防止重复创建：检查正在创建中
+  if (creatingAnnotation.value) {
+    console.warn('[createAnnotationFromSelection] 正在创建中，跳过重复请求');
+    return;
+  }
+
+  const annotationLevel = pendingTitleLevel.value || currentLevel.value;
+
+  // 防止重复创建：检查相同文本和级别在短时间内是否已创建（延长到3秒）
+  const now = Date.now();
+  if (selectedText.value === lastCreatedText && 
+      annotationLevel === lastCreatedLevel && 
+      (now - lastCreatedTime) < 3000) {
+    console.warn('[createAnnotationFromSelection] 相同文本和级别已创建，跳过:', selectedText.value.substring(0, 30), '级别:', annotationLevel);
+    return;
+  }
+
+  // 锁定创建
+  createAnnotationLock = true;
   creatingAnnotation.value = true;
+  lastCreatedText = selectedText.value;
+  lastCreatedTime = now;
+  lastCreatedLevel = annotationLevel;
 
   try {
     const rect = selectedRect.value || [0, 0, 100, 20];
-    const annotationLevel = pendingTitleLevel.value || currentLevel.value;
 
+    // 使用更精确的时间戳+随机数生成唯一ID
     const newAnnotation: PDFAnnotation = {
-      id: `ann-${Date.now()}`,
+      id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       blockId: '',
       pdfPath: currentPdf.value.path,
       pdfName: currentPdf.value.name,
@@ -948,23 +1245,34 @@ const createAnnotationFromSelection = async () => {
       updated: Date.now()
     };
 
+    console.log('[createAnnotationFromSelection] 开始创建标注:', newAnnotation.id, '级别:', annotationLevel, '文本:', newAnnotation.text.substring(0, 30));
+
     const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
     if (result.blockId) {
       newAnnotation.blockId = result.blockId;
       console.log('[createAnnotation] 标注已保存到思源文档:', result.blockId);
     } else if (result.error) {
       alert(result.error);
+      createAnnotationLock = false; // 释放锁
       creatingAnnotation.value = false;
+      // 不重置 lastCreatedText，保持防抖状态，防止用户快速重试创建重复标注
       return;
     } else {
       console.warn('[createAnnotation] 保存到思源文档失败，仅保存到本地');
     }
 
-    // 只添加到缓存，不重复 push
-    addAnnotationToCache(currentProject.value.id, newAnnotation);
-    // 更新当前显示的标注列表
-    annotations.value = [...annotations.value, newAnnotation];
+    // 在光标位置插入标注
+    const insertResult = insertAnnotationAtPosition(newAnnotation);
+    if (!insertResult.success) {
+      if (insertResult.reason) {
+        alert(insertResult.reason);
+      }
+      createAnnotationLock = false; // 释放锁
+      creatingAnnotation.value = false;
+      return;
+    }
 
+    // 清空选择状态
     selectedText.value = '';
     selectedRect.value = null;
     window.getSelection()?.removeAllRanges();
@@ -977,8 +1285,11 @@ const createAnnotationFromSelection = async () => {
   } catch (error: any) {
     console.error('创建标注失败:', error);
     alert(`创建失败: ${error.message || '未知错误'}`);
+    lastCreatedText = ''; // 重置，允许重试
+    lastCreatedLevel = ''; // 重置级别
   } finally {
     creatingAnnotation.value = false;
+    createAnnotationLock = false; // 释放锁
   }
 };
 
@@ -1320,6 +1631,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+  position: relative;
 }
 
 .doc-search-input {
@@ -1351,6 +1663,21 @@ onUnmounted(() => {
   background: var(--b3-theme-error);
   color: white;
   border-color: var(--b3-theme-error);
+}
+
+.doc-search-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--b3-theme-surface-light);
+  border-top-color: var(--b3-theme-primary);
+  border-radius: 50%;
+  animation: doc-spin 0.8s linear infinite;
+  position: absolute;
+  right: 30px;
+}
+
+@keyframes doc-spin {
+  to { transform: rotate(360deg); }
 }
 
 .level-select {

@@ -185,6 +185,16 @@ export function getSelectionRect(
     maxY = Math.max(maxY, relY + rect.height);
   }
 
+  // 计算当前高度，如果太小则设置最小高度（约一行文字的高度）
+  let height = maxY - minY;
+  const minHeight = 14 * scale; // 最小高度约14px对应的PDF单位
+  if (height < minHeight) {
+    // 居中扩展高度
+    const diff = minHeight - height;
+    minY -= diff / 2;
+    maxY += diff / 2;
+  }
+
   // 转换回 PDF 坐标系
   const pdfX1 = minX / scale;
   const pdfY1 = viewportHeight / scale - maxY / scale;

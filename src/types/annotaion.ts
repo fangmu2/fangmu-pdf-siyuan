@@ -66,6 +66,12 @@ export interface PDFAnnotation {
   isImage?: boolean;             // 是否为图片摘录
   imagePath?: string;            // 图片路径（思源assets路径）
 
+  // 拖拽合并相关
+  parentId?: string | null;      // 父标注ID（用于嵌套合并）
+  sortOrder?: number;            // 在父级下的排序顺序
+  children?: PDFAnnotation[];    // 子标注列表（运行时计算）
+  isExpanded?: boolean;          // 是否展开（运行时状态）
+
   // 元数据
   created: number;               // 创建时间戳
   updated: number;               // 更新时间戳
