@@ -70,8 +70,8 @@ export async function renderPage(
 }
 
 /**
- * 渲染文本层（支持文本选择）
- * 使用 PDF.js 的 textContent 准确渲染
+ * 使用 PDF.js 官方 API 渲染文本层
+ * 这是Koodo Reader等流畅阅读器使用的方式
  */
 export async function renderTextLayer(
   page: any,
@@ -83,72 +83,111 @@ export async function renderTextLayer(
   container.style.width = viewport.width + 'px';
   container.style.height = viewport.height + 'px';
 
-  // 获取文本内容
-  const textContent = await page.getTextContent();
+  // 创建文本层容器
+  const textLayerDiv = document.createElement('div');
+  textLayerDiv.className = 'textLayer';
+  textLayerDiv.style.cssText = `
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: ${viewport.width}px;
+    height: ${viewport.height}px;
+  `;
+  container.appendChild(textLayerDiv);
 
-  // 获取原始 viewport（未缩放）用于计算缩放比例
+  // 尝试使用 PDF.js 官方 API
+  try {
+    // pdfjs-dist v5 中，TextLayer 可能需要动态导入
+    const pdfjsWeb = await import('pdfjs-dist/web/pdf_viewer.mjs').catch(() => null);
+    
+    if (pdfjsWeb && pdfjsWeb.TextLayer) {
+      const textContentSource = await page.streamTextContent();
+      const textLayer = new pdfjsWeb.TextLayer({
+        container: textLayerDiv,
+        textContentSource: textContentSource,
+        viewport: viewport,
+      });
+      await textLayer.render();
+    } else {
+      // 如果官方API不可用，使用改进的备用方案
+      await renderTextLayerFallback(page, container, viewport);
+    }
+  } catch (e: any) {
+    // 如果官方API失败，使用改进的备用方案
+    console.warn('[renderTextLayer] Using fallback:', e.message);
+    await renderTextLayerFallback(page, container, viewport);
+  }
+  
+  // 缓存viewport信息供后续坐标计算使用
+  (container as any)._viewport = viewport;
+}
+
+/**
+ * 改进的手动文本层渲染（备用方案）
+ * 使用更精确的字符级定位
+ */
+async function renderTextLayerFallback(
+  page: any,
+  container: HTMLElement,
+  viewport: any
+): Promise<void> {
+  const textContent = await page.getTextContent();
   const defaultViewport = page.getViewport({ scale: 1 });
   const scale = viewport.scale || (viewport.width / defaultViewport.width);
 
-  // 存储文本项信息，用于后续获取坐标
-  const textItems: any[] = [];
+  // 创建文本层容器
+  const textLayerDiv = document.createElement('div');
+  textLayerDiv.className = 'textLayer';
+  textLayerDiv.style.cssText = `
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: ${viewport.width}px;
+    height: ${viewport.height}px;
+  `;
+  container.appendChild(textLayerDiv);
 
-  // 逐项渲染文本
+  // 逐项渲染文本 - 使用更精确的定位方式
   for (const item of textContent.items) {
     if (!('str' in item) || !item.str) continue;
 
     const tx = item.transform;
     
-    // 计算字体大小（考虑缩放）
-    const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]) * scale;
+    // 创建文本容器
+    const textDiv = document.createElement('span');
+    textDiv.textContent = item.str;
+    
+    // 精确计算字体大小和位置
+    const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
     const fontFamily = item.fontName || 'sans-serif';
     
-    // 计算位置（PDF 坐标系转换为 CSS 坐标系，并应用缩放）
+    // PDF坐标系转换
     const x = tx[4] * scale;
     const y = viewport.height - tx[5] * scale;
     
-    // 存储文本项信息
-    textItems.push({
-      str: item.str,
-      transform: tx,
-      x: tx[4],
-      y: tx[5],
-      width: item.width,
-      height: fontSize / scale
-    });
-
-    // 创建文本 span
-    const span = document.createElement('span');
-    span.textContent = item.str;
-    span.style.cssText = `
+    // 计算旋转角度
+    const angle = Math.atan2(tx[1], tx[0]);
+    
+    textDiv.style.cssText = `
       position: absolute;
       white-space: pre;
       color: transparent;
-      font-size: ${fontSize}px;
+      font-size: ${fontSize * scale}px;
       font-family: ${fontFamily};
       left: ${x}px;
-      top: ${y - fontSize}px;
-      transform-origin: 0 0;
+      top: ${y - fontSize * scale}px;
+      transform-origin: 0% 0%;
       line-height: 1;
+      ${Math.abs(angle) > 0.001 ? `transform: rotate(${angle}rad);` : ''}
     `;
-
-    // 处理旋转
-    const angle = Math.atan2(tx[1], tx[0]);
-    if (Math.abs(angle) > 0.001) {
-      span.style.transform = `rotate(${angle}rad)`;
-    }
-
-    container.appendChild(span);
+    
+    textLayerDiv.appendChild(textDiv);
   }
-
-  // 存储文本项信息到容器上，方便后续获取
-  (container as any)._textItems = textItems;
-  (container as any)._scale = scale;
-  (container as any)._viewportHeight = viewport.height;
 }
 
 /**
  * 从文本层 DOM 获取选中区域的 PDF 坐标
+ * 使用精确的坐标转换方式
  */
 export function getSelectionRect(
   textLayerContainer: HTMLElement
@@ -159,49 +198,128 @@ export function getSelectionRect(
   const range = selection.getRangeAt(0);
   if (range.collapsed) return null;
 
-  // 获取选中区域相对于文本层容器的边界
-  const containerRect = textLayerContainer.getBoundingClientRect();
+  // 查找文本层容器
+  const textLayer = textLayerContainer.querySelector('.textLayer') as HTMLElement;
+  if (!textLayer) {
+    console.warn('[getSelectionRect] 未找到 .textLayer');
+    return null;
+  }
+
+  const containerRect = textLayer.getBoundingClientRect();
   const rangeRects = range.getClientRects();
 
   if (rangeRects.length === 0) return null;
 
-  // 获取文本项信息和缩放比例
-  const textItems = (textLayerContainer as any)._textItems || [];
-  const scale = (textLayerContainer as any)._scale || 1;
-  const viewportHeight = (textLayerContainer as any)._viewportHeight || textLayerContainer.clientHeight;
+  // 获取缓存的 viewport 信息
+  const viewport = (textLayerContainer as any)._viewport;
+  if (!viewport) {
+    console.warn('[getSelectionRect] 未找到 viewport 缓存');
+    return null;
+  }
+
+  // viewport.scale 是 PDF单位到CSS像素的转换比例
+  // PDF坐标 * scale = CSS坐标
+  // CSS坐标 / scale = PDF坐标
+  const scale = viewport.scale;
+  
+  // viewport.viewBox 是PDF原始尺寸 [x, y, width, height]
+  const pdfPageHeight = viewport.viewBox[3];
 
   // 找到选中区域的边界
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
   for (let i = 0; i < rangeRects.length; i++) {
     const rect = rangeRects[i];
-    // 转换为相对于容器的坐标
+    // 转换为相对于文本层的坐标
     const relX = rect.left - containerRect.left;
     const relY = rect.top - containerRect.top;
-    
+
     minX = Math.min(minX, relX);
     minY = Math.min(minY, relY);
     maxX = Math.max(maxX, relX + rect.width);
     maxY = Math.max(maxY, relY + rect.height);
   }
 
-  // 计算当前高度，如果太小则设置最小高度（约一行文字的高度）
-  let height = maxY - minY;
-  const minHeight = 14 * scale; // 最小高度约14px对应的PDF单位
-  if (height < minHeight) {
-    // 居中扩展高度
-    const diff = minHeight - height;
-    minY -= diff / 2;
-    maxY += diff / 2;
+  // 确保最小高度
+  const height = maxY - minY;
+  const minLineHeight = 14;
+  if (height < minLineHeight) {
+    const diff = minLineHeight - height;
+    minY = Math.max(0, minY - diff / 2);
+    maxY = minY + minLineHeight;
   }
 
-  // 转换回 PDF 坐标系
+  // CSS像素坐标转换为PDF坐标
+  // CSS坐标 / scale = PDF坐标
+  // 注意Y轴：CSS的Y坐标需要翻转
+  // CSS Y=0 对应 PDF Y=pageHeight
+  // CSS Y=containerHeight 对应 PDF Y=0
   const pdfX1 = minX / scale;
-  const pdfY1 = viewportHeight / scale - maxY / scale;
   const pdfX2 = maxX / scale;
-  const pdfY2 = viewportHeight / scale - minY / scale;
+  
+  // Y轴转换：PDF的Y是从底部开始，CSS的Y是从顶部开始
+  // textLayer.clientHeight 是CSS高度
+  // pdfY = pdfPageHeight - cssY/scale
+  const pdfY1 = pdfPageHeight - maxY / scale;
+  const pdfY2 = pdfPageHeight - minY / scale;
+
+  console.log('[getSelectionRect] scale:', scale, 'pdfPageHeight:', pdfPageHeight);
+  console.log('[getSelectionRect] CSS坐标:', { minX, minY, maxX, maxY });
+  console.log('[getSelectionRect] PDF坐标:', { pdfX1, pdfY1, pdfX2, pdfY2 });
 
   return [pdfX1, pdfY1, pdfX2, pdfY2];
+}
+
+/**
+ * 创建高亮覆盖元素（DOM方式，比Canvas更流畅）
+ */
+export function createHighlightElement(
+  container: HTMLElement,
+  rect: [number, number, number, number],
+  viewport: any,
+  options: {
+    color?: string;
+    opacity?: number;
+    id?: string;
+    onClick?: () => void;
+  } = {}
+): HTMLElement {
+  const [pdfX1, pdfY1, pdfX2, pdfY2] = rect;
+  const scale = viewport.scale || 1;
+  
+  // PDF坐标转换为CSS坐标
+  const cssX = pdfX1 * scale;
+  const cssY = viewport.height - pdfY2 * scale;
+  const cssWidth = (pdfX2 - pdfX1) * scale;
+  const cssHeight = (pdfY2 - pdfY1) * scale;
+
+  const highlight = document.createElement('div');
+  highlight.className = 'highlight-element';
+  highlight.style.cssText = `
+    position: absolute;
+    left: ${cssX}px;
+    top: ${cssY}px;
+    width: ${cssWidth}px;
+    height: ${Math.max(cssHeight, 14)}px;
+    background-color: ${options.color || 'rgba(255, 217, 61, 0.4)'};
+    opacity: ${options.opacity || 1};
+    border-radius: 2px;
+    pointer-events: auto;
+    cursor: pointer;
+  `;
+  
+  if (options.id) {
+    highlight.dataset.annotationId = options.id;
+  }
+  
+  if (options.onClick) {
+    highlight.addEventListener('click', (e) => {
+      e.stopPropagation();
+      options.onClick!();
+    });
+  }
+  
+  return highlight;
 }
 
 /**

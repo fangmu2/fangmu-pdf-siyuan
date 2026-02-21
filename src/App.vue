@@ -928,8 +928,11 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     return { success: false, reason: '标注ID已存在' };
   }
   
-  // 第三步：检查内容重复
+  // 第三步：检查内容重复（增强版：加入时间戳判断）
   let isDuplicate = false;
+  const now = Date.now();
+  const DUPLICATE_TIME_WINDOW = 5000; // 5秒内相同内容视为重复
+  
   if (newAnnotation.isImage && newAnnotation.imagePath) {
     isDuplicate = deduplicatedAnnotations.some(a => 
       a.isImage && a.imagePath === newAnnotation.imagePath
@@ -939,7 +942,9 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
       !a.isImage && 
       a.text === newAnnotation.text && 
       a.level === newAnnotation.level &&
-      a.page === newAnnotation.page
+      a.page === newAnnotation.page &&
+      a.pdfPath === newAnnotation.pdfPath &&
+      (now - (a.created || 0)) < DUPLICATE_TIME_WINDOW  // 5秒内创建的相同内容视为重复
     );
   }
   
@@ -1187,18 +1192,33 @@ const handleImageSelected = async (data: {
   }
 };
 
-// 从选择创建标注
-let lastCreatedText = '';
-let lastCreatedTime = 0;
-let lastCreatedLevel = '';
-let createAnnotationLock = false;  // 创建锁
+// 使用 window 全局锁防止跨 HMR 重复创建
+const getCreateAnnotationLock = () => {
+  if (typeof window === 'undefined') return { locked: false, text: '', level: '', time: 0 };
+  (window as any).__PDF_CREATE_ANNOTATION_LOCK__ ||= { locked: false, text: '', level: '', time: 0 };
+  return (window as any).__PDF_CREATE_ANNOTATION_LOCK__;
+};
+const CREATE_LOCK_DURATION = 3000; // 3秒锁定时间
 
+// 从选择创建标注
 const createAnnotationFromSelection = async () => {
   if (!selectedText.value || !currentProject.value || !currentPdf.value) return;
 
-  // 使用锁防止重复创建
-  if (createAnnotationLock) {
-    console.warn('[createAnnotationFromSelection] 创建锁已锁定，跳过重复请求');
+  const lock = getCreateAnnotationLock();
+  const annotationLevel = pendingTitleLevel.value || currentLevel.value;
+  const now = Date.now();
+
+  // 检查全局锁
+  if (lock.locked) {
+    console.warn('[createAnnotationFromSelection] 全局锁已锁定，跳过');
+    return;
+  }
+
+  // 检查相同文本和级别在锁定时间内是否已创建
+  if (selectedText.value === lock.text && 
+      annotationLevel === lock.level && 
+      (now - lock.time) < CREATE_LOCK_DURATION) {
+    console.warn('[createAnnotationFromSelection] 相同文本已在锁定时间内创建，跳过:', selectedText.value.substring(0, 30));
     return;
   }
 
@@ -1208,23 +1228,12 @@ const createAnnotationFromSelection = async () => {
     return;
   }
 
-  const annotationLevel = pendingTitleLevel.value || currentLevel.value;
-
-  // 防止重复创建：检查相同文本和级别在短时间内是否已创建（延长到3秒）
-  const now = Date.now();
-  if (selectedText.value === lastCreatedText && 
-      annotationLevel === lastCreatedLevel && 
-      (now - lastCreatedTime) < 3000) {
-    console.warn('[createAnnotationFromSelection] 相同文本和级别已创建，跳过:', selectedText.value.substring(0, 30), '级别:', annotationLevel);
-    return;
-  }
-
-  // 锁定创建
-  createAnnotationLock = true;
+  // 立即设置全局锁
+  lock.locked = true;
+  lock.text = selectedText.value;
+  lock.level = annotationLevel;
+  lock.time = now;
   creatingAnnotation.value = true;
-  lastCreatedText = selectedText.value;
-  lastCreatedTime = now;
-  lastCreatedLevel = annotationLevel;
 
   try {
     const rect = selectedRect.value || [0, 0, 100, 20];
@@ -1285,11 +1294,17 @@ const createAnnotationFromSelection = async () => {
   } catch (error: any) {
     console.error('创建标注失败:', error);
     alert(`创建失败: ${error.message || '未知错误'}`);
-    lastCreatedText = ''; // 重置，允许重试
-    lastCreatedLevel = ''; // 重置级别
+    // 重置全局锁，允许重试
+    const lock = getCreateAnnotationLock();
+    lock.text = '';
+    lock.level = '';
   } finally {
     creatingAnnotation.value = false;
-    createAnnotationLock = false; // 释放锁
+    // 延迟释放全局锁，防止短时间内重复创建
+    setTimeout(() => {
+      const lock = getCreateAnnotationLock();
+      lock.locked = false;
+    }, 500);
   }
 };
 

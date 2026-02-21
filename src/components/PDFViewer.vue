@@ -16,10 +16,10 @@
     <!-- PDF渲染层容器 -->
     <div class="pdf-page-container" ref="pageContainerRef">
       <canvas ref="canvasRef" class="pdf-canvas"></canvas>
-      <!-- 标注高亮层 -->
-      <canvas ref="annotationCanvasRef" class="annotation-canvas"></canvas>
-      <!-- 文本选择层 -->
-      <div ref="textLayerRef" class="pdf-text-layer" @click="handleAnnotationClick"></div>
+      <!-- 文本选择层（使用官方API） -->
+      <div ref="textLayerRef" class="pdf-text-layer"></div>
+      <!-- DOM高亮层（替代Canvas，更流畅） -->
+      <div ref="highlightLayerRef" class="highlight-layer"></div>
       <!-- 图片框选层 -->
       <div 
         v-if="extractMode === 'image'"
@@ -78,14 +78,15 @@ const emit = defineEmits<{
     page: number 
   }): void;
   (e: 'annotation-delete', annotation: PDFAnnotation): void;
+  (e: 'annotation-click', annotation: PDFAnnotation): void;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement>();
-const annotationCanvasRef = ref<HTMLCanvasElement>();
 const containerRef = ref<HTMLElement>();
 const textLayerRef = ref<HTMLElement>();
 const pageContainerRef = ref<HTMLElement>();
 const imageSelectLayerRef = ref<HTMLElement>();
+const highlightLayerRef = ref<HTMLElement>();
 const loading = ref(false);
 const error = ref('');
 const totalPages = ref(0);
@@ -100,30 +101,37 @@ let isSelecting = false;
 let selectionStart = { x: 0, y: 0 };
 let selectionDiv: HTMLDivElement | null = null;
 
-// 文本选择防抖
-let lastSelectedText = '';
-let lastSelectionTime = 0;
+// 使用 window 对象存储全局锁，确保跨 HMR 和组件实例唯一
+const getGlobalLock = () => {
+  if (typeof window === 'undefined') return { locked: false, text: '', time: 0 };
+  (window as any).__PDF_SELECTION_LOCK__ ||= { locked: false, text: '', time: 0 };
+  return (window as any).__PDF_SELECTION_LOCK__;
+};
+const SELECTION_LOCK_DURATION = 800; // 800ms 锁定时间
 
 // 图片选择防抖
 let lastImageSelectTime = 0;
 
+// 当前 viewport 缓存
+let currentViewport: any = null;
+
 // 标注颜色映射
-const LEVEL_COLORS: Record<string, { fill: string; stroke: string }> = {
-  title: { fill: 'rgba(255, 87, 87, 0.3)', stroke: '#ff5757' },      // 红色
-  h1: { fill: 'rgba(255, 159, 67, 0.3)', stroke: '#ff9f43' },        // 橙色
-  h2: { fill: 'rgba(254, 202, 87, 0.3)', stroke: '#feca57' },        // 黄色
-  h3: { fill: 'rgba(29, 209, 161, 0.3)', stroke: '#1dd1a1' },        // 绿色
-  h4: { fill: 'rgba(72, 219, 251, 0.3)', stroke: '#48dbfb' },        // 青色
-  h5: { fill: 'rgba(84, 160, 255, 0.3)', stroke: '#54a0ff' },        // 蓝色
-  text: { fill: 'rgba(255, 217, 61, 0.3)', stroke: '#ffd93d' },      // 黄色
+const LEVEL_COLORS: Record<string, { bg: string; border: string }> = {
+  title: { bg: 'rgba(255, 87, 87, 0.35)', border: '#ff5757' },
+  h1: { bg: 'rgba(255, 159, 67, 0.35)', border: '#ff9f43' },
+  h2: { bg: 'rgba(254, 202, 87, 0.35)', border: '#feca57' },
+  h3: { bg: 'rgba(29, 209, 161, 0.35)', border: '#1dd1a1' },
+  h4: { bg: 'rgba(72, 219, 251, 0.35)', border: '#48dbfb' },
+  h5: { bg: 'rgba(84, 160, 255, 0.35)', border: '#54a0ff' },
+  text: { bg: 'rgba(255, 217, 61, 0.35)', border: '#ffd93d' },
 };
 
-const ANNOTATION_COLORS: Record<AnnotationColor, { fill: string; stroke: string }> = {
-  red: { fill: 'rgba(255, 107, 107, 0.3)', stroke: '#ff6b6b' },
-  yellow: { fill: 'rgba(255, 217, 61, 0.3)', stroke: '#ffd93d' },
-  green: { fill: 'rgba(107, 203, 119, 0.3)', stroke: '#6bcb77' },
-  blue: { fill: 'rgba(77, 150, 255, 0.3)', stroke: '#4d96ff' },
-  purple: { fill: 'rgba(155, 89, 182, 0.3)', stroke: '#9b59b6' },
+const ANNOTATION_COLORS: Record<AnnotationColor, { bg: string; border: string }> = {
+  red: { bg: 'rgba(255, 107, 107, 0.35)', border: '#ff6b6b' },
+  yellow: { bg: 'rgba(255, 217, 61, 0.35)', border: '#ffd93d' },
+  green: { bg: 'rgba(107, 203, 119, 0.35)', border: '#6bcb77' },
+  blue: { bg: 'rgba(77, 150, 255, 0.35)', border: '#4d96ff' },
+  purple: { bg: 'rgba(155, 89, 182, 0.35)', border: '#9b59b6' },
 };
 
 // 当前页的标注
@@ -134,10 +142,6 @@ const currentPageAnnotations = computed(() => {
 
 // 选中的标注
 const selectedAnnotation = ref<PDFAnnotation | null>(null);
-
-// 当前 viewport 缓存（用于坐标转换）
-let currentViewport: any = null;
-let currentPdfToCanvasScale = 1;
 
 // 加载PDF
 const loadPdf = async () => {
@@ -176,7 +180,7 @@ const loadPdf = async () => {
 
 // 渲染当前页
 const renderCurrentPage = async () => {
-  if (!pdfDoc || !canvasRef.value || !containerRef.value || !textLayerRef.value || !annotationCanvasRef.value) return;
+  if (!pdfDoc || !canvasRef.value || !containerRef.value || !textLayerRef.value || !highlightLayerRef.value) return;
 
   try {
     currentPageObj = await pdfDoc.getPage(props.currentPage);
@@ -186,13 +190,10 @@ const renderCurrentPage = async () => {
     // 渲染 Canvas
     const viewport = await renderPage(currentPageObj, canvasRef.value, containerWidth * scale.value);
 
-    // 设置标注层 Canvas 尺寸
-    annotationCanvasRef.value.width = canvasRef.value.width;
-    annotationCanvasRef.value.height = canvasRef.value.height;
-    annotationCanvasRef.value.style.width = canvasRef.value.style.width;
-    annotationCanvasRef.value.style.height = canvasRef.value.style.height;
+    // 缓存viewport
+    currentViewport = viewport;
 
-    // 渲染文本层
+    // 渲染文本层（使用官方API）
     await renderTextLayer(currentPageObj, textLayerRef.value, viewport);
 
     // 设置页面容器尺寸
@@ -201,8 +202,8 @@ const renderCurrentPage = async () => {
       pageContainerRef.value.style.height = canvasRef.value.style.height;
     }
 
-    // 绘制标注高亮
-    drawAnnotations(viewport);
+    // 绘制标注高亮（DOM方式）
+    renderHighlights();
 
   } catch (e: any) {
     console.error('渲染页面失败:', e);
@@ -210,170 +211,136 @@ const renderCurrentPage = async () => {
   }
 };
 
-// 绘制标注高亮
-const drawAnnotations = (viewport: any) => {
-  const canvas = annotationCanvasRef.value;
+// 使用DOM渲染高亮（比Canvas更流畅，支持交互）
+const renderHighlights = () => {
+  const layer = highlightLayerRef.value;
+  if (!layer || !currentViewport) return;
+
+  // 清空高亮层
+  layer.innerHTML = '';
+  layer.style.width = currentViewport.width + 'px';
+  layer.style.height = currentViewport.height + 'px';
+
+  // viewport.scale 是 PDF单位到CSS像素的转换比例
+  // PDF坐标 * scale = CSS坐标
+  const scale = currentViewport.scale || 1;
   
-  console.log('[drawAnnotations] 开始绘制, 当前页标注数:', currentPageAnnotations.value.length);
-  console.log('[drawAnnotations] viewport:', viewport);
+  // PDF页面原始高度（从viewBox获取）
+  const pdfPageHeight = currentViewport.viewBox[3];
   
-  if (!canvas) {
-    console.log('[drawAnnotations] 没有 canvas');
-    return;
-  }
-  
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  // 缓存 viewport 用于点击检测
-  currentViewport = viewport;
-
-  // 清除之前的内容
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  if (!currentPageAnnotations.value.length) {
-    console.log('[drawAnnotations] 当前页没有标注，跳过绘制');
-    return;
-  }
-
-  // 获取缩放比例
-  currentPdfToCanvasScale = canvas.width / viewport.viewBox[2];
-  console.log('[drawAnnotations] 缩放比例:', currentPdfToCanvasScale);
+  console.log('[renderHighlights] scale:', scale, 'pdfPageHeight:', pdfPageHeight);
+  console.log('[renderHighlights] 当前页标注数:', currentPageAnnotations.value.length);
 
   for (const ann of currentPageAnnotations.value) {
-    const [x1, y1, x2, y2] = ann.rect;
+    const [pdfX1, pdfY1, pdfX2, pdfY2] = ann.rect;
     
-    console.log('[drawAnnotations] 标注:', ann.text, 'rect:', ann.rect);
-    
-    // PDF坐标转换到Canvas坐标
-    // PDF坐标系：左下角为原点，Y轴向上
-    // Canvas坐标系：左上角为原点，Y轴向下
-    const canvasX = x1 * currentPdfToCanvasScale;
-    const canvasY = (viewport.viewBox[3] - y2) * currentPdfToCanvasScale; // y2 是底部，需要翻转
-    let canvasWidth = (x2 - x1) * currentPdfToCanvasScale;
-    let canvasHeight = (y2 - y1) * currentPdfToCanvasScale;
+    // PDF坐标转换为CSS坐标
+    // CSS X = PDF X * scale
+    // CSS Y = (pdfPageHeight - PDF Y) * scale  （Y轴翻转）
+    const cssX = pdfX1 * scale;
+    const cssY = (pdfPageHeight - pdfY2) * scale;  // y2是底部，翻转后是CSS的top
+    const cssWidth = (pdfX2 - pdfX1) * scale;
+    const cssHeight = Math.max((pdfY2 - pdfY1) * scale, 14);
 
-    // 确保最小高度，避免显示为一条线
-    const minCanvasHeight = 10; // 最小10像素高度
-    if (canvasHeight < minCanvasHeight) {
-      canvasHeight = minCanvasHeight;
-    }
-
-    console.log('[drawAnnotations] Canvas坐标:', { canvasX, canvasY, canvasWidth, canvasHeight });
+    console.log('[renderHighlights] 标注:', ann.text?.substring(0, 20), 
+      'PDF:', ann.rect, 
+      'CSS:', { cssX, cssY, cssWidth, cssHeight });
 
     // 获取颜色
     const colors = LEVEL_COLORS[ann.level] || ANNOTATION_COLORS[ann.color] || ANNOTATION_COLORS.yellow;
-
-    // 是否选中
     const isSelected = selectedAnnotation.value?.id === ann.id;
 
-    // 绘制高亮矩形
-    ctx.fillStyle = isSelected ? colors.fill.replace('0.3', '0.5') : colors.fill;
-    ctx.fillRect(canvasX, canvasY, canvasWidth, canvasHeight);
+    // 创建高亮元素
+    const highlight = document.createElement('div');
+    highlight.className = 'highlight-element';
+    highlight.dataset.annotationId = ann.id;
+    highlight.style.cssText = `
+      position: absolute;
+      left: ${cssX}px;
+      top: ${cssY}px;
+      width: ${cssWidth}px;
+      height: ${cssHeight}px;
+      background-color: ${isSelected ? colors.bg.replace('0.35', '0.55') : colors.bg};
+      border: 2px solid ${isSelected ? '#fff' : colors.border};
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      box-shadow: ${isSelected ? '0 0 8px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)'};
+      z-index: ${isSelected ? 2 : 1};
+    `;
 
-    // 绘制边框 - 选中的标注边框更粗
-    ctx.strokeStyle = colors.stroke;
-    ctx.lineWidth = isSelected ? 4 : 2;
-    ctx.strokeRect(canvasX, canvasY, canvasWidth, canvasHeight);
-
-    // 如果选中，绘制选中指示
-    if (isSelected) {
-      ctx.setLineDash([5, 3]);
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(canvasX + 2, canvasY + 2, canvasWidth - 4, canvasHeight - 4);
-      ctx.setLineDash([]);
-    }
-
-    // 如果是标题级别，绘制角标
+    // 如果是标题级别，添加角标
     if (ann.level && ann.level !== 'text') {
       const levelLabels: Record<string, string> = {
-        title: 'T',
-        h1: 'H1',
-        h2: 'H2',
-        h3: 'H3',
-        h4: 'H4',
-        h5: 'H5',
+        title: 'T', h1: 'H1', h2: 'H2', h3: 'H3', h4: 'H4', h5: 'H5',
       };
       const label = levelLabels[ann.level];
       if (label) {
-        ctx.fillStyle = colors.stroke;
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText(label, canvasX + 2, canvasY + 12);
+        const badge = document.createElement('span');
+        badge.style.cssText = `
+          position: absolute;
+          top: -8px;
+          left: 0;
+          background: ${colors.border};
+          color: white;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 1px 4px;
+          border-radius: 2px;
+          line-height: 1;
+        `;
+        badge.textContent = label;
+        highlight.appendChild(badge);
       }
     }
-  }
-  
-  console.log('[drawAnnotations] 绘制完成');
-};
 
-// 处理标注点击选择
-const handleAnnotationClick = (e: MouseEvent) => {
-  // 图片模式下不处理
-  if (props.extractMode === 'image') return;
-  
-  const canvas = annotationCanvasRef.value;
-  if (!canvas || !currentViewport) return;
+    // 点击事件
+    highlight.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selectedAnnotation.value?.id === ann.id) {
+        selectedAnnotation.value = null;
+      } else {
+        selectedAnnotation.value = ann;
+        emit('annotation-click', ann);
+      }
+      renderHighlights();
+    });
 
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    // 悬停效果
+    highlight.addEventListener('mouseenter', () => {
+      if (selectedAnnotation.value?.id !== ann.id) {
+        highlight.style.transform = 'scale(1.01)';
+      }
+    });
+    highlight.addEventListener('mouseleave', () => {
+      highlight.style.transform = 'scale(1)';
+    });
 
-  console.log('[handleAnnotationClick] 点击坐标:', { x, y });
-
-  // 查找点击位置对应的标注
-  let foundAnnotation: PDFAnnotation | null = null;
-
-  for (const ann of currentPageAnnotations.value) {
-    const [x1, y1, x2, y2] = ann.rect;
-    
-    // PDF坐标转换到Canvas坐标
-    const canvasX = x1 * currentPdfToCanvasScale;
-    const canvasY = (currentViewport.viewBox[3] - y2) * currentPdfToCanvasScale;
-    const canvasWidth = (x2 - x1) * currentPdfToCanvasScale;
-    const canvasHeight = (y2 - y1) * currentPdfToCanvasScale;
-
-    // 检查点击是否在标注区域内
-    if (x >= canvasX && x <= canvasX + canvasWidth &&
-        y >= canvasY && y <= canvasY + canvasHeight) {
-      foundAnnotation = ann;
-      break;
-    }
-  }
-
-  if (foundAnnotation) {
-    // 如果点击的是已选中的标注，取消选中
-    if (selectedAnnotation.value?.id === foundAnnotation.id) {
-      selectedAnnotation.value = null;
-    } else {
-      selectedAnnotation.value = foundAnnotation;
-    }
-    console.log('[handleAnnotationClick] 选中标注:', selectedAnnotation.value?.text);
-    
-    // 重绘标注以显示选中状态
-    drawAnnotations(currentViewport);
-  } else {
-    // 点击空白区域，取消选中
-    if (selectedAnnotation.value) {
-      selectedAnnotation.value = null;
-      drawAnnotations(currentViewport);
-    }
+    layer.appendChild(highlight);
   }
 };
 
 // 处理键盘删除
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Delete' && selectedAnnotation.value) {
-    console.log('[handleKeyDown] 删除标注:', selectedAnnotation.value.text);
     emit('annotation-delete', selectedAnnotation.value);
     selectedAnnotation.value = null;
   }
 };
 
-// 处理文本选择
+// 处理文本选择 - 使用 window 全局锁确保跨 HMR 只触发一次
 const handleTextSelection = () => {
   // 图片模式下不处理文本选择
   if (props.extractMode === 'image') return;
+
+  const lock = getGlobalLock();
+  const now = Date.now();
+
+  // 全局锁检查：如果正在处理中，直接返回
+  if (lock.locked) {
+    console.log('[handleTextSelection] 全局锁已锁定，跳过');
+    return;
+  }
 
   if (!textLayerRef.value) return;
 
@@ -381,21 +348,31 @@ const handleTextSelection = () => {
   if (selection && selection.toString().trim()) {
     const text = selection.toString().trim();
 
-    // 防抖：相同的文本在500ms内不重复发送
-    const now = Date.now();
-    if (text === lastSelectedText && (now - lastSelectionTime) < 500) {
+    // 检查相同文本在锁定时间内是否已处理
+    if (text === lock.text && (now - lock.time) < SELECTION_LOCK_DURATION) {
+      console.log('[handleTextSelection] 相同文本已在处理中，跳过:', text.substring(0, 20));
       return;
     }
-    lastSelectedText = text;
-    lastSelectionTime = now;
+
+    // 立即设置全局锁
+    lock.locked = true;
+    lock.text = text;
+    lock.time = now;
 
     const rect = getSelectionRect(textLayerRef.value);
+    
+    console.log('[handleTextSelection] 选中文本:', text.substring(0, 30), 'rect:', rect);
 
     emit('text-selected', {
       text,
       page: props.currentPage,
       rect
     });
+
+    // 延迟释放锁
+    setTimeout(() => {
+      lock.locked = false;
+    }, SELECTION_LOCK_DURATION);
   }
 };
 
@@ -413,7 +390,6 @@ const startImageSelect = (e: MouseEvent) => {
   // 创建选择框元素
   selectionDiv = document.createElement('div');
   selectionDiv.className = 'image-selection-box';
-  // 添加内联样式确保显示
   selectionDiv.style.cssText = `
     position: absolute;
     border: 2px solid #1890ff;
@@ -452,10 +428,9 @@ const updateImageSelect = (e: MouseEvent) => {
 const endImageSelect = (e: MouseEvent) => {
   if (!isSelecting || !selectionDiv || !imageSelectLayerRef.value || !canvasRef.value) return;
 
-  // 防抖：500ms内不重复处理
+  // 防抖
   const now = Date.now();
   if (now - lastImageSelectTime < 500) {
-    console.log('[endImageSelect] 防抖跳过');
     isSelecting = false;
     selectionDiv.remove();
     selectionDiv = null;
@@ -474,51 +449,27 @@ const endImageSelect = (e: MouseEvent) => {
   const width = Math.abs(currentX - selectionStart.x);
   const height = Math.abs(currentY - selectionStart.y);
   
-  // 移除选择框
   selectionDiv.remove();
   selectionDiv = null;
   
-  // 如果选择区域太小，忽略
   if (width < 10 || height < 10) return;
   
-  // 计算PDF坐标（用于存储和绘制高亮）
-  // 需要将CSS像素坐标转换为PDF坐标
+  // 计算PDF坐标
   const canvas = canvasRef.value;
   const canvasCssWidth = canvas.offsetWidth;
-  const canvasCssHeight = canvas.offsetHeight;
   
-  if (currentPageObj) {
+  if (currentPageObj && currentViewport) {
     const viewport = currentPageObj.getViewport({ scale: 1 });
-    
-    // CSS像素到PDF坐标的转换
-    // PDF坐标系：左下角为原点，Y轴向上
-    // Canvas坐标系：左上角为原点，Y轴向下
     const pdfScale = viewport.width / canvasCssWidth;
     
-    // 转换坐标
     const pdfX1 = left * pdfScale;
-    const pdfY1 = viewport.height - (top + height) * pdfScale;  // Y轴翻转
+    const pdfY1 = viewport.height - (top + height) * pdfScale;
     const pdfX2 = (left + width) * pdfScale;
-    const pdfY2 = viewport.height - top * pdfScale;  // Y轴翻转
+    const pdfY2 = viewport.height - top * pdfScale;
     
-    console.log('[endImageSelect] 坐标转换:', {
-      css: { left, top, width, height },
-      pdf: { pdfX1, pdfY1, pdfX2, pdfY2 },
-      viewport: { width: viewport.width, height: viewport.height },
-      canvasCss: { width: canvasCssWidth, height: canvasCssHeight }
-    });
-    
-    // 发出图片选择事件
     emit('image-selected', {
       canvasRect: { x: left, y: top, width, height },
       pdfRect: [pdfX1, pdfY1, pdfX2, pdfY2],
-      page: props.currentPage
-    });
-  } else {
-    // 如果没有currentPageObj，只发送CSS坐标
-    emit('image-selected', {
-      canvasRect: { x: left, y: top, width, height },
-      pdfRect: [left, top, left + width, top + height],
       page: props.currentPage
     });
   }
@@ -554,18 +505,10 @@ watch(() => props.highlightAnnotation, () => {
   }
 });
 
-// 监听标注变化，重绘高亮
-watch(() => props.annotations, (newAnnotations) => {
-  console.log('[PDFViewer] 标注变化:', newAnnotations?.length);
-  if (newAnnotations && newAnnotations.length >= 0) {
-    // 如果 PDF 已加载，立即重绘
-    if (pdfDoc && annotationCanvasRef.value && currentPageObj) {
-      const containerWidth = containerRef.value?.clientWidth || 800;
-      const viewport = currentPageObj.getViewport({ 
-        scale: containerWidth * scale.value / currentPageObj.getViewport({ scale: 1 }).width 
-      });
-      drawAnnotations(viewport);
-    }
+// 监听标注变化
+watch(() => props.annotations, () => {
+  if (pdfDoc && currentViewport) {
+    renderHighlights();
   }
 }, { deep: true, immediate: true });
 
@@ -576,14 +519,15 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener('mouseup', handleTextSelection);
+  document.removeEventListener('keydown', handleKeyDown);
+  
   if (pdfDoc) {
     pdfDoc.destroy();
   }
   if (currentBlobUrl) {
     URL.revokeObjectURL(currentBlobUrl);
   }
-  document.removeEventListener('mouseup', handleTextSelection);
-  document.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 
@@ -635,33 +579,62 @@ onBeforeUnmount(() => {
   z-index: 1;
 }
 
-.annotation-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
+/* 文本层样式 - 支持流畅选择 */
 .pdf-text-layer {
   position: absolute;
   top: 0;
   left: 0;
   overflow: hidden;
   line-height: 1;
-  z-index: 3;
+  z-index: 5; /* 确保文本层在高亮层之上 */
   pointer-events: auto;
 }
 
-.pdf-text-layer span {
+.pdf-text-layer :deep(.textLayer) {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2;
+  line-height: 1;
+}
+
+.pdf-text-layer :deep(.textLayer > span) {
   color: transparent;
   position: absolute;
   white-space: pre;
   cursor: text;
+  transform-origin: 0% 0%;
 }
 
-.pdf-text-layer ::selection {
+.pdf-text-layer :deep(::selection) {
   background: rgba(0, 120, 255, 0.4);
+}
+
+/* 文本选择提示动画 */
+.pdf-text-layer :deep(.textLayer > span::selection) {
+  background: rgba(0, 120, 255, 0.5);
+}
+
+/* DOM高亮层 - 比Canvas更流畅 */
+.highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1; /* 降低高亮层z-index，让文本层在上面 */
+}
+
+.highlight-layer :deep(.highlight-element) {
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.highlight-layer :deep(.highlight-element:hover) {
+  filter: brightness(1.1);
 }
 
 .image-select-layer {
