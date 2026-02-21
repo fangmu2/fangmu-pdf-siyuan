@@ -298,6 +298,7 @@
           :cursor-after-id="cursorAfterId"
           @annotation-click="handleAnnotationClick"
           @annotation-edit="handleAnnotationEdit"
+          @annotation-delete="handleAnnotationDelete"
           @refresh="loadAnnotations"
           @merge="handleAnnotationMerge"
           @unmerge="handleAnnotationUnmerge"
@@ -840,22 +841,40 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
 
   // 计算新的 sortOrder
   const siblingsUnderTarget = annotations.value.filter(a => a.parentId === targetId);
-  const maxSortOrder = siblingsUnderTarget.length > 0 
-    ? Math.max(...siblingsUnderTarget.map(a => a.sortOrder || 0)) 
-    : -1;
+  let nextSortOrder = siblingsUnderTarget.length > 0 
+    ? Math.max(...siblingsUnderTarget.map(a => a.sortOrder || 0)) + 1
+    : 0;
 
   // 更新源标注的 parentId 和 sortOrder
   annotations.value[sourceIndex] = {
     ...annotations.value[sourceIndex],
     parentId: targetId,
-    sortOrder: maxSortOrder + 1,
+    sortOrder: nextSortOrder,
     updated: Date.now()
   };
+  nextSortOrder++;
+
+  // 【关键修复】如果源标注有子块，将这些子块也变成目标标注的直接子块
+  // 这样可以避免嵌套合并导致的显示问题
+  const sourceChildren = annotations.value.filter(a => a.parentId === sourceId);
+  for (const child of sourceChildren) {
+    const childIndex = annotations.value.findIndex(a => a.id === child.id);
+    if (childIndex !== -1) {
+      annotations.value[childIndex] = {
+        ...annotations.value[childIndex],
+        parentId: targetId,
+        sortOrder: nextSortOrder,
+        updated: Date.now()
+      };
+      nextSortOrder++;
+    }
+  }
 
   // 保存
   saveProjectAnnotations(currentProject.value.id, annotations.value);
 
-  console.log('[handleAnnotationMerge] 合并成功:', sourceId, '->', targetId);
+  console.log('[handleAnnotationMerge] 合并成功:', sourceId, '->', targetId, 
+    '同时移动了', sourceChildren.length, '个子块');
 };
 
 // 取消合并
@@ -928,24 +947,42 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     return { success: false, reason: '标注ID已存在' };
   }
   
-  // 第三步：检查内容重复（增强版：加入时间戳判断）
+  // 第三步：检查内容重复（增强版：不依赖时间，直接检查相同内容）
   let isDuplicate = false;
   const now = Date.now();
-  const DUPLICATE_TIME_WINDOW = 5000; // 5秒内相同内容视为重复
+  const DUPLICATE_TIME_WINDOW = 10000; // 10秒内相同内容视为重复
   
   if (newAnnotation.isImage && newAnnotation.imagePath) {
+    // 图片：检查相同路径
     isDuplicate = deduplicatedAnnotations.some(a => 
       a.isImage && a.imagePath === newAnnotation.imagePath
     );
   } else if (newAnnotation.text) {
-    isDuplicate = deduplicatedAnnotations.some(a => 
-      !a.isImage && 
-      a.text === newAnnotation.text && 
-      a.level === newAnnotation.level &&
-      a.page === newAnnotation.page &&
-      a.pdfPath === newAnnotation.pdfPath &&
-      (now - (a.created || 0)) < DUPLICATE_TIME_WINDOW  // 5秒内创建的相同内容视为重复
-    );
+    // 文本：检查相同文本+页码+位置（矩形区域重叠）
+    isDuplicate = deduplicatedAnnotations.some(a => {
+      if (a.isImage || !a.text) return false;
+      
+      // 完全相同的文本
+      if (a.text === newAnnotation.text && 
+          a.page === newAnnotation.page && 
+          a.pdfPath === newAnnotation.pdfPath) {
+        // 检查矩形是否重叠（允许一定误差）
+        if (a.rect && newAnnotation.rect) {
+          const [ax1, ay1, ax2, ay2] = a.rect;
+          const [bx1, by1, bx2, by2] = newAnnotation.rect;
+          // 如果矩形中心点距离小于 10 单位，视为重复
+          const centerADist = Math.sqrt(Math.pow((ax1 + ax2) / 2 - (bx1 + bx2) / 2, 2) + Math.pow((ay1 + ay2) / 2 - (by1 + by2) / 2, 2));
+          if (centerADist < 10) {
+            return true;
+          }
+        }
+        // 或者时间窗口内的相同内容
+        if ((now - (a.created || 0)) < DUPLICATE_TIME_WINDOW) {
+          return true;
+        }
+      }
+      return false;
+    });
   }
   
   if (isDuplicate) {

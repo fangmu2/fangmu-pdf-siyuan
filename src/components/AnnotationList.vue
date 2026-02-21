@@ -110,7 +110,7 @@
           <span class="cursor-label">↑ 新摘录将插入此处</span>
         </div>
 
-        <template v-for="(node, index) in documentTree" :key="node.annotation.id">
+        <template v-for="node in documentTree" :key="node.annotation.id">
           <!-- 页码分隔 -->
           <div v-if="node.isPageBreak" class="page-separator">
             <span class="page-num">第 {{ node.page }} 页</span>
@@ -127,7 +127,8 @@
                   'drag-over': dragOverId === node.annotation.id,
                   'dragging': draggingId === node.annotation.id,
                   'is-foldable': canFold(node),
-                  'is-collapsed': isCollapsed(node)
+                  'is-collapsed': isCollapsed(node),
+                  'selected': selectedAnnotationId === node.annotation.id
                 }
               ]"
               :style="{ paddingLeft: getIndent(node) + 'px' }"
@@ -139,6 +140,7 @@
               @dragleave="onDragLeave"
               @drop="onDrop($event, node.annotation)"
               @click="handleHeadingClick(node, $event)"
+              @contextmenu.prevent="selectAnnotation(node.annotation, $event)"
             >
               <!-- 折叠指示器（Typora风格） -->
               <div
@@ -213,10 +215,12 @@
                 `color-accent-${node.annotation.color}`,
                 {
                   'drag-over': dragOverId === node.annotation.id,
-                  'dragging': draggingId === node.annotation.id
+                  'dragging': draggingId === node.annotation.id,
+                  'selected': selectedAnnotationId === node.annotation.id
                 }
               ]"
               :style="{ paddingLeft: getIndent(node) + 'px' }"
+              :data-annotation-id="node.annotation.id"
               draggable="true"
               @dragstart="onDragStart($event, node.annotation)"
               @dragend="onDragEnd"
@@ -224,6 +228,7 @@
               @dragleave="onDragLeave"
               @drop="onDrop($event, node.annotation)"
               @click="handleDoubleClick(node.annotation)"
+              @contextmenu.prevent="selectAnnotation(node.annotation, $event)"
             >
               <div class="paragraph-marker"></div>
               <div class="paragraph-content">
@@ -288,9 +293,11 @@
               class="doc-image"
               :class="{
                 'drag-over': dragOverId === node.annotation.id,
-                'dragging': draggingId === node.annotation.id
+                'dragging': draggingId === node.annotation.id,
+                'selected': selectedAnnotationId === node.annotation.id
               }"
               :style="{ paddingLeft: getIndent(node) + 'px' }"
+              :data-annotation-id="node.annotation.id"
               draggable="true"
               @dragstart="onDragStart($event, node.annotation)"
               @dragend="onDragEnd"
@@ -298,6 +305,7 @@
               @dragleave="onDragLeave"
               @drop="onDrop($event, node.annotation)"
               @click="handleDoubleClick(node.annotation)"
+              @contextmenu.prevent="selectAnnotation(node.annotation, $event)"
             >
               <div class="image-container">
                 <img
@@ -380,7 +388,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, onMounted, onBeforeUnmount } from 'vue';
 import type { PDFAnnotation, AnnotationLevel } from '../types/annotaion';
 import { deleteAnnotation as deleteAnnotationApi } from '../api/annotationApi';
 import { generateMarkdown } from '../utils/markdownGenerator';
@@ -411,6 +419,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'annotation-click', annotation: PDFAnnotation): void;
   (e: 'annotation-edit', annotation: PDFAnnotation): void;
+  (e: 'annotation-delete', annotation: PDFAnnotation): void;
   (e: 'refresh'): void;
   (e: 'merge', sourceId: string, targetId: string): void;
   (e: 'unmerge', annotationId: string): void;
@@ -456,6 +465,9 @@ const draggingId = ref<string | null>(null);
 const dragOverId = ref<string | null>(null);
 const dragTip = ref<string>('');
 
+// 选中的标注（用于键盘删除）
+const selectedAnnotationId = ref<string | null>(null);
+
 // 合并块展开状态（用于正文合并，已不需要展开/折叠）
 const expandedGroups = reactive<Set<string>>(new Set());
 
@@ -465,13 +477,19 @@ const collapsedHeadings = ref<Set<string>>(new Set());
 // 切换标题折叠状态
 const toggleHeadingFold = (annotationId: string, e: Event) => {
   e.stopPropagation();
+  console.log('[toggleHeadingFold] 切换前，折叠集合:', Array.from(collapsedHeadings.value));
+  console.log('[toggleHeadingFold] 目标ID:', annotationId);
+  
   const newSet = new Set(collapsedHeadings.value);
   if (newSet.has(annotationId)) {
     newSet.delete(annotationId);
+    console.log('[toggleHeadingFold] 展开:', annotationId);
   } else {
     newSet.add(annotationId);
+    console.log('[toggleHeadingFold] 折叠:', annotationId);
   }
   collapsedHeadings.value = newSet;
+  console.log('[toggleHeadingFold] 切换后，折叠集合:', Array.from(newSet));
 };
 
 // 判断标题是否可以折叠（下面有内容或子块）
@@ -506,9 +524,27 @@ const isCollapsed = (node: DocumentNode): boolean => {
   return collapsedHeadings.value.has(node.annotation.id);
 };
 
-// 获取子标注
+// 获取子标注（使用去重后的数据，支持嵌套合并）
 const getChildren = (parentId: string): PDFAnnotation[] => {
-  return props.annotations.filter(a => a.parentId === parentId);
+  const seenIds = new Set<string>();
+  const result: PDFAnnotation[] = [];
+  
+  // 递归获取所有子块（包括嵌套的孙子块）
+  const collectChildren = (pId: string) => {
+    for (const a of props.annotations) {
+      if (a.parentId === pId && !seenIds.has(a.id)) {
+        seenIds.add(a.id);
+        result.push(a);
+        // 递归获取这个子块的子块
+        collectChildren(a.id);
+      }
+    }
+  };
+  
+  collectChildren(parentId);
+  
+  // 按 sortOrder 排序
+  return result.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 };
 
 // 判断是否有子标注
@@ -539,6 +575,37 @@ const handleHeadingClick = (node: DocumentNode, e: Event) => {
 const handleBlockClick = (annotation: PDFAnnotation, e: Event) => {
   handleDoubleClick(annotation);
 };
+
+// 选中标注（用于键盘删除）
+const selectAnnotation = (annotation: PDFAnnotation, e: Event) => {
+  e.stopPropagation();
+  if (selectedAnnotationId.value === annotation.id) {
+    selectedAnnotationId.value = null;
+  } else {
+    selectedAnnotationId.value = annotation.id;
+  }
+};
+
+// 键盘删除处理
+const handleKeyDown = (e: KeyboardEvent) => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotationId.value) {
+    const ann = props.annotations.find(a => a.id === selectedAnnotationId.value);
+    if (ann) {
+      e.preventDefault();
+      deleteAnnotation(ann);
+      selectedAnnotationId.value = null;
+    }
+  }
+};
+
+// 生命周期
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeyDown);
+});
 
 // 获取图片URL
 const getImageUrl = (imagePath: string): string => {
@@ -610,8 +677,25 @@ const getIndent = (node: DocumentNode): number => {
 
 // 构建文档树结构（支持手动合并的嵌套）
 const documentTree = computed<DocumentNode[]>(() => {
-  // 按页码和创建时间排序，同时考虑 parentId 和 sortOrder
-  const sorted = [...props.annotations].sort((a, b) => {
+  // 【第一步：去重】同一 ID 只保留第一个
+  const seenIds = new Set<string>();
+  const uniqueAnnotations: PDFAnnotation[] = [];
+  
+  for (const a of props.annotations) {
+    if (!seenIds.has(a.id)) {
+      seenIds.add(a.id);
+      uniqueAnnotations.push(a);
+    } else {
+      console.warn('[documentTree] 发现重复标注ID，已过滤:', a.id, a.text?.substring(0, 20));
+    }
+  }
+  
+  // 调试：记录当前折叠状态
+  console.log('[documentTree] 唯一标注数:', uniqueAnnotations.length, '原始数:', props.annotations.length);
+  console.log('[documentTree] 折叠集合:', Array.from(collapsedHeadings.value));
+
+  // 【第二步：排序】按页码和创建时间排序，同时考虑 parentId 和 sortOrder
+  const sorted = [...uniqueAnnotations].sort((a, b) => {
     // 如果有 parentId，放在父级后面
     if (a.parentId && !b.parentId) return 1;
     if (!a.parentId && b.parentId) return -1;
@@ -619,9 +703,9 @@ const documentTree = computed<DocumentNode[]>(() => {
     // 如果都有 parentId，按父级分组
     if (a.parentId && b.parentId) {
       if (a.parentId !== b.parentId) {
-        // 找到父级的位置来决定排序
-        const parentA = props.annotations.find(p => p.id === a.parentId);
-        const parentB = props.annotations.find(p => p.id === b.parentId);
+        // 找到父级的位置来决定排序（使用去重后的数组）
+        const parentA = uniqueAnnotations.find(p => p.id === a.parentId);
+        const parentB = uniqueAnnotations.find(p => p.id === b.parentId);
         if (parentA && parentB) {
           if (parentA.page !== parentB.page) return parentA.page - parentB.page;
           return parentA.created - parentB.created;
@@ -844,17 +928,8 @@ const editAnnotation = (ann: PDFAnnotation) => {
 
 // 删除标注
 const deleteAnnotation = async (ann: PDFAnnotation) => {
-  if (!confirm('确定要删除这条标注吗？')) {
-    return;
-  }
-
-  try {
-    await deleteAnnotationApi(ann.blockId);
-    emit('refresh');
-  } catch (e) {
-    console.error('删除失败:', e);
-    alert('删除失败');
-  }
+  // 发出删除事件，让父组件处理确认和删除逻辑
+  emit('annotation-delete', ann);
 };
 
 // 导出Markdown
@@ -1326,6 +1401,19 @@ const refresh = () => {
 
 .doc-heading:hover .hover-actions {
   opacity: 1;
+}
+
+/* 选中状态样式 */
+.doc-heading.selected,
+.doc-paragraph.selected,
+.doc-image.selected {
+  background: var(--b3-theme-primary-lightest, rgba(66, 133, 244, 0.1));
+  border-left-color: var(--b3-theme-primary);
+  margin-left: -8px;
+  margin-right: -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 4px;
 }
 
 .heading-prefix {

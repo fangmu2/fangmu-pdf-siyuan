@@ -103,11 +103,11 @@ let selectionDiv: HTMLDivElement | null = null;
 
 // 使用 window 对象存储全局锁，确保跨 HMR 和组件实例唯一
 const getGlobalLock = () => {
-  if (typeof window === 'undefined') return { locked: false, text: '', time: 0 };
-  (window as any).__PDF_SELECTION_LOCK__ ||= { locked: false, text: '', time: 0 };
+  if (typeof window === 'undefined') return { locked: false, text: '', time: 0, lastEmittedText: '' };
+  (window as any).__PDF_SELECTION_LOCK__ ||= { locked: false, text: '', time: 0, lastEmittedText: '' };
   return (window as any).__PDF_SELECTION_LOCK__;
 };
-const SELECTION_LOCK_DURATION = 800; // 800ms 锁定时间
+const SELECTION_LOCK_DURATION = 2000; // 2秒锁定时间，防止快速摘录重复
 
 // 图片选择防抖
 let lastImageSelectTime = 0;
@@ -137,7 +137,20 @@ const ANNOTATION_COLORS: Record<AnnotationColor, { bg: string; border: string }>
 // 当前页的标注
 const currentPageAnnotations = computed(() => {
   if (!props.annotations) return [];
-  return props.annotations.filter(ann => ann.page === props.currentPage);
+  const pageAnnotations = props.annotations.filter(ann => ann.page === props.currentPage);
+  
+  // 去重：同一 ID 只保留一个
+  const seenIds = new Set<string>();
+  const uniqueAnnotations: typeof pageAnnotations = [];
+  for (const ann of pageAnnotations) {
+    if (!seenIds.has(ann.id)) {
+      seenIds.add(ann.id);
+      uniqueAnnotations.push(ann);
+    } else {
+      console.warn('[currentPageAnnotations] 发现重复标注ID:', ann.id);
+    }
+  }
+  return uniqueAnnotations;
 });
 
 // 选中的标注
@@ -322,9 +335,11 @@ const renderHighlights = () => {
 
 // 处理键盘删除
 const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.key === 'Delete' && selectedAnnotation.value) {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotation.value) {
+    e.preventDefault();
     emit('annotation-delete', selectedAnnotation.value);
     selectedAnnotation.value = null;
+    renderHighlights();
   }
 };
 
@@ -342,38 +357,59 @@ const handleTextSelection = () => {
     return;
   }
 
-  if (!textLayerRef.value) return;
+  // 【关键修复】立即设置全局锁，防止竞态条件
+  lock.locked = true;
+
+  // 释放锁的辅助函数
+  const releaseLock = () => {
+    lock.locked = false;
+  };
+
+  if (!textLayerRef.value) {
+    releaseLock();
+    return;
+  }
 
   const selection = window.getSelection();
-  if (selection && selection.toString().trim()) {
-    const text = selection.toString().trim();
-
-    // 检查相同文本在锁定时间内是否已处理
-    if (text === lock.text && (now - lock.time) < SELECTION_LOCK_DURATION) {
-      console.log('[handleTextSelection] 相同文本已在处理中，跳过:', text.substring(0, 20));
-      return;
-    }
-
-    // 立即设置全局锁
-    lock.locked = true;
-    lock.text = text;
-    lock.time = now;
-
-    const rect = getSelectionRect(textLayerRef.value);
-    
-    console.log('[handleTextSelection] 选中文本:', text.substring(0, 30), 'rect:', rect);
-
-    emit('text-selected', {
-      text,
-      page: props.currentPage,
-      rect
-    });
-
-    // 延迟释放锁
-    setTimeout(() => {
-      lock.locked = false;
-    }, SELECTION_LOCK_DURATION);
+  if (!selection || !selection.toString().trim()) {
+    releaseLock();
+    return;
   }
+
+  const text = selection.toString().trim();
+
+  // 检查是否是最近发出过的相同文本（防止重复）
+  if (text === lock.lastEmittedText && (now - lock.time) < SELECTION_LOCK_DURATION) {
+    console.log('[handleTextSelection] 最近已发出相同文本，跳过:', text.substring(0, 20));
+    releaseLock();
+    return;
+  }
+
+  // 更新锁的文本和时间
+  lock.text = text;
+  lock.time = now;
+  lock.lastEmittedText = text; // 记录最后发出的文本
+
+  const rect = getSelectionRect(textLayerRef.value);
+  
+  console.log('[handleTextSelection] 选中文本:', text.substring(0, 30), 'rect:', rect);
+
+  emit('text-selected', {
+    text,
+    page: props.currentPage,
+    rect
+  });
+
+  // 延迟释放锁（但保留 lastEmittedText 用于去重）
+  setTimeout(() => {
+    lock.locked = false;
+    // 2秒后清除 lastEmittedText，允许再次选择相同文本
+    setTimeout(() => {
+      if (lock.lastEmittedText === text) {
+        lock.lastEmittedText = '';
+      }
+    }, SELECTION_LOCK_DURATION);
+  }, 500); // 500ms 后释放锁，但保留文本去重
 };
 
 // 图片框选 - 开始
