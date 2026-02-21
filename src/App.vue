@@ -801,7 +801,16 @@ const handleAnnotationSaved = () => {
 const handleAnnotationDelete = async (ann: PDFAnnotation) => {
   if (!currentProject.value) return;
 
-  if (!confirm(`确定要删除这条标注吗？\n\n"${ann.text.substring(0, 50)}${ann.text.length > 50 ? '...' : ''}"`)) {
+  // 根据标注类型显示不同的确认内容
+  let confirmContent: string;
+  if (ann.isImage) {
+    confirmContent = `确定要删除这张图片摘录吗？\n\n图片路径: ${ann.imagePath || '未知'}`;
+  } else {
+    const displayText = ann.text || '(空内容)';
+    confirmContent = `确定要删除这条标注吗？\n\n"${displayText.substring(0, 50)}${displayText.length > 50 ? '...' : ''}"`;
+  }
+
+  if (!confirm(confirmContent)) {
     return;
   }
 

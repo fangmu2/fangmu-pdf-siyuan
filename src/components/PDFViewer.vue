@@ -227,7 +227,16 @@ const renderCurrentPage = async () => {
 // 使用DOM渲染高亮（比Canvas更流畅，支持交互）
 const renderHighlights = () => {
   const layer = highlightLayerRef.value;
-  if (!layer || !currentViewport) return;
+  
+  if (!layer) {
+    console.log('[renderHighlights] 高亮层不存在，跳过');
+    return;
+  }
+  
+  if (!currentViewport) {
+    console.log('[renderHighlights] currentViewport 不存在，跳过');
+    return;
+  }
 
   // 清空高亮层
   layer.innerHTML = '';
@@ -277,13 +286,31 @@ const renderHighlights = () => {
       border: 2px solid ${isSelected ? '#fff' : colors.border};
       border-radius: 3px;
       cursor: pointer;
+      pointer-events: auto;
       transition: background-color 0.15s ease, transform 0.1s ease;
       box-shadow: ${isSelected ? '0 0 8px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)'};
       z-index: ${isSelected ? 2 : 1};
     `;
 
     // 如果是标题级别，添加角标
-    if (ann.level && ann.level !== 'text') {
+    if (ann.isImage) {
+      // 图片摘录角标
+      const badge = document.createElement('span');
+      badge.style.cssText = `
+        position: absolute;
+        top: -8px;
+        left: 0;
+        background: #8b5cf6;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 1px 4px;
+        border-radius: 2px;
+        line-height: 1;
+      `;
+      badge.textContent = '📷';
+      highlight.appendChild(badge);
+    } else if (ann.level && ann.level !== 'text') {
       const levelLabels: Record<string, string> = {
         title: 'T', h1: 'H1', h2: 'H2', h3: 'H3', h4: 'H4', h5: 'H5',
       };
@@ -310,16 +337,19 @@ const renderHighlights = () => {
     // 点击事件
     highlight.addEventListener('click', (e) => {
       e.stopPropagation();
+      console.log('[renderHighlights] 点击高亮元素:', ann.id, ann.text?.substring(0, 20));
       if (selectedAnnotation.value?.id === ann.id) {
         selectedAnnotation.value = null;
+        console.log('[renderHighlights] 取消选中');
       } else {
         selectedAnnotation.value = ann;
+        console.log('[renderHighlights] 选中标注:', ann.id);
         emit('annotation-click', ann);
       }
       renderHighlights();
     });
 
-    // 悬停效果
+    // 悬停效果 - 显示删除按钮
     highlight.addEventListener('mouseenter', () => {
       if (selectedAnnotation.value?.id !== ann.id) {
         highlight.style.transform = 'scale(1.01)';
@@ -329,14 +359,88 @@ const renderHighlights = () => {
       highlight.style.transform = 'scale(1)';
     });
 
+    // 创建删除按钮（始终显示，悬停时高亮）
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'highlight-delete-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.title = '删除标注';
+    deleteBtn.style.cssText = `
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: white;
+      border: 2px solid white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 100;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    `;
+    
+    // 鼠标进入高亮区域时显示删除按钮
+    highlight.addEventListener('mouseenter', () => {
+      deleteBtn.style.opacity = '1';
+    });
+    highlight.addEventListener('mouseleave', () => {
+      if (selectedAnnotation.value?.id !== ann.id) {
+        deleteBtn.style.opacity = '0';
+      }
+    });
+    
+    // 删除按钮悬停效果
+    deleteBtn.addEventListener('mouseenter', () => {
+      deleteBtn.style.background = '#dc2626';
+      deleteBtn.style.transform = 'scale(1.1)';
+    });
+    deleteBtn.addEventListener('mouseleave', () => {
+      deleteBtn.style.background = '#ef4444';
+      deleteBtn.style.transform = 'scale(1)';
+    });
+    
+    // 删除按钮点击事件
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      console.log('[renderHighlights] 点击删除按钮:', ann.id, ann.text?.substring(0, 20));
+      emit('annotation-delete', ann);
+      selectedAnnotation.value = null;
+    });
+    
+    // 选中状态下也显示删除按钮
+    if (isSelected) {
+      deleteBtn.style.opacity = '1';
+    }
+
+    highlight.appendChild(deleteBtn);
     layer.appendChild(highlight);
   }
 };
 
 // 处理键盘删除
 const handleKeyDown = (e: KeyboardEvent) => {
-  if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotation.value) {
+  // 只在 Delete 或 Backspace 键时处理
+  if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+  
+  // 如果焦点在输入框中，不处理删除
+  const activeElement = document.activeElement;
+  if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || (activeElement as HTMLElement).isContentEditable)) {
+    return;
+  }
+  
+  if (selectedAnnotation.value) {
     e.preventDefault();
+    console.log('[handleKeyDown] 删除选中的标注:', selectedAnnotation.value.id);
     emit('annotation-delete', selectedAnnotation.value);
     selectedAnnotation.value = null;
     renderHighlights();
@@ -541,9 +645,11 @@ watch(() => props.highlightAnnotation, () => {
   }
 });
 
-// 监听标注变化
-watch(() => props.annotations, () => {
-  if (pdfDoc && currentViewport) {
+// 监听标注变化 - 确保删除后能正确重新渲染
+watch(() => props.annotations, (newVal, oldVal) => {
+  console.log('[PDFViewer] annotations 变化, 新长度:', newVal?.length, '旧长度:', oldVal?.length);
+  // 无论 pdfDoc 和 currentViewport 是否存在，都尝试重新渲染
+  if (highlightLayerRef.value) {
     renderHighlights();
   }
 }, { deep: true, immediate: true });
@@ -660,17 +766,12 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 1; /* 降低高亮层z-index，让文本层在上面 */
+  z-index: 6; /* 高于文本层(z-index:5)，使点击事件能到达高亮元素 */
 }
 
-.highlight-layer :deep(.highlight-element) {
-  pointer-events: auto;
+.highlight-element {
+  pointer-events: auto !important;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.highlight-layer :deep(.highlight-element:hover) {
-  filter: brightness(1.1);
 }
 
 .image-select-layer {

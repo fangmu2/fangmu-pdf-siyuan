@@ -13,22 +13,32 @@ A powerful PDF annotation and mindmap extraction tool that helps you efficiently
 - Select text in PDF to create annotations with one click
 - Support multiple annotation levels: Document Title, H1-H5 headings, Text annotation
 - Annotations are automatically saved to SiYuan documents
+- Real-time highlight display in PDF
 
 ### 📷 Image Excerpt
 - Select an area in PDF to capture as an image
 - Images are automatically uploaded to SiYuan assets
 - Support adding annotation levels and notes
+- Display 📷 badge in PDF for image excerpts
 
 ### 🎨 Annotation Management
 - Real-time display of all excerpted content
 - Sort by page number
 - Click annotation to quickly locate the corresponding position in PDF
 - Support editing annotation content and adding notes
+- **Drag to merge**: Drag annotations under headings for organization
+
+### 🗑️ Multiple Delete Methods
+- **Delete in PDF**:
+  - Hover delete: Hover over highlight marker, click red × button on top-right corner
+  - Keyboard delete: Click highlight marker to select (white border, deeper background), press Delete or Backspace key
+- **Delete in list**: Click delete button in annotation list
+- **Bidirectional sync**: Deleting from PDF or list will synchronously remove the corresponding block in SiYuan
 
 ### ⌨️ Quick Operations
 - **Click annotation**: Select annotation (highlighted display)
-- **Delete key**: Delete selected annotation
-- Annotation deletion will synchronously remove the corresponding block in SiYuan
+- **Delete/Backspace key**: Delete selected annotation
+- **Double-click annotation**: Jump to corresponding position in PDF
 
 ## 🚀 How to Use
 
@@ -52,9 +62,14 @@ Before excerpting, you can select the annotation level in the toolbar:
 Search and select a SiYuan document in the "Target" input box, annotations will be saved to that document.
 
 ### 6. Manage Annotations
-- Double-click an annotation item to jump to the corresponding position in PDF
-- Click the edit button to modify annotation content and notes
-- Click on an annotation in PDF to select it, press Delete to remove
+- **View**: Annotation list displays all excerpts in real-time
+- **Locate**: Double-click annotation item to jump to corresponding position in PDF
+- **Edit**: Click edit button to modify annotation content and notes
+- **Merge**: Drag annotation under heading for organization
+- **Delete**:
+  - Hover and click × button in PDF
+  - Click to select in PDF, then press Delete key
+  - Click delete button in list
 
 ## 📖 Use Cases
 
@@ -80,6 +95,7 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 3. **Bidirectional Linking**: Real-time linking between PDF and annotation list for quick positioning
 4. **Image Excerpt**: Support screenshot saving of charts, formulas, etc. in PDF
 5. **Project-based Management**: Unified management of multiple PDF files, suitable for thematic research
+6. **Easy Deletion**: Support deleting annotations directly in PDF with bidirectional sync
 
 ## ⚙️ Technical Implementation
 
@@ -87,6 +103,7 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 - Developed with Vue 3 + TypeScript
 - Data stored in SiYuan document block attributes
 - Support for SiYuan theme style adaptation
+- DOM highlight layer for annotation interaction
 
 ## 📌 Notes
 
@@ -94,8 +111,18 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 2. Annotation saving requires a valid target document (if not specified, it will try to save to the most recently edited document)
 3. Image excerpts generate PNG files stored in the assets directory
 4. It is recommended to regularly check project status through project management
+5. Delete operations will synchronously remove the corresponding block in SiYuan, please operate with caution
 
 ## 🔄 Changelog
+
+### v0.0.13
+- Added: Hover to show delete button on PDF highlight markers
+- Added: Click to select + Delete key to remove annotations in PDF
+- Added: 📷 badge for image excerpts in PDF
+- Added: Delete confirmation dialog distinguishes between image/text excerpts
+- Optimized: Annotation list rendering performance, fixed duplicate display issue
+- Fixed: PDF highlight markers not responding to clicks (z-index layer fix)
+- Fixed: Bidirectional sync issue for annotation deletion
 
 ### v0.0.8
 - Added: PDF annotation click selection feature

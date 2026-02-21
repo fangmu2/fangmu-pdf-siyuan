@@ -110,14 +110,14 @@
           <span class="cursor-label">↑ 新摘录将插入此处</span>
         </div>
 
-        <template v-for="node in documentTree" :key="node.annotation.id">
+        <template v-for="(node, index) in documentTree" :key="node.isPageBreak ? `page-${node.page}-${index}` : node.annotation.id">
           <!-- 页码分隔 -->
           <div v-if="node.isPageBreak" class="page-separator">
             <span class="page-num">第 {{ node.page }} 页</span>
           </div>
 
           <!-- 标题节点（有Typora风格折叠功能） -->
-          <template v-if="isHeadingNode(node)">
+          <template v-else-if="isHeadingNode(node)">
             <div
               class="doc-heading"
               :class="[
