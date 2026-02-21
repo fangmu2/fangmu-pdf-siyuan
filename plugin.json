@@ -1,10 +1,11 @@
 {
-  "name": "plugin-sample-vite-vue",
-  "author": "wetoria",
-  "url": "https://github.com/Wetoria/plugin-sample-vite-vue",
+  "id": "com.fangmu.pdf-extractor",
+  "name": "fangmu-pdf摘录助手",
+  "author": "方木",
+  "url": "https://gitee.com/your-repo/fangmu-pdf摘录助手",
   "version": "0.0.14",
   "minAppVersion": "2.10.14",
-  "disabledInPublish": true,
+  "disabledInPublish": false,
   "backends": [
     "all"
   ],
@@ -29,5 +30,7 @@
   "funding": {
     "custom": []
   },
-  "keywords": ["PDF", "annotation", "mindmap", "excerpt", "摘录", "标注", "思维导图"]
+  "keywords": ["PDF", "annotation", "mindmap", "excerpt", "摘录", "标注", "思维导图"],
+  "icon": "icon.png",
+  "preview": "preview.png"
 }
