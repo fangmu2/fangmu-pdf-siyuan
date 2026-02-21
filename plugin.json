@@ -1,8 +1,8 @@
 {
-  "id": "com.fangmu.pdf-extractor",
+  "id": "fangmu_siyuan_pdf",
   "name": "fangmu-pdf摘录助手",
   "author": "方木",
-  "url": "https://gitee.com/your-repo/fangmu-pdf摘录助手",
+  "url": "https://gitee.com/Neio101/fangmu_siyuan_pdf.git",
   "version": "0.0.14",
   "minAppVersion": "2.10.14",
   "disabledInPublish": false,
