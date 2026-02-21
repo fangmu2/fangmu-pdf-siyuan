@@ -5,7 +5,7 @@
     <div class="panel-header">
       <div class="header-title">
         <span>PDF 思维导图摘录</span>
-        <span class="version-badge">v0.0.8</span>
+        <span class="version-badge">v0.0.14</span>
       </div>
       <div class="header-actions">
         <button
@@ -850,7 +850,7 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
 
   // 计算新的 sortOrder
   const siblingsUnderTarget = annotations.value.filter(a => a.parentId === targetId);
-  let nextSortOrder = siblingsUnderTarget.length > 0 
+  let nextSortOrder = siblingsUnderTarget.length > 0
     ? Math.max(...siblingsUnderTarget.map(a => a.sortOrder || 0)) + 1
     : 0;
 
@@ -882,7 +882,7 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
   // 保存
   saveProjectAnnotations(currentProject.value.id, annotations.value);
 
-  console.log('[handleAnnotationMerge] 合并成功:', sourceId, '->', targetId, 
+  console.log('[handleAnnotationMerge] 合并成功:', sourceId, '->', targetId,
     '同时移动了', sourceChildren.length, '个子块');
 };
 
@@ -934,10 +934,10 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
 
   console.log('[insertAnnotationAtPosition] 开始插入，当前数组长度:', annotations.value.length);
   console.log('[insertAnnotationAtPosition] 新标注ID:', newAnnotation.id, '文本:', newAnnotation.text?.substring(0, 30));
-  
+
   // 直接使用 Vue 响应式数组（单一数据源）
   const currentAnnotations = annotations.value;
-  
+
   // 第一步：去重 - 清理历史数据中可能存在的重复
   const seenIds = new Set<string>();
   const deduplicatedAnnotations: PDFAnnotation[] = [];
@@ -949,31 +949,31 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
       console.warn('[insertAnnotationAtPosition] 发现历史重复数据，已清理:', ann.id);
     }
   }
-  
+
   // 第二步：检查新标注ID是否已存在
   if (seenIds.has(newAnnotation.id)) {
     console.warn('[insertAnnotationAtPosition] 标注ID已存在，跳过:', newAnnotation.id);
     return { success: false, reason: '标注ID已存在' };
   }
-  
+
   // 第三步：检查内容重复（增强版：不依赖时间，直接检查相同内容）
   let isDuplicate = false;
   const now = Date.now();
   const DUPLICATE_TIME_WINDOW = 10000; // 10秒内相同内容视为重复
-  
+
   if (newAnnotation.isImage && newAnnotation.imagePath) {
     // 图片：检查相同路径
-    isDuplicate = deduplicatedAnnotations.some(a => 
+    isDuplicate = deduplicatedAnnotations.some(a =>
       a.isImage && a.imagePath === newAnnotation.imagePath
     );
   } else if (newAnnotation.text) {
     // 文本：检查相同文本+页码+位置（矩形区域重叠）
     isDuplicate = deduplicatedAnnotations.some(a => {
       if (a.isImage || !a.text) return false;
-      
+
       // 完全相同的文本
-      if (a.text === newAnnotation.text && 
-          a.page === newAnnotation.page && 
+      if (a.text === newAnnotation.text &&
+          a.page === newAnnotation.page &&
           a.pdfPath === newAnnotation.pdfPath) {
         // 检查矩形是否重叠（允许一定误差）
         if (a.rect && newAnnotation.rect) {
@@ -993,16 +993,16 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
       return false;
     });
   }
-  
+
   if (isDuplicate) {
-    console.warn('[insertAnnotationAtPosition] 标注已存在，跳过:', 
+    console.warn('[insertAnnotationAtPosition] 标注已存在，跳过:',
       newAnnotation.isImage ? `图片 ${newAnnotation.imagePath}` : newAnnotation.text.substring(0, 30));
     return { success: false, reason: '该标注已存在，请勿重复创建' };
   }
 
   // 第四步：插入新标注
   let newAnnotations: PDFAnnotation[];
-  
+
   if (cursorAfterId.value === null) {
     newAnnotations = [newAnnotation, ...deduplicatedAnnotations];
   } else {
@@ -1032,7 +1032,7 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
   // 更新 Vue 响应式数组并保存
   annotations.value = newAnnotations;
   saveProjectAnnotations(currentProject.value.id, newAnnotations);
-  
+
   console.log('[insertAnnotationAtPosition] 插入成功，新数组长度:', newAnnotations.length);
   return { success: true };
 };
@@ -1178,15 +1178,15 @@ const handleImageSelected = async (data: {
 
     const fileName = `pdf-excerpt-${Date.now()}.png`;
     const file = new File([blob], fileName, { type: 'image/png' });
-    
+
     console.log('[handleImageSelected] 上传图片:', fileName, '大小:', (blob.size / 1024).toFixed(1), 'KB');
-    
+
     const uploadResult = await uploadFileToAssets(file);
-    
+
     if (!uploadResult || !uploadResult.path) {
       throw new Error('图片上传失败');
     }
-    
+
     console.log('[handleImageSelected] 上传成功:', uploadResult.path);
 
     const newAnnotation: PDFAnnotation = {
@@ -1261,8 +1261,8 @@ const createAnnotationFromSelection = async () => {
   }
 
   // 检查相同文本和级别在锁定时间内是否已创建
-  if (selectedText.value === lock.text && 
-      annotationLevel === lock.level && 
+  if (selectedText.value === lock.text &&
+      annotationLevel === lock.level &&
       (now - lock.time) < CREATE_LOCK_DURATION) {
     console.warn('[createAnnotationFromSelection] 相同文本已在锁定时间内创建，跳过:', selectedText.value.substring(0, 30));
     return;
