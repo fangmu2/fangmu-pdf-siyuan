@@ -115,6 +115,14 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 
 ## 🔄 Changelog
 
+### v0.0.17
+- Fixed: `indexOf` error when selecting SiYuan documents in dropdown
+- Fixed: Document list not showing after clearing selection
+- Improved: Better null/undefined value handling
+
+### v0.0.16
+- Removed all debug console.log statements
+
 ### v0.0.13
 - Added: Hover to show delete button on PDF highlight markers
 - Added: Click to select + Delete key to remove annotations in PDF
@@ -138,7 +146,7 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 
 ## 💬 Feedback
 
-For issues or suggestions, please feedback at [GitHub Issues](https://github.com/Wetoria/plugin-sample-vite-vue/issues).
+For issues or suggestions, please feedback at [Gitee Issues](https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant/issues).
 
 ## 📄 License
 

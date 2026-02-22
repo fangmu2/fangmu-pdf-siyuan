@@ -1,12 +1,12 @@
 {
-  "name": "plugin-sample-vite-vue",
-  "version": "0.0.16",
+  "name": "fangmu-pdf-excerpt-assistant",
+  "version": "0.0.17",
   "type": "module",
-  "description": "This is a sample plugin based on vite and vue for Siyuan (https://b3log.org/siyuan)",
-  "author": "",
+  "description": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
+  "author": "方木",
   "license": "MIT",
-  "homepage": "",
-  "repository": "",
+  "homepage": "https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant",
+  "repository": "https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant.git",
   "scripts": {
     "dev": "vite build --watch",
     "release": "node ./release.js",

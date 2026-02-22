@@ -1,26 +1,21 @@
 {
-  "id": "fangmu_siyuan_pdf",
   "name": "fangmu-pdf摘录助手",
   "author": "方木",
-  "url": "https://gitee.com/Neio101/fangmu_siyuan_pdf.git",
-  "version": "0.0.16",
-  "minAppVersion": "2.10.14",
+  "url": "https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant",
+  "version": "0.0.17",
+  "minAppVersion": "3.3.0",
+  "backends": ["all"],
+  "frontends": ["all"],
   "disabledInPublish": false,
-  "backends": [
-    "all"
-  ],
-  "frontends": [
-    "all"
-  ],
   "displayName": {
-    "default": "PDF Mindmap",
-    "en_US": "PDF Mindmap",
-    "zh_CN": "PDF 思维导图摘录"
+    "default": "PDF Excerpt Assistant",
+    "en_US": "PDF Excerpt Assistant",
+    "zh_CN": "PDF 摘录助手"
   },
   "description": {
-    "default": "PDF annotation and mindmap extraction tool for SiYuan Note",
-    "en_US": "PDF annotation and mindmap extraction tool for SiYuan Note",
-    "zh_CN": "PDF 标注摘录与思维导图生成工具，支持多 PDF 项目管理、文字/图片摘录、标注级别分类"
+    "default": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
+    "en_US": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
+    "zh_CN": "PDF 标注摘录工具，支持文字/图片摘录、多级标题、多 PDF 项目管理"
   },
   "readme": {
     "default": "README.md",
@@ -30,7 +25,13 @@
   "funding": {
     "custom": []
   },
-  "keywords": ["PDF", "annotation", "mindmap", "excerpt", "摘录", "标注", "思维导图"],
-  "icon": "icon.png",
-  "preview": "preview.png"
+  "keywords": [
+    "PDF",
+    "annotation",
+    "excerpt",
+    "摘录",
+    "标注",
+    "思维导图",
+    "mindmap"
+  ]
 }

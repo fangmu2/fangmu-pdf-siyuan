@@ -1,6 +1,7 @@
 # fangmu-pdf摘录助手
 
 一个 PDF 标注摘录与思维导图生成工具，帮助你高效地从 PDF 文档中提取知识并组织成结构化笔记。
+(注意: 思维导图功能暂未实现)
 
 ## ✨ 核心功能
 
@@ -115,6 +116,14 @@
 
 ## 🔄 更新日志
 
+### v0.0.17
+- 修复：选择思源文档时的 `indexOf` 错误
+- 修复：清除选择后文档列表不显示的问题
+- 优化：更好的空值处理
+
+### v0.0.16
+- 移除所有调试日志
+
 ### v0.0.13
 - 新增：PDF 内标注悬停显示删除按钮
 - 新增：PDF 内标注点击选中 + Delete 键删除
@@ -138,7 +147,7 @@
 
 ## 💬 反馈与建议
 
-如有问题或建议，欢迎在 [GitHub Issues](https://github.com/Wetoria/plugin-sample-vite-vue/issues) 中反馈。
+如有问题或建议，欢迎在 [Gitee Issues](https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant/issues) 中反馈。
 
 ## 📄 开源协议
 
