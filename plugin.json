@@ -2,7 +2,7 @@
   "name": "fangmu-pdf-siyuan",
   "author": "方木",
   "url": "https://github.com/fangmu2/fangmu-pdf-siyuan",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "minAppVersion": "3.3.0",
   "backends": ["all"],
   "frontends": ["all"],
