@@ -1,6 +1,11 @@
 <!-- src/components/PDFViewer.vue -->
 <template>
-  <div class="pdf-viewer-container" ref="containerRef">
+  <div 
+    class="pdf-viewer-container" 
+    ref="containerRef"
+    tabindex="0"
+    @keydown="handlePageKeyDown"
+  >
     <!-- 加载提示 -->
     <div v-if="loading" class="loading-overlay">
       <div class="b3-spin"></div>
@@ -11,6 +16,30 @@
     <div v-if="error" class="error-overlay">
       <span class="error-icon">⚠️</span>
       <span>{{ error }}</span>
+    </div>
+
+    <!-- 左侧翻页区域 -->
+    <div 
+      class="page-nav-area page-nav-left"
+      title="上一页 (←)"
+    >
+      <div class="page-nav-btn" @click="handlePageNavClick('prev')" :class="{ visible: showLeftNav }">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 右侧翻页区域 -->
+    <div 
+      class="page-nav-area page-nav-right"
+      title="下一页 (→)"
+    >
+      <div class="page-nav-btn" @click="handlePageNavClick('next')" :class="{ visible: showRightNav }">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+        </svg>
+      </div>
     </div>
 
     <!-- PDF渲染层容器 -->
@@ -38,17 +67,23 @@
 
     <!-- 页码指示器 -->
     <div class="page-indicator" v-if="totalPages > 0">
-      {{ currentPage }} / {{ totalPages }}
+      <span class="page-current">{{ currentPage }}</span>
+      <span class="page-divider">/</span>
+      <span class="page-total">{{ totalPages }}</span>
     </div>
 
     <!-- 缩放控制 -->
     <div class="zoom-controls">
-      <button @click="zoomOut" class="b3-button b3-button--outline" title="缩小">
-        <svg><use xlink:href="#iconZoomOut"></use></svg>
+      <button @click="zoomOut" class="zoom-btn" title="缩小 (-)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M19 13H5v-2h14v2z"/>
+        </svg>
       </button>
       <span class="zoom-level">{{ Math.round(scale * 100) }}%</span>
-      <button @click="zoomIn" class="b3-button b3-button--outline" title="放大">
-        <svg><use xlink:href="#iconZoomIn"></use></svg>
+      <button @click="zoomIn" class="zoom-btn" title="放大 (+)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -92,6 +127,10 @@ const error = ref('');
 const totalPages = ref(0);
 const scale = ref(1.0);
 
+// 翻页按钮显示状态
+const showLeftNav = ref(false);
+const showRightNav = ref(false);
+
 let pdfDoc: any = null;
 let currentPageObj: any = null;
 let currentBlobUrl: string | null = null;
@@ -111,6 +150,11 @@ const SELECTION_LOCK_DURATION = 2000; // 2秒锁定时间，防止快速摘录�
 
 // 图片选择防抖
 let lastImageSelectTime = 0;
+
+// 翻页按钮悬停检测
+let navHoverTimer: ReturnType<typeof setTimeout> | null = null;
+const NAV_EDGE_WIDTH = 40; // 边缘检测宽度
+const NAV_HOVER_DELAY = 400; // 悬停显示延迟(ms)
 
 // 当前 viewport 缓存
 let currentViewport: any = null;
@@ -242,20 +286,21 @@ const renderHighlights = () => {
   layer.style.height = currentViewport.height + 'px';
 
   // viewport.scale 是 PDF单位到CSS像素的转换比例
-  // PDF坐标 * scale = CSS坐标
   const scale = currentViewport.scale || 1;
   
-  // PDF页面原始高度（从viewBox获取）
-  const pdfPageHeight = currentViewport.viewBox[3];
+  // 使用 viewport.height 作为CSS坐标系参考（与文本层保持一致）
+  // 避免使用 viewBox[3] * scale 导致的浮点误差
+  const cssPageHeight = currentViewport.height;
 
   for (const ann of currentPageAnnotations.value) {
     const [pdfX1, pdfY1, pdfX2, pdfY2] = ann.rect;
 
     // PDF坐标转换为CSS坐标
     // CSS X = PDF X * scale
-    // CSS Y = (pdfPageHeight - PDF Y) * scale  （Y轴翻转）
+    // CSS Y = viewport.height - PDF Y * scale （Y轴翻转）
+    // 注意：使用 viewport.height 而不是 viewBox[3] * scale
     const cssX = pdfX1 * scale;
-    const cssY = (pdfPageHeight - pdfY2) * scale;  // y2是底部，翻转后是CSS的top
+    const cssY = cssPageHeight - pdfY2 * scale;
     const cssWidth = (pdfX2 - pdfX1) * scale;
     const cssHeight = Math.max((pdfY2 - pdfY1) * scale, 14);
 
@@ -612,6 +657,113 @@ const zoomOut = () => {
   }
 };
 
+// 翻页控制
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value || page === props.currentPage) return;
+  emit('page-change', page);
+};
+
+const prevPage = () => {
+  goToPage(props.currentPage - 1);
+};
+
+const nextPage = () => {
+  goToPage(props.currentPage + 1);
+};
+
+// 键盘翻页
+const handlePageKeyDown = (e: KeyboardEvent) => {
+  // 如果焦点在输入框中，不处理
+  const activeElement = document.activeElement;
+  if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || (activeElement as HTMLElement).isContentEditable)) {
+    return;
+  }
+
+  switch (e.key) {
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      e.preventDefault();
+      prevPage();
+      break;
+    case 'ArrowRight':
+    case 'ArrowDown':
+      e.preventDefault();
+      nextPage();
+      break;
+    case 'PageUp':
+      e.preventDefault();
+      prevPage();
+      break;
+    case 'PageDown':
+      e.preventDefault();
+      nextPage();
+      break;
+    case 'Home':
+      e.preventDefault();
+      goToPage(1);
+      break;
+    case 'End':
+      e.preventDefault();
+      goToPage(totalPages.value);
+      break;
+    case '-':
+    case '_':
+      e.preventDefault();
+      zoomOut();
+      break;
+    case '=':
+    case '+':
+      e.preventDefault();
+      zoomIn();
+      break;
+  }
+};
+
+// 点击翻页区域
+const handlePageNavClick = (direction: 'prev' | 'next') => {
+  if (direction === 'prev') {
+    prevPage();
+  } else {
+    nextPage();
+  }
+};
+
+// 鼠标移动时检测是否在边缘停留
+const handleNavMouseMove = (e: MouseEvent) => {
+  if (!containerRef.value) return;
+  
+  const rect = containerRef.value.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const width = rect.width;
+  
+  // 清除之前的定时器
+  if (navHoverTimer) {
+    clearTimeout(navHoverTimer);
+    navHoverTimer = null;
+  }
+  
+  // 如果鼠标不在边缘，立即隐藏按钮
+  const inLeftEdge = x < NAV_EDGE_WIDTH;
+  const inRightEdge = x > width - NAV_EDGE_WIDTH;
+  
+  if (!inLeftEdge && !inRightEdge) {
+    showLeftNav.value = false;
+    showRightNav.value = false;
+    return;
+  }
+  
+  // 鼠标在边缘，延迟显示按钮（需要停留一段时间）
+  navHoverTimer = setTimeout(() => {
+    if (inLeftEdge) {
+      showLeftNav.value = true;
+      showRightNav.value = false;
+    } else if (inRightEdge) {
+      showLeftNav.value = false;
+      showRightNav.value = true;
+    }
+  }, NAV_HOVER_DELAY);
+};
+
 // 监听变化
 watch([() => props.pdfPath, () => props.currentPage], () => {
   nextTick(() => loadPdf());
@@ -639,11 +791,25 @@ onMounted(() => {
   loadPdf();
   document.addEventListener('mouseup', handleTextSelection);
   document.addEventListener('keydown', handleKeyDown);
+  
+  // 翻页按钮悬停检测
+  if (containerRef.value) {
+    containerRef.value.addEventListener('mousemove', handleNavMouseMove);
+  }
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('mouseup', handleTextSelection);
   document.removeEventListener('keydown', handleKeyDown);
+  
+  // 清理翻页按钮定时器
+  if (navHoverTimer) {
+    clearTimeout(navHoverTimer);
+  }
+  
+  if (containerRef.value) {
+    containerRef.value.removeEventListener('mousemove', handleNavMouseMove);
+  }
   
   if (pdfDoc) {
     pdfDoc.destroy();
@@ -665,6 +831,67 @@ onBeforeUnmount(() => {
   justify-content: center;
   align-items: flex-start;
   padding: 20px;
+  outline: none;
+}
+
+.pdf-viewer-container:focus {
+  outline: none;
+}
+
+/* 翻页区域 - 不捕获事件，由JS控制显示 */
+.page-nav-area {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* 不捕获任何事件 */
+}
+
+.page-nav-left {
+  left: 0;
+}
+
+.page-nav-right {
+  right: 0;
+}
+
+.page-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--b3-theme-surface);
+  border: 1px solid var(--b3-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--b3-theme-on-surface-light);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.page-nav-btn.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.page-nav-btn.visible:hover {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-primary);
+}
+
+.page-nav-btn.visible:active {
+  transform: scale(0.95);
+  background: var(--b3-theme-primary-light);
+  color: var(--b3-theme-primary);
 }
 
 .loading-overlay,
@@ -788,38 +1015,83 @@ onBeforeUnmount(() => {
   z-index: 20;
 }
 
+/* 页码指示器 - 右下角，默认半透明不遮挡 */
 .page-indicator {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
-  padding: 6px 12px;
+  bottom: 12px;
+  right: 12px;
+  padding: 4px 10px;
   background: var(--b3-theme-surface);
   border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 12px;
+  font-size: 11px;
   color: var(--b3-theme-on-surface);
   z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
+.page-indicator:hover {
+  opacity: 1;
+}
+
+.page-current {
+  font-weight: 600;
+  color: var(--b3-theme-primary);
+}
+
+.page-divider {
+  color: var(--b3-theme-on-surface-light);
+}
+
+.page-total {
+  color: var(--b3-theme-on-surface-light);
+}
+
+/* 缩放控制 */
 .zoom-controls {
   position: absolute;
   top: 20px;
   right: 20px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  background: var(--b3-theme-surface, #fff);
-  border: 1px solid var(--b3-border-color, #ddd);
-  border-radius: 4px;
+  gap: 4px;
+  padding: 4px;
+  background: var(--b3-theme-surface);
+  border: 1px solid var(--b3-border-color);
+  border-radius: 6px;
   z-index: 200;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.zoom-btn:hover {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-primary);
 }
 
 .zoom-level {
   font-size: 12px;
-  min-width: 40px;
+  min-width: 42px;
   text-align: center;
+  color: var(--b3-theme-on-surface-light);
 }
 </style>

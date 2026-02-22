@@ -233,21 +233,6 @@
           </button>
         </div>
         
-        <div class="toolbar-divider" v-if="totalPages > 0"></div>
-        
-        <div class="page-control" v-if="totalPages > 0">
-          <button @click="prevPage" class="page-btn" :disabled="currentPage <= 1">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-            </svg>
-          </button>
-          <span class="page-num">{{ currentPage }}/{{ totalPages }}</span>
-          <button @click="nextPage" class="page-btn" :disabled="currentPage >= totalPages">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
 
@@ -780,15 +765,6 @@ const handlePdfLoaded = (numPages: number) => {
 // 页码变化
 const handlePageChange = (page: number) => {
   currentPage.value = page;
-};
-
-// 翻页
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--;
-};
-
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++;
 };
 
 // 点击标注
@@ -1683,44 +1659,6 @@ onUnmounted(() => {
 .doc-clear:hover {
   background: var(--b3-theme-error-light);
   color: var(--b3-theme-error);
-}
-
-.page-control {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.page-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-surface);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.page-btn:hover:not(:disabled) {
-  background: var(--b3-theme-primary-light);
-  color: var(--b3-theme-primary);
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.page-num {
-  font-size: 12px;
-  color: var(--b3-theme-on-surface);
-  min-width: 40px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 
 /* 项目管理面板 */

@@ -218,12 +218,17 @@ export function getSelectionRect(
   }
 
   // viewport.scale 是 PDF单位到CSS像素的转换比例
-  // PDF坐标 * scale = CSS坐标
-  // CSS坐标 / scale = PDF坐标
   const scale = viewport.scale;
+  if (!scale || scale <= 0) {
+    console.warn('[getSelectionRect] viewport.scale 无效:', scale);
+    return null;
+  }
   
-  // viewport.viewBox 是PDF原始尺寸 [x, y, width, height]
-  const pdfPageHeight = viewport.viewBox[3];
+  // 使用 viewport.height 作为CSS坐标系参考
+  // PDF坐标 = CSS坐标 / scale
+  // PDF高度 = viewport.height / scale
+  const cssPageHeight = viewport.height;
+  const pdfPageHeight = cssPageHeight / scale;
 
   // 找到选中区域的边界
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -250,16 +255,13 @@ export function getSelectionRect(
   }
 
   // CSS像素坐标转换为PDF坐标
-  // CSS坐标 / scale = PDF坐标
-  // 注意Y轴：CSS的Y坐标需要翻转
-  // CSS Y=0 对应 PDF Y=pageHeight
-  // CSS Y=containerHeight 对应 PDF Y=0
+  // PDF坐标 = CSS坐标 / scale
+  // Y轴翻转：PDF Y = pdfPageHeight - CSS Y / scale
   const pdfX1 = minX / scale;
   const pdfX2 = maxX / scale;
   
-  // Y轴转换：PDF的Y是从底部开始，CSS的Y是从顶部开始
-  // textLayer.clientHeight 是CSS高度
-  // pdfY = pdfPageHeight - cssY/scale
+  // 使用统一的公式：pdfY = pdfPageHeight - cssY / scale
+  // pdfPageHeight = cssPageHeight / scale
   const pdfY1 = pdfPageHeight - maxY / scale;
   const pdfY2 = pdfPageHeight - minY / scale;
 
@@ -283,9 +285,14 @@ export function createHighlightElement(
   const [pdfX1, pdfY1, pdfX2, pdfY2] = rect;
   const scale = viewport.scale || 1;
   
+  // 使用 viewport.height 作为CSS坐标系参考
+  const cssPageHeight = viewport.height;
+  
   // PDF坐标转换为CSS坐标
+  // CSS X = PDF X * scale
+  // CSS Y = cssPageHeight - PDF Y * scale
   const cssX = pdfX1 * scale;
-  const cssY = viewport.height - pdfY2 * scale;
+  const cssY = cssPageHeight - pdfY2 * scale;
   const cssWidth = (pdfX2 - pdfX1) * scale;
   const cssHeight = (pdfY2 - pdfY1) * scale;
 
