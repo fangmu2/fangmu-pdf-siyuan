@@ -20,18 +20,6 @@
 
     <!-- PDF内容区域 -->
     <div class="pdf-content-wrapper">
-      <!-- 左侧翻页区域 -->
-      <div 
-        class="page-nav-area page-nav-left"
-        title="上一页 (←)"
-      >
-        <div class="page-nav-btn" @click="handlePageNavClick('prev')" :class="{ visible: showLeftNav }">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-          </svg>
-        </div>
-      </div>
-
       <!-- 右侧翻页区域 -->
       <div 
         class="page-nav-area page-nav-right"
@@ -248,7 +236,6 @@ const totalPages = ref(0);
 const scale = ref(1.0);
 
 // 翻页按钮显示状态
-const showLeftNav = ref(false);
 const showRightNav = ref(false);
 
 // 底部工具栏状态
@@ -927,15 +914,11 @@ const handlePageKeyDown = (e: KeyboardEvent) => {
 };
 
 // 点击翻页区域
-const handlePageNavClick = (direction: 'prev' | 'next') => {
-  if (direction === 'prev') {
-    prevPage();
-  } else {
-    nextPage();
-  }
+const handlePageNavClick = (direction: 'next') => {
+  nextPage();
 };
 
-// 鼠标移动时检测是否在边缘停留
+// 鼠标移动时检测是否在右边缘停留
 const handleNavMouseMove = (e: MouseEvent) => {
   if (!containerRef.value) return;
   
@@ -949,25 +932,17 @@ const handleNavMouseMove = (e: MouseEvent) => {
     navHoverTimer = null;
   }
   
-  // 如果鼠标不在边缘，立即隐藏按钮
-  const inLeftEdge = x < NAV_EDGE_WIDTH;
+  // 如果鼠标不在右边缘，立即隐藏按钮
   const inRightEdge = x > width - NAV_EDGE_WIDTH;
   
-  if (!inLeftEdge && !inRightEdge) {
-    showLeftNav.value = false;
+  if (!inRightEdge) {
     showRightNav.value = false;
     return;
   }
   
-  // 鼠标在边缘，延迟显示按钮（需要停留一段时间）
+  // 鼠标在右边缘，延迟显示按钮（需要停留一段时间）
   navHoverTimer = setTimeout(() => {
-    if (inLeftEdge) {
-      showLeftNav.value = true;
-      showRightNav.value = false;
-    } else if (inRightEdge) {
-      showLeftNav.value = false;
-      showRightNav.value = true;
-    }
+    showRightNav.value = true;
   }, NAV_HOVER_DELAY);
 };
 
@@ -1054,10 +1029,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   pointer-events: none; /* 不捕获任何事件 */
-}
-
-.page-nav-left {
-  left: 0;
 }
 
 .page-nav-right {
