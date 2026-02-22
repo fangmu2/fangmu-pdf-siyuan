@@ -115,6 +115,15 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 
 ## 🔄 Changelog
 
+### v0.0.19
+- Fixed: Image issues
+
+### v0.0.18
+- Fixed: Annotation highlight marker vertical offset issue (unified coordinate reference using `viewport.height`)
+- Improved: Page navigation buttons no longer interfere with PDF panning (require hover delay to activate)
+- Improved: Page indicator moved to bottom-right corner, no longer blocks PDF content
+- Improved: Smaller navigation area with hover delay to prevent accidental clicks during text selection
+
 ### v0.0.17
 - Fixed: `indexOf` error when selecting SiYuan documents in dropdown
 - Fixed: Document list not showing after clearing selection
