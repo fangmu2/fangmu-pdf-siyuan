@@ -50,28 +50,22 @@ export function parseAnnotationFromBlock(
   try {
     // 1. 解析 IAL（可能是字符串或对象）
     const ial = parseIAL(block.ial);
-    console.log('[parseAnnotationFromBlock] 块ID:', block.id, 'IAL:', ial);
 
     // 2. 从IAL中提取file-annotation-ref属性
     const fileAnnotationRef = ial['file-annotation-ref'];
     if (!fileAnnotationRef) {
-      console.log('[parseAnnotationFromBlock] 没有 file-annotation-ref 属性');
       return null;
     }
-
-    console.log('[parseAnnotationFromBlock] file-annotation-ref:', fileAnnotationRef);
 
     // 3. 解析引用字符串
     const parsed = parseFileAnnotationRef(fileAnnotationRef);
     if (!parsed) {
-      console.log('[parseAnnotationFromBlock] 解析 file-annotation-ref 失败');
       return null;
     }
 
     // 4. 如果指定了期望的PDF路径，进行过滤
     const expectedPdfName = expectedPdfPath.split('/').pop() || '';
     if (expectedPdfPath && !parsed.pdfName.includes(expectedPdfName) && !expectedPdfName.includes(parsed.pdfName)) {
-      console.log('[parseAnnotationFromBlock] PDF 名称不匹配:', parsed.pdfName, 'vs', expectedPdfName);
       return null;
     }
 
@@ -104,7 +98,6 @@ export function parseAnnotationFromBlock(
       parentHPath: ial['hpath']
     };
 
-    console.log('[parseAnnotationFromBlock] 解析成功:', annotation);
     return annotation;
 
   } catch (e) {

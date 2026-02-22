@@ -263,10 +263,6 @@ export function getSelectionRect(
   const pdfY1 = pdfPageHeight - maxY / scale;
   const pdfY2 = pdfPageHeight - minY / scale;
 
-  console.log('[getSelectionRect] scale:', scale, 'pdfPageHeight:', pdfPageHeight);
-  console.log('[getSelectionRect] CSS坐标:', { minX, minY, maxX, maxY });
-  console.log('[getSelectionRect] PDF坐标:', { pdfX1, pdfY1, pdfX2, pdfY2 });
-
   return [pdfX1, pdfY1, pdfX2, pdfY2];
 }
 

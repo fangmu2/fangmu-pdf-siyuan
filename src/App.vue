@@ -465,7 +465,6 @@ const onDocSelect = () => {
   const doc = targetDocOptions.value.find(d => d.name === targetDocSearch.value);
   if (doc) {
     targetDoc.value = doc;
-    console.log('[onDocSelect] 已选择目标文档:', doc.name, doc.id);
     // 选择新文档后重置防抖状态，允许重新创建标注
     lastCreatedText = '';
     lastCreatedLevel = '';
@@ -710,8 +709,6 @@ const createNewProject = async () => {
     loadProjects();
     newProjectDialog.value.visible = false;
     showProjectManager.value = false;
-
-    console.log('[createNewProject] 创建项目成功:', project);
   } catch (error) {
     console.error('创建项目失败:', error);
     alert('创建项目失败，请查看控制台');
@@ -828,8 +825,6 @@ const handleAnnotationDelete = async (ann: PDFAnnotation) => {
     updateProject(currentProject.value.id, {
       annotationCount: annotations.value.length
     });
-
-    console.log('[handleAnnotationDelete] 删除成功:', ann.id);
   } catch (error: any) {
     console.error('删除标注失败:', error);
     alert(`删除失败: ${error.message || '未知错误'}`);
@@ -881,9 +876,6 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
 
   // 保存
   saveProjectAnnotations(currentProject.value.id, annotations.value);
-
-  console.log('[handleAnnotationMerge] 合并成功:', sourceId, '->', targetId,
-    '同时移动了', sourceChildren.length, '个子块');
 };
 
 // 取消合并
@@ -919,8 +911,6 @@ const handleAnnotationUnmerge = (annotationId: string) => {
 
   // 保存
   saveProjectAnnotations(currentProject.value.id, annotations.value);
-
-  console.log('[handleAnnotationUnmerge] 取消合并成功:', annotationId);
 };
 
 // 处理光标位置变化
@@ -932,9 +922,6 @@ const handleCursorChange = (afterId: string | null) => {
 const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: boolean; reason?: string } => {
   if (!currentProject.value) return { success: false, reason: '无项目' };
 
-  console.log('[insertAnnotationAtPosition] 开始插入，当前数组长度:', annotations.value.length);
-  console.log('[insertAnnotationAtPosition] 新标注ID:', newAnnotation.id, '文本:', newAnnotation.text?.substring(0, 30));
-
   // 直接使用 Vue 响应式数组（单一数据源）
   const currentAnnotations = annotations.value;
 
@@ -945,14 +932,11 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     if (!seenIds.has(ann.id)) {
       seenIds.add(ann.id);
       deduplicatedAnnotations.push(ann);
-    } else {
-      console.warn('[insertAnnotationAtPosition] 发现历史重复数据，已清理:', ann.id);
     }
   }
 
   // 第二步：检查新标注ID是否已存在
   if (seenIds.has(newAnnotation.id)) {
-    console.warn('[insertAnnotationAtPosition] 标注ID已存在，跳过:', newAnnotation.id);
     return { success: false, reason: '标注ID已存在' };
   }
 
@@ -995,8 +979,6 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
   }
 
   if (isDuplicate) {
-    console.warn('[insertAnnotationAtPosition] 标注已存在，跳过:',
-      newAnnotation.isImage ? `图片 ${newAnnotation.imagePath}` : newAnnotation.text.substring(0, 30));
     return { success: false, reason: '该标注已存在，请勿重复创建' };
   }
 
@@ -1022,7 +1004,6 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
   const finalIds = newAnnotations.map(a => a.id);
   const finalUniqueIds = new Set(finalIds);
   if (finalIds.length !== finalUniqueIds.size) {
-    console.error('[insertAnnotationAtPosition] 最终检查发现重复ID，拒绝保存！');
     return { success: false, reason: '数据异常，请刷新页面后重试' };
   }
 
@@ -1033,7 +1014,6 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
   annotations.value = newAnnotations;
   saveProjectAnnotations(currentProject.value.id, newAnnotations);
 
-  console.log('[insertAnnotationAtPosition] 插入成功，新数组长度:', newAnnotations.length);
   return { success: true };
 };
 
@@ -1077,7 +1057,6 @@ const handleImageSelected = async (data: {
 
   // 使用锁防止重复调用
   if (imageSelectLock) {
-    console.warn('[handleImageSelected] 已有图片选择正在处理中，跳过');
     return;
   }
 
@@ -1133,12 +1112,6 @@ const handleImageSelected = async (data: {
       throw new Error('裁剪区域无效，请重新选择');
     }
 
-    console.log('[handleImageSelected] 裁剪参数:', {
-      canvas: { width: canvas.width, height: canvas.height },
-      crop: { x: cropX, y: cropY, width: cropWidth, height: cropHeight },
-      scale: { x: scaleX, y: scaleY }
-    });
-
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = cropWidth;
     tempCanvas.height = cropHeight;
@@ -1179,15 +1152,11 @@ const handleImageSelected = async (data: {
     const fileName = `pdf-excerpt-${Date.now()}.png`;
     const file = new File([blob], fileName, { type: 'image/png' });
 
-    console.log('[handleImageSelected] 上传图片:', fileName, '大小:', (blob.size / 1024).toFixed(1), 'KB');
-
     const uploadResult = await uploadFileToAssets(file);
 
     if (!uploadResult || !uploadResult.path) {
       throw new Error('图片上传失败');
     }
-
-    console.log('[handleImageSelected] 上传成功:', uploadResult.path);
 
     const newAnnotation: PDFAnnotation = {
       id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -1206,19 +1175,15 @@ const handleImageSelected = async (data: {
       updated: Date.now()
     };
 
-    console.log('[handleImageSelected] 开始创建标注:', newAnnotation.id);
-
     const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
     if (result.blockId) {
       newAnnotation.blockId = result.blockId;
-      console.log('[handleImageSelected] 标注已保存到思源文档:', result.blockId);
     } else if (result.error) {
       alert(result.error);
       creatingAnnotation.value = false;
       return;
-    } else {
-      console.warn('[handleImageSelected] 保存到思源文档失败，仅保存到本地');
     }
+
 
     // 在光标位置插入标注
     const insertResult = insertAnnotationAtPosition(newAnnotation);
@@ -1256,7 +1221,6 @@ const createAnnotationFromSelection = async () => {
 
   // 检查全局锁
   if (lock.locked) {
-    console.warn('[createAnnotationFromSelection] 全局锁已锁定，跳过');
     return;
   }
 
@@ -1264,13 +1228,11 @@ const createAnnotationFromSelection = async () => {
   if (selectedText.value === lock.text &&
       annotationLevel === lock.level &&
       (now - lock.time) < CREATE_LOCK_DURATION) {
-    console.warn('[createAnnotationFromSelection] 相同文本已在锁定时间内创建，跳过:', selectedText.value.substring(0, 30));
     return;
   }
 
   // 防止重复创建：检查正在创建中
   if (creatingAnnotation.value) {
-    console.warn('[createAnnotationFromSelection] 正在创建中，跳过重复请求');
     return;
   }
 
@@ -1300,20 +1262,15 @@ const createAnnotationFromSelection = async () => {
       updated: Date.now()
     };
 
-    console.log('[createAnnotationFromSelection] 开始创建标注:', newAnnotation.id, '级别:', annotationLevel, '文本:', newAnnotation.text.substring(0, 30));
-
     const result = await saveAnnotationToProject(currentProject.value, newAnnotation, targetDoc.value?.id);
     if (result.blockId) {
       newAnnotation.blockId = result.blockId;
-      console.log('[createAnnotation] 标注已保存到思源文档:', result.blockId);
     } else if (result.error) {
       alert(result.error);
       createAnnotationLock = false; // 释放锁
       creatingAnnotation.value = false;
       // 不重置 lastCreatedText，保持防抖状态，防止用户快速重试创建重复标注
       return;
-    } else {
-      console.warn('[createAnnotation] 保存到思源文档失败，仅保存到本地');
     }
 
     // 在光标位置插入标注

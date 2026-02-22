@@ -20,7 +20,6 @@ async function getProjectStorageAsync(): Promise<ProjectStorage> {
   try {
     const saved = await getPluginData<ProjectStorage>(PROJECTS_STORAGE_KEY);
     if (saved && Array.isArray(saved.projects)) {
-      console.log('[getProjectStorageAsync] 从思源加载项目数据:', saved.projects.length, '个项目');
       return saved;
     }
   } catch (e) {
@@ -34,10 +33,7 @@ async function getProjectStorageAsync(): Promise<ProjectStorage> {
  */
 async function saveProjectStorageAsync(storage: ProjectStorage): Promise<void> {
   try {
-    const success = await setPluginData(PROJECTS_STORAGE_KEY, storage);
-    if (success) {
-      console.log('[saveProjectStorageAsync] 已保存到思源:', storage.projects.length, '个项目');
-    }
+    await setPluginData(PROJECTS_STORAGE_KEY, storage);
   } catch (e) {
     console.error('保存项目存储失败:', e);
   }
@@ -120,7 +116,6 @@ export async function createProject(options: {
   // 更新缓存并保存到思源
   cachedStorage = storage;
   await saveProjectStorageAsync(storage);
-  console.log('[createProject] 项目已保存:', project.name);
 
   // 同步创建标注文档（等待完成）
   try {
@@ -133,7 +128,6 @@ export async function createProject(options: {
         cachedStorage.projects[projIndex].annotationDocId = docId;
         await saveProjectStorageAsync(cachedStorage);
       }
-      console.log('[createProject] 标注文档创建成功:', docId);
     }
   } catch (e: any) {
     console.warn('[createProject] 标注文档创建失败，项目已保存:', e.message);
@@ -190,8 +184,6 @@ export async function addPdfToProject(
   // 更新缓存并保存
   cachedStorage = storage;
   await saveProjectStorageAsync(storage);
-  
-  console.log('[addPdfToProject] 添加成功:', options.pdfName, '到项目', projectId);
 
   return newPdf;
 }
@@ -282,7 +274,6 @@ async function createAnnotationDocument(project: PDFProject): Promise<string | n
       }
     }
 
-    console.log('[createAnnotationDocument] 创建结果:', { docId, notebookId });
     return docId;
   } catch (e: any) {
     console.error('[createAnnotationDocument] 创建失败:', e);
@@ -454,7 +445,6 @@ export async function deleteProject(projectId: string): Promise<boolean> {
           notebook: notebookId,
           path: `/${project.name}-标注`
         });
-        console.log('[deleteProject] 删除标注文档成功');
       }
     } catch (e) {
       console.error('[deleteProject] 删除标注文档失败:', e);
@@ -504,12 +494,9 @@ export async function saveAnnotationToProject(
   annotation: PDFAnnotation,
   targetDocId?: string
 ): Promise<{ blockId: string | null; error?: string }> {
-  console.log('[saveAnnotationToProject] 开始保存标注, 项目:', project.name, '目标文档:', targetDocId);
-  
   // 使用传入的目标文档ID，或者尝试获取当前文档
   let docId = targetDocId || getCurrentDocId();
-  console.log('[saveAnnotationToProject] 文档ID:', docId);
-  
+
   if (!docId) {
     console.warn('[saveAnnotationToProject] 未找到目标文档');
     return { 
@@ -531,8 +518,7 @@ export async function saveAnnotationToProject(
   try {
     // 构建标注的 Markdown
     const markdown = buildAnnotationMarkdown(annotation);
-    console.log('[saveAnnotationToProject] 目标文档:', docId, 'Markdown 内容:', markdown.substring(0, 100) + '...');
-    
+
     // 追加到文档
     const result = await postApi<any>('/api/block/appendBlock', {
       dataType: 'markdown',
@@ -540,10 +526,8 @@ export async function saveAnnotationToProject(
       parentID: docId
     });
 
-    console.log('[saveAnnotationToProject] API 返回:', result);
-
     let blockId: string | null = null;
-    
+
     if (result) {
       if (result.doOperations && result.doOperations[0]?.id) {
         blockId = result.doOperations[0].id;
@@ -555,7 +539,6 @@ export async function saveAnnotationToProject(
     }
 
     if (blockId) {
-      console.log('[saveAnnotationToProject] 标注保存成功，blockId:', blockId);
       // 更新项目的标注数量
       updateProject(project.id, { 
         annotationCount: (project.annotationCount || 0) + 1 
@@ -660,7 +643,6 @@ export async function getProjectAnnotationsAsync(projectId: string): Promise<PDF
     const saved = await getPluginData<PDFAnnotation[]>(key);
     if (saved && Array.isArray(saved)) {
       annotationsCache.set(projectId, saved);
-      console.log('[getProjectAnnotationsAsync] 加载标注:', projectId, saved.length, '条');
       return saved;
     }
   } catch (e) {
@@ -677,7 +659,6 @@ export async function saveProjectAnnotationsAsync(projectId: string, annotations
   try {
     annotationsCache.set(projectId, annotations);
     await setPluginData(key, annotations);
-    console.log('[saveProjectAnnotationsAsync] 保存标注:', projectId, annotations.length, '条');
   } catch (e) {
     console.error('保存标注缓存失败:', e);
   }

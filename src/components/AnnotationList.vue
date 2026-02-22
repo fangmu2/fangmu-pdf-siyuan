@@ -477,19 +477,14 @@ const collapsedHeadings = ref<Set<string>>(new Set());
 // 切换标题折叠状态
 const toggleHeadingFold = (annotationId: string, e: Event) => {
   e.stopPropagation();
-  console.log('[toggleHeadingFold] 切换前，折叠集合:', Array.from(collapsedHeadings.value));
-  console.log('[toggleHeadingFold] 目标ID:', annotationId);
-  
+
   const newSet = new Set(collapsedHeadings.value);
   if (newSet.has(annotationId)) {
     newSet.delete(annotationId);
-    console.log('[toggleHeadingFold] 展开:', annotationId);
   } else {
     newSet.add(annotationId);
-    console.log('[toggleHeadingFold] 折叠:', annotationId);
   }
   collapsedHeadings.value = newSet;
-  console.log('[toggleHeadingFold] 切换后，折叠集合:', Array.from(newSet));
 };
 
 // 判断标题是否可以折叠（下面有内容或子块）
@@ -689,10 +684,6 @@ const documentTree = computed<DocumentNode[]>(() => {
       console.warn('[documentTree] 发现重复标注ID，已过滤:', a.id, a.text?.substring(0, 20));
     }
   }
-  
-  // 调试：记录当前折叠状态
-  console.log('[documentTree] 唯一标注数:', uniqueAnnotations.length, '原始数:', props.annotations.length);
-  console.log('[documentTree] 折叠集合:', Array.from(collapsedHeadings.value));
 
   // 【第二步：排序】按页码和创建时间排序，同时考虑 parentId 和 sortOrder
   const sorted = [...uniqueAnnotations].sort((a, b) => {

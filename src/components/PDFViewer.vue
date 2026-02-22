@@ -229,12 +229,10 @@ const renderHighlights = () => {
   const layer = highlightLayerRef.value;
   
   if (!layer) {
-    console.log('[renderHighlights] 高亮层不存在，跳过');
     return;
   }
-  
+
   if (!currentViewport) {
-    console.log('[renderHighlights] currentViewport 不存在，跳过');
     return;
   }
 
@@ -249,13 +247,10 @@ const renderHighlights = () => {
   
   // PDF页面原始高度（从viewBox获取）
   const pdfPageHeight = currentViewport.viewBox[3];
-  
-  console.log('[renderHighlights] scale:', scale, 'pdfPageHeight:', pdfPageHeight);
-  console.log('[renderHighlights] 当前页标注数:', currentPageAnnotations.value.length);
 
   for (const ann of currentPageAnnotations.value) {
     const [pdfX1, pdfY1, pdfX2, pdfY2] = ann.rect;
-    
+
     // PDF坐标转换为CSS坐标
     // CSS X = PDF X * scale
     // CSS Y = (pdfPageHeight - PDF Y) * scale  （Y轴翻转）
@@ -263,10 +258,6 @@ const renderHighlights = () => {
     const cssY = (pdfPageHeight - pdfY2) * scale;  // y2是底部，翻转后是CSS的top
     const cssWidth = (pdfX2 - pdfX1) * scale;
     const cssHeight = Math.max((pdfY2 - pdfY1) * scale, 14);
-
-    console.log('[renderHighlights] 标注:', ann.text?.substring(0, 20), 
-      'PDF:', ann.rect, 
-      'CSS:', { cssX, cssY, cssWidth, cssHeight });
 
     // 获取颜色
     const colors = LEVEL_COLORS[ann.level] || ANNOTATION_COLORS[ann.color] || ANNOTATION_COLORS.yellow;
@@ -337,13 +328,10 @@ const renderHighlights = () => {
     // 点击事件
     highlight.addEventListener('click', (e) => {
       e.stopPropagation();
-      console.log('[renderHighlights] 点击高亮元素:', ann.id, ann.text?.substring(0, 20));
       if (selectedAnnotation.value?.id === ann.id) {
         selectedAnnotation.value = null;
-        console.log('[renderHighlights] 取消选中');
       } else {
         selectedAnnotation.value = ann;
-        console.log('[renderHighlights] 选中标注:', ann.id);
         emit('annotation-click', ann);
       }
       renderHighlights();
@@ -412,7 +400,6 @@ const renderHighlights = () => {
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
-      console.log('[renderHighlights] 点击删除按钮:', ann.id, ann.text?.substring(0, 20));
       emit('annotation-delete', ann);
       selectedAnnotation.value = null;
     });
@@ -440,7 +427,6 @@ const handleKeyDown = (e: KeyboardEvent) => {
   
   if (selectedAnnotation.value) {
     e.preventDefault();
-    console.log('[handleKeyDown] 删除选中的标注:', selectedAnnotation.value.id);
     emit('annotation-delete', selectedAnnotation.value);
     selectedAnnotation.value = null;
     renderHighlights();
@@ -457,7 +443,6 @@ const handleTextSelection = () => {
 
   // 全局锁检查：如果正在处理中，直接返回
   if (lock.locked) {
-    console.log('[handleTextSelection] 全局锁已锁定，跳过');
     return;
   }
 
@@ -484,7 +469,6 @@ const handleTextSelection = () => {
 
   // 检查是否是最近发出过的相同文本（防止重复）
   if (text === lock.lastEmittedText && (now - lock.time) < SELECTION_LOCK_DURATION) {
-    console.log('[handleTextSelection] 最近已发出相同文本，跳过:', text.substring(0, 20));
     releaseLock();
     return;
   }
@@ -495,8 +479,6 @@ const handleTextSelection = () => {
   lock.lastEmittedText = text; // 记录最后发出的文本
 
   const rect = getSelectionRect(textLayerRef.value);
-  
-  console.log('[handleTextSelection] 选中文本:', text.substring(0, 30), 'rect:', rect);
 
   emit('text-selected', {
     text,
@@ -646,8 +628,7 @@ watch(() => props.highlightAnnotation, () => {
 });
 
 // 监听标注变化 - 确保删除后能正确重新渲染
-watch(() => props.annotations, (newVal, oldVal) => {
-  console.log('[PDFViewer] annotations 变化, 新长度:', newVal?.length, '旧长度:', oldVal?.length);
+watch(() => props.annotations, () => {
   // 无论 pdfDoc 和 currentViewport 是否存在，都尝试重新渲染
   if (highlightLayerRef.value) {
     renderHighlights();

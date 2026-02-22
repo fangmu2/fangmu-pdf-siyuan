@@ -62,8 +62,6 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
   // 目标路径: /data/assets/xxx.png
   const targetPath = `/data/assets/${uniqueFileName}`;
 
-  console.log('[uploadFileToAssets] 内核地址:', kernelBase, '目标路径:', targetPath);
-
   // 使用 FormData 上传
   const formData = new FormData();
   formData.append("path", targetPath);
@@ -75,8 +73,7 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
   });
 
   const json = await res.json();
-  console.log('[uploadFileToAssets] API响应:', json);
-  
+
   if (json.code !== 0) {
     throw new Error(`上传失败: ${json.msg}`);
   }
@@ -86,8 +83,6 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
   const actualPath = `assets/${uniqueFileName}`;  // 返回相对路径格式
   const actualName = file.name;
 
-  console.log(`[uploadFileToAssets] 上传成功, 路径: ${actualPath}`);
-  
   return {
     path: actualPath,
     name: actualName
@@ -126,8 +121,6 @@ export async function getFileAsBlob(path: string): Promise<Blob> {
   // 直接通过静态资源路径访问文件
   // 思源的 assets 文件可以通过 /assets/xxx.pdf 直接访问
   const assetUrl = `${kernelBase}/assets/${fileName}`;
-  
-  console.log(`[getFileAsBlob] 原始路径: ${path}, 静态资源URL: ${assetUrl}`);
 
   const res = await fetch(assetUrl);
   
@@ -146,9 +139,7 @@ export async function getFileAsBlob(path: string): Promise<Blob> {
   if (blob.type && !blob.type.includes('pdf') && !blob.type.includes('octet-stream')) {
     console.warn(`[getFileAsBlob] 文件类型可能不正确: ${blob.type}`);
   }
-  
-  console.log(`[getFileAsBlob] 获取成功, 大小: ${blob.size} bytes, 类型: ${blob.type}`);
-  
+
   return blob;
 }
 
@@ -180,19 +171,16 @@ export async function getPluginData<T = any>(key: string): Promise<T | null> {
     });
 
     if (!res.ok) {
-      console.log('[getPluginData] 文件不存在或读取失败:', key);
       return null;
     }
 
     const text = await res.text();
     if (text) {
       const data = JSON.parse(text);
-      console.log('[getPluginData] 加载成功:', key);
       return data as T;
     }
     return null;
   } catch (e) {
-    console.log('[getPluginData] 数据不存在或解析失败:', key, e);
     return null;
   }
 }
@@ -208,7 +196,6 @@ export function updateCachedDocId(): string | null {
   const docId = fetchCurrentDocId();
   if (docId) {
     cachedCurrentDocId = docId;
-    console.log('[updateCachedDocId] 已缓存当前文档ID:', docId);
   }
   return docId;
 }
@@ -232,14 +219,13 @@ function fetchCurrentDocId(): string | null {
       const protyle = siyuan.editor.protyle;
       
       // 尝试多种可能的路径获取 rootID
-      const docId = protyle.block?.rootID 
-        || protyle.options?.rootId 
+      const docId = protyle.block?.rootID
+        || protyle.options?.rootId
         || protyle.wysiwyg?.element?.dataset?.rootid
         || protyle.element?.dataset?.rootid
         || protyle.doc?.id;
-      
+
       if (docId) {
-        console.log('[fetchCurrentDocId] 从编辑器protyle获取:', docId);
         return docId;
       }
       
@@ -247,19 +233,17 @@ function fetchCurrentDocId(): string | null {
       if (protyle.block?.parentElement) {
         const rootId = protyle.block.parentElement.dataset?.rootid;
         if (rootId) {
-          console.log('[fetchCurrentDocId] 从block父元素获取:', rootId);
           return rootId;
         }
       }
     }
-    
+
     // 方式2: 移动端编辑器
     if (siyuan?.mobile?.editor?.protyle) {
       const mobileProtyle = siyuan.mobile.editor.protyle;
-      const docId = mobileProtyle.block?.rootID 
+      const docId = mobileProtyle.block?.rootID
         || mobileProtyle.element?.dataset?.rootid;
       if (docId) {
-        console.log('[fetchCurrentDocId] 从移动端编辑器获取:', docId);
         return docId;
       }
     }
@@ -269,29 +253,25 @@ function fetchCurrentDocId(): string | null {
     if (focusedProtyle) {
       const container = focusedProtyle.closest('.protyle') as HTMLElement;
       if (container?.dataset?.rootid) {
-        console.log('[fetchCurrentDocId] 从焦点DOM获取:', container.dataset.rootid);
         return container.dataset.rootid;
       }
     }
-    
+
     // 方式4: 获取页面上第一个可见的编辑器
     const visibleProtyle = document.querySelector('.protyle[data-rootid]') as HTMLElement;
     if (visibleProtyle?.dataset?.rootid) {
-      console.log('[fetchCurrentDocId] 从可见DOM获取:', visibleProtyle.dataset.rootid);
       return visibleProtyle.dataset.rootid;
     }
-    
+
     // 方式5: 从 protyle-wysiwyg 元素获取
     const wysiwyg = document.querySelector('.protyle-wysiwyg[data-doc-type]') as HTMLElement;
     if (wysiwyg) {
       const container = wysiwyg.closest('.protyle') as HTMLElement;
       if (container?.dataset?.rootid) {
-        console.log('[fetchCurrentDocId] 从wysiwyg获取:', container.dataset.rootid);
         return container.dataset.rootid;
       }
     }
-    
-    console.log('[fetchCurrentDocId] 未找到当前文档');
+
     return null;
   } catch (e) {
     console.error('[fetchCurrentDocId] 获取失败:', e);
@@ -306,7 +286,6 @@ function fetchCurrentDocId(): string | null {
 export function getCurrentDocId(): string | null {
   // 优先使用缓存的文档ID
   if (cachedCurrentDocId) {
-    console.log('[getCurrentDocId] 使用缓存的文档ID:', cachedCurrentDocId);
     return cachedCurrentDocId;
   }
   // 如果没有缓存，尝试实时获取
@@ -356,17 +335,14 @@ export async function searchSiyuanDocs(keyword: string): Promise<{ id: string; n
               WHERE type = 'd' 
               ORDER BY updated DESC LIMIT 30`;
     }
-    
-    console.log('[searchSiyuanDocs] 执行查询:', stmt);
-    
+
     const result = await postApi<{ id: string; name: string; box: string; hpath: string }[]>('/api/query/sql', {
       stmt
     });
-    
+
     // 过滤掉空结果
     const filteredResult = (result || []).filter(doc => doc.id && doc.name);
-    
-    console.log('[searchSiyuanDocs] 搜索结果:', filteredResult.length, '个文档');
+
     return filteredResult;
   } catch (e) {
     console.error('[searchSiyuanDocs] 搜索失败:', e);
@@ -414,7 +390,6 @@ export async function setPluginData<T>(key: string, value: T): Promise<boolean> 
 
     const json = await res.json();
     if (json.code === 0) {
-      console.log('[setPluginData] 保存成功:', key);
       return true;
     } else {
       console.error('[setPluginData] 保存失败:', json.msg);

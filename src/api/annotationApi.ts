@@ -22,8 +22,6 @@ function extractBasePdfName(fullName: string): string {
 export async function getAnnotationsForPdf(pdfPath: string): Promise<PDFAnnotation[]> {
   const pdfName = pdfPath.split('/').pop() || '';
   const baseName = extractBasePdfName(pdfName);
-  
-  console.log('[getAnnotationsForPdf] 查询PDF标注, 原始名称:', pdfName, ', 基础名称:', baseName);
 
   // 使用基础名称进行模糊匹配
   const sql = `
@@ -34,14 +32,7 @@ export async function getAnnotationsForPdf(pdfPath: string): Promise<PDFAnnotati
     LIMIT 100
   `;
 
-  console.log('[getAnnotationsForPdf] SQL:', sql);
-
   const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql });
-  console.log('[getAnnotationsForPdf] 查询到块数量:', blocks?.length || 0);
-  
-  if (blocks && blocks.length > 0) {
-    console.log('[getAnnotationsForPdf] 第一个块的IAL:', blocks[0].ial);
-  }
 
   const annotations: PDFAnnotation[] = [];
 
@@ -56,7 +47,6 @@ export async function getAnnotationsForPdf(pdfPath: string): Promise<PDFAnnotati
     }
   }
 
-  console.log('[getAnnotationsForPdf] 解析到标注数量:', annotations.length);
   return annotations;
 }
 
@@ -225,7 +215,6 @@ export async function createAnnotation(options: {
       });
       if (recentDocs && recentDocs.length > 0 && recentDocs[0].root_id) {
         docId = recentDocs[0].root_id;
-        console.log('通过最近编辑获取到文档ID:', docId);
       }
     } catch (e) {
       console.warn('通过 SQL 获取最近文档失败:', e);
@@ -237,7 +226,6 @@ export async function createAnnotation(options: {
         const currentDoc = await postApi<{ id: string; rootID?: string } | null>('/api/editor/getCurrentDoc', {});
         if (currentDoc && (currentDoc.id || currentDoc.rootID)) {
           docId = currentDoc.rootID || currentDoc.id;
-          console.log('获取到当前文档ID:', docId);
         }
       } catch (e) {
         // 这个 API 可能返回空响应，忽略错误
@@ -250,17 +238,12 @@ export async function createAnnotation(options: {
     throw new Error('无法确定目标文档，请先在思源中打开一个文档');
   }
 
-  console.log('准备插入标注到文档:', docId);
-  console.log('标注级别:', level, ', 标注内容:', markdown);
-
   // 使用 appendBlock 在文档末尾追加块
   const result = await postApi<{ doOperations?: Array<{ action: string; id: string }>; id?: string }[]>('/api/block/appendBlock', {
     dataType: 'markdown',
     data: markdown,
     parentID: docId
   });
-
-  console.log('appendBlock 返回结果:', result);
 
   let blockId: string | undefined;
   if (Array.isArray(result) && result.length > 0) {
