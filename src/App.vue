@@ -186,7 +186,7 @@
             :disabled="docSearchLoading"
           />
           <datalist id="doc-list">
-            <option v-for="doc in targetDocOptions" :key="doc.id" :value="doc.name" :data-id="doc.id" />
+            <option v-for="doc in targetDocOptions" :key="doc.id" :value="doc.name || ''" :data-id="doc.id" />
           </datalist>
           <button v-if="targetDoc" @click="clearTargetDoc" class="clear-btn" title="清除">✕</button>
           <div v-if="docSearchLoading" class="doc-search-spinner"></div>
@@ -455,9 +455,8 @@ const onDocSearchInput = () => {
 
 // 输入框聚焦时重新搜索
 const onDocFocus = () => {
-  if (targetDocOptions.value.length === 0) {
-    onDocSearchInput();
-  }
+  // 始终重新加载文档列表，确保显示最新数据
+  loadDocOptions();
 };
 
 // 选择文档
@@ -476,6 +475,8 @@ const onDocSelect = () => {
 const clearTargetDoc = () => {
   targetDoc.value = null;
   targetDocSearch.value = '';
+  // 重新加载文档列表
+  loadDocOptions();
 };
 
 // 加载文档列表
@@ -565,6 +566,10 @@ const switchProject = async (projectId: string) => {
     // 异步加载标注
     annotations.value = await getProjectAnnotationsAsync(proj.id);
     showProjectManager.value = false;
+    // 重置目标文档选择
+    targetDoc.value = null;
+    targetDocSearch.value = '';
+    targetDocOptions.value = [];
   }
 };
 

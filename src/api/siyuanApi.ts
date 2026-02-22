@@ -52,13 +52,13 @@ export async function postApi<T = any>(
  */
 export async function uploadFileToAssets(file: File): Promise<{ path: string; name: string }> {
   const kernelBase = getKernelBase();
-  
+
   // 生成唯一的文件名，避免冲突
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
   const ext = file.name.split('.').pop() || 'png';
   const uniqueFileName = `pdf-excerpt-${timestamp}-${randomSuffix}.${ext}`;
-  
+
   // 目标路径: /data/assets/xxx.png
   const targetPath = `/data/assets/${uniqueFileName}`;
 
@@ -100,7 +100,7 @@ export function toAssetUrl(path: string): string {
   if (path.includes('/')) {
     fileName = path.split('/').pop() || path;
   }
-  
+
   // 思源内核静态资源访问路径
   return `${kernelBase}/assets/${fileName}`;
 }
@@ -111,7 +111,7 @@ export function toAssetUrl(path: string): string {
  */
 export async function getFileAsBlob(path: string): Promise<Blob> {
   const kernelBase = getKernelBase();
-  
+
   // 提取文件名
   let fileName = path;
   if (path.includes('/')) {
@@ -123,18 +123,18 @@ export async function getFileAsBlob(path: string): Promise<Blob> {
   const assetUrl = `${kernelBase}/assets/${fileName}`;
 
   const res = await fetch(assetUrl);
-  
+
   if (!res.ok) {
     throw new Error(`获取文件失败: ${res.status} ${res.statusText}`);
   }
-  
+
   const blob = await res.blob();
-  
+
   // 验证是否是有效的 PDF 文件
   if (blob.size === 0) {
     throw new Error('获取的文件为空');
   }
-  
+
   // 检查文件类型，如果不是 PDF，可能是错误响应
   if (blob.type && !blob.type.includes('pdf') && !blob.type.includes('octet-stream')) {
     console.warn(`[getFileAsBlob] 文件类型可能不正确: ${blob.type}`);
@@ -157,7 +157,7 @@ export async function listAssetsFiles(): Promise<string[]> {
 /**
  * 获取插件持久化数据（使用文件存储）
  * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下
- */
+ */1
 export async function getPluginData<T = any>(key: string): Promise<T | null> {
   const kernelBase = getKernelBase();
   try {
@@ -213,11 +213,11 @@ export function getCachedDocId(): string | null {
 function fetchCurrentDocId(): string | null {
   try {
     const siyuan = (window as any).siyuan;
-    
+
     // 方式1: 从编辑器 protyle 获取（桌面端）
     if (siyuan?.editor?.protyle) {
       const protyle = siyuan.editor.protyle;
-      
+
       // 尝试多种可能的路径获取 rootID
       const docId = protyle.block?.rootID
         || protyle.options?.rootId
@@ -228,7 +228,7 @@ function fetchCurrentDocId(): string | null {
       if (docId) {
         return docId;
       }
-      
+
       // 尝试从 protyle.block 获取
       if (protyle.block?.parentElement) {
         const rootId = protyle.block.parentElement.dataset?.rootid;
@@ -247,7 +247,7 @@ function fetchCurrentDocId(): string | null {
         return docId;
       }
     }
-    
+
     // 方式3: 从DOM获取当前焦点的编辑器
     const focusedProtyle = document.querySelector('.protyle:focus-within, .protyle-wysiwyg:focus-within') as HTMLElement;
     if (focusedProtyle) {
@@ -316,23 +316,23 @@ export async function searchSiyuanDocs(keyword: string): Promise<{ id: string; n
   try {
     const kernelBase = getKernelBase();
     let stmt: string;
-    
+
     // 转义单引号防止 SQL 注入
     const escapedKeyword = keyword ? keyword.replace(/'/g, "''").trim() : '';
-    
+
     if (escapedKeyword) {
       // 模糊搜索 - 同时搜索文档标题和内容
-      stmt = `SELECT DISTINCT root_id as id, 
-              (SELECT content FROM blocks b2 WHERE b2.root_id = b.root_id AND type = 'd' LIMIT 1) as name, 
-              box, hpath 
+      stmt = `SELECT DISTINCT root_id as id,
+              (SELECT content FROM blocks b2 WHERE b2.root_id = b.root_id AND type = 'd' LIMIT 1) as name,
+              box, hpath
               FROM blocks b
-              WHERE type = 'd' 
+              WHERE type = 'd'
               AND (content LIKE '%${escapedKeyword}%' OR hpath LIKE '%${escapedKeyword}%')
               ORDER BY updated DESC LIMIT 30`;
     } else {
       // 获取最近更新的文档
-      stmt = `SELECT root_id as id, content as name, box, hpath FROM blocks 
-              WHERE type = 'd' 
+      stmt = `SELECT root_id as id, content as name, box, hpath FROM blocks
+              WHERE type = 'd'
               ORDER BY updated DESC LIMIT 30`;
     }
 
@@ -340,8 +340,15 @@ export async function searchSiyuanDocs(keyword: string): Promise<{ id: string; n
       stmt
     });
 
-    // 过滤掉空结果
-    const filteredResult = (result || []).filter(doc => doc.id && doc.name);
+    // 过滤掉空结果，并确保所有字段都有有效值
+    const filteredResult = (result || [])
+      .filter(doc => doc.id && doc.name)
+      .map(doc => ({
+        id: doc.id || '',
+        name: doc.name || '',
+        box: doc.box || '',
+        hpath: doc.hpath || ''
+      }));
 
     return filteredResult;
   } catch (e) {
