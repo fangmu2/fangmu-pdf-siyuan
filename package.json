@@ -1,5 +1,5 @@
 {
-  "name": "fangmu-pdf-excerpt-assistant",
+  "name": "fangmu-pdf-siyuan",
   "version": "0.0.17",
   "type": "module",
   "description": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
