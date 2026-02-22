@@ -1,6 +1,6 @@
 {
   "name": "fangmu-pdf-siyuan",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "type": "module",
   "description": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
   "author": "方木",
