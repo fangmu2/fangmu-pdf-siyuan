@@ -6,20 +6,17 @@
   "minAppVersion": "3.3.0",
   "backends": ["all"],
   "frontends": ["all"],
-  "disabledInPublish": false,
+  "disabledInPublish": true,
   "displayName": {
     "default": "PDF Excerpt Assistant",
-    "en_US": "PDF Excerpt Assistant",
     "zh_CN": "PDF 摘录助手"
   },
   "description": {
     "default": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
-    "en_US": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
     "zh_CN": "PDF 标注摘录工具，支持文字/图片摘录、多级标题、多 PDF 项目管理"
   },
   "readme": {
     "default": "README.md",
-    "en_US": "README.md",
     "zh_CN": "README_zh_CN.md"
   },
   "funding": {

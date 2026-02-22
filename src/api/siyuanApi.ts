@@ -157,17 +157,42 @@ export async function listAssetsFiles(): Promise<string[]> {
 /**
  * 获取插件持久化数据（使用文件存储）
  * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下
- */1
+ */
 export async function getPluginData<T = any>(key: string): Promise<T | null> {
   const kernelBase = getKernelBase();
+  const filePath = `/data/storage/petal/plugin-sample-vite-vue/${key}.json`;
+  
   try {
-    // 使用文件 API 读取数据
+    // 先检查文件是否存在，避免请求不存在的文件产生 404 日志
+    const checkRes = await fetch(`${kernelBase}/api/file/readDir`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ path: `/data/storage/petal/plugin-sample-vite-vue` }),
+    });
+    
+    // 如果目录不存在或请求失败，返回 null
+    if (!checkRes.ok) {
+      return null;
+    }
+    
+    const dirData = await checkRes.json();
+    // 检查目标文件是否存在于目录中
+    const fileName = `${key}.json`;
+    const fileExists = dirData?.data?.some((item: { name: string }) => item.name === fileName);
+    
+    if (!fileExists) {
+      return null;
+    }
+
+    // 文件存在，读取内容
     const res = await fetch(`${kernelBase}/api/file/getFile`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ path: `/data/storage/petal/plugin-sample-vite-vue/${key}.json` }),
+      body: JSON.stringify({ path: filePath }),
     });
 
     if (!res.ok) {
@@ -380,14 +405,26 @@ export async function getDocNotebookId(docId: string): Promise<string | null> {
  */
 export async function setPluginData<T>(key: string, value: T): Promise<boolean> {
   const kernelBase = getKernelBase();
+  const storageDir = `/data/storage/petal/plugin-sample-vite-vue`;
+  
   try {
+    // 先确保目录存在（使用 isDir=true 创建目录）
+    const dirFormData = new FormData();
+    dirFormData.append("path", storageDir);
+    dirFormData.append("isDir", "true");
+    
+    await fetch(`${kernelBase}/api/file/putFile`, {
+      method: "POST",
+      body: dirFormData,
+    });
+
     // 使用 FormData 存储文件
     const content = JSON.stringify(value, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
     const file = new File([blob], `${key}.json`, { type: 'application/json' });
 
     const formData = new FormData();
-    formData.append("path", `/data/storage/petal/plugin-sample-vite-vue/${key}.json`);
+    formData.append("path", `${storageDir}/${key}.json`);
     formData.append("file", file);
 
     const res = await fetch(`${kernelBase}/api/file/putFile`, {

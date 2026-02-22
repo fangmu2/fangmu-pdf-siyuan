@@ -146,7 +146,7 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 
 ## 💬 Feedback
 
-For issues or suggestions, please feedback at [Gitee Issues](https://github.com/fangmu2/fangmu-pdf-siyuan/issues).
+For issues or suggestions, please feedback at [GitHub Issues](https://github.com/fangmu2/fangmu-pdf-siyuan/issues).
 
 ## 📄 License
 

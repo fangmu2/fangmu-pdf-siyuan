@@ -309,8 +309,8 @@
             >
               <div class="image-container">
                 <img
-                  v-if="node.annotation.imagePath && imageStatus[node.annotation.id] !== 'error'"
-                  :src="getImageUrl(node.annotation.imagePath)"
+                  v-if="isValidImagePath(node.annotation.imagePath) && imageStatus[node.annotation.id] !== 'error'"
+                  :src="getImageUrl(node.annotation.imagePath!)"
                   class="excerpt-image"
                   @load="handleImageLoad(node.annotation.id)"
                   @error="handleImageError($event, node.annotation)"
@@ -601,6 +601,20 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeyDown);
 });
+
+// 检查图片路径是否有效（排除 blob URL、临时文件等无效路径）
+const isValidImagePath = (path: string | undefined): boolean => {
+  if (!path) return false;
+  // 排除 blob URL
+  if (path.startsWith('blob:')) return false;
+  // 排除 file:// 协议
+  if (path.startsWith('file://')) return false;
+  // 排除 Windows 临时文件路径（以 @ 开头）
+  if (path.startsWith('@')) return false;
+  // 排除 localhost 临时地址
+  if (path.includes('localhost') || path.includes('127.0.0.1')) return false;
+  return true;
+};
 
 // 获取图片URL
 const getImageUrl = (imagePath: string): string => {

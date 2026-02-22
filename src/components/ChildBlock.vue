@@ -20,8 +20,8 @@
       <!-- 图片类型 -->
       <template v-if="annotation.isImage">
         <img
-          v-if="annotation.imagePath && imageStatus[annotation.id] !== 'error'"
-          :src="getImageUrl(annotation.imagePath)"
+          v-if="isValidImagePath(annotation.imagePath) && imageStatus[annotation.id] !== 'error'"
+          :src="getImageUrl(annotation.imagePath!)"
           class="excerpt-image"
           @load="onImageLoad(annotation.id)"
           @error="onImageError($event, annotation)"
@@ -89,6 +89,20 @@ const emit = defineEmits<{
   (e: 'image-load', annotationId: string): void;
   (e: 'image-error', event: Event, annotation: PDFAnnotation): void;
 }>();
+
+// 检查图片路径是否有效（排除 blob URL、临时文件等无效路径）
+const isValidImagePath = (path: string | undefined): boolean => {
+  if (!path) return false;
+  // 排除 blob URL
+  if (path.startsWith('blob:')) return false;
+  // 排除 file:// 协议
+  if (path.startsWith('file://')) return false;
+  // 排除 Windows 临时文件路径（以 @ 开头）
+  if (path.startsWith('@')) return false;
+  // 排除 localhost 临时地址
+  if (path.includes('localhost') || path.includes('127.0.0.1')) return false;
+  return true;
+};
 
 // 获取图片URL
 const getImageUrl = (imagePath: string): string => {
