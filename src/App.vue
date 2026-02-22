@@ -3,34 +3,53 @@
   <div class="pdf-mindmap-container">
     <!-- 顶部标题栏 -->
     <div class="panel-header">
-      <div class="header-title">
-        <span>PDF 思维导图摘录</span>
-        <span class="version-badge">v0.0.14</span>
-      </div>
-      <div class="header-actions">
+      <div class="header-left">
         <button
           @click="showProjectManager = !showProjectManager"
-          class="b3-button b3-button--outline"
+          class="header-btn project-btn"
+          :class="{ active: showProjectManager }"
           title="项目管理"
         >
-          📚 项目
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+          </svg>
+          <span class="btn-text">项目</span>
+        </button>
+        <div class="header-divider"></div>
+        <div class="header-title">
+          <span class="title-main">{{ currentProject?.name || 'PDF 摘录助手' }}</span>
+          <span v-if="currentPdf" class="title-sub">{{ currentPdf.name }}</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button
+          @click="toggleView"
+          class="header-btn icon-btn"
+          :title="viewMode === 'split' ? '切换到列表视图' : '切换到分屏视图'"
+        >
+          <svg v-if="viewMode === 'split'" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M3 5v14h18V5H3zm16 12H5V7h14v10z"/>
+          </svg>
         </button>
         <button
           @click="toggleFullscreen"
-          class="b3-button b3-button--outline"
+          class="header-btn icon-btn"
           :title="isFullscreen ? '退出全屏' : '全屏'"
         >
-          <svg><use :xlink:href="isFullscreen ? '#iconMin' : '#iconFullscreen'"></use></svg>
+          <svg v-if="isFullscreen" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+          </svg>
         </button>
-        <button
-          @click="toggleView"
-          class="b3-button b3-button--outline"
-          :title="viewMode === 'split' ? '切换到列表视图' : '切换到分屏视图'"
-        >
-          <svg><use :xlink:href="viewMode === 'split' ? '#iconList' : '#iconSplit'"></use></svg>
-        </button>
-        <button @click="handleClose" class="b3-button b3-button--outline">
-          <svg><use xlink:href="#iconClose"></use></svg>
+        <button @click="handleClose" class="header-btn icon-btn close-btn" title="关闭">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -127,58 +146,77 @@
     </div>
 
     <!-- 工具栏 -->
-    <div class="toolbar">
-      <!-- 当前项目信息 + PDF切换 -->
-      <div class="toolbar-section project-section">
+    <div class="toolbar" v-if="currentProject">
+      <!-- 左侧：PDF切换 + 添加PDF -->
+      <div class="toolbar-left">
+        <select
+          v-if="currentProject.pdfs.length > 1"
+          v-model="currentPdfId"
+          class="pdf-select"
+          @change="onPdfSwitch"
+        >
+          <option v-for="pdf in currentProject.pdfs" :key="pdf.id" :value="pdf.id">
+            {{ pdf.name }}
+          </option>
+        </select>
         <button
-          v-if="currentProject"
           @click="triggerAddPdf"
-          class="b3-button b3-button--outline"
+          class="toolbar-btn"
           title="添加PDF到当前项目"
         >
-          + PDF
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          <span>PDF</span>
         </button>
-        <button
-          v-else
-          @click="showNewProjectDialog"
-          class="b3-button b3-button--outline"
-          :disabled="uploading"
-        >
-          {{ uploading ? '导入中...' : '+ 新项目' }}
-        </button>
+      </div>
 
-        <!-- PDF切换下拉框 -->
-        <div v-if="currentProject && currentProject.pdfs.length > 0" class="pdf-switcher">
-          <select
-            v-model="currentPdfId"
-            class="pdf-select b3-select"
-            @change="onPdfSwitch"
-          >
-            <option v-for="pdf in currentProject.pdfs" :key="pdf.id" :value="pdf.id">
-              📄 {{ pdf.name }}
+      <!-- 中间：标注级别 + 摘录模式 -->
+      <div class="toolbar-center">
+        <div class="toolbar-group">
+          <select v-model="currentLevel" class="level-select">
+            <option v-for="level in ANNOTATION_LEVELS" :key="level.value" :value="level.value">
+              {{ level.label }}
             </option>
           </select>
         </div>
+        <div class="toolbar-divider"></div>
+        <div class="toolbar-group mode-group">
+          <button
+            @click="extractMode = 'text'"
+            class="mode-btn"
+            :class="{ active: extractMode === 'text' }"
+            title="文字摘录"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            <span>文字</span>
+          </button>
+          <button
+            @click="extractMode = 'image'"
+            class="mode-btn"
+            :class="{ active: extractMode === 'image' }"
+            title="图片摘录"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+            </svg>
+            <span>图片</span>
+          </button>
+        </div>
       </div>
 
-      <!-- 标注级别选择 -->
-      <div class="toolbar-section level-section" v-if="currentProject">
-        <label class="level-label">级别:</label>
-        <select v-model="currentLevel" class="level-select b3-select">
-          <option v-for="level in ANNOTATION_LEVELS" :key="level.value" :value="level.value">
-            {{ level.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- 目标文档选择 -->
-      <div class="toolbar-section doc-section" v-if="currentProject">
-        <label class="level-label">目标:</label>
-        <div class="doc-input-wrapper">
+      <!-- 右侧：目标文档 + 页码 -->
+      <div class="toolbar-right">
+        <div class="doc-selector">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" class="doc-icon">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
           <input
             v-model="targetDocSearch"
-            class="doc-search-input b3-text-field"
-            :placeholder="docSearchLoading ? '搜索中...' : '输入搜索文档...'"
+            class="doc-input"
+            :placeholder="targetDoc ? targetDoc.name : '目标文档'"
             list="doc-list"
             @input="onDocSearchInput"
             @change="onDocSelect"
@@ -188,48 +226,28 @@
           <datalist id="doc-list">
             <option v-for="doc in targetDocOptions" :key="doc.id" :value="doc.name || ''" :data-id="doc.id" />
           </datalist>
-          <button v-if="targetDoc" @click="clearTargetDoc" class="clear-btn" title="清除">✕</button>
-          <div v-if="docSearchLoading" class="doc-search-spinner"></div>
+          <button v-if="targetDoc" @click="clearTargetDoc" class="doc-clear" title="清除">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
         </div>
-      </div>
-
-      <!-- 摘录模式切换 -->
-      <div class="toolbar-section mode-section" v-if="currentProject">
-        <button
-          @click="extractMode = 'text'"
-          class="b3-button"
-          :class="extractMode === 'text' ? 'b3-button--primary' : 'b3-button--outline'"
-          title="文字摘录模式"
-        >
-          📝 文字
-        </button>
-        <button
-          @click="extractMode = 'image'"
-          class="b3-button"
-          :class="extractMode === 'image' ? 'b3-button--primary' : 'b3-button--outline'"
-          title="图片摘录模式"
-        >
-          📷 图片
-        </button>
-      </div>
-
-      <!-- 页码控制 -->
-      <div class="toolbar-section" v-if="totalPages > 0">
-        <button
-          @click="prevPage"
-          class="b3-button b3-button--outline"
-          :disabled="currentPage <= 1"
-        >
-          <svg><use xlink:href="#iconLeft"></use></svg>
-        </button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button
-          @click="nextPage"
-          class="b3-button b3-button--outline"
-          :disabled="currentPage >= totalPages"
-        >
-          <svg><use xlink:href="#iconRight"></use></svg>
-        </button>
+        
+        <div class="toolbar-divider" v-if="totalPages > 0"></div>
+        
+        <div class="page-control" v-if="totalPages > 0">
+          <button @click="prevPage" class="page-btn" :disabled="currentPage <= 1">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+          </button>
+          <span class="page-num">{{ currentPage }}/{{ totalPages }}</span>
+          <button @click="nextPage" class="page-btn" :disabled="currentPage >= totalPages">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1392,35 +1410,317 @@ onUnmounted(() => {
   height: 100%;
   background: var(--b3-theme-background);
   color: var(--b3-theme-on-background);
+  font-size: 14px;
 }
 
+/* ===== 头部区域 ===== */
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--b3-border-color);
+  padding: 0 12px;
+  height: 48px;
   background: var(--b3-theme-surface);
+  border-bottom: 1px solid var(--b3-border-color);
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+}
+
+.header-btn:hover {
+  background: var(--b3-theme-surface-light);
+}
+
+.header-btn.active {
+  background: var(--b3-theme-primary-light);
+  color: var(--b3-theme-primary);
+}
+
+.header-btn.icon-btn {
+  padding: 8px;
+}
+
+.header-btn.close-btn:hover {
+  background: var(--b3-theme-error-light);
+  color: var(--b3-theme-error);
+}
+
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--b3-border-color);
+  margin: 0 4px;
 }
 
 .header-title {
   display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.title-main {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--b3-theme-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.title-sub {
+  font-size: 11px;
+  color: var(--b3-theme-on-surface-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* ===== 工具栏 ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--b3-theme-surface);
+  border-bottom: 1px solid var(--b3-border-color);
+  gap: 12px;
+  flex-shrink: 0;
+  height: 44px;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+  display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: bold;
-  font-size: 16px;
 }
 
-.version-badge {
-  font-size: 10px;
-  padding: 2px 6px;
-  background: var(--b3-theme-primary-light);
-  border-radius: 10px;
+.toolbar-left {
+  flex-shrink: 0;
 }
 
-.header-actions {
+.toolbar-center {
+  flex: 1;
+  justify-content: center;
+}
+
+.toolbar-right {
+  flex-shrink: 0;
+}
+
+.toolbar-group {
   display: flex;
+  align-items: center;
   gap: 4px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--b3-border-color);
+  flex-shrink: 0;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.toolbar-btn:hover {
+  background: var(--b3-theme-primary-light);
+  border-color: var(--b3-theme-primary);
+  color: var(--b3-theme-primary);
+}
+
+.pdf-select {
+  padding: 5px 8px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+  font-size: 12px;
+  min-width: 140px;
+  max-width: 200px;
+  cursor: pointer;
+}
+
+.pdf-select:focus {
+  outline: none;
+  border-color: var(--b3-theme-primary);
+}
+
+.level-select {
+  padding: 5px 10px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+  font-size: 12px;
+  min-width: 90px;
+  cursor: pointer;
+}
+
+.level-select:focus {
+  outline: none;
+  border-color: var(--b3-theme-primary);
+}
+
+.mode-group {
+  display: flex;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: none;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-surface-light);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.mode-btn:not(:last-child) {
+  border-right: 1px solid var(--b3-border-color);
+}
+
+.mode-btn:hover {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-on-surface);
+}
+
+.mode-btn.active {
+  background: var(--b3-theme-primary);
+  color: white;
+}
+
+.doc-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  position: relative;
+}
+
+.doc-icon {
+  color: var(--b3-theme-on-surface-light);
+  flex-shrink: 0;
+}
+
+.doc-input {
+  border: none;
+  background: transparent;
+  color: var(--b3-theme-on-background);
+  font-size: 12px;
+  padding: 5px 2px;
+  width: 100px;
+}
+
+.doc-input:focus {
+  outline: none;
+}
+
+.doc-input::placeholder {
+  color: var(--b3-theme-on-surface-light);
+}
+
+.doc-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: var(--b3-theme-on-surface-light);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.doc-clear:hover {
+  background: var(--b3-theme-error-light);
+  color: var(--b3-theme-error);
+}
+
+.page-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--b3-theme-primary-light);
+  color: var(--b3-theme-primary);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-num {
+  font-size: 12px;
+  color: var(--b3-theme-on-surface);
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 项目管理面板 */
@@ -1431,23 +1731,25 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(2px);
 }
 
 .project-manager-panel,
 .dialog-panel {
   background: var(--b3-theme-surface);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  width: 550px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  width: 480px;
   max-width: 90vw;
-  max-height: 80vh;
+  max-height: 75vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .panel-title,
@@ -1455,73 +1757,98 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--b3-border-color);
-  font-weight: bold;
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 15px;
+  background: var(--b3-theme-background);
+}
+
+.panel-title button {
+  padding: 4px 8px;
+  font-size: 12px;
 }
 
 .project-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 12px;
 }
 
 .no-projects {
-  text-align: center;
-  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
   color: var(--b3-theme-on-surface-light);
+  text-align: center;
+}
+
+.no-projects p {
+  margin: 0;
+  font-size: 14px;
 }
 
 .project-item {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 12px;
-  border-radius: 6px;
+  flex-direction: column;
+  padding: 12px 14px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.15s;
   margin-bottom: 8px;
-  border: 1px solid var(--b3-border-color);
-}
-
-.project-item:hover {
+  border: 1px solid transparent;
   background: var(--b3-theme-background);
 }
 
+.project-item:hover {
+  background: var(--b3-theme-surface-light);
+  border-color: var(--b3-border-color);
+}
+
 .project-item.active {
-  background: var(--b3-theme-primary-light);
-  border-color: var(--b3-theme-primary);
+  background: var(--b3-theme-primary-lightest);
+  border-color: var(--b3-theme-primary-light);
+}
+
+.project-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .project-info {
   flex: 1;
+  min-width: 0;
 }
 
 .project-name {
   font-weight: 500;
-  font-size: 15px;
+  font-size: 14px;
   margin-bottom: 4px;
+  color: var(--b3-theme-on-surface);
 }
 
 .project-meta {
   display: flex;
   gap: 12px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--b3-theme-on-surface-light);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .project-pdfs {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  margin-top: 4px;
 }
 
 .pdf-tag {
   font-size: 11px;
   padding: 2px 6px;
-  background: var(--b3-theme-background);
+  background: var(--b3-theme-surface-light);
   border-radius: 3px;
   color: var(--b3-theme-on-surface-light);
 }
@@ -1530,24 +1857,32 @@ onUnmounted(() => {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.project-actions button {
+  padding: 4px 8px;
+  font-size: 11px;
 }
 
 .delete-btn:hover {
-  background: var(--b3-card-error-background);
-  color: var(--b3-card-error-color);
+  background: var(--b3-theme-error-light) !important;
+  border-color: var(--b3-theme-error) !important;
+  color: var(--b3-theme-error) !important;
 }
 
 .panel-footer,
 .dialog-footer {
-  padding: 16px;
+  padding: 12px 20px;
   border-top: 1px solid var(--b3-border-color);
   display: flex;
   justify-content: center;
   gap: 8px;
+  background: var(--b3-theme-background);
 }
 
 .dialog-body {
-  padding: 16px;
+  padding: 20px;
 }
 
 .form-group {
@@ -1559,21 +1894,24 @@ onUnmounted(() => {
   margin-bottom: 6px;
   font-size: 13px;
   color: var(--b3-theme-on-surface);
+  font-weight: 500;
 }
 
 .b3-text-field {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--b3-theme-background);
   color: var(--b3-theme-on-background);
   font-size: 14px;
+  transition: border-color 0.15s;
 }
 
 .b3-text-field:focus {
   outline: none;
   border-color: var(--b3-theme-primary);
+  box-shadow: 0 0 0 2px var(--b3-theme-primary-lightest);
 }
 
 /* 工具栏 */
@@ -1724,6 +2062,7 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-height: 0;
 }
 
 .panel-body.split {
@@ -1737,6 +2076,7 @@ onUnmounted(() => {
 .pdf-area {
   flex: 1;
   min-width: 0;
+  background: var(--b3-theme-background);
 }
 
 .panel-body.list .pdf-area {
@@ -1744,24 +2084,26 @@ onUnmounted(() => {
 }
 
 .resize-handle {
-  width: 6px;
+  width: 4px;
   cursor: col-resize;
   background: transparent;
   position: relative;
   flex-shrink: 0;
   z-index: 10;
+  transition: background 0.15s;
 }
 
-.resize-handle:hover {
-  background: var(--b3-theme-primary-light);
+.resize-handle:hover,
+.resize-handle:active {
+  background: var(--b3-theme-primary);
 }
 
 .resize-line {
   position: absolute;
-  left: 2px;
+  left: 0;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: 1px;
   background: var(--b3-border-color);
 }
 
@@ -1771,28 +2113,36 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 48px;
 }
 
 .welcome-content {
   text-align: center;
+  max-width: 400px;
 }
 
 .welcome-icon {
-  font-size: 64px;
+  font-size: 56px;
   margin-bottom: 16px;
+  opacity: 0.8;
 }
 
 .welcome-content h2 {
   margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--b3-theme-on-surface);
 }
 
 .welcome-content p {
   color: var(--b3-theme-on-surface-light);
   margin: 0 0 24px 0;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .recent-pdfs {
-  margin-top: 24px;
+  margin-top: 32px;
   text-align: left;
 }
 
@@ -1800,35 +2150,43 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--b3-theme-on-surface-light);
   margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .recent-pdf-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 10px 14px;
   margin: 4px 0;
   background: var(--b3-theme-surface);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
+  transition: all 0.15s;
+  border: 1px solid transparent;
 }
 
 .recent-pdf-item:hover {
-  background: var(--b3-theme-primary-light);
+  background: var(--b3-theme-primary-lightest);
+  border-color: var(--b3-theme-primary-light);
 }
 
 .project-icon {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .project-title {
   flex: 1;
+  font-weight: 500;
 }
 
 .project-pdf-count {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--b3-theme-on-surface-light);
+  padding: 2px 6px;
+  background: var(--b3-theme-surface-light);
+  border-radius: 3px;
 }
 
 /* 标注区域 */
@@ -1838,54 +2196,59 @@ onUnmounted(() => {
   max-width: 600px;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid var(--b3-border-color);
+  background: var(--b3-theme-surface);
 }
 
 .annotation-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--b3-border-color);
   font-size: 13px;
   font-weight: 500;
+  background: var(--b3-theme-background);
 }
 
 .annotation-count {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--b3-theme-on-surface-light);
-  font-weight: normal;
+  font-weight: 400;
+  padding: 2px 8px;
+  background: var(--b3-theme-surface-light);
+  border-radius: 10px;
 }
 
 .panel-body.list .annotation-area {
   width: 100% !important;
   flex: 1;
   max-width: none;
+  border-left: none;
 }
 
 /* 选择提示 */
 .selection-toast {
   position: fixed;
-  bottom: 20px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 20px;
   background: var(--b3-theme-surface);
   border: 1px solid var(--b3-border-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   z-index: 1001;
   max-width: 90vw;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 .selected-text {
   font-size: 13px;
   color: var(--b3-theme-on-surface);
-  max-width: 180px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1894,11 +2257,49 @@ onUnmounted(() => {
 .level-hint {
   font-size: 12px;
   color: var(--b3-theme-primary);
-  font-weight: bold;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--b3-theme-primary-lightest);
+  border-radius: 4px;
 }
 
 .b3-button--small {
-  padding: 4px 12px;
+  padding: 6px 14px;
   font-size: 12px;
+  border-radius: 6px;
+}
+
+/* 按钮样式覆盖 */
+:deep(.b3-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+:deep(.b3-button--primary) {
+  background: var(--b3-theme-primary);
+  color: white;
+  border: none;
+}
+
+:deep(.b3-button--primary:hover) {
+  background: var(--b3-theme-primary-dark);
+}
+
+:deep(.b3-button--outline) {
+  background: transparent;
+  border: 1px solid var(--b3-border-color);
+  color: var(--b3-theme-on-surface);
+}
+
+:deep(.b3-button--outline:hover) {
+  background: var(--b3-theme-surface-light);
+  border-color: var(--b3-theme-primary);
 }
 </style>

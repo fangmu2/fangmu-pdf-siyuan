@@ -2,21 +2,21 @@
 
 /* 定义插件面板的全局容器样式 */
 #plugin-pdf-mindmap-panel {
-  position: fixed; /* 固定定位 */
+  position: fixed;
   top: 0;
-  right: 0; /* 从右侧滑出 */
-  width: 600px; /* 初始宽度 */
-  min-width: 400px; /* 最小宽度 */
-  max-width: 95vw; /* 最大宽度 */
-  height: 100vh; /* 占满全屏高度 */
-  z-index: 999; /* 确保在思源主界面之上 */
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15); /* 左侧阴影，增加立体感 */
-  border-left: 1px solid var(--b3-border-color); /* 边框线 */
-  /* 动画效果：从右侧滑入 */
-  animation: slideIn 0.3s ease-out forwards;
-  transition: width 0.15s ease;
+  right: 0;
+  width: 680px;
+  min-width: 450px;
+  max-width: 95vw;
+  height: 100vh;
+  z-index: 999;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  border-left: 1px solid var(--b3-border-color);
+  animation: slideIn 0.25s ease-out forwards;
+  transition: width 0.2s ease;
   display: flex;
   flex-direction: column;
+  background: var(--b3-theme-background);
 }
 
 /* 左侧拖动调整宽度的手柄 */
@@ -25,13 +25,14 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 6px;
+  width: 4px;
   height: 100%;
   cursor: ew-resize;
   z-index: 10;
+  transition: background 0.15s;
 }
 
-#plugin-pdf-mindmap-panel::before:hover {
+#plugin-pdf-mindmap-panel:hover::before {
   background: var(--b3-theme-primary-light);
 }
 
@@ -46,15 +47,18 @@
   width: 100vw !important;
   left: 0;
   min-width: unset;
+  border-left: none;
 }
 
 /* 定义滑入动画 */
 @keyframes slideIn {
   from {
-    transform: translateX(100%); /* 初始位置在屏幕右侧外 */
+    transform: translateX(100%);
+    opacity: 0.9;
   }
   to {
-    transform: translateX(0); /* 最终位置 */
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 
@@ -84,9 +88,46 @@
 
 /* 选中文本样式 */
 .pdf-text-layer ::selection {
-  background: rgba(0, 120, 255, 0.4) !important;
+  background: rgba(66, 133, 244, 0.35) !important;
 }
 
 .pdf-text-layer ::-moz-selection {
-  background: rgba(0, 120, 255, 0.4) !important;
+  background: rgba(66, 133, 244, 0.35) !important;
+}
+
+/* 滚动条样式 */
+#plugin-pdf-mindmap-panel ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#plugin-pdf-mindmap-panel ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#plugin-pdf-mindmap-panel ::-webkit-scrollbar-thumb {
+  background: var(--b3-scroll-color);
+  border-radius: 3px;
+}
+
+#plugin-pdf-mindmap-panel ::-webkit-scrollbar-thumb:hover {
+  background: var(--b3-scroll-color-hover);
+}
+
+/* 全局过渡效果 */
+#plugin-pdf-mindmap-panel * {
+  box-sizing: border-box;
+}
+
+/* 按钮焦点样式 */
+#plugin-pdf-mindmap-panel button:focus-visible {
+  outline: 2px solid var(--b3-theme-primary);
+  outline-offset: 2px;
+}
+
+/* 输入框焦点样式 */
+#plugin-pdf-mindmap-panel input:focus-visible,
+#plugin-pdf-mindmap-panel select:focus-visible {
+  outline: 2px solid var(--b3-theme-primary);
+  outline-offset: 0;
 }
