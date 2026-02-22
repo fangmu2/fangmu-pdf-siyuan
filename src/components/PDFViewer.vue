@@ -18,46 +18,49 @@
       <span>{{ error }}</span>
     </div>
 
-    <!-- 左侧翻页区域 -->
-    <div 
-      class="page-nav-area page-nav-left"
-      title="上一页 (←)"
-    >
-      <div class="page-nav-btn" @click="handlePageNavClick('prev')" :class="{ visible: showLeftNav }">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-        </svg>
-      </div>
-    </div>
-
-    <!-- 右侧翻页区域 -->
-    <div 
-      class="page-nav-area page-nav-right"
-      title="下一页 (→)"
-    >
-      <div class="page-nav-btn" @click="handlePageNavClick('next')" :class="{ visible: showRightNav }">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-        </svg>
-      </div>
-    </div>
-
-    <!-- PDF渲染层容器 -->
-    <div class="pdf-page-container" ref="pageContainerRef">
-      <canvas ref="canvasRef" class="pdf-canvas"></canvas>
-      <!-- 文本选择层（使用官方API） -->
-      <div ref="textLayerRef" class="pdf-text-layer"></div>
-      <!-- DOM高亮层（替代Canvas，更流畅） -->
-      <div ref="highlightLayerRef" class="highlight-layer"></div>
-      <!-- 图片框选层 -->
+    <!-- PDF内容区域 -->
+    <div class="pdf-content-wrapper">
+      <!-- 左侧翻页区域 -->
       <div 
-        v-if="extractMode === 'image'"
-        ref="imageSelectLayerRef" 
-        class="image-select-layer"
-        @mousedown="startImageSelect"
-        @mousemove="updateImageSelect"
-        @mouseup="endImageSelect"
-      ></div>
+        class="page-nav-area page-nav-left"
+        title="上一页 (←)"
+      >
+        <div class="page-nav-btn" @click="handlePageNavClick('prev')" :class="{ visible: showLeftNav }">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 右侧翻页区域 -->
+      <div 
+        class="page-nav-area page-nav-right"
+        title="下一页 (→)"
+      >
+        <div class="page-nav-btn" @click="handlePageNavClick('next')" :class="{ visible: showRightNav }">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- PDF渲染层容器 -->
+      <div class="pdf-page-container" ref="pageContainerRef">
+        <canvas ref="canvasRef" class="pdf-canvas"></canvas>
+        <!-- 文本选择层（使用官方API） -->
+        <div ref="textLayerRef" class="pdf-text-layer"></div>
+        <!-- DOM高亮层（替代Canvas，更流畅） -->
+        <div ref="highlightLayerRef" class="highlight-layer"></div>
+        <!-- 图片框选层 -->
+        <div 
+          v-if="extractMode === 'image'"
+          ref="imageSelectLayerRef" 
+          class="image-select-layer"
+          @mousedown="startImageSelect"
+          @mousemove="updateImageSelect"
+          @mouseup="endImageSelect"
+        ></div>
+      </div>
     </div>
 
     <!-- 框选提示 -->
@@ -65,35 +68,152 @@
       📷 图片摘录模式 - 在PDF上框选区域截图
     </div>
 
-    <!-- 页码指示器 -->
-    <div class="page-indicator" v-if="totalPages > 0">
-      <span class="page-current">{{ currentPage }}</span>
-      <span class="page-divider">/</span>
-      <span class="page-total">{{ totalPages }}</span>
+    <!-- 底部工具栏 -->
+    <div class="bottom-toolbar" v-if="totalPages > 0">
+      <!-- 左侧：缩放控制 -->
+      <div class="toolbar-section toolbar-left">
+        <button @click="zoomOut" class="toolbar-btn" title="缩小 (-)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 13H5v-2h14v2z"/>
+          </svg>
+        </button>
+        <span class="zoom-display" @click="showZoomMenu = !showZoomMenu">{{ Math.round(scale * 100) }}%</span>
+        <button @click="zoomIn" class="toolbar-btn" title="放大 (+)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+        <!-- 缩放菜单 -->
+        <div v-if="showZoomMenu" class="zoom-menu">
+          <button @click="setZoom(0.5)" class="zoom-menu-item">50%</button>
+          <button @click="setZoom(0.75)" class="zoom-menu-item">75%</button>
+          <button @click="setZoom(1)" class="zoom-menu-item">100%</button>
+          <button @click="setZoom(1.25)" class="zoom-menu-item">125%</button>
+          <button @click="setZoom(1.5)" class="zoom-menu-item">150%</button>
+          <button @click="setZoom(2)" class="zoom-menu-item">200%</button>
+          <div class="zoom-menu-divider"></div>
+          <button @click="fitToWidth" class="zoom-menu-item">适应宽度</button>
+          <button @click="fitToPage" class="zoom-menu-item">适应页面</button>
+        </div>
+      </div>
+
+      <!-- 中间：翻页控制 -->
+      <div class="toolbar-section toolbar-center">
+        <button @click="goToPage(1)" class="toolbar-btn" title="首页" :disabled="currentPage === 1">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/>
+          </svg>
+        </button>
+        <button @click="prevPage" class="toolbar-btn" title="上一页 (←)" :disabled="currentPage === 1">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+        </button>
+        <div class="page-input-wrapper">
+          <input 
+            type="number" 
+            :value="currentPage" 
+            @change="handlePageInput"
+            @keyup.enter="handlePageInput"
+            min="1" 
+            :max="totalPages"
+            class="page-input"
+          />
+          <span class="page-total-text">/ {{ totalPages }}</span>
+        </div>
+        <button @click="nextPage" class="toolbar-btn" title="下一页 (→)" :disabled="currentPage === totalPages">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
+        </button>
+        <button @click="goToPage(totalPages)" class="toolbar-btn" title="末页" :disabled="currentPage === totalPages">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 右侧：目录按钮 -->
+      <div class="toolbar-section toolbar-right">
+        <button @click="toggleOutline" class="toolbar-btn" title="目录">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <!-- 缩放控制 -->
-    <div class="zoom-controls">
-      <button @click="zoomOut" class="zoom-btn" title="缩小 (-)">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M19 13H5v-2h14v2z"/>
-        </svg>
-      </button>
-      <span class="zoom-level">{{ Math.round(scale * 100) }}%</span>
-      <button @click="zoomIn" class="zoom-btn" title="放大 (+)">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-        </svg>
-      </button>
+    <!-- 目录侧边栏 -->
+    <div v-if="showOutline" class="outline-sidebar">
+      <div class="outline-header">
+        <span>目录</span>
+        <button @click="showOutline = false" class="outline-close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="outline-content">
+        <div v-if="outlineLoading" class="outline-loading">
+          <div class="b3-spin"></div>
+        </div>
+        <div v-else-if="outline.length === 0" class="outline-empty">
+          此文档没有目录
+        </div>
+        <div v-else class="outline-tree">
+          <OutlineItem 
+            v-for="(item, index) in outline" 
+            :key="index"
+            :item="item"
+            :level="0"
+            @navigate="handleOutlineNavigate"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed, defineComponent, h } from 'vue';
 import { getOrLoadPdf, renderPage, renderTextLayer, getSelectionRect } from '../utils/pdf';
 import { getFileAsBlob } from '../api/siyuanApi';
 import type { PDFAnnotation, AnnotationColor, ExtractMode } from '../types/annotaion';
+
+// 目录项组件
+const OutlineItem = defineComponent({
+  name: 'OutlineItem',
+  props: {
+    item: { type: Object, required: true },
+    level: { type: Number, default: 0 }
+  },
+  emits: ['navigate'],
+  setup(props, { emit }) {
+    const handleClick = () => {
+      emit('navigate', props.item);
+    };
+    return () => {
+      const children = props.item.items?.map((child: any, index: number) =>
+        h(OutlineItem, {
+          key: index,
+          item: child,
+          level: props.level + 1,
+          onNavigate: (item: any) => emit('navigate', item)
+        })
+      );
+      return h('div', { class: 'outline-item-wrapper' }, [
+        h('div', {
+          class: 'outline-item',
+          style: { paddingLeft: `${props.level * 16 + 8}px` },
+          onClick: handleClick
+        }, [
+          h('span', { class: 'outline-item-title' }, props.item.title)
+        ]),
+        children?.length ? h('div', { class: 'outline-children' }, children) : null
+      ]);
+    };
+  }
+});
 
 const props = defineProps<{
   pdfPath: string;
@@ -130,6 +250,12 @@ const scale = ref(1.0);
 // 翻页按钮显示状态
 const showLeftNav = ref(false);
 const showRightNav = ref(false);
+
+// 底部工具栏状态
+const showZoomMenu = ref(false);
+const showOutline = ref(false);
+const outline = ref<any[]>([]);
+const outlineLoading = ref(false);
 
 let pdfDoc: any = null;
 let currentPageObj: any = null;
@@ -657,6 +783,87 @@ const zoomOut = () => {
   }
 };
 
+// 设置精确缩放
+const setZoom = (newScale: number) => {
+  scale.value = newScale;
+  showZoomMenu.value = false;
+  renderCurrentPage();
+};
+
+// 适应宽度
+const fitToWidth = async () => {
+  if (!pdfDoc || !containerRef.value) return;
+  const page = await pdfDoc.getPage(props.currentPage);
+  const viewport = page.getViewport({ scale: 1 });
+  const containerWidth = containerRef.value.clientWidth - 40;
+  scale.value = containerWidth / viewport.width;
+  showZoomMenu.value = false;
+  renderCurrentPage();
+};
+
+// 适应页面
+const fitToPage = async () => {
+  if (!pdfDoc || !containerRef.value) return;
+  const page = await pdfDoc.getPage(props.currentPage);
+  const viewport = page.getViewport({ scale: 1 });
+  const containerWidth = containerRef.value.clientWidth - 40;
+  const containerHeight = containerRef.value.clientHeight - 100; // 减去底部工具栏高度
+  const scaleX = containerWidth / viewport.width;
+  const scaleY = containerHeight / viewport.height;
+  scale.value = Math.min(scaleX, scaleY);
+  showZoomMenu.value = false;
+  renderCurrentPage();
+};
+
+// 目录功能
+const toggleOutline = async () => {
+  showOutline.value = !showOutline.value;
+  if (showOutline.value && outline.value.length === 0 && pdfDoc) {
+    outlineLoading.value = true;
+    try {
+      const pdfOutline = await pdfDoc.getOutline();
+      if (pdfOutline) {
+        outline.value = pdfOutline;
+      }
+    } catch (e) {
+      console.error('获取目录失败:', e);
+    } finally {
+      outlineLoading.value = false;
+    }
+  }
+};
+
+// 目录导航
+const handleOutlineNavigate = async (item: any) => {
+  if (item.dest) {
+    try {
+      let dest = item.dest;
+      if (typeof dest === 'string') {
+        dest = await pdfDoc.getDestination(dest);
+      }
+      if (dest) {
+        const ref = dest[0];
+        const pageIndex = await pdfDoc.getPageIndex(ref);
+        emit('page-change', pageIndex + 1);
+        showOutline.value = false;
+      }
+    } catch (e) {
+      console.error('导航失败:', e);
+    }
+  }
+};
+
+// 页码输入处理
+const handlePageInput = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const page = parseInt(input.value, 10);
+  if (page >= 1 && page <= totalPages.value) {
+    goToPage(page);
+  } else {
+    input.value = String(props.currentPage);
+  }
+};
+
 // 翻页控制
 const goToPage = (page: number) => {
   if (page < 1 || page > totalPages.value || page === props.currentPage) return;
@@ -824,13 +1031,11 @@ onBeforeUnmount(() => {
 .pdf-viewer-container {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   background-color: var(--b3-theme-background);
   position: relative;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 20px;
+  flex-direction: column;
   outline: none;
 }
 
@@ -1093,5 +1298,262 @@ onBeforeUnmount(() => {
   min-width: 42px;
   text-align: center;
   color: var(--b3-theme-on-surface-light);
+}
+
+/* PDF内容区域包装器 */
+.pdf-content-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px;
+}
+
+/* 底部工具栏 */
+.bottom-toolbar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: var(--b3-theme-surface);
+  border-top: 1px solid var(--b3-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-left {
+  flex: 1;
+  justify-content: flex-start;
+  position: relative;
+}
+
+.toolbar-center {
+  flex: 1;
+  justify-content: center;
+  gap: 8px;
+}
+
+.toolbar-right {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.toolbar-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-primary);
+}
+
+.toolbar-btn:active:not(:disabled) {
+  transform: scale(0.95);
+  background: var(--b3-theme-primary-light);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoom-display {
+  font-size: 13px;
+  min-width: 50px;
+  text-align: center;
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.zoom-display:hover {
+  background: var(--b3-theme-surface-light);
+}
+
+/* 缩放菜单 */
+.zoom-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 8px;
+  background: var(--b3-theme-surface);
+  border: 1px solid var(--b3-border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 200;
+  min-width: 120px;
+}
+
+.zoom-menu-item {
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  color: var(--b3-theme-on-surface);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.zoom-menu-item:hover {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-primary);
+}
+
+.zoom-menu-divider {
+  height: 1px;
+  background: var(--b3-border-color);
+  margin: 4px 0;
+}
+
+/* 页码输入 */
+.page-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-input {
+  width: 48px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-surface);
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.page-input:focus {
+  border-color: var(--b3-theme-primary);
+}
+
+.page-total-text {
+  font-size: 13px;
+  color: var(--b3-theme-on-surface-light);
+}
+
+/* 目录侧边栏 */
+.outline-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100%;
+  background: var(--b3-theme-surface);
+  border-left: 1px solid var(--b3-border-color);
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+}
+
+.outline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--b3-border-color);
+  font-weight: 600;
+  color: var(--b3-theme-on-surface);
+}
+
+.outline-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--b3-theme-on-surface-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.outline-close:hover {
+  background: var(--b3-theme-surface-light);
+  color: var(--b3-theme-on-surface);
+}
+
+.outline-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.outline-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.outline-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--b3-theme-on-surface-light);
+  font-size: 13px;
+}
+
+.outline-tree {
+  width: 100%;
+}
+
+.outline-item-wrapper {
+  width: 100%;
+}
+
+.outline-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.outline-item:hover {
+  background: var(--b3-theme-surface-light);
+}
+
+.outline-item-title {
+  font-size: 13px;
+  color: var(--b3-theme-on-surface);
+  line-height: 1.4;
+}
+
+.outline-children {
+  width: 100%;
 }
 </style>
