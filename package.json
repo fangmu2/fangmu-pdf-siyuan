@@ -5,8 +5,8 @@
   "description": "PDF annotation and excerpt tool for SiYuan Note, supporting text/image excerpts and multi-level headings",
   "author": "方木",
   "license": "MIT",
-  "homepage": "https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant",
-  "repository": "https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant.git",
+  "homepage": "https://github.com/fangmu2/fangmu-pdf-siyuan",
+  "repository": "https://github.com/fangmu2/fangmu-pdf-siyuan.git",
   "scripts": {
     "dev": "vite build --watch",
     "release": "node ./release.js",

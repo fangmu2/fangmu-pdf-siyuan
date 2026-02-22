@@ -147,7 +147,7 @@
 
 ## 💬 反馈与建议
 
-如有问题或建议，欢迎在 [Gitee Issues](https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant/issues) 中反馈。
+如有问题或建议，欢迎在 [GitHub Issues](https://github.com/fangmu2/fangmu-pdf-siyuan/issues) 中反馈。
 
 ## 📄 开源协议
 

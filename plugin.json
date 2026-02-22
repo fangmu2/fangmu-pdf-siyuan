@@ -1,7 +1,7 @@
 {
   "name": "fangmu-pdf摘录助手",
   "author": "方木",
-  "url": "https://gitee.com/Neio101/fangmu-pdf-excerpt-assistant",
+  "url": "https://github.com/fangmu2/fangmu-pdf-siyuan",
   "version": "0.0.17",
   "minAppVersion": "3.3.0",
   "backends": ["all"],
