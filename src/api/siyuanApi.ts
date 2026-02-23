@@ -408,17 +408,7 @@ export async function setPluginData<T>(key: string, value: T): Promise<boolean> 
   const storageDir = `/data/storage/petal/fangmu-pdf-siyuan`;
   
   try {
-    // 先确保目录存在（使用 isDir=true 创建目录）
-    const dirFormData = new FormData();
-    dirFormData.append("path", storageDir);
-    dirFormData.append("isDir", "true");
-    
-    await fetch(`${kernelBase}/api/file/putFile`, {
-      method: "POST",
-      body: dirFormData,
-    });
-
-    // 使用 FormData 存储文件
+    // 使用 FormData 存储文件（putFile 会自动创建父目录）
     const content = JSON.stringify(value, null, 2);
     const blob = new Blob([content], { type: 'application/json' });
     const file = new File([blob], `${key}.json`, { type: 'application/json' });
