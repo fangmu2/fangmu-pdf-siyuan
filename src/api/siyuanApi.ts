@@ -156,11 +156,11 @@ export async function listAssetsFiles(): Promise<string[]> {
 
 /**
  * 获取插件持久化数据（使用文件存储）
- * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下
+ * 数据存储在 /data/storage/petal/fangmu-pdf-siyuan/ 目录下
  */
 export async function getPluginData<T = any>(key: string): Promise<T | null> {
   const kernelBase = getKernelBase();
-  const filePath = `/data/storage/petal/plugin-sample-vite-vue/${key}.json`;
+  const filePath = `/data/storage/petal/fangmu-pdf-siyuan/${key}.json`;
   
   try {
     // 先检查文件是否存在，避免请求不存在的文件产生 404 日志
@@ -169,7 +169,7 @@ export async function getPluginData<T = any>(key: string): Promise<T | null> {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ path: `/data/storage/petal/plugin-sample-vite-vue` }),
+      body: JSON.stringify({ path: `/data/storage/petal/fangmu-pdf-siyuan` }),
     });
     
     // 如果目录不存在或请求失败，返回 null
@@ -401,11 +401,11 @@ export async function getDocNotebookId(docId: string): Promise<string | null> {
 
 /**
  * 设置插件持久化数据（使用文件存储）
- * 数据存储在 /data/storage/petal/plugin-sample-vite-vue/ 目录下
+ * 数据存储在 /data/storage/petal/fangmu-pdf-siyuan/ 目录下
  */
 export async function setPluginData<T>(key: string, value: T): Promise<boolean> {
   const kernelBase = getKernelBase();
-  const storageDir = `/data/storage/petal/plugin-sample-vite-vue`;
+  const storageDir = `/data/storage/petal/fangmu-pdf-siyuan`;
   
   try {
     // 先确保目录存在（使用 isDir=true 创建目录）
