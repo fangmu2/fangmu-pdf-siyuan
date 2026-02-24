@@ -1,6 +1,6 @@
-# PDF Mindmap
+# PDF Excerpt Assistant
 
-A powerful PDF annotation and mindmap extraction tool that helps you efficiently extract knowledge from PDF documents and organize it into structured notes.
+A powerful PDF annotation and excerpt tool for SiYuan Note that helps you efficiently extract knowledge from PDF documents and organize it into structured notes.
 
 ## ✨ Core Features
 
@@ -114,6 +114,10 @@ Search and select a SiYuan document in the "Target" input box, annotations will 
 5. Delete operations will synchronously remove the corresponding block in SiYuan, please operate with caution
 
 ## 🔄 Changelog
+
+### v0.0.23
+- Updated plugin metadata for marketplace compatibility
+- Improved document list refresh behavior
 
 ### v0.0.19
 - Fixed: Image issues
