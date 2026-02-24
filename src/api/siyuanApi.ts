@@ -47,8 +47,9 @@ export async function postApi<T = any>(
 }
 
 /**
- * 上传文件到思源笔记本的assets目录
+ * 上传文件到思源笔记本的petal目录
  * 使用 /api/file/putFile API 直接保存文件到指定路径
+ * 保存到 petal 目录可避免被当做未引用资源文件清理
  */
 export async function uploadFileToAssets(file: File): Promise<{ path: string; name: string }> {
   const kernelBase = getKernelBase();
@@ -59,8 +60,9 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
   const ext = file.name.split('.').pop() || 'png';
   const uniqueFileName = `pdf-excerpt-${timestamp}-${randomSuffix}.${ext}`;
 
-  // 目标路径: /data/assets/xxx.png
-  const targetPath = `/data/assets/${uniqueFileName}`;
+  // 目标路径: /data/storage/petal/fangmu-pdf-siyuan/xxx.png
+  // 保存到 petal 目录，避免被当做未引用资源文件清理
+  const targetPath = `/data/storage/petal/fangmu-pdf-siyuan/${uniqueFileName}`;
 
   // 使用 FormData 上传
   const formData = new FormData();
@@ -80,7 +82,7 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
 
   // /api/file/putFile 返回 { code: 0, msg: "", data: null }
   // 成功后文件路径就是我们指定的路径
-  const actualPath = `assets/${uniqueFileName}`;  // 返回相对路径格式
+  const actualPath = `storage/petal/fangmu-pdf-siyuan/${uniqueFileName}`;
   const actualName = file.name;
 
   return {
@@ -90,8 +92,9 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
 }
 
 /**
- * 生成PDF的直接访问URL
- * 思源的assets文件访问路径是 /assets/xxx.pdf
+ * 生成文件的直接访问URL
+ * petal 目录下的文件需要通过 /api/file/getFile API 访问
+ * 注意： getFile API 需要 POST 方式调用，此函数返回的 URL 仅用于特定场景
  */
 export function toAssetUrl(path: string): string {
   const kernelBase = getKernelBase();
@@ -101,13 +104,16 @@ export function toAssetUrl(path: string): string {
     fileName = path.split('/').pop() || path;
   }
 
-  // 思源内核静态资源访问路径
-  return `${kernelBase}/assets/${fileName}`;
+  // petal 目录下的文件路径
+  const filePath = `/data/storage/petal/fangmu-pdf-siyuan/${fileName}`;
+  // getFile API 支持 GET 方式，通过 query 参数传递路径
+  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent(filePath)}`;
 }
 
 /**
  * 通过API获取文件内容（二进制）
- * path: 文件路径，如 "/data/assets/xxx.pdf" 或 "assets/xxx.pdf"
+ * path: 文件路径，如 "/data/storage/petal/fangmu-pdf-siyuan/xxx.pdf"
+ * 使用 POST 方式调用 /api/file/getFile API
  */
 export async function getFileAsBlob(path: string): Promise<Blob> {
   const kernelBase = getKernelBase();
@@ -118,11 +124,17 @@ export async function getFileAsBlob(path: string): Promise<Blob> {
     fileName = path.split('/').pop() || path;
   }
 
-  // 直接通过静态资源路径访问文件
-  // 思源的 assets 文件可以通过 /assets/xxx.pdf 直接访问
-  const assetUrl = `${kernelBase}/assets/${fileName}`;
+  // petal 目录下的文件路径
+  const filePath = `/data/storage/petal/fangmu-pdf-siyuan/${fileName}`;
 
-  const res = await fetch(assetUrl);
+  // 使用 POST 方式调用 getFile API
+  const res = await fetch(`${kernelBase}/api/file/getFile`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ path: filePath }),
+  });
 
   if (!res.ok) {
     throw new Error(`获取文件失败: ${res.status} ${res.statusText}`);
@@ -161,32 +173,9 @@ export async function listAssetsFiles(): Promise<string[]> {
 export async function getPluginData<T = any>(key: string): Promise<T | null> {
   const kernelBase = getKernelBase();
   const filePath = `/data/storage/petal/fangmu-pdf-siyuan/${key}.json`;
-  
-  try {
-    // 先检查文件是否存在，避免请求不存在的文件产生 404 日志
-    const checkRes = await fetch(`${kernelBase}/api/file/readDir`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ path: `/data/storage/petal/fangmu-pdf-siyuan` }),
-    });
-    
-    // 如果目录不存在或请求失败，返回 null
-    if (!checkRes.ok) {
-      return null;
-    }
-    
-    const dirData = await checkRes.json();
-    // 检查目标文件是否存在于目录中
-    const fileName = `${key}.json`;
-    const fileExists = dirData?.data?.some((item: { name: string }) => item.name === fileName);
-    
-    if (!fileExists) {
-      return null;
-    }
 
-    // 文件存在，读取内容
+  try {
+    // 直接读取文件，通过返回结果判断文件是否存在
     const res = await fetch(`${kernelBase}/api/file/getFile`, {
       method: "POST",
       headers: {
