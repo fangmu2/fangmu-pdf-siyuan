@@ -1,7 +1,7 @@
 <!-- src/components/PDFViewer.vue -->
 <template>
-  <div 
-    class="pdf-viewer-container" 
+  <div
+    class="pdf-viewer-container"
     ref="containerRef"
     tabindex="0"
     @keydown="handlePageKeyDown"
@@ -18,31 +18,31 @@
       <span>{{ error }}</span>
     </div>
 
-    <!-- PDF内容区域 -->
+    <!-- PDF 内容区域 -->
     <div class="pdf-content-wrapper">
       <!-- 右侧翻页区域 -->
-      <div 
+      <div
         class="page-nav-area page-nav-right"
         title="下一页 (→)"
       >
-        <div class="page-nav-btn" @click="handlePageNavClick('next')" :class="{ visible: showRightNav }">
+        <div class="page-nav-btn" @click="handlePageNavClick" :class="{ visible: showRightNav }">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
           </svg>
         </div>
       </div>
 
-      <!-- PDF渲染层容器 -->
+      <!-- PDF 渲染层容器 -->
       <div class="pdf-page-container" ref="pageContainerRef">
         <canvas ref="canvasRef" class="pdf-canvas"></canvas>
-        <!-- 文本选择层（使用官方API） -->
+        <!-- 文本选择层（使用官方 API） -->
         <div ref="textLayerRef" class="pdf-text-layer"></div>
-        <!-- DOM高亮层（替代Canvas，更流畅） -->
+        <!-- DOM 高亮层（替代 Canvas，更流畅） -->
         <div ref="highlightLayerRef" class="highlight-layer"></div>
         <!-- 图片框选层 -->
-        <div 
+        <div
           v-if="extractMode === 'image'"
-          ref="imageSelectLayerRef" 
+          ref="imageSelectLayerRef"
           class="image-select-layer"
           @mousedown="startImageSelect"
           @mousemove="updateImageSelect"
@@ -53,7 +53,7 @@
 
     <!-- 框选提示 -->
     <div v-if="extractMode === 'image'" class="image-mode-hint">
-      📷 图片摘录模式 - 在PDF上框选区域截图
+      📷 图片摘录模式 - 在 PDF 上框选区域截图
     </div>
 
     <!-- 底部工具栏 -->
@@ -98,12 +98,12 @@
           </svg>
         </button>
         <div class="page-input-wrapper">
-          <input 
-            type="number" 
-            :value="currentPage" 
+          <input
+            type="number"
+            :value="currentPage"
             @change="handlePageInput"
             @keyup.enter="handlePageInput"
-            min="1" 
+            min="1"
             :max="totalPages"
             class="page-input"
           />
@@ -149,8 +149,8 @@
           此文档没有目录
         </div>
         <div v-else class="outline-tree">
-          <OutlineItem 
-            v-for="(item, index) in outline" 
+          <OutlineItem
+            v-for="(item, index) in outline"
             :key="index"
             :item="item"
             :level="0"
@@ -216,10 +216,10 @@ const emit = defineEmits<{
   (e: 'loaded', numPages: number): void;
   (e: 'page-change', page: number): void;
   (e: 'text-selected', data: { text: string; page: number; rect: [number, number, number, number] | null }): void;
-  (e: 'image-selected', data: { 
-    canvasRect: { x: number; y: number; width: number; height: number }; 
+  (e: 'image-selected', data: {
+    canvasRect: { x: number; y: number; width: number; height: number };
     pdfRect: [number, number, number, number];
-    page: number 
+    page: number
   }): void;
   (e: 'annotation-delete', annotation: PDFAnnotation): void;
   (e: 'annotation-click', annotation: PDFAnnotation): void;
@@ -260,7 +260,7 @@ const getGlobalLock = () => {
   (window as any).__PDF_SELECTION_LOCK__ ||= { locked: false, text: '', time: 0, lastEmittedText: '' };
   return (window as any).__PDF_SELECTION_LOCK__;
 };
-const SELECTION_LOCK_DURATION = 2000; // 2秒锁定时间，防止快速摘录重复
+const SELECTION_LOCK_DURATION = 2000; // 2 秒锁定时间，防止快速摘录重复
 
 // 图片选择防抖
 let lastImageSelectTime = 0;
@@ -268,7 +268,7 @@ let lastImageSelectTime = 0;
 // 翻页按钮悬停检测
 let navHoverTimer: ReturnType<typeof setTimeout> | null = null;
 const NAV_EDGE_WIDTH = 40; // 边缘检测宽度
-const NAV_HOVER_DELAY = 400; // 悬停显示延迟(ms)
+const NAV_HOVER_DELAY = 400; // 悬停显示延迟 (ms)
 
 // 当前 viewport 缓存
 let currentViewport: any = null;
@@ -296,7 +296,7 @@ const ANNOTATION_COLORS: Record<AnnotationColor, { bg: string; border: string }>
 const currentPageAnnotations = computed(() => {
   if (!props.annotations) return [];
   const pageAnnotations = props.annotations.filter(ann => ann.page === props.currentPage);
-  
+
   // 去重：同一 ID 只保留一个
   const seenIds = new Set<string>();
   const uniqueAnnotations: typeof pageAnnotations = [];
@@ -304,8 +304,6 @@ const currentPageAnnotations = computed(() => {
     if (!seenIds.has(ann.id)) {
       seenIds.add(ann.id);
       uniqueAnnotations.push(ann);
-    } else {
-      console.warn('[currentPageAnnotations] 发现重复标注ID:', ann.id);
     }
   }
   return uniqueAnnotations;
@@ -314,8 +312,11 @@ const currentPageAnnotations = computed(() => {
 // 选中的标注
 const selectedAnnotation = ref<PDFAnnotation | null>(null);
 
-// 加载PDF - 添加锁防止重复加载
+// 加载 PDF - 添加锁防止重复加载
 let isLoadingPdf = false;
+
+// 全局 PDF 缓存，避免重复加载相同 PDF
+const globalPdfCache = new Map<string, any>();
 
 const loadPdf = async () => {
   if (!props.pdfPath || !canvasRef.value || !containerRef.value) return;
@@ -346,7 +347,20 @@ const loadPdf = async () => {
     if (props.pdfBlobUrl) {
       currentBlobUrl = props.pdfBlobUrl;
     } else {
-      // 没有传入 Blob URL，则通过 API 获取文件
+      // 检查全局缓存中是否已有对应路径的 PDF 文档
+      if (globalPdfCache.has(props.pdfPath)) {
+        // 如果有缓存，直接使用缓存的 PDF 文档
+        if (pdfDoc) {
+          pdfDoc.destroy();
+        }
+        pdfDoc = globalPdfCache.get(props.pdfPath);
+        totalPages.value = pdfDoc.numPages;
+        emit('loaded', pdfDoc.numPages);
+        await renderCurrentPage();
+        return;
+      }
+
+      // 没有传入 Blob URL，也没有缓存，则通过 API 获取文件
       const blob = await getFileAsBlob(props.pdfPath);
       currentBlobUrl = URL.createObjectURL(blob);
     }
@@ -356,13 +370,17 @@ const loadPdf = async () => {
     }
     pdfDoc = await getOrLoadPdf(currentBlobUrl);
     pdfDoc._path = props.pdfPath;
+
+    // 将 PDF 文档存入全局缓存
+    globalPdfCache.set(props.pdfPath, pdfDoc);
+
     totalPages.value = pdfDoc.numPages;
     emit('loaded', pdfDoc.numPages);
 
     await renderCurrentPage();
 
   } catch (e: any) {
-    console.error('PDF加载失败:', e);
+    console.error('PDF 加载失败:', e);
     error.value = e.message || '加载失败';
   } finally {
     loading.value = false;
@@ -382,10 +400,10 @@ const renderCurrentPage = async () => {
     // 渲染 Canvas
     const viewport = await renderPage(currentPageObj, canvasRef.value, containerWidth * scale.value);
 
-    // 缓存viewport
+    // 缓存 viewport
     currentViewport = viewport;
 
-    // 渲染文本层（使用官方API）
+    // 渲染文本层（使用官方 API）
     await renderTextLayer(currentPageObj, textLayerRef.value, viewport);
 
     // 设置页面容器尺寸
@@ -394,7 +412,7 @@ const renderCurrentPage = async () => {
       pageContainerRef.value.style.height = canvasRef.value.style.height;
     }
 
-    // 绘制标注高亮（DOM方式）
+    // 绘制标注高亮（DOM 方式）
     renderHighlights();
 
   } catch (e: any) {
@@ -403,10 +421,10 @@ const renderCurrentPage = async () => {
   }
 };
 
-// 使用DOM渲染高亮（比Canvas更流畅，支持交互）
+// 使用 DOM 渲染高亮（比 Canvas 更流畅，支持交互）
 const renderHighlights = () => {
   const layer = highlightLayerRef.value;
-  
+
   if (!layer) {
     return;
   }
@@ -420,19 +438,19 @@ const renderHighlights = () => {
   layer.style.width = currentViewport.width + 'px';
   layer.style.height = currentViewport.height + 'px';
 
-  // viewport.scale 是 PDF单位到CSS像素的转换比例
+  // viewport.scale 是 PDF 单位到 CSS 像素的转换比例
   const scale = currentViewport.scale || 1;
-  
-  // 使用 viewport.height 作为CSS坐标系参考（与文本层保持一致）
+
+  // 使用 viewport.height 作为 CSS 坐标系参考（与文本层保持一致）
   // 避免使用 viewBox[3] * scale 导致的浮点误差
   const cssPageHeight = currentViewport.height;
 
   for (const ann of currentPageAnnotations.value) {
     const [pdfX1, pdfY1, pdfX2, pdfY2] = ann.rect;
 
-    // PDF坐标转换为CSS坐标
+    // PDF 坐标转换为 CSS 坐标
     // CSS X = PDF X * scale
-    // CSS Y = viewport.height - PDF Y * scale （Y轴翻转）
+    // CSS Y = viewport.height - PDF Y * scale（Y 轴翻转）
     // 注意：使用 viewport.height 而不是 viewBox[3] * scale
     const cssX = pdfX1 * scale;
     const cssY = cssPageHeight - pdfY2 * scale;
@@ -555,7 +573,7 @@ const renderHighlights = () => {
       opacity: 0;
       transition: opacity 0.15s ease, transform 0.15s ease;
     `;
-    
+
     // 鼠标进入高亮区域时显示删除按钮
     highlight.addEventListener('mouseenter', () => {
       deleteBtn.style.opacity = '1';
@@ -565,7 +583,7 @@ const renderHighlights = () => {
         deleteBtn.style.opacity = '0';
       }
     });
-    
+
     // 删除按钮悬停效果
     deleteBtn.addEventListener('mouseenter', () => {
       deleteBtn.style.background = '#dc2626';
@@ -575,7 +593,7 @@ const renderHighlights = () => {
       deleteBtn.style.background = '#ef4444';
       deleteBtn.style.transform = 'scale(1)';
     });
-    
+
     // 删除按钮点击事件
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -583,7 +601,7 @@ const renderHighlights = () => {
       emit('annotation-delete', ann);
       selectedAnnotation.value = null;
     });
-    
+
     // 选中状态下也显示删除按钮
     if (isSelected) {
       deleteBtn.style.opacity = '1';
@@ -598,13 +616,13 @@ const renderHighlights = () => {
 const handleKeyDown = (e: KeyboardEvent) => {
   // 只在 Delete 或 Backspace 键时处理
   if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-  
+
   // 如果焦点在输入框中，不处理删除
   const activeElement = document.activeElement;
   if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || (activeElement as HTMLElement).isContentEditable)) {
     return;
   }
-  
+
   if (selectedAnnotation.value) {
     e.preventDefault();
     emit('annotation-delete', selectedAnnotation.value);
@@ -669,7 +687,7 @@ const handleTextSelection = () => {
   // 延迟释放锁（但保留 lastEmittedText 用于去重）
   setTimeout(() => {
     lock.locked = false;
-    // 2秒后清除 lastEmittedText，允许再次选择相同文本
+    // 2 秒后清除 lastEmittedText，允许再次选择相同文本
     setTimeout(() => {
       if (lock.lastEmittedText === text) {
         lock.lastEmittedText = '';
@@ -681,14 +699,14 @@ const handleTextSelection = () => {
 // 图片框选 - 开始
 const startImageSelect = (e: MouseEvent) => {
   if (props.extractMode !== 'image' || !imageSelectLayerRef.value) return;
-  
+
   isSelecting = true;
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
   selectionStart = {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
   };
-  
+
   // 创建选择框元素
   selectionDiv = document.createElement('div');
   selectionDiv.className = 'image-selection-box';
@@ -710,16 +728,16 @@ const startImageSelect = (e: MouseEvent) => {
 // 图片框选 - 更新
 const updateImageSelect = (e: MouseEvent) => {
   if (!isSelecting || !selectionDiv || !imageSelectLayerRef.value) return;
-  
+
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
   const currentX = e.clientX - rect.left;
   const currentY = e.clientY - rect.top;
-  
+
   const left = Math.min(selectionStart.x, currentX);
   const top = Math.min(selectionStart.y, currentY);
   const width = Math.abs(currentX - selectionStart.x);
   const height = Math.abs(currentY - selectionStart.y);
-  
+
   selectionDiv.style.left = left + 'px';
   selectionDiv.style.top = top + 'px';
   selectionDiv.style.width = width + 'px';
@@ -741,34 +759,34 @@ const endImageSelect = (e: MouseEvent) => {
   lastImageSelectTime = now;
 
   isSelecting = false;
-  
+
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
   const currentX = e.clientX - rect.left;
   const currentY = e.clientY - rect.top;
-  
+
   const left = Math.min(selectionStart.x, currentX);
   const top = Math.min(selectionStart.y, currentY);
   const width = Math.abs(currentX - selectionStart.x);
   const height = Math.abs(currentY - selectionStart.y);
-  
+
   selectionDiv.remove();
   selectionDiv = null;
-  
+
   if (width < 10 || height < 10) return;
-  
-  // 计算PDF坐标
+
+  // 计算 PDF 坐标
   const canvas = canvasRef.value;
   const canvasCssWidth = canvas.offsetWidth;
-  
+
   if (currentPageObj && currentViewport) {
     const viewport = currentPageObj.getViewport({ scale: 1 });
     const pdfScale = viewport.width / canvasCssWidth;
-    
+
     const pdfX1 = left * pdfScale;
     const pdfY1 = viewport.height - (top + height) * pdfScale;
     const pdfX2 = (left + width) * pdfScale;
     const pdfY2 = viewport.height - top * pdfScale;
-    
+
     emit('image-selected', {
       canvasRect: { x: left, y: top, width, height },
       pdfRect: [pdfX1, pdfY1, pdfX2, pdfY2],
@@ -936,32 +954,32 @@ const handlePageKeyDown = (e: KeyboardEvent) => {
 };
 
 // 点击翻页区域
-const handlePageNavClick = (direction: 'next') => {
+const handlePageNavClick = () => {
   nextPage();
 };
 
 // 鼠标移动时检测是否在右边缘停留
 const handleNavMouseMove = (e: MouseEvent) => {
   if (!containerRef.value) return;
-  
+
   const rect = containerRef.value.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const width = rect.width;
-  
+
   // 清除之前的定时器
   if (navHoverTimer) {
     clearTimeout(navHoverTimer);
     navHoverTimer = null;
   }
-  
+
   // 如果鼠标不在右边缘，立即隐藏按钮
   const inRightEdge = x > width - NAV_EDGE_WIDTH;
-  
+
   if (!inRightEdge) {
     showRightNav.value = false;
     return;
   }
-  
+
   // 鼠标在右边缘，延迟显示按钮（需要停留一段时间）
   navHoverTimer = setTimeout(() => {
     showRightNav.value = true;
@@ -995,7 +1013,7 @@ onMounted(() => {
   loadPdf();
   document.addEventListener('mouseup', handleTextSelection);
   document.addEventListener('keydown', handleKeyDown);
-  
+
   // 翻页按钮悬停检测
   if (containerRef.value) {
     containerRef.value.addEventListener('mousemove', handleNavMouseMove);
@@ -1005,16 +1023,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('mouseup', handleTextSelection);
   document.removeEventListener('keydown', handleKeyDown);
-  
+
   // 清理翻页按钮定时器
   if (navHoverTimer) {
     clearTimeout(navHoverTimer);
   }
-  
+
   if (containerRef.value) {
     containerRef.value.removeEventListener('mousemove', handleNavMouseMove);
   }
-  
+
   if (pdfDoc) {
     pdfDoc.destroy();
   }
@@ -1040,7 +1058,7 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-/* 翻页区域 - 不捕获事件，由JS控制显示 */
+/* 翻页区域 - 不捕获事件，由 JS 控制显示 */
 .page-nav-area {
   position: absolute;
   top: 0;
@@ -1166,13 +1184,13 @@ onBeforeUnmount(() => {
   background: rgba(0, 120, 255, 0.5);
 }
 
-/* DOM高亮层 - 比Canvas更流畅 */
+/* DOM 高亮层 - 比 Canvas 更流畅 */
 .highlight-layer {
   position: absolute;
   top: 0;
   left: 0;
   pointer-events: none;
-  z-index: 6; /* 高于文本层(z-index:5)，使点击事件能到达高亮元素 */
+  z-index: 6; /* 高于文本层 (z-index:5)，使点击事件能到达高亮元素 */
 }
 
 .highlight-element {
@@ -1293,7 +1311,7 @@ onBeforeUnmount(() => {
   color: var(--b3-theme-on-surface-light);
 }
 
-/* PDF内容区域包装器 */
+/* PDF 内容区域包装器 */
 .pdf-content-wrapper {
   flex: 1;
   display: flex;
