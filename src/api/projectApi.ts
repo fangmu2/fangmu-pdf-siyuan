@@ -651,7 +651,11 @@ export async function getProjectAnnotationsAsync(projectId: string): Promise<PDF
 
 /**
  * 保存项目的所有标注（使用思源持久化存储）
+ * 使用防抖机制，避免短时间内重复保存同一个项目的标注
  */
+const pendingAnnotationSaves = new Map<string, { timer: ReturnType<typeof setTimeout> }>();
+const ANNOTATION_SAVE_DEBOUNCE_MS = 500; // 标注保存防抖时间
+
 export async function saveProjectAnnotationsAsync(projectId: string, annotations: PDFAnnotation[]): Promise<void> {
   const key = `${ANNOTATIONS_DOC_PREFIX}${projectId}`;
   try {
@@ -663,6 +667,30 @@ export async function saveProjectAnnotationsAsync(projectId: string, annotations
 }
 
 /**
+ * 保存项目的所有标注到本地缓存（同步版本，后台异步持久化）
+ * 使用防抖机制，避免短时间内重复保存同一个项目的标注
+ */
+export function saveProjectAnnotations(projectId: string, annotations: PDFAnnotation[]): void {
+  annotationsCache.set(projectId, annotations);
+
+  // 取消之前的待处理保存
+  const pending = pendingAnnotationSaves.get(projectId);
+  if (pending) {
+    clearTimeout(pending.timer);
+  }
+
+  // 设置新的待处理保存
+  const timer = setTimeout(() => {
+    pendingAnnotationSaves.delete(projectId);
+    saveProjectAnnotationsAsync(projectId, annotations).catch(e => {
+      console.error('异步保存标注失败:', e);
+    });
+  }, ANNOTATION_SAVE_DEBOUNCE_MS);
+
+  pendingAnnotationSaves.set(projectId, { timer });
+}
+
+/**
  * 同步版本（使用内存缓存，用于快速访问）
  */
 export function getProjectAnnotations(projectId: string): PDFAnnotation[] {
@@ -670,14 +698,20 @@ export function getProjectAnnotations(projectId: string): PDFAnnotation[] {
 }
 
 /**
- * 保存项目的所有标注到本地缓存（同步版本，后台异步持久化）
+ * 强制立即保存所有待处理的标注保存请求
+ * 在插件关闭或页面卸载时调用
  */
-export function saveProjectAnnotations(projectId: string, annotations: PDFAnnotation[]): void {
-  annotationsCache.set(projectId, annotations);
-  // 异步保存到思源
-  saveProjectAnnotationsAsync(projectId, annotations).catch(e => {
-    console.error('异步保存标注失败:', e);
-  });
+export async function flushPendingAnnotationSaves(): Promise<void> {
+  const savesToProcess = Array.from(pendingAnnotationSaves.entries());
+  pendingAnnotationSaves.clear();
+
+  await Promise.all(savesToProcess.map(async ([projectId, { timer }]) => {
+    clearTimeout(timer);
+    const annotations = annotationsCache.get(projectId);
+    if (annotations) {
+      await saveProjectAnnotationsAsync(projectId, annotations);
+    }
+  }));
 }
 
 /**
