@@ -74,11 +74,11 @@
             <div class="project-info" @click="switchProject(proj.id)">
               <div class="project-name">{{ proj.name }}</div>
               <div class="project-meta">
-                <span>📚 {{ proj.pdfCount }}本PDF</span>
+                <span>📚 {{ proj.pdfCount }}本 PDF</span>
                 <span>📝 {{ proj.annotationCount }}条标注</span>
                 <span>{{ formatDate(proj.updated) }}</span>
               </div>
-              <!-- PDF列表 -->
+              <!-- PDF 列表 -->
               <div v-if="proj.pdfNames.length > 0" class="project-pdfs">
                 <div v-for="(name, idx) in proj.pdfNames" :key="idx" class="pdf-tag">
                   📄 {{ name }}
@@ -89,7 +89,7 @@
               <button
                 @click.stop="addPdfToProjectDialog(proj.id)"
                 class="b3-button b3-button--outline b3-button--small"
-                title="添加PDF"
+                title="添加 PDF"
               >
                 +PDF
               </button>
@@ -122,13 +122,13 @@
               v-model="newProjectDialog.name"
               type="text"
               class="b3-text-field"
-              placeholder="例如：MySQL学习笔记"
+              placeholder="例如：MySQL 学习笔记"
             />
           </div>
           <div class="form-group">
-            <label>导入第一个PDF：</label>
+            <label>导入第一个 PDF：</label>
             <button @click="selectPdfForNewProject" class="b3-button b3-button--outline">
-              {{ newProjectDialog.pdfName || '选择PDF文件' }}
+              {{ newProjectDialog.pdfName || '选择 PDF 文件' }}
             </button>
           </div>
         </div>
@@ -147,7 +147,7 @@
 
     <!-- 工具栏 -->
     <div class="toolbar" v-if="currentProject">
-      <!-- 左侧：PDF切换 + 添加PDF -->
+      <!-- 左侧：PDF 切换 + 添加 PDF -->
       <div class="toolbar-left">
         <select
           v-if="currentProject.pdfs.length > 1"
@@ -162,7 +162,7 @@
         <button
           @click="triggerAddPdf"
           class="toolbar-btn"
-          title="添加PDF到当前项目"
+          title="添加 PDF 到当前项目"
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -238,7 +238,7 @@
 
     <!-- 主体区域 -->
     <div class="panel-body" :class="viewMode">
-      <!-- PDF预览区 -->
+      <!-- PDF 预览区 -->
       <div class="pdf-area" v-if="currentPdf" :style="{ width: `calc(100% - ${annotationWidth}px)` }">
         <PDFViewer
           :pdf-path="currentPdf.path"
@@ -260,7 +260,7 @@
         <div class="welcome-content">
           <div class="welcome-icon">📄</div>
           <h2>欢迎使用 PDF 思维导图摘录</h2>
-          <p>创建项目，导入多本PDF，统一管理标注</p>
+          <p>创建项目，导入多本 PDF，统一管理标注</p>
           <button @click="showNewProjectDialog" class="b3-button b3-button--primary">
             创建新项目
           </button>
@@ -313,7 +313,7 @@
 
     <!-- 文本选择提示 -->
     <div v-if="selectedText" class="selection-toast">
-      <span class="selected-text">已选择: "{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</span>
+      <span class="selected-text">已选择："{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</span>
       <span class="level-hint">→ {{ getLevelLabel(currentLevel) }}</span>
       <button
         @click="createAnnotationFromSelection"
@@ -401,7 +401,9 @@ let fileSelectMode: 'newProject' | 'addPdf' | 'none' = 'none';
 let addTargetProjectId: string | null = null;
 
 // 待处理的 PDF Blob URL（上传后直接使用，避免 getFile）
+// 同时记录对应的路径，用于匹配
 const pendingPdfBlobUrl = ref<string | null>(null);
+const pendingPdfPath = ref<string | null>(null);
 
 // PDF 状态
 const currentPage = ref(1);
@@ -428,7 +430,7 @@ const selectedRect = ref<[number, number, number, number] | null>(null);
 const creatingAnnotation = ref(false);
 const pendingTitleLevel = ref<AnnotationLevel | null>(null);
 
-// 插入光标位置（null表示插入到最前面，否则是某个标注ID之后）
+// 插入光标位置（null 表示插入到最前面，否则是某个标注 ID 之后）
 const cursorAfterId = ref<string | null>(null);
 
 // 目标文档选择
@@ -495,14 +497,14 @@ const loadDocOptions = async () => {
 // 拖拽调整大小
 const isResizing = ref(false);
 
-// 当前PDF
+// 当前 PDF
 const currentPdf = computed(() => {
   if (!currentProject.value) return null;
   if (!currentPdfId.value) return currentProject.value.pdfs[0] || null;
   return currentProject.value.pdfs.find(p => p.id === currentPdfId.value) || currentProject.value.pdfs[0] || null;
 });
 
-// 当前PDF的标注
+// 当前 PDF 的标注
 const currentPdfAnnotations = computed(() => {
   if (!currentPdf.value) return [];
   return annotations.value.filter(a => a.pdfPath === currentPdf.value!.path);
@@ -576,11 +578,11 @@ const switchProject = async (projectId: string) => {
   }
 };
 
-// PDF切换
+// PDF 切换
 const onPdfSwitch = () => {
   if (!currentProject.value || !currentPdfId.value) return;
 
-  // 保存当前PDF状态
+  // 保存当前 PDF 状态
   if (currentPdf.value) {
     updateProjectPdf(currentProject.value.id, currentPdf.value.id, {
       currentPage: currentPage.value,
@@ -588,7 +590,7 @@ const onPdfSwitch = () => {
     });
   }
 
-  // 切换PDF
+  // 切换 PDF
   const proj = switchProjectPdf(currentProject.value.id, currentPdfId.value);
   if (proj) {
     currentProject.value = proj;
@@ -624,20 +626,20 @@ const showNewProjectDialog = () => {
   };
 };
 
-// 为新项目选择PDF
+// 为新项目选择 PDF
 const selectPdfForNewProject = () => {
   fileSelectMode = 'newProject';
   fileInput.value?.click();
 };
 
-// 添加PDF到项目对话框
+// 添加 PDF 到项目对话框
 const addPdfToProjectDialog = (projectId: string) => {
   addTargetProjectId = projectId;
   fileSelectMode = 'addPdf';
   fileInput.value?.click();
 };
 
-// 向当前项目添加PDF
+// 向当前项目添加 PDF
 const triggerAddPdf = () => {
   if (!currentProject.value) return;
   addTargetProjectId = currentProject.value.id;
@@ -654,22 +656,37 @@ const handleFileChange = async (e: Event) => {
   uploading.value = true;
 
   try {
-    // 上传文件到思源，同时返回 Blob URL（用于 PDF 文件）
     const isPdf = file.type === 'application/pdf';
-    const result = await uploadFileToAssets(file, isPdf);
+
+    // 【关键优化】对于 PDF 文件，直接从本地 File 对象创建 Blob URL
+    // 这样 PDFViewer 可以直接使用，无需再从服务器 GET 文件
+    let pdfBlobUrl: string | null = null;
+    if (isPdf) {
+      pdfBlobUrl = URL.createObjectURL(file);
+    }
+
+    // 上传文件到思源（不需要返回 Blob URL，因为我们已经创建了）
+    const result = await uploadFileToAssets(file, false);
 
     if (fileSelectMode === 'newProject') {
-      // 为新项目记录PDF信息
+      // 为新项目记录 PDF 信息
       newProjectDialog.value.pdfPath = result.path;
       newProjectDialog.value.pdfName = result.name;
-      // 保存 Blob URL 用于 PDFViewer
-      if (result.blobUrl) {
-        (newProjectDialog.value as any).pdfBlobUrl = result.blobUrl;
+      // 保存 Blob URL 用于 PDFViewer（直接使用本地 File 对象）
+      if (pdfBlobUrl) {
+        (newProjectDialog.value as any).pdfBlobUrl = pdfBlobUrl;
       }
     } else if (fileSelectMode === 'addPdf') {
       // 添加到现有项目
       const projectId = addTargetProjectId || currentProject.value?.id;
       if (projectId) {
+        // 【关键修复】先设置 Blob URL，避免时序问题
+        // 必须在 loadProjects 和改变 currentPdfId 之前设置
+        if (pdfBlobUrl) {
+          pendingPdfBlobUrl.value = pdfBlobUrl;
+          pendingPdfPath.value = result.path;  // 记录对应的路径
+        }
+
         const pdf = await addPdfToProject(projectId, {
           pdfPath: result.path,
           pdfName: result.name
@@ -679,15 +696,11 @@ const handleFileChange = async (e: Event) => {
           // 刷新项目数据
           await loadProjects();
 
-          // 如果添加到当前项目，切换到新PDF
+          // 如果添加到当前项目，切换到新 PDF
           if (currentProject.value?.id === projectId) {
             currentPdfId.value = pdf.id;
             currentPage.value = 1;
             totalPages.value = 0;
-            // 保存 Blob URL 用于 PDFViewer
-            if (result.blobUrl) {
-              pendingPdfBlobUrl.value = result.blobUrl;
-            }
           }
         }
       }
@@ -742,7 +755,7 @@ const createNewProject = async () => {
 
 // 删除项目确认
 const deleteProjectConfirm = async (proj: ProjectListItem) => {
-  if (!confirm(`确定删除项目「${proj.name}」？\n\n这将删除：\n- ${proj.pdfCount}个PDF文件关联\n- ${proj.annotationCount}条标注数据\n- 标注文档\n\n此操作不可撤销！`)) {
+  if (!confirm(`确定删除项目「${proj.name}」？\n\n这将删除：\n- ${proj.pdfCount}个 PDF 文件关联\n- ${proj.annotationCount}条标注数据\n- 标注文档\n\n此操作不可撤销！`)) {
     return;
   }
 
@@ -759,7 +772,7 @@ const deleteProjectConfirm = async (proj: ProjectListItem) => {
     }
   } catch (error: any) {
     console.error('删除项目失败:', error);
-    alert(`删除失败: ${error.message || '未知错误'}`);
+    alert(`删除失败：${error.message || '未知错误'}`);
   }
 };
 
@@ -769,7 +782,7 @@ const loadAnnotations = async () => {
   annotations.value = getProjectAnnotations(currentProject.value.id);
 };
 
-// PDF加载完成
+// PDF 加载完成
 const handlePdfLoaded = (numPages: number) => {
   totalPages.value = numPages;
   if (currentProject.value && currentPdf.value) {
@@ -785,7 +798,7 @@ const handlePageChange = (page: number) => {
 // 点击标注
 const handleAnnotationClick = (ann: PDFAnnotation) => {
   highlightAnnotation.value = ann;
-  // 切换到标注所属的PDF
+  // 切换到标注所属的 PDF
   if (currentProject.value) {
     const pdf = currentProject.value.pdfs.find(p => p.path === ann.pdfPath);
     if (pdf && pdf.id !== currentPdfId.value) {
@@ -815,7 +828,7 @@ const handleAnnotationDelete = async (ann: PDFAnnotation) => {
   // 根据标注类型显示不同的确认内容
   let confirmContent: string;
   if (ann.isImage) {
-    confirmContent = `确定要删除这张图片摘录吗？\n\n图片路径: ${ann.imagePath || '未知'}`;
+    confirmContent = `确定要删除这张图片摘录吗？\n\n图片路径：${ann.imagePath || '未知'}`;
   } else {
     const displayText = ann.text || '(空内容)';
     confirmContent = `确定要删除这条标注吗？\n\n"${displayText.substring(0, 50)}${displayText.length > 50 ? '...' : ''}"`;
@@ -841,7 +854,7 @@ const handleAnnotationDelete = async (ann: PDFAnnotation) => {
     });
   } catch (error: any) {
     console.error('删除标注失败:', error);
-    alert(`删除失败: ${error.message || '未知错误'}`);
+    alert(`删除失败：${error.message || '未知错误'}`);
   }
 };
 
@@ -949,15 +962,15 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     }
   }
 
-  // 第二步：检查新标注ID是否已存在
+  // 第二步：检查新标注 ID 是否已存在
   if (seenIds.has(newAnnotation.id)) {
-    return { success: false, reason: '标注ID已存在' };
+    return { success: false, reason: '标注 ID 已存在' };
   }
 
   // 第三步：检查内容重复（增强版：不依赖时间，直接检查相同内容）
   let isDuplicate = false;
   const now = Date.now();
-  const DUPLICATE_TIME_WINDOW = 10000; // 10秒内相同内容视为重复
+  const DUPLICATE_TIME_WINDOW = 10000; // 10 秒内相同内容视为重复
 
   if (newAnnotation.isImage && newAnnotation.imagePath) {
     // 图片：检查相同路径
@@ -965,7 +978,7 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
       a.isImage && a.imagePath === newAnnotation.imagePath
     );
   } else if (newAnnotation.text) {
-    // 文本：检查相同文本+页码+位置（矩形区域重叠）
+    // 文本：检查相同文本 + 页码 + 位置（矩形区域重叠）
     isDuplicate = deduplicatedAnnotations.some(a => {
       if (a.isImage || !a.text) return false;
 
@@ -1014,7 +1027,7 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     }
   }
 
-  // 第五步：最终验证 - 确保没有重复ID
+  // 第五步：最终验证 - 确保没有重复 ID
   const finalIds = newAnnotations.map(a => a.id);
   const finalUniqueIds = new Set(finalIds);
   if (finalIds.length !== finalUniqueIds.size) {
@@ -1097,12 +1110,12 @@ const handleImageSelected = async (data: {
     const canvas = pdfViewerEl?.querySelector('.pdf-canvas') as HTMLCanvasElement;
 
     if (!canvas) {
-      throw new Error('找不到PDF画布，请等待PDF加载完成');
+      throw new Error('找不到 PDF 画布，请等待 PDF 加载完成');
     }
 
-    // 确保canvas已经渲染
+    // 确保 canvas 已经渲染
     if (canvas.width === 0 || canvas.height === 0) {
-      throw new Error('PDF画布未准备好，请稍后重试');
+      throw new Error('PDF 画布未准备好，请稍后重试');
     }
 
     const scaleX = canvas.width / canvas.offsetWidth;
@@ -1114,7 +1127,7 @@ const handleImageSelected = async (data: {
     let cropWidth = Math.max(1, Math.round(data.canvasRect.width * scaleX));
     let cropHeight = Math.max(1, Math.round(data.canvasRect.height * scaleY));
 
-    // 确保不超出canvas边界
+    // 确保不超出 canvas 边界
     if (cropX + cropWidth > canvas.width) {
       cropWidth = canvas.width - cropX;
     }
@@ -1148,7 +1161,7 @@ const handleImageSelected = async (data: {
       cropHeight
     );
 
-    // 转换为Blob
+    // 转换为 Blob
     const blob = await new Promise<Blob>((resolve, reject) => {
       tempCanvas.toBlob(b => {
         if (b) {
@@ -1159,7 +1172,7 @@ const handleImageSelected = async (data: {
       }, 'image/png', 0.92);
     });
 
-    // 检查blob大小
+    // 检查 blob 大小
     if (blob.size < 100) {
       throw new Error('生成的图片太小，可能选择区域无效');
     }
@@ -1212,7 +1225,7 @@ const handleImageSelected = async (data: {
 
   } catch (error: any) {
     console.error('创建图片摘录失败:', error);
-    alert(`创建失败: ${error.message || '未知错误'}`);
+    alert(`创建失败：${error.message || '未知错误'}`);
   } finally {
     creatingAnnotation.value = false;
     imageSelectLock = false; // 释放锁
@@ -1225,7 +1238,7 @@ const getCreateAnnotationLock = () => {
   (window as any).__PDF_CREATE_ANNOTATION_LOCK__ ||= { locked: false, text: '', level: '', time: 0 };
   return (window as any).__PDF_CREATE_ANNOTATION_LOCK__;
 };
-const CREATE_LOCK_DURATION = 3000; // 3秒锁定时间
+const CREATE_LOCK_DURATION = 3000; // 3 秒锁定时间
 
 // 从选择创建标注
 const createAnnotationFromSelection = async () => {
@@ -1262,7 +1275,7 @@ const createAnnotationFromSelection = async () => {
   try {
     const rect = selectedRect.value || [0, 0, 100, 20];
 
-    // 使用更精确的时间戳+随机数生成唯一ID
+    // 使用更精确的时间戳 + 随机数生成唯一 ID
     const newAnnotation: PDFAnnotation = {
       id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       blockId: '',
@@ -1309,7 +1322,7 @@ const createAnnotationFromSelection = async () => {
 
   } catch (error: any) {
     console.error('创建标注失败:', error);
-    alert(`创建失败: ${error.message || '未知错误'}`);
+    alert(`创建失败：${error.message || '未知错误'}`);
     // 重置全局锁，允许重试
     const lock = getCreateAnnotationLock();
     lock.text = '';
@@ -1369,22 +1382,32 @@ watch(currentPage, () => {
 });
 
 // 清理之前的 Blob URL（切换 PDF 时）
-watch(currentPdfId, () => {
-  if (pendingPdfBlobUrl.value) {
-    URL.revokeObjectURL(pendingPdfBlobUrl.value);
-    pendingPdfBlobUrl.value = null;
+// 注意：只有当 pendingPdfPath 与当前 PDF 路径不匹配时才清理
+watch(currentPdfId, (newId) => {
+  // 获取当前 PDF 路径
+  const currentPath = currentPdf.value?.path;
+
+  // 如果 pendingPdfPath 存在且与当前路径匹配，不清理
+  if (pendingPdfBlobUrl.value && pendingPdfPath.value) {
+    if (pendingPdfPath.value !== currentPath) {
+      // 路径不匹配，说明切换到了其他 PDF，清理
+      URL.revokeObjectURL(pendingPdfBlobUrl.value);
+      pendingPdfBlobUrl.value = null;
+      pendingPdfPath.value = null;
+    }
+    // 路径匹配，保留 Blob URL 给 PDFViewer 使用
   }
 });
 
-// 定时更新缓存的文档ID（每3秒检查一次）
+// 定时更新缓存的文档 ID（每 3 秒检查一次）
 let docIdUpdateTimer: ReturnType<typeof setInterval> | null = null;
 
 // 初始化
 onMounted(async () => {
   await loadProjects();
-  // 初始化时缓存当前文档ID
+  // 初始化时缓存当前文档 ID
   updateCachedDocId();
-  // 定时更新缓存的文档ID
+  // 定时更新缓存的文档 ID
   docIdUpdateTimer = setInterval(() => {
     updateCachedDocId();
   }, 3000);
@@ -1827,7 +1850,7 @@ onUnmounted(async () => {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
-  margin-left: 8px;
+  margin-le1ft: 8px;
 }
 
 .project-actions button {
