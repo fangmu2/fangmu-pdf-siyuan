@@ -205,6 +205,7 @@ const OutlineItem = defineComponent({
 
 const props = defineProps<{
   pdfPath: string;
+  pdfBlobUrl?: string;  // 可选的 Blob URL，用于避免上传后立即 getFile
   currentPage: number;
   annotations?: PDFAnnotation[];
   highlightAnnotation?: PDFAnnotation | null;
@@ -335,12 +336,20 @@ const loadPdf = async () => {
   error.value = '';
 
   try {
-    const blob = await getFileAsBlob(props.pdfPath);
-    
+    // 清理之前的 Blob URL
     if (currentBlobUrl) {
       URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = null;
     }
-    currentBlobUrl = URL.createObjectURL(blob);
+
+    // 优先使用传入的 Blob URL，避免重复 getFile
+    if (props.pdfBlobUrl) {
+      currentBlobUrl = props.pdfBlobUrl;
+    } else {
+      // 没有传入 Blob URL，则通过 API 获取文件
+      const blob = await getFileAsBlob(props.pdfPath);
+      currentBlobUrl = URL.createObjectURL(blob);
+    }
 
     if (pdfDoc) {
       pdfDoc.destroy();

@@ -232,7 +232,7 @@
             </svg>
           </button>
         </div>
-        
+
       </div>
     </div>
 
@@ -242,6 +242,7 @@
       <div class="pdf-area" v-if="currentPdf" :style="{ width: `calc(100% - ${annotationWidth}px)` }">
         <PDFViewer
           :pdf-path="currentPdf.path"
+          :pdf-blob-url="pendingPdfBlobUrl || undefined"
           :current-page="currentPage"
           :annotations="currentPdfAnnotations"
           :highlight-annotation="highlightAnnotation"
@@ -370,14 +371,14 @@ import {
   deleteProject as deleteProjectApi,
   getProjectAnnotations,
   saveProjectAnnotations,
-  addAnnotationToCache,
   saveAnnotationToProject,
   initProjectStorage,
-  getProjectAnnotationsAsync
+  getProjectAnnotationsAsync,
+  flushPendingAnnotationSaves
 } from './api/projectApi';
 import type { PDFAnnotation, AnnotationLevel, ExtractMode } from './types/annotaion';
 import { ANNOTATION_LEVELS } from './types/annotaion';
-import type { PDFProject, ProjectListItem, ProjectPdf } from './types/project';
+import type { PDFProject, ProjectListItem } from './types/project';
 
 const props = defineProps<{ plugin: Plugin }>();
 
@@ -398,6 +399,9 @@ const newProjectDialog = ref({
 // 文件选择模式
 let fileSelectMode: 'newProject' | 'addPdf' | 'none' = 'none';
 let addTargetProjectId: string | null = null;
+
+// 待处理的 PDF Blob URL（上传后直接使用，避免 getFile）
+const pendingPdfBlobUrl = ref<string | null>(null);
 
 // PDF 状态
 const currentPage = ref(1);
@@ -448,8 +452,8 @@ const onDocSearchInput = () => {
     try {
       const results = await searchSiyuanDocs(targetDocSearch.value);
       targetDocOptions.value = results;
-    } catch (e) {
-      console.error('[onDocSearchInput] 搜索失败:', e);
+    } catch (error) {
+      console.error('[onDocSearchInput] 搜索失败:', error);
     } finally {
       docSearchLoading.value = false;
     }
@@ -467,10 +471,6 @@ const onDocSelect = () => {
   const doc = targetDocOptions.value.find(d => d.name === targetDocSearch.value);
   if (doc) {
     targetDoc.value = doc;
-    // 选择新文档后重置防抖状态，允许重新创建标注
-    lastCreatedText = '';
-    lastCreatedLevel = '';
-    lastCreatedTime = 0;
   }
 };
 
@@ -654,13 +654,18 @@ const handleFileChange = async (e: Event) => {
   uploading.value = true;
 
   try {
-    // 上传文件到思源
-    const result = await uploadFileToAssets(file);
+    // 上传文件到思源，同时返回 Blob URL（用于 PDF 文件）
+    const isPdf = file.type === 'application/pdf';
+    const result = await uploadFileToAssets(file, isPdf);
 
     if (fileSelectMode === 'newProject') {
       // 为新项目记录PDF信息
       newProjectDialog.value.pdfPath = result.path;
       newProjectDialog.value.pdfName = result.name;
+      // 保存 Blob URL 用于 PDFViewer
+      if (result.blobUrl) {
+        (newProjectDialog.value as any).pdfBlobUrl = result.blobUrl;
+      }
     } else if (fileSelectMode === 'addPdf') {
       // 添加到现有项目
       const projectId = addTargetProjectId || currentProject.value?.id;
@@ -679,6 +684,10 @@ const handleFileChange = async (e: Event) => {
             currentPdfId.value = pdf.id;
             currentPage.value = 1;
             totalPages.value = 0;
+            // 保存 Blob URL 用于 PDFViewer
+            if (result.blobUrl) {
+              pendingPdfBlobUrl.value = result.blobUrl;
+            }
           }
         }
       }
@@ -713,6 +722,12 @@ const createNewProject = async () => {
     currentPage.value = 1;
     totalPages.value = 0;
     annotations.value = [];
+
+    // 使用保存的 Blob URL（如果存在）
+    const blobUrl = (newProjectDialog.value as any).pdfBlobUrl as string | undefined;
+    if (blobUrl) {
+      pendingPdfBlobUrl.value = blobUrl;
+    }
 
     loadProjects();
     newProjectDialog.value.visible = false;
@@ -1268,9 +1283,7 @@ const createAnnotationFromSelection = async () => {
       newAnnotation.blockId = result.blockId;
     } else if (result.error) {
       alert(result.error);
-      createAnnotationLock = false; // 释放锁
       creatingAnnotation.value = false;
-      // 不重置 lastCreatedText，保持防抖状态，防止用户快速重试创建重复标注
       return;
     }
 
@@ -1280,7 +1293,6 @@ const createAnnotationFromSelection = async () => {
       if (insertResult.reason) {
         alert(insertResult.reason);
       }
-      createAnnotationLock = false; // 释放锁
       creatingAnnotation.value = false;
       return;
     }
@@ -1356,6 +1368,14 @@ watch(currentPage, () => {
   }
 });
 
+// 清理之前的 Blob URL（切换 PDF 时）
+watch(currentPdfId, () => {
+  if (pendingPdfBlobUrl.value) {
+    URL.revokeObjectURL(pendingPdfBlobUrl.value);
+    pendingPdfBlobUrl.value = null;
+  }
+});
+
 // 定时更新缓存的文档ID（每3秒检查一次）
 let docIdUpdateTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -1374,10 +1394,18 @@ onMounted(async () => {
 
 // 卸载时保存
 onUnmounted(async () => {
-  saveCurrentState();
   if (docIdUpdateTimer) {
     clearInterval(docIdUpdateTimer);
   }
+  // 清理 Blob URL
+  if (pendingPdfBlobUrl.value) {
+    URL.revokeObjectURL(pendingPdfBlobUrl.value);
+    pendingPdfBlobUrl.value = null;
+  }
+  // 先保存当前状态
+  saveCurrentState();
+  // 强制立即保存所有待处理的标注保存请求
+  await flushPendingAnnotationSaves();
   // 强制立即保存所有待处理的数据
   await flushPendingSaves();
 });
