@@ -1,7 +1,7 @@
 <!-- src/components/PDFViewer.vue -->
 <template>
-  <div 
-    class="pdf-viewer-container" 
+  <div
+    class="pdf-viewer-container"
     ref="containerRef"
     tabindex="0"
     @keydown="handlePageKeyDown"
@@ -21,7 +21,7 @@
     <!-- PDF内容区域 -->
     <div class="pdf-content-wrapper">
       <!-- 右侧翻页区域 -->
-      <div 
+      <div
         class="page-nav-area page-nav-right"
         title="下一页 (→)"
       >
@@ -40,14 +40,22 @@
         <!-- DOM高亮层（替代Canvas，更流畅） -->
         <div ref="highlightLayerRef" class="highlight-layer"></div>
         <!-- 图片框选层 -->
-        <div 
+        <div
           v-if="extractMode === 'image'"
-          ref="imageSelectLayerRef" 
+          ref="imageSelectLayerRef"
           class="image-select-layer"
           @mousedown="startImageSelect"
           @mousemove="updateImageSelect"
           @mouseup="endImageSelect"
         ></div>
+        <!-- 手写图层 -->
+        <HandwritingLayer
+          v-if="isHandwritingLayerEnabled"
+          :pdf-path="props.pdfPath"
+          :page="props.currentPage"
+          :is-visible="isHandwritingLayerVisible"
+          @reset-learning="handleResetLearning"
+        />
       </div>
     </div>
 
@@ -98,12 +106,12 @@
           </svg>
         </button>
         <div class="page-input-wrapper">
-          <input 
-            type="number" 
-            :value="currentPage" 
+          <input
+            type="number"
+            :value="currentPage"
             @change="handlePageInput"
             @keyup.enter="handlePageInput"
-            min="1" 
+            min="1"
             :max="totalPages"
             class="page-input"
           />
@@ -149,8 +157,8 @@
           此文档没有目录
         </div>
         <div v-else class="outline-tree">
-          <OutlineItem 
-            v-for="(item, index) in outline" 
+          <OutlineItem
+            v-for="(item, index) in outline"
             :key="index"
             :item="item"
             :level="0"
@@ -167,6 +175,8 @@ import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed, defineCompo
 import { getOrLoadPdf, renderPage, renderTextLayer, getSelectionRect } from '../utils/pdf';
 import { getFileAsBlob } from '../api/siyuanApi';
 import type { PDFAnnotation, AnnotationColor, ExtractMode } from '../types/annotaion';
+import HandwritingLayer from './HandwritingLayer.vue'; // 导入手写图层组件
+import { LearningSetService } from '../services/learningSetService'; // 导入学习集服务
 
 // 目录项组件
 const OutlineItem = defineComponent({
@@ -215,10 +225,10 @@ const emit = defineEmits<{
   (e: 'loaded', numPages: number): void;
   (e: 'page-change', page: number): void;
   (e: 'text-selected', data: { text: string; page: number; rect: [number, number, number, number] | null }): void;
-  (e: 'image-selected', data: { 
-    canvasRect: { x: number; y: number; width: number; height: number }; 
+  (e: 'image-selected', data: {
+    canvasRect: { x: number; y: number; width: number; height: number };
     pdfRect: [number, number, number, number];
-    page: number 
+    page: number
   }): void;
   (e: 'annotation-delete', annotation: PDFAnnotation): void;
   (e: 'annotation-click', annotation: PDFAnnotation): void;
@@ -295,7 +305,7 @@ const ANNOTATION_COLORS: Record<AnnotationColor, { bg: string; border: string }>
 const currentPageAnnotations = computed(() => {
   if (!props.annotations) return [];
   const pageAnnotations = props.annotations.filter(ann => ann.page === props.currentPage);
-  
+
   // 去重：同一 ID 只保留一个
   const seenIds = new Set<string>();
   const uniqueAnnotations: typeof pageAnnotations = [];
@@ -313,6 +323,10 @@ const currentPageAnnotations = computed(() => {
 // 选中的标注
 const selectedAnnotation = ref<PDFAnnotation | null>(null);
 
+// 手写图层状态
+const isHandwritingLayerEnabled = ref(false); // 是否启用整个手写图层功能
+const isHandwritingLayerVisible = ref(false); // 手写图层是否可见
+
 // 加载PDF
 const loadPdf = async () => {
   if (!props.pdfPath || !canvasRef.value || !containerRef.value) return;
@@ -322,7 +336,7 @@ const loadPdf = async () => {
 
   try {
     const blob = await getFileAsBlob(props.pdfPath);
-    
+
     if (currentBlobUrl) {
       URL.revokeObjectURL(currentBlobUrl);
     }
@@ -384,7 +398,7 @@ const renderCurrentPage = async () => {
 // 使用DOM渲染高亮（比Canvas更流畅，支持交互）
 const renderHighlights = () => {
   const layer = highlightLayerRef.value;
-  
+
   if (!layer) {
     return;
   }
@@ -400,7 +414,7 @@ const renderHighlights = () => {
 
   // viewport.scale 是 PDF单位到CSS像素的转换比例
   const scale = currentViewport.scale || 1;
-  
+
   // 使用 viewport.height 作为CSS坐标系参考（与文本层保持一致）
   // 避免使用 viewBox[3] * scale 导致的浮点误差
   const cssPageHeight = currentViewport.height;
@@ -533,7 +547,7 @@ const renderHighlights = () => {
       opacity: 0;
       transition: opacity 0.15s ease, transform 0.15s ease;
     `;
-    
+
     // 鼠标进入高亮区域时显示删除按钮
     highlight.addEventListener('mouseenter', () => {
       deleteBtn.style.opacity = '1';
@@ -543,7 +557,7 @@ const renderHighlights = () => {
         deleteBtn.style.opacity = '0';
       }
     });
-    
+
     // 删除按钮悬停效果
     deleteBtn.addEventListener('mouseenter', () => {
       deleteBtn.style.background = '#dc2626';
@@ -553,7 +567,7 @@ const renderHighlights = () => {
       deleteBtn.style.background = '#ef4444';
       deleteBtn.style.transform = 'scale(1)';
     });
-    
+
     // 删除按钮点击事件
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -561,7 +575,7 @@ const renderHighlights = () => {
       emit('annotation-delete', ann);
       selectedAnnotation.value = null;
     });
-    
+
     // 选中状态下也显示删除按钮
     if (isSelected) {
       deleteBtn.style.opacity = '1';
@@ -576,13 +590,13 @@ const renderHighlights = () => {
 const handleKeyDown = (e: KeyboardEvent) => {
   // 只在 Delete 或 Backspace 键时处理
   if (e.key !== 'Delete' && e.key !== 'Backspace') return;
-  
+
   // 如果焦点在输入框中，不处理删除
   const activeElement = document.activeElement;
   if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || (activeElement as HTMLElement).isContentEditable)) {
     return;
   }
-  
+
   if (selectedAnnotation.value) {
     e.preventDefault();
     emit('annotation-delete', selectedAnnotation.value);
@@ -659,14 +673,14 @@ const handleTextSelection = () => {
 // 图片框选 - 开始
 const startImageSelect = (e: MouseEvent) => {
   if (props.extractMode !== 'image' || !imageSelectLayerRef.value) return;
-  
+
   isSelecting = true;
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
   selectionStart = {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
   };
-  
+
   // 创建选择框元素
   selectionDiv = document.createElement('div');
   selectionDiv.className = 'image-selection-box';
@@ -688,16 +702,16 @@ const startImageSelect = (e: MouseEvent) => {
 // 图片框选 - 更新
 const updateImageSelect = (e: MouseEvent) => {
   if (!isSelecting || !selectionDiv || !imageSelectLayerRef.value) return;
-  
+
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
   const currentX = e.clientX - rect.left;
   const currentY = e.clientY - rect.top;
-  
+
   const left = Math.min(selectionStart.x, currentX);
   const top = Math.min(selectionStart.y, currentY);
   const width = Math.abs(currentX - selectionStart.x);
   const height = Math.abs(currentY - selectionStart.y);
-  
+
   selectionDiv.style.left = left + 'px';
   selectionDiv.style.top = top + 'px';
   selectionDiv.style.width = width + 'px';
@@ -719,34 +733,34 @@ const endImageSelect = (e: MouseEvent) => {
   lastImageSelectTime = now;
 
   isSelecting = false;
-  
+
   const rect = imageSelectLayerRef.value.getBoundingClientRect();
   const currentX = e.clientX - rect.left;
   const currentY = e.clientY - rect.top;
-  
+
   const left = Math.min(selectionStart.x, currentX);
   const top = Math.min(selectionStart.y, currentY);
   const width = Math.abs(currentX - selectionStart.x);
   const height = Math.abs(currentY - selectionStart.y);
-  
+
   selectionDiv.remove();
   selectionDiv = null;
-  
+
   if (width < 10 || height < 10) return;
-  
+
   // 计算PDF坐标
   const canvas = canvasRef.value;
   const canvasCssWidth = canvas.offsetWidth;
-  
+
   if (currentPageObj && currentViewport) {
     const viewport = currentPageObj.getViewport({ scale: 1 });
     const pdfScale = viewport.width / canvasCssWidth;
-    
+
     const pdfX1 = left * pdfScale;
     const pdfY1 = viewport.height - (top + height) * pdfScale;
     const pdfX2 = (left + width) * pdfScale;
     const pdfY2 = viewport.height - top * pdfScale;
-    
+
     emit('image-selected', {
       canvasRect: { x: left, y: top, width, height },
       pdfRect: [pdfX1, pdfY1, pdfX2, pdfY2],
@@ -918,28 +932,72 @@ const handlePageNavClick = (direction: 'next') => {
   nextPage();
 };
 
+// 保存当前页面到学习集进度
+const saveProgressToLearningSet = (pdfPath: string, page: number) => {
+  // 这里可以实现将当前页面进度保存到学习集中
+  // 暂时只做日志记录，实际实现需要根据具体需求
+  console.log(`Progress saved for ${pdfPath}, page ${page}`);
+
+  // 实际实现：遍历所有学习集，如果包含当前PDF，则更新进度
+  const allSets = LearningSetService.getAllLearningSets();
+  allSets.forEach(set => {
+    if (set.pdfPaths.includes(pdfPath)) {
+      LearningSetService.saveProgress(set.id, pdfPath, page);
+    }
+  });
+};
+
+// 页面变化时保存进度
+watch(() => props.currentPage, (newPage) => {
+  if (props.pdfPath) {
+    saveProgressToLearningSet(props.pdfPath, newPage);
+  }
+});
+
+// 手写图层控制方法
+const toggleHandwritingLayer = () => {
+  // 首次启用时激活功能
+  if (!isHandwritingLayerEnabled.value) {
+    isHandwritingLayerEnabled.value = true;
+  }
+  // 切换可见性
+  isHandwritingLayerVisible.value = !isHandwritingLayerVisible.value;
+};
+
+// 重置学习功能
+const handleResetLearning = () => {
+  // 发出重置学习事件，通知父组件执行重置操作
+  console.log('Learning reset triggered for PDF:', props.pdfPath, 'Page:', props.currentPage);
+  // 可以在这里添加清理标注等操作
+  // 例如：清除当前页面的所有标注
+  const pageAnnotations = props.annotations?.filter(ann => ann.page === props.currentPage) || [];
+  pageAnnotations.forEach(ann => {
+    emit('annotation-delete', ann);
+  });
+};
+
 // 鼠标移动时检测是否在右边缘停留
 const handleNavMouseMove = (e: MouseEvent) => {
   if (!containerRef.value) return;
-  
+
   const rect = containerRef.value.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const width = rect.width;
-  
+
   // 清除之前的定时器
   if (navHoverTimer) {
     clearTimeout(navHoverTimer);
     navHoverTimer = null;
   }
-  
+
   // 如果鼠标不在右边缘，立即隐藏按钮
   const inRightEdge = x > width - NAV_EDGE_WIDTH;
-  
+
   if (!inRightEdge) {
     showRightNav.value = false;
     return;
   }
-  
+
   // 鼠标在右边缘，延迟显示按钮（需要停留一段时间）
   navHoverTimer = setTimeout(() => {
     showRightNav.value = true;
@@ -973,7 +1031,7 @@ onMounted(() => {
   loadPdf();
   document.addEventListener('mouseup', handleTextSelection);
   document.addEventListener('keydown', handleKeyDown);
-  
+
   // 翻页按钮悬停检测
   if (containerRef.value) {
     containerRef.value.addEventListener('mousemove', handleNavMouseMove);
@@ -983,16 +1041,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('mouseup', handleTextSelection);
   document.removeEventListener('keydown', handleKeyDown);
-  
+
   // 清理翻页按钮定时器
   if (navHoverTimer) {
     clearTimeout(navHoverTimer);
   }
-  
+
   if (containerRef.value) {
     containerRef.value.removeEventListener('mousemove', handleNavMouseMove);
   }
-  
+
   if (pdfDoc) {
     pdfDoc.destroy();
   }

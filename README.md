@@ -1,166 +1,109 @@
-# PDF Excerpt Assistant
+# PDF 思维导图摘录插件
 
-A powerful PDF annotation and excerpt tool for SiYuan Note that helps you efficiently extract knowledge from PDF documents and organize it into structured notes.
+一个强大的思源笔记插件，用于从PDF文档中提取文本和图片，并以思维导图形式组织和展示标注内容。
 
-## ✨ Core Features
+## 功能特性
 
-### 📚 Multi-PDF Project Management
-- Create projects to manage multiple PDFs in one place
-- Support switching between PDFs within a project
-- Persistent data storage
+### 📚 项目管理
+- 支持创建多个PDF项目，每个项目可包含多本PDF
+- 统一管理所有PDF文档和标注内容
+- 项目级统计信息（PDF数量、标注数量等）
 
-### 📝 Text Excerpt
-- Select text in PDF to create annotations with one click
-- Support multiple annotation levels: Document Title, H1-H5 headings, Text annotation
-- Annotations are automatically saved to SiYuan documents
-- Real-time highlight display in PDF
+### 📄 PDF处理
+- 支持多PDF文档同时管理
+- PDF页面浏览和导航
+- 实时PDF内容预览
 
-### 📷 Image Excerpt
-- Select an area in PDF to capture as an image
-- Images are automatically uploaded to SiYuan assets
-- Support adding annotation levels and notes
-- Display 📷 badge in PDF for image excerpts
+### ✍️ 标注功能
+- **文字摘录**：选择PDF中的文字内容进行标注
+- **图片摘录**：圈选PDF中的图片进行摘录
+- **多级标注**：支持标题、段落、句子等多个层级
+- **实时同步**：标注自动同步到思源笔记对应文档
 
-### 🎨 Annotation Management
-- Real-time display of all excerpted content
-- Sort by page number
-- Click annotation to quickly locate the corresponding position in PDF
-- Support editing annotation content and adding notes
-- **Drag to merge**: Drag annotations under headings for organization
+### 🎯 视图模式
+- **分屏模式**：PDF预览与标注列表并排显示
+- **列表模式**：专注标注内容管理
+- **思维导图模式**：可视化展示标注间的层级关系
 
-### 🗑️ Multiple Delete Methods
-- **Delete in PDF**:
-  - Hover delete: Hover over highlight marker, click red × button on top-right corner
-  - Keyboard delete: Click highlight marker to select (white border, deeper background), press Delete or Backspace key
-- **Delete in list**: Click delete button in annotation list
-- **Bidirectional sync**: Deleting from PDF or list will synchronously remove the corresponding block in SiYuan
+### 🔄 数据同步
+- 标注内容实时保存到思源笔记
+- 支持标注的增删改查
+- 自动维护标注与PDF页面的关联
 
-### ⌨️ Quick Operations
-- **Click annotation**: Select annotation (highlighted display)
-- **Delete/Backspace key**: Delete selected annotation
-- **Double-click annotation**: Jump to corresponding position in PDF
+## 安装方法
 
-## 🚀 How to Use
+1. 将插件文件夹复制到思源笔记的 `plugins` 目录下
+2. 重启思源笔记
+3. 在设置中启用插件
 
-### 1. Create a Project
-Click the "+ New Project" button at the top, enter a project name, and select a PDF file.
+## 使用指南
 
-### 2. Add PDFs
-Continue adding more PDFs to the current project in project management.
+### 创建项目
+1. 点击"项目"按钮打开项目管理面板
+2. 点击"新建项目"创建新项目
+3. 选择第一个PDF文件导入
 
-### 3. Excerpt Content
-- **Text Mode**: Select the "Text" button in the toolbar, then drag to select text in PDF
-- **Image Mode**: Select the "Image" button in the toolbar, then drag to select an area in PDF
+### 添加PDF
+1. 在项目管理面板中选择目标项目
+2. 点击"添加PDF"按钮
+3. 选择要添加的PDF文件
 
-### 4. Set Level
-Before excerpting, you can select the annotation level in the toolbar:
-- Document Title: Will become the title of the target document
-- H1-H5: Generate headings of corresponding levels
-- Text Annotation: Normal text highlight
+### 文字摘录
+1. 在PDF预览区选择要摘录的文字
+2. 点击"创建标注"按钮
+3. 选择合适的标注级别（标题/段落/句子）
 
-### 5. Specify Target Document (Optional)
-Search and select a SiYuan document in the "Target" input box, annotations will be saved to that document.
+### 图片摘录
+1. 在PDF预览区圈选要摘录的图片区域
+2. 系统会自动创建图片标注
+3. 图片会保存到思源的资源库
 
-### 6. Manage Annotations
-- **View**: Annotation list displays all excerpts in real-time
-- **Locate**: Double-click annotation item to jump to corresponding position in PDF
-- **Edit**: Click edit button to modify annotation content and notes
-- **Merge**: Drag annotation under heading for organization
-- **Delete**:
-  - Hover and click × button in PDF
-  - Click to select in PDF, then press Delete key
-  - Click delete button in list
+### 管理标注
+- 点击标注列表中的项目查看详细内容
+- 可编辑、删除或移动标注
+- 支持标注的合并与拆分
 
-## 📖 Use Cases
+## 技术架构
 
-### Academic Research
-- Quickly excerpt key viewpoints when reading papers
-- Organize literature structure by heading levels
-- Export notes in Markdown format
+### 前端技术栈
+- Vue 3 + TypeScript
+- Vite 构建工具
+- PDF.js 用于PDF渲染
+- D3.js 用于思维导图可视化
 
-### Knowledge Organization
-- Manage multiple textbooks in one place
-- Categorize and annotate important concepts
-- Save charts with image screenshots
+### 核心组件
+- `PDFViewer`：PDF渲染和交互
+- `AnnotationList`：标注列表管理
+- `MindMapViewer`：思维导图可视化
+- `AnnotationEditor`：标注编辑界面
 
-### Reading Notes
-- Highlight and excerpt wonderful passages
-- Add personal thoughts and notes
-- Generate structured reading notes
+### 数据管理
+- 本地存储项目和标注元数据
+- 与思源API集成进行文档同步
+- 支持增量更新和冲突解决
 
-## 🎯 Highlights
+## 开发说明
 
-1. **Non-intrusive Design**: Annotation data is stored in SiYuan document blocks, can be viewed without the plugin
-2. **Multi-level Heading Support**: Directly generate H1-H5 headings for easy document structure building
-3. **Bidirectional Linking**: Real-time linking between PDF and annotation list for quick positioning
-4. **Image Excerpt**: Support screenshot saving of charts, formulas, etc. in PDF
-5. **Project-based Management**: Unified management of multiple PDF files, suitable for thematic research
-6. **Easy Deletion**: Support deleting annotations directly in PDF with bidirectional sync
+### 项目结构
+```
+src/
+├── api/           # 思源API接口
+├── components/    # Vue组件
+├── types/         # 类型定义
+├── utils/         # 工具函数
+└── App.vue       # 主应用组件
+```
 
-## ⚙️ Technical Implementation
+### 依赖项
+- vue: ^3.0.0
+- pdfjs-dist: ^4.0.0
+- d3: ^7.0.0
+- siyuan: ^*
 
-- PDF rendering based on PDF.js
-- Developed with Vue 3 + TypeScript
-- Data stored in SiYuan document block attributes
-- Support for SiYuan theme style adaptation
-- DOM highlight layer for annotation interaction
+## 贡献指南
 
-## 📌 Notes
+欢迎提交Issue和Pull Request来改进插件功能。
 
-1. First-time use requires creating a project and importing a PDF
-2. Annotation saving requires a valid target document (if not specified, it will try to save to the most recently edited document)
-3. Image excerpts generate PNG files stored in the assets directory
-4. It is recommended to regularly check project status through project management
-5. Delete operations will synchronously remove the corresponding block in SiYuan, please operate with caution
-
-## 🔄 Changelog
-
-### v0.0.23
-- Updated plugin metadata for marketplace compatibility
-- Improved document list refresh behavior
-
-### v0.0.19
-- Fixed: Image issues
-
-### v0.0.18
-- Fixed: Annotation highlight marker vertical offset issue (unified coordinate reference using `viewport.height`)
-- Improved: Page navigation buttons no longer interfere with PDF panning (require hover delay to activate)
-- Improved: Page indicator moved to bottom-right corner, no longer blocks PDF content
-- Improved: Smaller navigation area with hover delay to prevent accidental clicks during text selection
-
-### v0.0.17
-- Fixed: `indexOf` error when selecting SiYuan documents in dropdown
-- Fixed: Document list not showing after clearing selection
-- Improved: Better null/undefined value handling
-
-### v0.0.16
-- Removed all debug console.log statements
-
-### v0.0.13
-- Added: Hover to show delete button on PDF highlight markers
-- Added: Click to select + Delete key to remove annotations in PDF
-- Added: 📷 badge for image excerpts in PDF
-- Added: Delete confirmation dialog distinguishes between image/text excerpts
-- Optimized: Annotation list rendering performance, fixed duplicate display issue
-- Fixed: PDF highlight markers not responding to clicks (z-index layer fix)
-- Fixed: Bidirectional sync issue for annotation deletion
-
-### v0.0.8
-- Added: PDF annotation click selection feature
-- Added: Delete key to remove selected annotation
-- Optimized: Minimum height for annotation rendering to avoid displaying as lines
-- Fixed: Error when annotation color is empty
-
-### v0.0.7
-- Added: Multi-PDF project management
-- Added: Image excerpt feature
-- Added: Annotation level classification
-- Optimized: UI interaction experience
-
-## 💬 Feedback
-
-For issues or suggestions, please feedback at [GitHub Issues](https://github.com/fangmu2/fangmu-pdf-siyuan/issues).
-
-## 📄 License
+## 许可证
 
 MIT License

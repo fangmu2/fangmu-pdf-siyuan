@@ -17,6 +17,8 @@
     "build": "vite build"
   },
   "dependencies": {
+    "markmap-lib": "^0.18.12",
+    "markmap-view": "^0.18.12",
     "pdfjs-dist": "^5.4.624",
     "vue": "^3.3.8"
   },

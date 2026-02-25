@@ -139,6 +139,7 @@ export default defineConfig(({
 
         // make sure to externalize deps that shouldn't be bundled
         // into your library
+        // 只externalize思源笔记本身提供的库
         external: ["siyuan", "process"],
 
         output: {
@@ -148,6 +149,11 @@ export default defineConfig(({
               return "index.css"
             }
             return assetInfo.name
+          },
+          // 为markmap相关库提供全局变量映射（如果需要外部化的话）
+          globals: {
+            'markmap-lib': 'markmapLib',
+            'markmap-view': 'markmapView',
           },
         },
       },
