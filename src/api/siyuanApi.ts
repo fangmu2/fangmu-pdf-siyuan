@@ -51,7 +51,7 @@ export async function postApi<T = any>(
  * 使用 /api/file/putFile API 直接保存文件到指定路径
  * 保存到 petal 目录可避免被当做未引用资源文件清理
  */
-export async function uploadFileToAssets(file: File): Promise<{ path: string; name: string }> {
+export async function uploadFileToAssets(file: File): Promise<{ path: string; name: string, base64?: string }> {
   const kernelBase = getKernelBase();
 
   // 生成唯一的文件名，避免冲突
@@ -63,6 +63,9 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
   // 目标路径: /data/storage/petal/fangmu-pdf-siyuan/xxx.png
   // 保存到 petal 目录，避免被当做未引用资源文件清理
   const targetPath = `/data/storage/petal/fangmu-pdf-siyuan/${uniqueFileName}`;
+
+  // 读取文件为 base64（用于图片嵌入到 Markdown）
+  const base64 = await fileToBase64(file);
 
   // 使用 FormData 上传
   const formData = new FormData();
@@ -80,52 +83,69 @@ export async function uploadFileToAssets(file: File): Promise<{ path: string; na
     throw new Error(`上传失败: ${json.msg}`);
   }
 
-  // /api/file/putFile 返回 { code: 0, msg: "", data: null }
-  // 成功后文件路径就是我们指定的路径
+  // 返回 petal 路径和 base64 数据
   const actualPath = `storage/petal/fangmu-pdf-siyuan/${uniqueFileName}`;
   const actualName = file.name;
 
   return {
     path: actualPath,
-    name: actualName
+    name: actualName,
+    base64
   };
 }
 
 /**
+ * 将 File 对象转换为 base64 字符串
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * 生成文件的直接访问URL
- * petal 目录下的文件需要通过 /api/file/getFile API 访问
- * 注意： getFile API 需要 POST 方式调用，此函数返回的 URL 仅用于特定场景
+ * assets 目录下的文件可以直接通过 HTTP GET 方式访问
  */
 export function toAssetUrl(path: string): string {
   const kernelBase = getKernelBase();
-  // 提取文件名
-  let fileName = path;
-  if (path.includes('/')) {
-    fileName = path.split('/').pop() || path;
+  
+  // 如果已经是 assets/ 格式，直接拼接
+  if (path.startsWith('assets/')) {
+    return `${kernelBase}/${path}`;
   }
-
-  // petal 目录下的文件路径
-  const filePath = `/data/storage/petal/fangmu-pdf-siyuan/${fileName}`;
-  // getFile API 支持 GET 方式，通过 query 参数传递路径
-  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent(filePath)}`;
+  
+  // 如果是完整路径 /data/assets/xxx，转换为 assets/xxx
+  if (path.startsWith('/data/assets/')) {
+    return `${kernelBase}/${path.slice(6)}`;
+  }
+  
+  // 其他路径通过 getFile API 获取
+  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent(path)}`;
 }
 
 /**
  * 通过API获取文件内容（二进制）
- * path: 文件路径，如 "/data/storage/petal/fangmu-pdf-siyuan/xxx.pdf"
+ * path: 文件路径，如 "assets/xxx.pdf" 或 "/data/assets/xxx.pdf"
  * 使用 POST 方式调用 /api/file/getFile API
  */
 export async function getFileAsBlob(path: string): Promise<Blob> {
   const kernelBase = getKernelBase();
 
-  // 提取文件名
-  let fileName = path;
-  if (path.includes('/')) {
-    fileName = path.split('/').pop() || path;
+  // 规范化路径
+  let filePath = path;
+  
+  // 如果路径不以 /data/ 开头，添加前缀
+  if (!filePath.startsWith('/data/')) {
+    // assets/xxx.pdf -> /data/assets/xxx.pdf
+    filePath = `/data/${filePath}`;
   }
-
-  // petal 目录下的文件路径
-  const filePath = `/data/storage/petal/fangmu-pdf-siyuan/${fileName}`;
 
   // 使用 POST 方式调用 getFile API
   const res = await fetch(`${kernelBase}/api/file/getFile`, {
@@ -328,7 +348,6 @@ export async function checkDocExists(docId: string): Promise<boolean> {
  */
 export async function searchSiyuanDocs(keyword: string): Promise<{ id: string; name: string; box: string; hpath: string }[]> {
   try {
-    const kernelBase = getKernelBase();
     let stmt: string;
 
     // 转义单引号防止 SQL 注入
@@ -391,8 +410,49 @@ export async function getDocNotebookId(docId: string): Promise<string | null> {
 /**
  * 设置插件持久化数据（使用文件存储）
  * 数据存储在 /data/storage/petal/fangmu-pdf-siyuan/ 目录下
+ * 
+ * 使用防抖机制，合并同一 key 的多次保存请求
  */
+const pendingSaves: Map<string, { value: any; timer: ReturnType<typeof setTimeout> }> = new Map();
+const SAVE_DEBOUNCE_MS = 300; // 防抖时间
+
 export async function setPluginData<T>(key: string, value: T): Promise<boolean> {
+  // 取消之前的待处理保存
+  const pending = pendingSaves.get(key);
+  if (pending) {
+    clearTimeout(pending.timer);
+  }
+
+  // 设置新的待处理保存
+  return new Promise((resolve) => {
+    const timer = setTimeout(async () => {
+      pendingSaves.delete(key);
+      const success = await doSetPluginData(key, value);
+      resolve(success);
+    }, SAVE_DEBOUNCE_MS);
+
+    pendingSaves.set(key, { value, timer });
+  });
+}
+
+/**
+ * 强制立即保存所有待处理的数据
+ * 在插件关闭或页面卸载时调用
+ */
+export async function flushPendingSaves(): Promise<void> {
+  const savesToProcess = Array.from(pendingSaves.entries());
+  pendingSaves.clear();
+
+  await Promise.all(savesToProcess.map(async ([key, { value, timer }]) => {
+    clearTimeout(timer);
+    await doSetPluginData(key, value);
+  }));
+}
+
+/**
+ * 实际执行保存操作
+ */
+async function doSetPluginData<T>(key: string, value: T): Promise<boolean> {
   const kernelBase = getKernelBase();
   const storageDir = `/data/storage/petal/fangmu-pdf-siyuan`;
   

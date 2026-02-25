@@ -15,17 +15,6 @@
           </svg>
           <span class="btn-text">项目</span>
         </button>
-        <button
-          @click="showLearningSetManager = !showLearningSetManager"
-          class="header-btn learning-set-btn"
-          :class="{ active: showLearningSetManager }"
-          title="学习集管理"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
-          </svg>
-          <span class="btn-text">学习集</span>
-        </button>
         <div class="header-divider"></div>
         <div class="header-title">
           <span class="title-main">{{ currentProject?.name || 'PDF 摘录助手' }}</span>
@@ -243,7 +232,7 @@
             </svg>
           </button>
         </div>
-
+        
       </div>
     </div>
 
@@ -301,7 +290,7 @@
       </div>
 
       <!-- 标注列表区 -->
-      <div v-if="currentProject && viewMode !== 'mindmap'" class="annotation-area" :style="{ width: `${annotationWidth}px` }">
+      <div class="annotation-area" v-if="currentProject" :style="{ width: `${annotationWidth}px` }">
         <div class="annotation-header">
           <span>📝 标注列表</span>
           <span class="annotation-count">{{ annotations.length }}条</span>
@@ -317,19 +306,6 @@
           @merge="handleAnnotationMerge"
           @unmerge="handleAnnotationUnmerge"
           @cursor-change="handleCursorChange"
-        />
-      </div>
-
-      <!-- 思维导图区 -->
-      <div v-if="currentProject && viewMode === 'mindmap'" class="annotation-area" :style="{ width: `${annotationWidth}px` }">
-        <div class="annotation-header">
-          <span>🧠 思维导图</span>
-          <span class="annotation-count">{{ annotations.length }}条</span>
-        </div>
-        <MindMapViewer
-          :annotations="annotations"
-          :loading="loadingAnnotations"
-          @annotation-click="handleAnnotationClick"
         />
       </div>
     </div>
@@ -362,16 +338,6 @@
       @saved="handleAnnotationSaved"
     />
 
-    <!-- 学习集管理器 -->
-    <LearningSetManager
-      v-if="showLearningSetManager"
-      :current-pdf-path="currentPdf?.path || ''"
-      @set-selected="handleLearningSetSelected"
-      @pdf-open-request="handlePdfOpenRequest"
-      @annotation-focus-request="handleAnnotationFocusRequest"
-      @page-jump-request="handlePageJumpRequest"
-    />
-
     <!-- 隐藏的文件选择框 -->
     <input
       ref="fileInput"
@@ -389,9 +355,7 @@ import type { Plugin } from 'siyuan';
 import PDFViewer from './components/PDFViewer.vue';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationEditor from './components/AnnotationEditor.vue';
-import MindMapViewer from './components/MindMapViewer.vue';
-import LearningSetManager from './components/LearningSetManager.vue'; // 导入学习集管理组件
-import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs } from './api/siyuanApi';
+import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs, flushPendingSaves } from './api/siyuanApi';
 import { deleteAnnotation as deleteAnnotationApi } from './api/annotationApi';
 import {
   createProject,
@@ -406,13 +370,14 @@ import {
   deleteProject as deleteProjectApi,
   getProjectAnnotations,
   saveProjectAnnotations,
+  addAnnotationToCache,
   saveAnnotationToProject,
   initProjectStorage,
   getProjectAnnotationsAsync
 } from './api/projectApi';
 import type { PDFAnnotation, AnnotationLevel, ExtractMode } from './types/annotaion';
 import { ANNOTATION_LEVELS } from './types/annotaion';
-import type { PDFProject, ProjectListItem } from './types/project';
+import type { PDFProject, ProjectListItem, ProjectPdf } from './types/project';
 
 const props = defineProps<{ plugin: Plugin }>();
 
@@ -421,9 +386,6 @@ const projects = ref<ProjectListItem[]>([]);
 const currentProject = ref<PDFProject | null>(null);
 const currentPdfId = ref<string | null>(null);
 const showProjectManager = ref(false);
-
-// 学习集管理状态
-const showLearningSetManager = ref(false);
 
 // 新建项目对话框
 const newProjectDialog = ref({
@@ -449,7 +411,7 @@ const annotations = ref<PDFAnnotation[]>([]);
 const highlightAnnotation = ref<PDFAnnotation | null>(null);
 const editingAnnotation = ref<PDFAnnotation | null>(null);
 const editorVisible = ref(false);
-const viewMode = ref<'split' | 'list' | 'mindmap'>('split');
+const viewMode = ref<'split' | 'list'>('split');
 const isFullscreen = ref(false);
 const annotationWidth = ref(360);
 const currentLevel = ref<AnnotationLevel>('text');
@@ -477,22 +439,6 @@ const targetDocSearch = ref('');
 const targetDocOptions = ref<SiyuanDoc[]>([]);
 const docSearchLoading = ref(false);
 let docSearchTimer: ReturnType<typeof setTimeout> | null = null;
-
-// 防抖相关变量 - 这些变量在某些情况下会被使用，保留它们
-let lastCreatedText = '';
-let lastCreatedLevel = '';
-let lastCreatedTime = 0;
-
-// 修复未使用的参数错误
-const handleResizeOriginal = (e: MouseEvent) => {
-  if (!isResizing.value) return;
-  const container = document.querySelector('.panel-body') as HTMLElement;
-  if (!container) return;
-  const newWidth = container.getBoundingClientRect().right - e.clientX;
-  if (newWidth >= 280 && newWidth <= 600) {
-    annotationWidth.value = newWidth;
-  }
-};
 
 // 搜索文档（防抖）
 const onDocSearchInput = () => {
@@ -1081,68 +1027,13 @@ const toggleFullscreen = () => {
 
 // 切换视图
 const toggleView = () => {
-  if (viewMode.value === 'split') {
-    viewMode.value = 'list';
-  } else if (viewMode.value === 'list') {
-    viewMode.value = 'mindmap';
-  } else {
-    viewMode.value = 'split';
-  }
-};
-
-// 修复另一个未使用的参数错误
-const handleFileChangeRef = async (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  uploading.value = true;
-
-  try {
-    // 上传文件到思源
-    const result = await uploadFileToAssets(file);
-
-    if (fileSelectMode === 'newProject') {
-      // 为新项目记录PDF信息
-      newProjectDialog.value.pdfPath = result.path;
-      newProjectDialog.value.pdfName = result.name;
-    } else if (fileSelectMode === 'addPdf') {
-      // 添加到现有项目
-      const projectId = addTargetProjectId || currentProject.value?.id;
-      if (projectId) {
-        const pdf = await addPdfToProject(projectId, {
-          pdfPath: result.path,
-          pdfName: result.name
-        });
-
-        if (pdf) {
-          // 刷新项目数据
-          await loadProjects();
-
-          // 如果添加到当前项目，切换到新PDF
-          if (currentProject.value?.id === projectId) {
-            currentPdfId.value = pdf.id;
-            currentPage.value = 1;
-            totalPages.value = 0;
-          }
-        }
-      }
-      addTargetProjectId = null;
-    }
-
-    fileSelectMode = 'none';
-  } catch (error) {
-    console.error('导入失败:', error);
-    alert('导入失败，请查看控制台');
-  } finally {
-    uploading.value = false;
-    if (target) target.value = '';
-  }
+  viewMode.value = viewMode.value === 'split' ? 'list' : 'split';
 };
 
 // 关闭面板
+// 注意：不再在这里调用 saveCurrentState()，由 onUnmounted 统一处理
+// 避免 closePanel() 触发 unmount 时重复保存
 const handleClose = () => {
-  saveCurrentState();
   (props.plugin as any).closePanel();
 };
 
@@ -1280,6 +1171,7 @@ const handleImageSelected = async (data: {
       level: 'text',
       isImage: true,
       imagePath: uploadResult.path,
+      imageBase64: uploadResult.base64,
       created: Date.now(),
       updated: Date.now()
     };
@@ -1376,8 +1268,7 @@ const createAnnotationFromSelection = async () => {
       newAnnotation.blockId = result.blockId;
     } else if (result.error) {
       alert(result.error);
-      const lock = getCreateAnnotationLock(); // 释放锁
-      lock.locked = false;
+      createAnnotationLock = false; // 释放锁
       creatingAnnotation.value = false;
       // 不重置 lastCreatedText，保持防抖状态，防止用户快速重试创建重复标注
       return;
@@ -1389,8 +1280,7 @@ const createAnnotationFromSelection = async () => {
       if (insertResult.reason) {
         alert(insertResult.reason);
       }
-      const lock = getCreateAnnotationLock(); // 释放锁
-      lock.locked = false;
+      createAnnotationLock = false; // 释放锁
       creatingAnnotation.value = false;
       return;
     }
@@ -1435,18 +1325,18 @@ const cancelSelection = () => {
 };
 
 // 拖拽调整大小
-const startResize = (_e: MouseEvent) => {
+const startResize = (e: MouseEvent) => {
   isResizing.value = true;
   document.addEventListener('mousemove', handleResize);
   document.addEventListener('mouseup', stopResize);
   document.body.style.cursor = 'col-resize';
 };
 
-const handleResize = (_e: MouseEvent) => {
+const handleResize = (e: MouseEvent) => {
   if (!isResizing.value) return;
   const container = document.querySelector('.panel-body') as HTMLElement;
   if (!container) return;
-  const newWidth = container.getBoundingClientRect().right - _e.clientX;
+  const newWidth = container.getBoundingClientRect().right - e.clientX;
   if (newWidth >= 280 && newWidth <= 600) {
     annotationWidth.value = newWidth;
   }
@@ -1483,11 +1373,13 @@ onMounted(async () => {
 });
 
 // 卸载时保存
-onUnmounted(() => {
+onUnmounted(async () => {
   saveCurrentState();
   if (docIdUpdateTimer) {
     clearInterval(docIdUpdateTimer);
   }
+  // 强制立即保存所有待处理的数据
+  await flushPendingSaves();
 });
 </script>
 

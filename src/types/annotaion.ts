@@ -64,7 +64,8 @@ export interface PDFAnnotation {
   
   // 图片摘录相关
   isImage?: boolean;             // 是否为图片摘录
-  imagePath?: string;            // 图片路径（思源assets路径）
+  imagePath?: string;            // 图片路径（petal目录路径）
+  imageBase64?: string;          // 图片base64数据（用于嵌入Markdown和显示）
 
   // 拖拽合并相关
   parentId?: string | null;      // 父标注ID（用于嵌套合并）
