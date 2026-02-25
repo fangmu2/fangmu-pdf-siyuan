@@ -355,7 +355,7 @@ import type { Plugin } from 'siyuan';
 import PDFViewer from './components/PDFViewer.vue';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationEditor from './components/AnnotationEditor.vue';
-import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs } from './api/siyuanApi';
+import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs, flushPendingSaves } from './api/siyuanApi';
 import { deleteAnnotation as deleteAnnotationApi } from './api/annotationApi';
 import {
   createProject,
@@ -1031,8 +1031,9 @@ const toggleView = () => {
 };
 
 // 关闭面板
+// 注意：不再在这里调用 saveCurrentState()，由 onUnmounted 统一处理
+// 避免 closePanel() 触发 unmount 时重复保存
 const handleClose = () => {
-  saveCurrentState();
   (props.plugin as any).closePanel();
 };
 
@@ -1170,6 +1171,7 @@ const handleImageSelected = async (data: {
       level: 'text',
       isImage: true,
       imagePath: uploadResult.path,
+      imageBase64: uploadResult.base64,
       created: Date.now(),
       updated: Date.now()
     };
@@ -1371,11 +1373,13 @@ onMounted(async () => {
 });
 
 // 卸载时保存
-onUnmounted(() => {
+onUnmounted(async () => {
   saveCurrentState();
   if (docIdUpdateTimer) {
     clearInterval(docIdUpdateTimer);
   }
+  // 强制立即保存所有待处理的数据
+  await flushPendingSaves();
 });
 </script>
 

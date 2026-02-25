@@ -309,8 +309,8 @@
             >
               <div class="image-container">
                 <img
-                  v-if="isValidImagePath(node.annotation.imagePath) && imageStatus[node.annotation.id] !== 'error'"
-                  :src="getImageUrl(node.annotation.imagePath!)"
+                  v-if="(node.annotation.imageBase64 || isValidImagePath(node.annotation.imagePath)) && imageStatus[node.annotation.id] !== 'error'"
+                  :src="getImageUrl(node.annotation.imagePath!, node.annotation.imageBase64)"
                   class="excerpt-image"
                   @load="handleImageLoad(node.annotation.id)"
                   @error="handleImageError($event, node.annotation)"
@@ -617,7 +617,13 @@ const isValidImagePath = (path: string | undefined): boolean => {
 };
 
 // 获取图片URL
-const getImageUrl = (imagePath: string): string => {
+const getImageUrl = (imagePath: string, imageBase64?: string): string => {
+  // 优先使用 base64 数据（图片数据直接嵌入）
+  if (imageBase64) {
+    return imageBase64;
+  }
+  
+  // 如果没有 base64，尝试通过路径获取
   const kernelBase = getKernelBase();
   
   let path = imagePath;

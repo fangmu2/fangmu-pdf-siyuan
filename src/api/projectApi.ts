@@ -566,11 +566,9 @@ function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
   
   let markdown = '';
   
-  if (annotation.isImage && annotation.imagePath) {
-    const imagePath = annotation.imagePath.startsWith('/data/') 
-      ? annotation.imagePath.slice(6) 
-      : annotation.imagePath;
-    const imageMarkdown = `![PDF截图](${imagePath})`;
+  if (annotation.isImage && annotation.imageBase64) {
+    // 使用 base64 嵌入图片，确保图片数据存储在文档中不会被清理
+    const imageMarkdown = `![PDF截图](${annotation.imageBase64})`;
     
     switch (annotation.level) {
       case 'title':

@@ -313,10 +313,24 @@ const currentPageAnnotations = computed(() => {
 // 选中的标注
 const selectedAnnotation = ref<PDFAnnotation | null>(null);
 
-// 加载PDF
+// 加载PDF - 添加锁防止重复加载
+let isLoadingPdf = false;
+
 const loadPdf = async () => {
   if (!props.pdfPath || !canvasRef.value || !containerRef.value) return;
 
+  // 防止重复加载：如果正在加载中，直接返回
+  if (isLoadingPdf) {
+    return;
+  }
+
+  // 如果 PDF 已加载且路径相同，只需重新渲染当前页
+  if (pdfDoc && pdfDoc._path === props.pdfPath) {
+    await renderCurrentPage();
+    return;
+  }
+
+  isLoadingPdf = true;
   loading.value = true;
   error.value = '';
 
@@ -328,15 +342,13 @@ const loadPdf = async () => {
     }
     currentBlobUrl = URL.createObjectURL(blob);
 
-    if (!pdfDoc || pdfDoc._path !== props.pdfPath) {
-      if (pdfDoc) {
-        pdfDoc.destroy();
-      }
-      pdfDoc = await getOrLoadPdf(currentBlobUrl);
-      pdfDoc._path = props.pdfPath;
-      totalPages.value = pdfDoc.numPages;
-      emit('loaded', pdfDoc.numPages);
+    if (pdfDoc) {
+      pdfDoc.destroy();
     }
+    pdfDoc = await getOrLoadPdf(currentBlobUrl);
+    pdfDoc._path = props.pdfPath;
+    totalPages.value = pdfDoc.numPages;
+    emit('loaded', pdfDoc.numPages);
 
     await renderCurrentPage();
 
@@ -345,6 +357,7 @@ const loadPdf = async () => {
     error.value = e.message || '加载失败';
   } finally {
     loading.value = false;
+    isLoadingPdf = false;
   }
 };
 
