@@ -68,6 +68,18 @@
     <div class="bottom-toolbar" v-if="totalPages > 0">
       <!-- 左侧：缩放控制 -->
       <div class="toolbar-section toolbar-left">
+        <!-- 高亮颜色选择器 -->
+        <div class="highlight-color-picker">
+          <button
+            v-for="color in highlightColors"
+            :key="color.value"
+            :class="['color-btn', { active: selectedHighlightColor === color.value }]"
+            :style="{ backgroundColor: color.hex }"
+            :title="color.name"
+            @click="selectedHighlightColor = color.value"
+          ></button>
+        </div>
+        <div class="toolbar-divider"></div>
         <button @click="zoomOut" class="toolbar-btn" title="缩小 (-)">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M19 13H5v-2h14v2z"/>
@@ -232,6 +244,7 @@ const emit = defineEmits<{
   }): void;
   (e: 'annotation-delete', annotation: PDFAnnotation): void;
   (e: 'annotation-click', annotation: PDFAnnotation): void;
+  (e: 'highlight-color-change', color: string): void;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement>();
@@ -253,6 +266,22 @@ const showZoomMenu = ref(false);
 const showOutline = ref(false);
 const outline = ref<any[]>([]);
 const outlineLoading = ref(false);
+
+// 高亮颜色选择
+const highlightColors = [
+  { value: 'yellow', name: '黄色', hex: '#fef08a' },
+  { value: 'green', name: '绿色', hex: '#bbf7d0' },
+  { value: 'blue', name: '蓝色', hex: '#bfdbfe' },
+  { value: 'red', name: '红色', hex: '#fecaca' },
+  { value: 'purple', name: '紫色', hex: '#e9d5ff' },
+  { value: 'orange', name: '橙色', hex: '#fed7aa' },
+];
+const selectedHighlightColor = ref('yellow');
+
+// 监听颜色变化并通知父组件
+watch(selectedHighlightColor, (newColor) => {
+  emit('highlight-color-change', newColor);
+}, { immediate: true });
 
 let pdfDoc: any = null;
 let currentPageObj: any = null;
@@ -1574,6 +1603,41 @@ onBeforeUnmount(() => {
 
 .outline-item:hover {
   background: var(--b3-theme-surface-light);
+}
+
+/* ======================================== 高亮颜色选择器 ======================================== */
+.highlight-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.15s $ease-spring;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &.active {
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    transform: scale(1.15);
+  }
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--b3-border-color);
+  margin: 0 8px;
 }
 
 .outline-item-title {

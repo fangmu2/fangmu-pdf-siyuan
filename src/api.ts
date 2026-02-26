@@ -78,6 +78,26 @@ export async function createDocWithMd(
   return request(url, data);
 }
 
+/**
+ * 根据路径获取文档 ID
+ * @param hPath - 人类可读路径（如：/笔记本/目录/文档）
+ */
+export async function getDocByHPath(hPath: string): Promise<{ id: string; name: string } | null> {
+  const sqlScript = `SELECT id, name FROM blocks WHERE type = 'd' AND hpath = '${hPath}' LIMIT 1`;
+  const data = await sql(sqlScript);
+  return data?.[0] || null;
+}
+
+/**
+ * 根据路径获取笔记本
+ * @param path - 笔记本路径
+ */
+export async function getNotebookByPath(path: string): Promise<{ id: string; name: string } | null> {
+  const result = await lsNotebooks();
+  const notebook = result.find((nb: any) => nb.name === path || nb.path === path);
+  return notebook || null;
+}
+
 export async function renameDoc(
   notebook: NotebookId,
   path: string,
@@ -313,6 +333,20 @@ export async function sql(sql: string): Promise<any[]> {
   return request(url, sqldata);
 }
 
+/**
+ * SQL 查询（别名，兼容 dataPersistenceService.ts）
+ */
+export async function sqlQuery(sql: string): Promise<any[]> {
+  return sql(sql);
+}
+
+/**
+ * 更新块属性（别名，兼容 dataPersistenceService.ts）
+ */
+export async function updateBlockAttrs(id: BlockId, attrs: { [key: string]: string }) {
+  return setBlockAttrs(id, attrs);
+}
+
 export async function getBlockByID(blockId: string): Promise<Block> {
   let sqlScript = `select * from blocks where id ='${blockId}'`;
   let data = await sql(sqlScript);
@@ -475,3 +509,82 @@ export async function version(): Promise<string> {
 export async function currentTime(): Promise<number> {
   return request("/api/system/currentTime", {});
 }
+
+// **************************************** 统一导出对象 ****************************************
+// 为了兼容 dataPersistenceService.ts 的导入方式
+
+export const api = {
+  // Noteboook
+  lsNotebooks,
+  openNotebook,
+  closeNotebook,
+  renameNotebook,
+  createNotebook,
+  removeNotebook,
+  getNotebookConf,
+  setNotebookConf,
+
+  // File Tree
+  createDocWithMd,
+  renameDoc,
+  removeDoc,
+  moveDocs,
+  getHPathByPath,
+  getHPathByID,
+  getIDsByHPath,
+  getDocByHPath,
+  getNotebookByPath,
+
+  // Asset Files
+  upload,
+
+  // Block
+  insertBlock,
+  prependBlock,
+  appendBlock,
+  updateBlock,
+  deleteBlock,
+  moveBlock,
+  getBlockKramdown,
+  getChildBlocks,
+  transferBlockRef,
+
+  // Attributes
+  setBlockAttrs,
+  getBlockAttrs,
+
+  // SQL
+  sql,
+  sqlQuery,
+  getBlockByID,
+  updateBlockAttrs,
+
+  // Template
+  render,
+  renderSprig,
+
+  // File
+  getFile,
+  putFile,
+  removeFile,
+  readDir,
+
+  // Export
+  exportMdContent,
+  exportResources,
+
+  // Convert
+  pandoc,
+
+  // Notification
+  pushMsg,
+  pushErrMsg,
+
+  // Network
+  forwardProxy,
+
+  // System
+  bootProgress,
+  version,
+  currentTime,
+};

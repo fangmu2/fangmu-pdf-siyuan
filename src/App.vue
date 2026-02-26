@@ -26,13 +26,98 @@
           </svg>
           <span class="btn-text">学习集</span>
         </button>
+        <!-- MarginNote 4 风格功能按钮 -->
+        <button
+          @click="showCardBox = !showCardBox"
+          class="header-btn card-box-btn"
+          :class="{ active: showCardBox }"
+          title="卡片盒"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h6v2h-6V7zm0 4h6v2h-6v-2zm0 4h6v2h-6v-2z"/>
+          </svg>
+          <span class="btn-text">卡片</span>
+        </button>
+        <button
+          @click="startReview"
+          class="header-btn review-btn"
+          :class="{ active: showReviewSession }"
+          title="开始复习"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+          </svg>
+          <span class="btn-text">复习</span>
+        </button>
+        <button
+          @click="showSmartStudySet = !showSmartStudySet"
+          class="header-btn smart-btn"
+          :class="{ active: showSmartStudySet }"
+          title="智能学习集"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <span class="btn-text">智能</span>
+        </button>
+        <!-- 第五阶段高级功能按钮 -->
+        <button
+          @click="showContextView = !showContextView"
+          class="header-btn context-btn"
+          :class="{ active: showContextView }"
+          title="上下文搜索"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <span class="btn-text">搜索</span>
+        </button>
+        <button
+          @click="showKeywordLibrary = !showKeywordLibrary"
+          class="header-btn keyword-btn"
+          :class="{ active: showKeywordLibrary }"
+          title="关键词库"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v3c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 14H7v-2h10v2zm0-5H7V9h10v2z"/>
+          </svg>
+          <span class="btn-text">词库</span>
+        </button>
+        <button
+          @click="showMemoryContext = !showMemoryContext"
+          class="header-btn memory-btn"
+          :class="{ active: showMemoryContext }"
+          title="场景记忆"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+          </svg>
+          <span class="btn-text">记忆</span>
+        </button>
+        <button
+          @click="showSettings = !showSettings"
+          class="header-btn settings-btn"
+          :class="{ active: showSettings }"
+          title="设置"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+          <span class="btn-text">设置</span>
+        </button>
         <div class="header-divider"></div>
         <div class="header-title">
-          <span class="title-main">{{ currentProject?.name || 'PDF 摘录助手' }}</span>
+          <span class="title-main">{{ currentProject?.name || 'MarginNote 学习' }}</span>
           <span v-if="currentPdf" class="title-sub">{{ currentPdf.name }}</span>
+          <span v-if="currentStudySet" class="title-set">📖 {{ currentStudySet.name }}</span>
         </div>
       </div>
       <div class="header-right">
+        <!-- 复习统计 -->
+        <div v-if="todayReviewCount > 0" class="header-review-count">
+          <span class="review-count-icon">✓</span>
+          <span class="review-count-text">{{ todayReviewCount }}</span>
+        </div>
         <button
           @click="toggleView"
           class="header-btn icon-btn"
@@ -85,11 +170,11 @@
             <div class="project-info" @click="switchProject(proj.id)">
               <div class="project-name">{{ proj.name }}</div>
               <div class="project-meta">
-                <span>📚 {{ proj.pdfCount }}本PDF</span>
+                <span>📚 {{ proj.pdfCount }}本 PDF</span>
                 <span>📝 {{ proj.annotationCount }}条标注</span>
                 <span>{{ formatDate(proj.updated) }}</span>
               </div>
-              <!-- PDF列表 -->
+              <!-- PDF 列表 -->
               <div v-if="proj.pdfNames.length > 0" class="project-pdfs">
                 <div v-for="(name, idx) in proj.pdfNames" :key="idx" class="pdf-tag">
                   📄 {{ name }}
@@ -100,7 +185,7 @@
               <button
                 @click.stop="addPdfToProjectDialog(proj.id)"
                 class="b3-button b3-button--outline b3-button--small"
-                title="添加PDF"
+                title="添加 PDF"
               >
                 +PDF
               </button>
@@ -133,13 +218,13 @@
               v-model="newProjectDialog.name"
               type="text"
               class="b3-text-field"
-              placeholder="例如：MySQL学习笔记"
+              placeholder="例如：MySQL 学习笔记"
             />
           </div>
           <div class="form-group">
-            <label>导入第一个PDF：</label>
+            <label>导入第一个 PDF：</label>
             <button @click="selectPdfForNewProject" class="b3-button b3-button--outline">
-              {{ newProjectDialog.pdfName || '选择PDF文件' }}
+              {{ newProjectDialog.pdfName || '选择 PDF 文件' }}
             </button>
           </div>
         </div>
@@ -158,7 +243,7 @@
 
     <!-- 工具栏 -->
     <div class="toolbar" v-if="currentProject">
-      <!-- 左侧：PDF切换 + 添加PDF -->
+      <!-- 左侧：PDF 切换 + 添加 PDF -->
       <div class="toolbar-left">
         <select
           v-if="currentProject.pdfs.length > 1"
@@ -173,7 +258,7 @@
         <button
           @click="triggerAddPdf"
           class="toolbar-btn"
-          title="添加PDF到当前项目"
+          title="添加 PDF 到当前项目"
         >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -249,7 +334,7 @@
 
     <!-- 主体区域 -->
     <div class="panel-body" :class="viewMode">
-      <!-- PDF预览区 -->
+      <!-- PDF 预览区 -->
       <div class="pdf-area" v-if="currentPdf" :style="{ width: `calc(100% - ${annotationWidth}px)` }">
         <PDFViewer
           :pdf-path="currentPdf.path"
@@ -270,7 +355,7 @@
         <div class="welcome-content">
           <div class="welcome-icon">📄</div>
           <h2>欢迎使用 PDF 思维导图摘录</h2>
-          <p>创建项目，导入多本PDF，统一管理标注</p>
+          <p>创建项目，导入多本 PDF，统一管理标注</p>
           <button @click="showNewProjectDialog" class="b3-button b3-button--primary">
             创建新项目
           </button>
@@ -336,7 +421,7 @@
 
     <!-- 文本选择提示 -->
     <div v-if="selectedText" class="selection-toast">
-      <span class="selected-text">已选择: "{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</span>
+      <span class="selected-text">已选择："{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</span>
       <span class="level-hint">→ {{ getLevelLabel(currentLevel) }}</span>
       <button
         @click="createAnnotationFromSelection"
@@ -372,6 +457,100 @@
       @page-jump-request="handlePageJumpRequest"
     />
 
+    <!-- 智能学习集 -->
+    <div v-if="showSmartStudySet" class="side-panel-overlay" @click.self="showSmartStudySet = false">
+      <div class="side-panel-content">
+        <SmartStudySet
+          :cards="allCards"
+          :study-set-id="currentStudySet?.id"
+          @save="handleSmartSetSave"
+          @add-to-set="handleSmartSetAddToSet"
+        />
+      </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div v-if="showSettings" class="side-panel-overlay" @click.self="showSettings = false">
+      <div class="side-panel-content">
+        <SettingsPanel
+          @save="handleSettingsSave"
+          @export="handleDataExport"
+          @import="handleDataImport"
+          @clear-cache="handleClearCache"
+        />
+      </div>
+    </div>
+
+    <!-- 第五阶段高级功能面板 -->
+    <!-- 上下文视图 -->
+    <div v-if="showContextView" class="side-panel-overlay" @click.self="showContextView = false">
+      <div class="side-panel-content">
+        <ContextView
+          :selected-text="selectedText"
+          @result-select="handleContextResultSelect"
+        />
+      </div>
+    </div>
+
+    <!-- 关键词库 -->
+    <div v-if="showKeywordLibrary" class="side-panel-overlay" @click.self="showKeywordLibrary = false">
+      <div class="side-panel-content">
+        <KeywordLibrary
+          :cards="allCards"
+          @keyword-select="handleKeywordSelect"
+          @note-click="handleCardNavigate"
+        />
+      </div>
+    </div>
+
+    <!-- 场景记忆 -->
+    <div v-if="showMemoryContext" class="side-panel-overlay" @click.self="showMemoryContext = false">
+      <div class="side-panel-content">
+        <MemoryContext
+          :cards="allCards"
+          :current-pdf="currentPdf?.path || ''"
+          :current-page="currentPage"
+          :current-doc="targetDoc?.name || ''"
+          @memory-select="handleMemorySelect"
+          @memory-replay="handleMemoryReplay"
+          @note-click="handleCardNavigate"
+        />
+      </div>
+    </div>
+
+    <!-- 搜索面板 -->
+    <SearchPanel
+      :cards="allCards"
+      :study-set-id="currentStudySet?.id"
+      @result-select="handleSearchResultSelect"
+      @navigate-to="handleSearchNavigate"
+    />
+
+    <!-- 快速捕获菜单 -->
+    <QuickCaptureMenu
+      :visible="showQuickCaptureMenu"
+      :x="quickCaptureMenuPosition.x"
+      :y="quickCaptureMenuPosition.y"
+      :selected-text="selectedText"
+      :study-sets="studySetsList"
+      :source-location="quickCaptureSourceLocation"
+      @update:visible="showQuickCaptureMenu = $event"
+      @captured="handleQuickCapture"
+      @open-editor="handleOpenCardEditor"
+      @closed="handleQuickCaptureClosed"
+    />
+
+    <!-- 卡片编辑浮层 -->
+    <CardEditorDialog
+      :model-value="editingCard"
+      :visible="showCardEditorDialog"
+      :study-sets="studySetsList"
+      @update:visible="showCardEditorDialog = $event"
+      @saved="handleCardEditorSaved"
+      @deleted="handleCardEditorDeleted"
+      @closed="handleCardEditorClosed"
+    />
+
     <!-- 隐藏的文件选择框 -->
     <input
       ref="fileInput"
@@ -390,7 +569,20 @@ import PDFViewer from './components/PDFViewer.vue';
 import AnnotationList from './components/AnnotationList.vue';
 import AnnotationEditor from './components/AnnotationEditor.vue';
 import MindMapViewer from './components/MindMapViewer.vue';
-import LearningSetManager from './components/LearningSetManager.vue'; // 导入学习集管理组件
+import LearningSetManager from './components/LearningSetManager.vue';
+import CardBoxBoard from './components/CardBoxBoard.vue';
+import ReviewSession from './components/ReviewSession.vue';
+import CardEditorDialog from './components/CardEditorDialog.vue';
+import QuickCaptureMenu from './components/QuickCaptureMenu.vue';
+// 第五阶段高级功能组件
+import ContextView from './components/ContextView.vue';
+import KeywordLibrary from './components/KeywordLibrary.vue';
+import MemoryContext from './components/MemoryContext.vue';
+import { cardService } from './services/cardService';
+import { reviewService } from './services/reviewService';
+import { studySetService } from './services/studySetService';
+import type { Card, FlashCard, StudySet } from './types/card';
+import type { ReviewQueueItem, ReviewSession as ReviewSessionType } from './types/review';
 import { uploadFileToAssets, updateCachedDocId, searchSiyuanDocs } from './api/siyuanApi';
 import { deleteAnnotation as deleteAnnotationApi } from './api/annotationApi';
 import {
@@ -424,6 +616,31 @@ const showProjectManager = ref(false);
 
 // 学习集管理状态
 const showLearningSetManager = ref(false);
+
+// MarginNote 4 风格功能状态
+const showCardBox = ref(false);
+const showReviewSession = ref(false);
+const showSmartStudySet = ref(false);
+const showSettings = ref(false);
+// 第五阶段高级功能状态
+const showContextView = ref(false);
+const showKeywordLibrary = ref(false);
+const showMemoryContext = ref(false);
+const currentStudySet = ref<any>(null);
+const todayReviewCount = ref(0);
+
+// 快速捕获菜单状态
+const showQuickCaptureMenu = ref(false);
+const quickCaptureMenuPosition = ref({ x: 0, y: 0 });
+const quickCaptureSourceLocation = ref<any>(null);
+
+// 卡片编辑浮层状态
+const showCardEditorDialog = ref(false);
+const editingCard = ref<any>(null);
+const cardEditorPendingData = ref<any>(null);
+
+// 学习集列表（用于快速捕获菜单）
+const studySetsList = ref<any[]>([]);
 
 // 新建项目对话框
 const newProjectDialog = ref({
@@ -462,7 +679,7 @@ const selectedRect = ref<[number, number, number, number] | null>(null);
 const creatingAnnotation = ref(false);
 const pendingTitleLevel = ref<AnnotationLevel | null>(null);
 
-// 插入光标位置（null表示插入到最前面，否则是某个标注ID之后）
+// 插入光标位置
 const cursorAfterId = ref<string | null>(null);
 
 // 目标文档选择
@@ -478,20 +695,11 @@ const targetDocOptions = ref<SiyuanDoc[]>([]);
 const docSearchLoading = ref(false);
 let docSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
-// 防抖相关变量 - 这些变量在某些情况下会被使用，保留它们
-let lastCreatedText = '';
-let lastCreatedLevel = '';
-let lastCreatedTime = 0;
-
-// 修复未使用的参数错误
-const handleResizeOriginal = (e: MouseEvent) => {
-  if (!isResizing.value) return;
-  const container = document.querySelector('.panel-body') as HTMLElement;
-  if (!container) return;
-  const newWidth = container.getBoundingClientRect().right - e.clientX;
-  if (newWidth >= 280 && newWidth <= 600) {
-    annotationWidth.value = newWidth;
-  }
+// 防抖相关变量（保留用于未来扩展）
+const lastCreatedRef = {
+  text: '',
+  level: '',
+  time: 0
 };
 
 // 搜索文档（防抖）
@@ -512,7 +720,6 @@ const onDocSearchInput = () => {
 
 // 输入框聚焦时重新搜索
 const onDocFocus = () => {
-  // 始终重新加载文档列表，确保显示最新数据
   loadDocOptions();
 };
 
@@ -521,10 +728,6 @@ const onDocSelect = () => {
   const doc = targetDocOptions.value.find(d => d.name === targetDocSearch.value);
   if (doc) {
     targetDoc.value = doc;
-    // 选择新文档后重置防抖状态，允许重新创建标注
-    lastCreatedText = '';
-    lastCreatedLevel = '';
-    lastCreatedTime = 0;
   }
 };
 
@@ -532,7 +735,6 @@ const onDocSelect = () => {
 const clearTargetDoc = () => {
   targetDoc.value = null;
   targetDocSearch.value = '';
-  // 重新加载文档列表
   loadDocOptions();
 };
 
@@ -549,17 +751,32 @@ const loadDocOptions = async () => {
 // 拖拽调整大小
 const isResizing = ref(false);
 
-// 当前PDF
+// 当前 PDF
 const currentPdf = computed(() => {
   if (!currentProject.value) return null;
   if (!currentPdfId.value) return currentProject.value.pdfs[0] || null;
   return currentProject.value.pdfs.find(p => p.id === currentPdfId.value) || currentProject.value.pdfs[0] || null;
 });
 
-// 当前PDF的标注
+// 当前 PDF 的标注
 const currentPdfAnnotations = computed(() => {
   if (!currentPdf.value) return [];
   return annotations.value.filter(a => a.pdfPath === currentPdf.value!.path);
+});
+
+// 所有卡片（用于智能学习集和搜索）
+const allCards = computed(() => {
+  return annotations.value.map(ann => ({
+    id: ann.id,
+    content: ann.isImage ? '[图片摘录]' : ann.text,
+    type: ann.isImage ? 'image' : 'text',
+    status: 'new' as const,
+    createdAt: ann.created,
+    updatedAt: ann.updated,
+    pdfPath: ann.pdfPath,
+    page: ann.page,
+    note: ann.note,
+  }));
 });
 
 // 获取级别标签
@@ -584,9 +801,7 @@ const formatDate = (timestamp: number): string => {
 
 // 加载项目列表
 const loadProjects = async () => {
-  // 先初始化存储（从思源加载数据）
   await initProjectStorage();
-
   projects.value = getAllProjects();
   const current = getCurrentProject();
   if (current) {
@@ -597,16 +812,13 @@ const loadProjects = async () => {
       currentPage.value = pdf.currentPage;
       totalPages.value = pdf.totalPages;
     }
-    // 异步加载标注
     annotations.value = await getProjectAnnotationsAsync(current.id);
   }
 };
 
 // 切换项目
 const switchProject = async (projectId: string) => {
-  // 先保存当前项目状态
   saveCurrentState();
-
   const proj = switchProjectApi(projectId);
   if (proj) {
     currentProject.value = proj;
@@ -620,29 +832,23 @@ const switchProject = async (projectId: string) => {
       totalPages.value = 0;
       currentPage.value = 1;
     }
-    // 异步加载标注
     annotations.value = await getProjectAnnotationsAsync(proj.id);
     showProjectManager.value = false;
-    // 重置目标文档选择
     targetDoc.value = null;
     targetDocSearch.value = '';
     targetDocOptions.value = [];
   }
 };
 
-// PDF切换
+// PDF 切换
 const onPdfSwitch = () => {
   if (!currentProject.value || !currentPdfId.value) return;
-
-  // 保存当前PDF状态
   if (currentPdf.value) {
     updateProjectPdf(currentProject.value.id, currentPdf.value.id, {
       currentPage: currentPage.value,
       totalPages: totalPages.value
     });
   }
-
-  // 切换PDF
   const proj = switchProjectPdf(currentProject.value.id, currentPdfId.value);
   if (proj) {
     currentProject.value = proj;
@@ -678,20 +884,20 @@ const showNewProjectDialog = () => {
   };
 };
 
-// 为新项目选择PDF
+// 为新项目选择 PDF
 const selectPdfForNewProject = () => {
   fileSelectMode = 'newProject';
   fileInput.value?.click();
 };
 
-// 添加PDF到项目对话框
+// 添加 PDF 到项目对话框
 const addPdfToProjectDialog = (projectId: string) => {
   addTargetProjectId = projectId;
   fileSelectMode = 'addPdf';
   fileInput.value?.click();
 };
 
-// 向当前项目添加PDF
+// 向当前项目添加 PDF
 const triggerAddPdf = () => {
   if (!currentProject.value) return;
   addTargetProjectId = currentProject.value.id;
@@ -708,15 +914,12 @@ const handleFileChange = async (e: Event) => {
   uploading.value = true;
 
   try {
-    // 上传文件到思源
     const result = await uploadFileToAssets(file);
 
     if (fileSelectMode === 'newProject') {
-      // 为新项目记录PDF信息
       newProjectDialog.value.pdfPath = result.path;
       newProjectDialog.value.pdfName = result.name;
     } else if (fileSelectMode === 'addPdf') {
-      // 添加到现有项目
       const projectId = addTargetProjectId || currentProject.value?.id;
       if (projectId) {
         const pdf = await addPdfToProject(projectId, {
@@ -725,10 +928,7 @@ const handleFileChange = async (e: Event) => {
         });
 
         if (pdf) {
-          // 刷新项目数据
           await loadProjects();
-
-          // 如果添加到当前项目，切换到新PDF
           if (currentProject.value?.id === projectId) {
             currentPdfId.value = pdf.id;
             currentPage.value = 1;
@@ -781,7 +981,7 @@ const createNewProject = async () => {
 
 // 删除项目确认
 const deleteProjectConfirm = async (proj: ProjectListItem) => {
-  if (!confirm(`确定删除项目「${proj.name}」？\n\n这将删除：\n- ${proj.pdfCount}个PDF文件关联\n- ${proj.annotationCount}条标注数据\n- 标注文档\n\n此操作不可撤销！`)) {
+  if (!confirm(`确定删除项目「${proj.name}」？\n\n这将删除：\n- ${proj.pdfCount}个 PDF 文件关联\n- ${proj.annotationCount}条标注数据\n- 标注文档\n\n此操作不可撤销！`)) {
     return;
   }
 
@@ -798,7 +998,7 @@ const deleteProjectConfirm = async (proj: ProjectListItem) => {
     }
   } catch (error: any) {
     console.error('删除项目失败:', error);
-    alert(`删除失败: ${error.message || '未知错误'}`);
+    alert(`删除失败：${error.message || '未知错误'}`);
   }
 };
 
@@ -808,7 +1008,7 @@ const loadAnnotations = async () => {
   annotations.value = getProjectAnnotations(currentProject.value.id);
 };
 
-// PDF加载完成
+// PDF 加载完成
 const handlePdfLoaded = (numPages: number) => {
   totalPages.value = numPages;
   if (currentProject.value && currentPdf.value) {
@@ -824,7 +1024,6 @@ const handlePageChange = (page: number) => {
 // 点击标注
 const handleAnnotationClick = (ann: PDFAnnotation) => {
   highlightAnnotation.value = ann;
-  // 切换到标注所属的PDF
   if (currentProject.value) {
     const pdf = currentProject.value.pdfs.find(p => p.path === ann.pdfPath);
     if (pdf && pdf.id !== currentPdfId.value) {
@@ -851,10 +1050,9 @@ const handleAnnotationSaved = () => {
 const handleAnnotationDelete = async (ann: PDFAnnotation) => {
   if (!currentProject.value) return;
 
-  // 根据标注类型显示不同的确认内容
   let confirmContent: string;
   if (ann.isImage) {
-    confirmContent = `确定要删除这张图片摘录吗？\n\n图片路径: ${ann.imagePath || '未知'}`;
+    confirmContent = `确定要删除这张图片摘录吗？\n\n图片路径：${ann.imagePath || '未知'}`;
   } else {
     const displayText = ann.text || '(空内容)';
     confirmContent = `确定要删除这条标注吗？\n\n"${displayText.substring(0, 50)}${displayText.length > 50 ? '...' : ''}"`;
@@ -865,26 +1063,22 @@ const handleAnnotationDelete = async (ann: PDFAnnotation) => {
   }
 
   try {
-    // 如果有 blockId，删除思源中的块
     if (ann.blockId) {
       await deleteAnnotationApi(ann.blockId);
     }
 
-    // 从本地列表中移除
     annotations.value = annotations.value.filter(a => a.id !== ann.id);
-
-    // 更新项目存储
     saveProjectAnnotations(currentProject.value.id, annotations.value);
     updateProject(currentProject.value.id, {
       annotationCount: annotations.value.length
     });
   } catch (error: any) {
     console.error('删除标注失败:', error);
-    alert(`删除失败: ${error.message || '未知错误'}`);
+    alert(`删除失败：${error.message || '未知错误'}`);
   }
 };
 
-// 合并标注（将 source 合并到 target 下）
+// 合并标注
 const handleAnnotationMerge = (sourceId: string, targetId: string) => {
   if (!currentProject.value) return;
 
@@ -896,13 +1090,11 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
     return;
   }
 
-  // 计算新的 sortOrder
   const siblingsUnderTarget = annotations.value.filter(a => a.parentId === targetId);
   let nextSortOrder = siblingsUnderTarget.length > 0
     ? Math.max(...siblingsUnderTarget.map(a => a.sortOrder || 0)) + 1
     : 0;
 
-  // 更新源标注的 parentId 和 sortOrder
   annotations.value[sourceIndex] = {
     ...annotations.value[sourceIndex],
     parentId: targetId,
@@ -911,8 +1103,6 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
   };
   nextSortOrder++;
 
-  // 【关键修复】如果源标注有子块，将这些子块也变成目标标注的直接子块
-  // 这样可以避免嵌套合并导致的显示问题
   const sourceChildren = annotations.value.filter(a => a.parentId === sourceId);
   for (const child of sourceChildren) {
     const childIndex = annotations.value.findIndex(a => a.id === child.id);
@@ -927,7 +1117,6 @@ const handleAnnotationMerge = (sourceId: string, targetId: string) => {
     }
   }
 
-  // 保存
   saveProjectAnnotations(currentProject.value.id, annotations.value);
 };
 
@@ -941,7 +1130,6 @@ const handleAnnotationUnmerge = (annotationId: string) => {
     return;
   }
 
-  // 清除 parentId 和 sortOrder
   annotations.value[index] = {
     ...annotations.value[index],
     parentId: null,
@@ -949,7 +1137,6 @@ const handleAnnotationUnmerge = (annotationId: string) => {
     updated: Date.now()
   };
 
-  // 同时取消所有子标注的 parentId
   annotations.value = annotations.value.map(a => {
     if (a.parentId === annotationId) {
       return {
@@ -962,7 +1149,6 @@ const handleAnnotationUnmerge = (annotationId: string) => {
     return a;
   });
 
-  // 保存
   saveProjectAnnotations(currentProject.value.id, annotations.value);
 };
 
@@ -975,10 +1161,8 @@ const handleCursorChange = (afterId: string | null) => {
 const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: boolean; reason?: string } => {
   if (!currentProject.value) return { success: false, reason: '无项目' };
 
-  // 直接使用 Vue 响应式数组（单一数据源）
   const currentAnnotations = annotations.value;
 
-  // 第一步：去重 - 清理历史数据中可能存在的重复
   const seenIds = new Set<string>();
   const deduplicatedAnnotations: PDFAnnotation[] = [];
   for (const ann of currentAnnotations) {
@@ -988,41 +1172,33 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     }
   }
 
-  // 第二步：检查新标注ID是否已存在
   if (seenIds.has(newAnnotation.id)) {
-    return { success: false, reason: '标注ID已存在' };
+    return { success: false, reason: '标注 ID 已存在' };
   }
 
-  // 第三步：检查内容重复（增强版：不依赖时间，直接检查相同内容）
   let isDuplicate = false;
   const now = Date.now();
-  const DUPLICATE_TIME_WINDOW = 10000; // 10秒内相同内容视为重复
+  const DUPLICATE_TIME_WINDOW = 10000;
 
   if (newAnnotation.isImage && newAnnotation.imagePath) {
-    // 图片：检查相同路径
     isDuplicate = deduplicatedAnnotations.some(a =>
       a.isImage && a.imagePath === newAnnotation.imagePath
     );
   } else if (newAnnotation.text) {
-    // 文本：检查相同文本+页码+位置（矩形区域重叠）
     isDuplicate = deduplicatedAnnotations.some(a => {
       if (a.isImage || !a.text) return false;
 
-      // 完全相同的文本
       if (a.text === newAnnotation.text &&
           a.page === newAnnotation.page &&
           a.pdfPath === newAnnotation.pdfPath) {
-        // 检查矩形是否重叠（允许一定误差）
         if (a.rect && newAnnotation.rect) {
           const [ax1, ay1, ax2, ay2] = a.rect;
           const [bx1, by1, bx2, by2] = newAnnotation.rect;
-          // 如果矩形中心点距离小于 10 单位，视为重复
-          const centerADist = Math.sqrt(Math.pow((ax1 + ax2) / 2 - (bx1 + bx2) / 2, 2) + Math.pow((ay1 + ay2) / 2 - (by1 + by2) / 2, 2));
-          if (centerADist < 10) {
+          const centerDist = Math.sqrt(Math.pow((ax1 + ax2) / 2 - (bx1 + bx2) / 2, 2) + Math.pow((ay1 + ay2) / 2 - (by1 + by2) / 2, 2));
+          if (centerDist < 10) {
             return true;
           }
         }
-        // 或者时间窗口内的相同内容
         if ((now - (a.created || 0)) < DUPLICATE_TIME_WINDOW) {
           return true;
         }
@@ -1035,7 +1211,6 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     return { success: false, reason: '该标注已存在，请勿重复创建' };
   }
 
-  // 第四步：插入新标注
   let newAnnotations: PDFAnnotation[];
 
   if (cursorAfterId.value === null) {
@@ -1053,17 +1228,13 @@ const insertAnnotationAtPosition = (newAnnotation: PDFAnnotation): { success: bo
     }
   }
 
-  // 第五步：最终验证 - 确保没有重复ID
   const finalIds = newAnnotations.map(a => a.id);
   const finalUniqueIds = new Set(finalIds);
   if (finalIds.length !== finalUniqueIds.size) {
     return { success: false, reason: '数据异常，请刷新页面后重试' };
   }
 
-  // 更新光标位置
   cursorAfterId.value = newAnnotation.id;
-
-  // 更新 Vue 响应式数组并保存
   annotations.value = newAnnotations;
   saveProjectAnnotations(currentProject.value.id, newAnnotations);
 
@@ -1087,56 +1258,6 @@ const toggleView = () => {
     viewMode.value = 'mindmap';
   } else {
     viewMode.value = 'split';
-  }
-};
-
-// 修复另一个未使用的参数错误
-const handleFileChangeRef = async (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  uploading.value = true;
-
-  try {
-    // 上传文件到思源
-    const result = await uploadFileToAssets(file);
-
-    if (fileSelectMode === 'newProject') {
-      // 为新项目记录PDF信息
-      newProjectDialog.value.pdfPath = result.path;
-      newProjectDialog.value.pdfName = result.name;
-    } else if (fileSelectMode === 'addPdf') {
-      // 添加到现有项目
-      const projectId = addTargetProjectId || currentProject.value?.id;
-      if (projectId) {
-        const pdf = await addPdfToProject(projectId, {
-          pdfPath: result.path,
-          pdfName: result.name
-        });
-
-        if (pdf) {
-          // 刷新项目数据
-          await loadProjects();
-
-          // 如果添加到当前项目，切换到新PDF
-          if (currentProject.value?.id === projectId) {
-            currentPdfId.value = pdf.id;
-            currentPage.value = 1;
-            totalPages.value = 0;
-          }
-        }
-      }
-      addTargetProjectId = null;
-    }
-
-    fileSelectMode = 'none';
-  } catch (error) {
-    console.error('导入失败:', error);
-    alert('导入失败，请查看控制台');
-  } finally {
-    uploading.value = false;
-    if (target) target.value = '';
   }
 };
 
@@ -1164,7 +1285,6 @@ const handleImageSelected = async (data: {
 }) => {
   if (!currentProject.value || !currentPdf.value) return;
 
-  // 使用锁防止重复调用
   if (imageSelectLock) {
     return;
   }
@@ -1177,12 +1297,10 @@ const handleImageSelected = async (data: {
     return;
   }
 
-  // 立即锁定，防止重复调用
   imageSelectLock = true;
   creatingAnnotation.value = true;
 
   try {
-    // 验证选择区域有效性
     if (data.canvasRect.width < 5 || data.canvasRect.height < 5) {
       throw new Error('选择区域太小，请重新选择');
     }
@@ -1191,24 +1309,21 @@ const handleImageSelected = async (data: {
     const canvas = pdfViewerEl?.querySelector('.pdf-canvas') as HTMLCanvasElement;
 
     if (!canvas) {
-      throw new Error('找不到PDF画布，请等待PDF加载完成');
+      throw new Error('找不到 PDF 画布，请等待 PDF 加载完成');
     }
 
-    // 确保canvas已经渲染
     if (canvas.width === 0 || canvas.height === 0) {
-      throw new Error('PDF画布未准备好，请稍后重试');
+      throw new Error('PDF 画布未准备好，请稍后重试');
     }
 
     const scaleX = canvas.width / canvas.offsetWidth;
     const scaleY = canvas.height / canvas.offsetHeight;
 
-    // 计算实际裁剪区域，确保不越界
     let cropX = Math.max(0, Math.round(data.canvasRect.x * scaleX));
     let cropY = Math.max(0, Math.round(data.canvasRect.y * scaleY));
     let cropWidth = Math.max(1, Math.round(data.canvasRect.width * scaleX));
     let cropHeight = Math.max(1, Math.round(data.canvasRect.height * scaleY));
 
-    // 确保不超出canvas边界
     if (cropX + cropWidth > canvas.width) {
       cropWidth = canvas.width - cropX;
     }
@@ -1216,7 +1331,6 @@ const handleImageSelected = async (data: {
       cropHeight = canvas.height - cropY;
     }
 
-    // 最终检查
     if (cropWidth < 1 || cropHeight < 1) {
       throw new Error('裁剪区域无效，请重新选择');
     }
@@ -1230,7 +1344,6 @@ const handleImageSelected = async (data: {
       throw new Error('无法创建画布上下文');
     }
 
-    // 绘制裁剪区域
     ctx.drawImage(
       canvas,
       cropX,
@@ -1242,7 +1355,6 @@ const handleImageSelected = async (data: {
       cropHeight
     );
 
-    // 转换为Blob
     const blob = await new Promise<Blob>((resolve, reject) => {
       tempCanvas.toBlob(b => {
         if (b) {
@@ -1253,7 +1365,6 @@ const handleImageSelected = async (data: {
       }, 'image/png', 0.92);
     });
 
-    // 检查blob大小
     if (blob.size < 100) {
       throw new Error('生成的图片太小，可能选择区域无效');
     }
@@ -1293,8 +1404,6 @@ const handleImageSelected = async (data: {
       return;
     }
 
-
-    // 在光标位置插入标注
     const insertResult = insertAnnotationAtPosition(newAnnotation);
     if (!insertResult.success) {
       if (insertResult.reason) {
@@ -1305,10 +1414,10 @@ const handleImageSelected = async (data: {
 
   } catch (error: any) {
     console.error('创建图片摘录失败:', error);
-    alert(`创建失败: ${error.message || '未知错误'}`);
+    alert(`创建失败：${error.message || '未知错误'}`);
   } finally {
     creatingAnnotation.value = false;
-    imageSelectLock = false; // 释放锁
+    imageSelectLock = false;
   }
 };
 
@@ -1318,7 +1427,7 @@ const getCreateAnnotationLock = () => {
   (window as any).__PDF_CREATE_ANNOTATION_LOCK__ ||= { locked: false, text: '', level: '', time: 0 };
   return (window as any).__PDF_CREATE_ANNOTATION_LOCK__;
 };
-const CREATE_LOCK_DURATION = 3000; // 3秒锁定时间
+const CREATE_LOCK_DURATION = 3000;
 
 // 从选择创建标注
 const createAnnotationFromSelection = async () => {
@@ -1328,24 +1437,20 @@ const createAnnotationFromSelection = async () => {
   const annotationLevel = pendingTitleLevel.value || currentLevel.value;
   const now = Date.now();
 
-  // 检查全局锁
   if (lock.locked) {
     return;
   }
 
-  // 检查相同文本和级别在锁定时间内是否已创建
   if (selectedText.value === lock.text &&
       annotationLevel === lock.level &&
       (now - lock.time) < CREATE_LOCK_DURATION) {
     return;
   }
 
-  // 防止重复创建：检查正在创建中
   if (creatingAnnotation.value) {
     return;
   }
 
-  // 立即设置全局锁
   lock.locked = true;
   lock.text = selectedText.value;
   lock.level = annotationLevel;
@@ -1355,7 +1460,6 @@ const createAnnotationFromSelection = async () => {
   try {
     const rect = selectedRect.value || [0, 0, 100, 20];
 
-    // 使用更精确的时间戳+随机数生成唯一ID
     const newAnnotation: PDFAnnotation = {
       id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       blockId: '',
@@ -1376,26 +1480,21 @@ const createAnnotationFromSelection = async () => {
       newAnnotation.blockId = result.blockId;
     } else if (result.error) {
       alert(result.error);
-      const lock = getCreateAnnotationLock(); // 释放锁
       lock.locked = false;
       creatingAnnotation.value = false;
-      // 不重置 lastCreatedText，保持防抖状态，防止用户快速重试创建重复标注
       return;
     }
 
-    // 在光标位置插入标注
     const insertResult = insertAnnotationAtPosition(newAnnotation);
     if (!insertResult.success) {
       if (insertResult.reason) {
         alert(insertResult.reason);
       }
-      const lock = getCreateAnnotationLock(); // 释放锁
       lock.locked = false;
       creatingAnnotation.value = false;
       return;
     }
 
-    // 清空选择状态
     selectedText.value = '';
     selectedRect.value = null;
     window.getSelection()?.removeAllRanges();
@@ -1407,14 +1506,12 @@ const createAnnotationFromSelection = async () => {
 
   } catch (error: any) {
     console.error('创建标注失败:', error);
-    alert(`创建失败: ${error.message || '未知错误'}`);
-    // 重置全局锁，允许重试
+    alert(`创建失败：${error.message || '未知错误'}`);
     const lock = getCreateAnnotationLock();
     lock.text = '';
     lock.level = '';
   } finally {
     creatingAnnotation.value = false;
-    // 延迟释放全局锁，防止短时间内重复创建
     setTimeout(() => {
       const lock = getCreateAnnotationLock();
       lock.locked = false;
@@ -1466,20 +1563,110 @@ watch(currentPage, () => {
   }
 });
 
-// 定时更新缓存的文档ID（每3秒检查一次）
+// 定时更新缓存的文档 ID
 let docIdUpdateTimer: ReturnType<typeof setInterval> | null = null;
+
+// 加载学习集列表
+const loadStudySetsList = async () => {
+  try {
+    studySetsList.value = [];
+  } catch (error) {
+    console.error('加载学习集列表失败:', error);
+  }
+};
+
+// 显示快速捕获菜单
+const showQuickCapture = (event?: MouseEvent) => {
+  if (!selectedText.value) return;
+
+  if (event) {
+    quickCaptureMenuPosition.value = { x: event.clientX, y: event.clientY };
+  } else {
+    quickCaptureMenuPosition.value = {
+      x: window.innerWidth / 2 - 160,
+      y: window.innerHeight / 2 - 140
+    };
+  }
+
+  quickCaptureSourceLocation.value = {
+    pdfPath: currentPdf.value?.path,
+    page: selectedPage.value,
+    rect: selectedRect.value || undefined
+  };
+
+  showQuickCaptureMenu.value = true;
+};
+
+// 快速捕获处理
+const handleQuickCapture = (card: any) => {
+  console.log('快速捕获创建卡片:', card);
+  selectedText.value = '';
+  selectedRect.value = null;
+  loadAnnotations();
+};
+
+// 快速捕获菜单关闭
+const handleQuickCaptureClosed = () => {
+  quickCaptureSourceLocation.value = null;
+};
+
+// 打开卡片编辑器
+const handleOpenCardEditor = (data: { text: string; sourceLocation: any }) => {
+  cardEditorPendingData.value = data;
+  editingCard.value = {
+    id: '',
+    content: data.text,
+    type: 'card',
+    status: 'new',
+    tags: [],
+    difficulty: 1,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    sourceLocation: data.sourceLocation || {},
+  };
+  showCardEditorDialog.value = true;
+};
+
+// 卡片编辑器保存
+const handleCardEditorSaved = (card: any) => {
+  console.log('卡片编辑器保存:', card);
+  loadAnnotations();
+  cardEditorPendingData.value = null;
+};
+
+// 卡片编辑器删除
+const handleCardEditorDeleted = (card: any) => {
+  console.log('卡片编辑器删除:', card);
+  loadAnnotations();
+  cardEditorPendingData.value = null;
+};
+
+// 卡片编辑器关闭
+const handleCardEditorClosed = () => {
+  editingCard.value = null;
+  cardEditorPendingData.value = null;
+};
+
+// 全局键盘快捷键处理
+const handleGlobalKeyDown = (event: KeyboardEvent) => {
+  if (event.altKey && event.key === 'c' && selectedText.value) {
+    event.preventDefault();
+    showQuickCapture();
+  }
+};
 
 // 初始化
 onMounted(async () => {
   await loadProjects();
-  // 初始化时缓存当前文档ID
   updateCachedDocId();
-  // 定时更新缓存的文档ID
   docIdUpdateTimer = setInterval(() => {
     updateCachedDocId();
   }, 3000);
-  // 加载文档列表
   loadDocOptions();
+  loadStudySetsList();
+
+  // 添加全局键盘事件监听
+  document.addEventListener('keydown', handleGlobalKeyDown);
 });
 
 // 卸载时保存
@@ -1488,10 +1675,118 @@ onUnmounted(() => {
   if (docIdUpdateTimer) {
     clearInterval(docIdUpdateTimer);
   }
+  document.removeEventListener('keydown', handleGlobalKeyDown);
 });
+
+// ====== MarginNote 4 风格功能方法 ======
+
+// 开始复习
+const startReview = () => {
+  showReviewSession.value = true;
+  console.log('开始复习');
+};
+
+// 处理学习集选择
+const handleLearningSetSelected = (studySet: any) => {
+  currentStudySet.value = studySet;
+  console.log('选择学习集:', studySet);
+};
+
+// 处理 PDF 打开请求
+const handlePdfOpenRequest = (pdfPath: string) => {
+  console.log('打开 PDF:', pdfPath);
+};
+
+// 处理标注聚焦请求
+const handleAnnotationFocusRequest = (annotationId: string) => {
+  console.log('聚焦标注:', annotationId);
+};
+
+// 处理页码跳转请求
+const handlePageJumpRequest = (page: number) => {
+  console.log('跳转到页码:', page);
+  currentPage.value = page;
+};
+
+// 智能学习集相关方法
+const handleSmartSetSave = (rules: any[]) => {
+  console.log('保存智能学习集规则:', rules);
+  showSmartStudySet.value = false;
+};
+
+const handleSmartSetAddToSet = (rules: any[], studySetId: string) => {
+  console.log('添加到学习集:', rules, studySetId);
+  showSmartStudySet.value = false;
+};
+
+// 设置面板相关方法
+const handleSettingsSave = (settings: any) => {
+  console.log('保存设置:', settings);
+};
+
+const handleDataExport = () => {
+  console.log('导出数据');
+};
+
+const handleDataImport = (data: any) => {
+  console.log('导入数据:', data);
+};
+
+const handleClearCache = () => {
+  console.log('清除缓存');
+};
+
+// 搜索面板相关方法
+const handleSearchResultSelect = (result: any) => {
+  console.log('选择搜索结果:', result);
+};
+
+const handleSearchNavigate = (cardId: string) => {
+  console.log('导航到卡片:', cardId);
+};
+
+// 第五阶段高级功能相关方法
+// 上下文搜索结果处理
+const handleContextResultSelect = (result: { url: string; title: string }) => {
+  console.log('选择搜索结果:', result.title);
+  window.open(result.url, '_blank');
+};
+
+// 关键词选择处理
+const handleKeywordSelect = (keyword: any) => {
+  console.log('选择关键词:', keyword.name);
+};
+
+// 场景选择处理
+const handleMemorySelect = (memory: any) => {
+  console.log('选择场景:', memory.title);
+};
+
+// 场景回放处理
+const handleMemoryReplay = async (memory: any) => {
+  console.log('回放场景:', memory);
+  // 恢复 PDF 位置
+  if (memory.context?.pdfPath) {
+    // 切换到对应 PDF
+  }
+  if (memory.context?.page) {
+    currentPage.value = memory.context.page;
+  }
+  // 恢复文档上下文
+  if (memory.context?.docId) {
+    // 切换到对应文档
+  }
+};
+
+// 卡片导航处理
+const handleCardNavigate = (card: { id: string }) => {
+  console.log('导航到卡片:', card.id);
+};
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import './styles/variables.scss';
+
 .pdf-mindmap-container {
   display: flex;
   flex-direction: column;
@@ -1501,7 +1796,6 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
-/* ===== 头部区域 ===== */
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -1513,16 +1807,11 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+.header-left,
 .header-right {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .header-btn {
@@ -1590,7 +1879,6 @@ onUnmounted(() => {
   max-width: 200px;
 }
 
-/* ===== 工具栏 ===== */
 .toolbar {
   display: flex;
   align-items: center;
@@ -1656,37 +1944,30 @@ onUnmounted(() => {
   color: var(--b3-theme-primary);
 }
 
-.pdf-select {
+.pdf-select,
+.level-select {
   padding: 5px 8px;
   border: 1px solid var(--b3-border-color);
   border-radius: 4px;
   background: var(--b3-theme-background);
   color: var(--b3-theme-on-background);
   font-size: 12px;
-  min-width: 140px;
-  max-width: 200px;
   cursor: pointer;
 }
 
-.pdf-select:focus {
-  outline: none;
-  border-color: var(--b3-theme-primary);
-}
-
-.level-select {
-  padding: 5px 10px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-background);
-  font-size: 12px;
-  min-width: 90px;
-  cursor: pointer;
-}
-
+.pdf-select:focus,
 .level-select:focus {
   outline: none;
   border-color: var(--b3-theme-primary);
+}
+
+.pdf-select {
+  min-width: 140px;
+  max-width: 200px;
+}
+
+.level-select {
+  min-width: 90px;
 }
 
 .mode-group {
@@ -1773,9 +2054,9 @@ onUnmounted(() => {
   color: var(--b3-theme-error);
 }
 
-/* 项目管理面板 */
 .project-manager-overlay,
-.dialog-overlay {
+.dialog-overlay,
+.side-panel-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -1787,6 +2068,16 @@ onUnmounted(() => {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(2px);
+}
+
+.side-panel-content {
+  background: var(--b3-theme-surface);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow: auto;
 }
 
 .project-manager-panel,
@@ -1860,12 +2151,6 @@ onUnmounted(() => {
 .project-item.active {
   background: var(--b3-theme-primary-lightest);
   border-color: var(--b3-theme-primary-light);
-}
-
-.project-item-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
 }
 
 .project-info {
@@ -1964,150 +2249,6 @@ onUnmounted(() => {
   box-shadow: 0 0 0 2px var(--b3-theme-primary-lightest);
 }
 
-/* 工具栏 */
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--b3-border-color);
-  background: var(--b3-theme-surface);
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.toolbar-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.project-section {
-  flex: 1;
-  min-width: 200px;
-}
-
-.pdf-switcher {
-  flex: 1;
-  max-width: 300px;
-}
-
-.pdf-select {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-background);
-  font-size: 13px;
-}
-
-.level-section {
-  background: var(--b3-theme-background);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.mode-section {
-  display: flex;
-  gap: 4px;
-}
-
-.mode-section .b3-button {
-  font-size: 12px;
-  padding: 4px 10px;
-}
-
-.level-label {
-  font-size: 12px;
-  color: var(--b3-theme-on-surface-light);
-}
-
-.level-select {
-  padding: 4px 8px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-background);
-  font-size: 13px;
-  min-width: 100px;
-}
-
-/* 目标文档选择器 */
-.doc-section {
-  position: relative;
-}
-
-.doc-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  position: relative;
-}
-
-.doc-search-input {
-  width: 180px;
-  padding: 4px 8px;
-  font-size: 13px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-background);
-}
-
-.doc-search-input:focus {
-  outline: none;
-  border-color: var(--b3-theme-primary);
-}
-
-.clear-btn {
-  padding: 2px 6px;
-  font-size: 12px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-surface-light);
-  cursor: pointer;
-}
-
-.clear-btn:hover {
-  background: var(--b3-theme-error);
-  color: white;
-  border-color: var(--b3-theme-error);
-}
-
-.doc-search-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--b3-theme-surface-light);
-  border-top-color: var(--b3-theme-primary);
-  border-radius: 50%;
-  animation: doc-spin 0.8s linear infinite;
-  position: absolute;
-  right: 30px;
-}
-
-@keyframes doc-spin {
-  to { transform: rotate(360deg); }
-}
-
-.level-select {
-  padding: 4px 8px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 4px;
-  background: var(--b3-theme-background);
-  color: var(--b3-theme-on-background);
-  font-size: 13px;
-  min-width: 100px;
-}
-
-.page-info {
-  font-size: 13px;
-  min-width: 60px;
-  text-align: center;
-}
-
-/* 主体区域 */
 .panel-body {
   flex: 1;
   display: flex;
@@ -2157,7 +2298,6 @@ onUnmounted(() => {
   background: var(--b3-border-color);
 }
 
-/* 欢迎页 */
 .welcome-area {
   flex: 1;
   display: flex;
@@ -2239,7 +2379,6 @@ onUnmounted(() => {
   border-radius: 3px;
 }
 
-/* 标注区域 */
 .annotation-area {
   flex-shrink: 0;
   min-width: 280px;
@@ -2277,7 +2416,6 @@ onUnmounted(() => {
   border-left: none;
 }
 
-/* 选择提示 */
 .selection-toast {
   position: fixed;
   bottom: 24px;
@@ -2319,7 +2457,6 @@ onUnmounted(() => {
   border-radius: 6px;
 }
 
-/* 按钮样式覆盖 */
 :deep(.b3-button) {
   display: inline-flex;
   align-items: center;
@@ -2351,5 +2488,559 @@ onUnmounted(() => {
 :deep(.b3-button--outline:hover) {
   background: var(--b3-theme-surface-light);
   border-color: var(--b3-theme-primary);
+}
+
+/* 第五阶段高级功能按钮样式 */
+.context-btn.active {
+  background: rgba(66, 165, 245, 0.15);
+  color: #42a5f5;
+}
+
+.keyword-btn.active {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ff9800;
+}
+
+.memory-btn.active {
+  background: rgba(171, 71, 188, 0.15);
+  color: #ab47bc;
+}
+
+/* ======================================== MarginNote 风格优化样式 ======================================== */
+
+/* 头部按钮增强效果 */
+.header-btn {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s $ease-spring, height 0.3s $ease-spring, opacity 0.2s;
+  }
+
+  &:hover::before {
+    width: 180px;
+    height: 180px;
+    opacity: 0.08;
+  }
+
+  .btn-text {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/* 项目按钮 */
+.project-btn.active {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.4));
+  }
+}
+
+/* 学习集按钮 */
+.learning-set-btn.active {
+  background: rgba(6, 182, 212, 0.12);
+  color: #06b6d4;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(6, 182, 212, 0.4));
+  }
+}
+
+/* 卡片盒按钮 */
+.card-box-btn.active {
+  background: rgba(244, 114, 182, 0.12);
+  color: #f472b6;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(244, 114, 182, 0.4));
+  }
+}
+
+/* 复习按钮 */
+.review-btn.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.4));
+  }
+}
+
+/* 智能按钮 */
+.smart-btn.active {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(139, 92, 246, 0.4));
+  }
+}
+
+/* 设置按钮 */
+.settings-btn.active {
+  background: rgba(107, 114, 128, 0.12);
+  color: #6b7280;
+
+  svg {
+    filter: drop-shadow(0 2px 4px rgba(107, 114, 128, 0.4));
+  }
+}
+
+/* 复习统计徽章 */
+.header-review-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08));
+  border-radius: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+
+  .review-count-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse-success 2s infinite;
+  }
+
+  .review-count-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #10b981;
+  }
+}
+
+@keyframes pulse-success {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* 头部标题增强 */
+.header-title {
+  .title-main {
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--b3-theme-on-surface), var(--b3-theme-on-surface-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .title-sub {
+    font-size: 11px;
+    opacity: 0.8;
+  }
+
+  .title-set {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 4px;
+    font-size: 11px;
+    color: #6366f1;
+    font-weight: 500;
+    margin-top: 2px;
+    width: fit-content;
+  }
+}
+
+/* 工具栏美化 */
+.toolbar {
+  background: linear-gradient(180deg, var(--b3-theme-surface), rgba(255, 255, 255, 0.5));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.toolbar-btn {
+  transition: all 0.15s $ease-spring;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  span {
+    font-weight: 500;
+  }
+}
+
+/* PDF 选择器美化 */
+.pdf-select {
+  transition: all 0.15s;
+  cursor: pointer;
+  font-weight: 500;
+
+  &:hover {
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+  }
+
+  &:focus {
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+}
+
+/* 标注头部美化 */
+.annotation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent);
+  border-bottom: 1px solid var(--b3-border-color);
+
+  span:first-child {
+    font-weight: 600;
+    font-size: 14px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* 选择提示框美化 */
+.selection-toast {
+  animation: slide-up-fade 0.3s $ease-spring;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: linear-gradient(135deg, var(--b3-theme-surface), rgba(255, 255, 255, 0.95));
+}
+
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 欢迎页美化 */
+.welcome-area {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+}
+
+.welcome-content {
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  p {
+    color: var(--b3-theme-on-surface-light);
+    margin-bottom: 24px;
+  }
+}
+
+.recent-pdfs {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 400px;
+
+  > p {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--b3-theme-on-surface-light);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.recent-pdf-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: var(--b3-theme-surface);
+  border-radius: 10px;
+  border: 1px solid var(--b3-border-color);
+  cursor: pointer;
+  transition: all 0.15s $ease-spring;
+
+  &:hover {
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    transform: translateX(4px);
+  }
+
+  .project-icon {
+    font-size: 20px;
+  }
+
+  .project-title {
+    flex: 1;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  .project-pdf-count {
+    font-size: 12px;
+    color: var(--b3-theme-on-surface-light);
+    background: var(--b3-theme-surface-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+}
+
+/* 项目管理器美化 */
+.project-manager-panel {
+  animation: scale-in-fade 0.2s $ease-spring;
+}
+
+@keyframes scale-in-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent);
+  border-bottom: 1px solid var(--b3-border-color);
+
+  span {
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.project-item {
+  transition: all 0.15s;
+  border-radius: 10px;
+  margin-bottom: 8px;
+
+  &:hover {
+    background: rgba(99, 102, 241, 0.04);
+  }
+
+  &.active {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+
+    .project-name {
+      color: #6366f1;
+      font-weight: 600;
+    }
+  }
+
+  .project-info {
+    cursor: pointer;
+  }
+
+  .project-name {
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .project-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--b3-theme-on-surface-light);
+    margin-top: 6px;
+  }
+
+  .project-pdfs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--b3-border-color);
+  }
+
+  .pdf-tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: var(--b3-theme-surface-light);
+    border-radius: 4px;
+    color: var(--b3-theme-on-surface);
+    border: 1px solid var(--b3-border-color);
+    transition: all 0.15s;
+
+    &:hover {
+      border-color: var(--b3-theme-primary);
+      color: var(--b3-theme-primary);
+      background: rgba(99, 102, 241, 0.08);
+    }
+  }
+}
+
+/* 对话框美化 */
+.dialog-panel {
+  animation: dialog-slide-in 0.25s $ease-spring;
+}
+
+@keyframes dialog-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dialog-header {
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent);
+  border-bottom: 1px solid var(--b3-border-color);
+
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--b3-theme-color);
+}
+
+/* 表单元素美化 */
+.form-group {
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--b3-theme-on-surface);
+    margin-bottom: 8px;
+  }
+
+  .b3-text-field {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--b3-border-color);
+    transition: all 0.15s;
+    font-size: 14px;
+
+    &:focus {
+      border-color: var(--b3-theme-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      outline: none;
+    }
+
+    &::placeholder {
+      color: var(--b3-theme-on-surface-light);
+    }
+  }
+}
+
+/* 按钮通用美化 */
+.b3-button {
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: all 0.15s $ease-spring;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.b3-button--primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+  }
+}
+
+.b3-button--outline {
+  &:hover {
+    border-color: var(--b3-theme-primary);
+    color: var(--b3-theme-primary);
+    background: rgba(99, 102, 241, 0.05);
+  }
+}
+
+/* 覆盖层美化 */
+.side-panel-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.side-panel-content {
+  border-radius: 16px;
+  box-shadow: $shadow-2xl;
+  overflow: hidden;
+}
+
+/* 滚动条美化（全局） */
+* {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.4);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(156, 163, 175, 0.6);
+    }
+  }
 }
 </style>
