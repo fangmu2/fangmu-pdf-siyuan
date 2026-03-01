@@ -1418,6 +1418,8 @@ const confirmMindMapClear = () => {
   if (confirm('确定要清空当前思维导图吗？此操作不可恢复。')) {
     mindMapBlockId.value = '';
     mindMapNodeCount.value = 0;
+    // 重新初始化思维导图块 ID
+    initMindMapBlockId();
   }
 };
 

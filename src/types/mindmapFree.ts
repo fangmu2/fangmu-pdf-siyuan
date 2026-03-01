@@ -26,8 +26,10 @@ export interface FreeMindMapNodeData {
   color?: string
   /** 节点层级（title/h1-h5/text） */
   level?: string
-  /** 是否折叠 */
+  /** 是否折叠（旧版，兼容用） */
   collapsed?: boolean
+  /** 是否展开（新版，用于 MarginNote4 风格） */
+  isExpanded?: boolean
   /** 排序序号 */
   sortOrder?: number
   /** 自定义样式 */
@@ -37,6 +39,38 @@ export interface FreeMindMapNodeData {
     fontSize?: string
     fontWeight?: string
   }
+  /** 节点尺寸（用于缩放功能） */
+  size?: {
+    width: number
+    height: number
+  }
+  /** 最小尺寸 */
+  minSize?: {
+    width: number
+    height: number
+  }
+  /** 最大尺寸 */
+  maxSize?: {
+    width: number
+    height: number
+  }
+  /** Z 轴层级（用于叠加管理） */
+  zIndex?: number
+  /** 所属分组 ID */
+  groupId?: string
+  /** 跨分支关联列表 */
+  relations?: NodeRelation[]
+}
+
+/**
+ * 节点关联关系（跨分支关联）
+ */
+export interface NodeRelation {
+  id: string
+  targetNodeId: string
+  type: 'dashed' | 'solid'  // 虚线/实线
+  label?: string            // 关联标签
+  color?: string            // 关联颜色
 }
 
 /**
@@ -106,8 +140,12 @@ export interface FreeMindMapNode {
   selectable?: boolean
   /** 是否可连接 */
   connectable?: boolean
-  /** 父节点 ID */
+  /** 父节点 ID（用于树状布局） */
   parentId?: string
+  /** 子节点 ID 列表（新增，用于 MarginNote4 风格层级管理） */
+  childrenIds?: string[]
+  /** Z 轴层级（新增，用于叠加管理） */
+  zIndex?: number
   /** 扩展数据 */
   [key: string]: unknown
 }

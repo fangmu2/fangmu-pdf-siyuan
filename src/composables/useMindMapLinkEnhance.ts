@@ -110,7 +110,7 @@ export function useMindMapLinkEnhance(
    * 加载跨分支关联
    */
   async function loadCrossLinks(): Promise<void> {
-    if (!enabled || !mindMapBlockId.value) return
+    if (!enabled || !mindMapBlockId?.value) return
 
     loadingCrossLinks.value = true
     try {

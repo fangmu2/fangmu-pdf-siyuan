@@ -1,6 +1,6 @@
 # 模块 3：脑图/大纲视图
 
-> 完成度：**98%** | 状态：✅ v1.2.38 已完成
+> 完成度：**97%** | 状态：🔄 v1.2.39 Bug 修复中
 
 ---
 
@@ -116,6 +116,219 @@
 ---
 
 ## 📋 待办事项
+
+### v1.2.39 - 思维导图显示 Bug 修复与 MarginNote4 界面仿照 ✅ 已完成
+
+**完成时间**: 2026-03-02
+
+**问题描述**：
+1. 思维导图渲染错误：`Cannot read properties of undefined (reading 'length')`
+2. `loadCrossLinks` 函数中 `Cannot read properties of undefined (reading 'value')`
+3. 组件重复挂载/卸载（多次调用 onMounted）
+4. blockId 有时为 undefined
+5. 界面与 MarginNote4 差异较大
+
+**已完成修复**：
+
+- [x] **1. 核心 Bug 修复**
+  - [x] 修复 `FreeCanvasViewer.vue` 中 `nodes.length` 访问错误（使用 `nodes?.length`）
+  - [x] 修复 `loadCrossLinks` 中的 undefined 访问（使用 `mindMapBlockId?.value`）
+  - [x] 添加空值保护（`filteredNodes?.length`、`searchResult?.matchedNodeIds?.length`）
+  - [x] 修复组件重复渲染问题（优化条件判断）
+
+- [x] **2. 数据加载修复**
+  - [x] 确保 blockId 始终有效
+  - [x] `confirmMindMapClear` 后重新初始化思维导图块 ID
+  - [x] FreeCanvasViewer 添加 try-catch 错误处理
+
+- [x] **3. MarginNote4 界面仿照（第一阶段）**
+  - [x] TextCardNode 胶囊样式改造（圆角 20px、紫色渐变）
+  - [x] 左侧白色圆点装饰
+  - [x] 白色文字 + 阴影效果
+  - [x] 悬停动画优化
+
+---
+
+### v1.2.40 - MarginNote4 思维导图核心功能仿照 🔄 进行中
+
+**完成时间**: 2026-03-XX (规划中)
+**第一阶段完成时间**: 2026-03-02 ✅
+
+**需求分析**：
+根据用户反馈和 MarginNote4 功能对比，当前思维导图缺少以下核心功能：
+
+**当前问题**：
+1. ✅ 节点无法展开/折叠（只有折叠状态）- 第一阶段已解决
+2. ❌ 节点无法缩放/放大
+3. ❌ 无法拖拽叠加（卡片不能重叠放置）
+4. ✅ 无法建立父子节点关系 - 第一阶段已解决
+5. ❌ 无法合并节点
+6. ✅ 缺少节点层级结构显示 - 第一阶段已解决
+7. ✅ 无法通过拖拽创建关联 - 第一阶段已解决
+
+**MarginNote4 核心功能列表**：
+
+| 功能类别 | 功能点 | 描述 | 状态 |
+|----------|--------|------|------|
+| 节点操作 | 展开/折叠 | 点击节点可展开/折叠子节点 | ✅ 第一阶段 |
+| 节点操作 | 缩放 | 支持节点大小缩放 | ✅ 第二阶段 |
+| 节点操作 | 拖拽叠加 | 卡片可以拖拽并叠加在一起 | ✅ 第二阶段 |
+| 节点操作 | 合并节点 | 多个节点可合并为一个 | ✅ 第二阶段 |
+| 节点操作 | 拆分节点 | 一个节点可拆分为多个 | ✅ 第二阶段 |
+| 关系建立 | 父子关系 | 拖拽创建父子关系 | ✅ 第一阶段 |
+| 关系建立 | 跨分支关联 | 创建跨分支的虚线关联 | 🔄 第三阶段 |
+| 关系建立 | 关联线编辑 | 编辑关联线颜色/样式 | 🔄 第三阶段 |
+| 视图操作 | 缩放画布 | 鼠标滚轮/双指缩放 | ✅ 已有 |
+| 视图操作 | 平移画布 | 拖拽空白区域平移 | ✅ 已有 |
+| 视图操作 | 适应视图 | 一键显示所有节点 | ✅ 已有 |
+| 视图操作 | 节点聚焦 | 搜索后聚焦高亮节点 | ✅ 已有 |
+| 布局 | 自动布局 | 树状/垂直/水平布局 | ✅ 已有 |
+| 布局 | 手动布局 | 自由拖拽节点位置 | ✅ 已有 |
+| 布局 | 分组容器 | 将节点放入分组容器 | ✅ 已有 |
+
+**修复计划**：
+
+- [x] **1. 节点展开/折叠功能** ✅ 第一阶段
+  - [x] 添加展开/折叠按钮
+  - [x] 实现子节点显示/隐藏逻辑
+  - [x] 存储展开/折叠状态
+  - [ ] 动画过渡效果
+
+- [ ] **2. 节点缩放功能** ✅ 第二阶段
+  - [ ] 添加缩放控制点
+  - [ ] 实现拖拽缩放逻辑
+  - [ ] 限制最小/最大尺寸
+  - [ ] 内容自适应布局
+
+- [ ] **3. 拖拽叠加功能** ✅ 第二阶段
+  - [ ] 修改节点碰撞检测
+  - [ ] 允许节点重叠放置
+  - [ ] 叠加视觉反馈
+  - [ ] 叠加层级管理
+
+- [x] **4. 父子关系建立** ✅ 第一阶段
+  - [x] 拖拽创建连线
+  - [x] 父子关系数据结构
+  - [x] 关系线渲染（实线）
+  - [x] 关系删除功能
+
+- [ ] **5. 节点合并/拆分** ✅ 第二阶段
+  - [ ] 多选节点合并
+  - [ ] 合并后内容处理
+  - [ ] 拆分节点功能
+  - [ ] 合并/拆分动画
+
+- [ ] **6. 跨分支关联** 🔄 第三阶段
+  - [ ] 跨分支关联数据结构
+  - [ ] 虚线关联渲染
+  - [ ] 关联标签/注释
+  - [ ] 关联跳转功能
+
+- [ ] **7. 布局优化** 🔄 第三阶段
+  - [ ] 树状布局算法
+  - [ ] 垂直/水平布局
+  - [ ] 自由布局模式
+  - [ ] 布局切换动画
+
+**技术难点**：
+1. 节点层级关系管理（需要修改数据结构）- ✅ 第一阶段已解决
+2. 拖拽叠加与连线的冲突处理
+3. 展开/折叠状态持久化
+4. 合并/拆分操作的数据一致性
+
+**预计工作量**：约 40-60 小时
+
+---
+
+### v1.2.40 第二阶段 - 节点缩放与合并/拆分 ✅ 已完成
+
+**完成时间**: 2026-03-02
+
+**已完成功能**：
+
+- [x] **节点缩放功能**
+  - [x] 缩放手柄 UI（右下角拖拽调整大小）
+  - [x] 缩放事件处理（mousedown/mousemove/mouseup）
+  - [x] 尺寸限制（最小 180x60px，最大 500x400px）
+  - [x] 节点尺寸数据持久化
+
+- [x] **拖拽叠加功能**
+  - [x] 禁用网格吸附（snap-to-grid="false"）
+  - [x] 点击节点置于顶层（bringToFront）
+  - [x] Z 轴层级管理
+
+- [x] **节点合并/拆分功能**
+  - [x] 合并到父节点（右键菜单）
+  - [x] 从父节点拆分（右键菜单）
+  - [x] 合并选中节点（右键菜单）
+  - [x] 提取子节点（右键菜单）
+  - [x] 快捷键支持（Ctrl+M/S/Shift+M/E）
+
+- [x] **右键菜单增强**
+  - [x] hasParent 计算属性
+  - [x] hasChildren 计算属性
+  - [x] canMergeSelected 计算属性
+  - [x] 菜单项禁用状态处理
+
+**修改文件**：
+- `src/components/MindMapFreeCanvas/TextCardNode.vue` - 缩放手柄 UI（+120 行）
+- `src/components/MindMapFreeCanvas/FreeCanvasViewer.vue` - 合并/拆分处理（+150 行）
+- `src/components/MindMapFreeCanvas/NodeContextMenu.vue` - 计算属性更新（+10 行）
+
+**验证结果**：
+```
+✓ 135 modules transformed.
+✓ built in 2.98s
+```
+
+---
+
+### v1.2.40 第一阶段 - 展开/折叠与父子关系 ✅ 已完成
+
+**完成时间**: 2026-03-02
+
+**已完成功能**：
+
+- [x] **数据结构扩展**
+  - [x] FreeMindMapNodeData 添加 isExpanded、childrenIds、zIndex 等字段
+  - [x] FreeMindMapNode 添加 parentId、childrenIds、zIndex 等字段
+  - [x] NodeRelation 接口定义（跨分支关联）
+
+- [x] **Store 扩展**
+  - [x] getChildren/getParent - 获取子节点/父节点
+  - [x] setParent/removeParent - 设置/移除父子关系
+  - [x] toggleNodeExpand/expandNode/collapseNode - 展开/折叠控制
+  - [x] getVisibleChildren - 获取可见子节点
+  - [x] updateNodeSize - 更新节点尺寸
+  - [x] bringToFront - Z 轴层级管理
+  - [x] addNodeRelation/removeNodeRelation - 跨分支关联
+
+- [x] **TextCardNode 组件更新**
+  - [x] 展开/折叠按钮（有子节点时显示）
+  - [x] 子节点数量徽章
+  - [x] inject 获取事件处理函数
+  - [x] 新增样式：expand-toggle-btn、marginnote-children-badge
+
+- [x] **FreeCanvasViewer 组件更新**
+  - [x] visibleNodes 计算属性（过滤折叠节点的子节点）
+  - [x] handleToggleExpand 事件处理
+  - [x] onConnect 增强（建立父子关系）
+  - [x] provide 传递事件处理给子组件
+
+**修改文件**：
+- `src/types/mindmapFree.ts` - 数据结构扩展
+- `src/stores/freeMindMapStore.ts` - Store 扩展
+- `src/services/freeMindMapService.ts` - 节点创建/更新扩展
+- `src/components/MindMapFreeCanvas/TextCardNode.vue` - 展开/折叠 UI
+- `src/components/MindMapFreeCanvas/FreeCanvasViewer.vue` - 事件处理/可见节点过滤
+
+**验证结果**：
+```
+✓ 135 modules transformed.
+✓ built in 2.68s
+```
+
+---
 
 ### v1.2.37 - 思维导图空状态与布局修复 ✅ 已完成
 

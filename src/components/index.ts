@@ -117,3 +117,21 @@ export { default as Breadcrumb } from './Breadcrumb.vue';
 // 多画布与图层系统组件（MarginNote 4 风格升级）
 export { default as CanvasManager } from './MindMapFreeCanvas/CanvasManager.vue';
 export { default as LayerPanel } from './MindMapFreeCanvas/LayerPanel.vue';
+
+// 自由画布思维导图组件（MarginNote 风格）
+export { default as FreeCanvasViewer } from './MindMapFreeCanvas/FreeCanvasViewer.vue';
+export { default as TextCardNode } from './MindMapFreeCanvas/TextCardNode.vue';
+export { default as ImageCardNode } from './MindMapFreeCanvas/ImageCardNode.vue';
+export { default as GroupNode } from './MindMapFreeCanvas/GroupNode.vue';
+export { default as NodeEditDialog } from './MindMapFreeCanvas/NodeEditDialog.vue';
+export { default as NodeContextMenu } from './MindMapFreeCanvas/NodeContextMenu.vue';
+export { default as CanvasToolbar } from './MindMapFreeCanvas/CanvasToolbar.vue';
+export { default as FloatingToolbar } from './MindMapFreeCanvas/FloatingToolbar.vue';
+export { default as LinksGraphPanel } from './MindMapFreeCanvas/LinksGraphPanel.vue';
+export { default as PdfLinkageSettings } from './MindMapFreeCanvas/PdfLinkageSettings.vue';
+export { default as MindMapSearch } from './MindMapFreeCanvas/MindMapSearch.vue';
+export { default as NodeFilterPanel } from './MindMapFreeCanvas/NodeFilterPanel.vue';
+
+// 思维导图辅助组件
+export { default as MindMapEmptyState } from './MindMapEmptyState.vue';
+export { default as PdfMindMapSidebar } from './PdfMindMapSidebar.vue';

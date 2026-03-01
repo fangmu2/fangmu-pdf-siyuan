@@ -76,14 +76,14 @@ const levelOptions = [
 const hasParent = computed(() => {
   if (!isSingleSelection.value) return false
   const node = props.selectedNodes[0]
-  return node.data?.parentId !== undefined && node.data?.parentId !== null
+  return node.parentId !== undefined && node.parentId !== null && node.parentId !== ''
 })
 
 // 计算是否有子节点（用于提取功能）
 const hasChildren = computed(() => {
   if (!isSingleSelection.value) return false
   const node = props.selectedNodes[0]
-  return node.data?.hasChildren === true
+  return node.data?.childrenIds && node.data.childrenIds.length > 0
 })
 
 // 计算是否可以合并（多个选中节点）

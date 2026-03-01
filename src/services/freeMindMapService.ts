@@ -252,13 +252,19 @@ export function createNode(params: CreateNodeParams): FreeMindMapNode {
       annotationId: params.annotationId,
       cardId: params.cardId,
       collapsed: false,
-      sortOrder: 0
+      isExpanded: true,  // 新增：默认展开
+      sortOrder: 0,
+      zIndex: 0,          // 新增：默认 Z 轴层级
+      childrenIds: [],    // 新增：子节点 ID 列表
+      relations: []       // 新增：跨分支关联
     },
     style: {
       width: params.type === 'textCard' ? '200px' : params.type === 'imageCard' ? '250px' : '400px',
       height: params.type === 'group' ? '300px' : undefined
     } as any,
-    class: `node-${params.type}`
+    class: `node-${params.type}`,
+    parentId: params.parentId,  // 新增：父节点 ID
+    zIndex: 0                   // 新增：Z 轴层级
   }
 
   return node
@@ -277,7 +283,8 @@ export function updateNode(node: FreeMindMapNode, params: UpdateNodeParams): Fre
       ...node.data,
       title: params.title ?? node.data.title,
       content: params.content ?? node.data.content,
-      collapsed: params.collapsed ?? node.data.collapsed
+      collapsed: params.collapsed ?? node.data.collapsed,
+      isExpanded: params.collapsed !== undefined ? !params.collapsed : node.data.isExpanded  // 兼容旧版 collapsed
     },
     position: params.position ?? node.position,
     style: {

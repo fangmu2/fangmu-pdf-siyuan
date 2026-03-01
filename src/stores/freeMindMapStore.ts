@@ -14,7 +14,9 @@ import type {
   MindMapViewport,
   CreateNodeParams,
   UpdateNodeParams,
-  CreateEdgeParams
+  CreateEdgeParams,
+  NodeRelation,
+  CrossBranchLink
 } from '@/types/mindmapFree'
 import {
   getFreeMindMap,
@@ -72,6 +74,9 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
   /** 选中的节点 ID 列表 */
   const selectedNodeIds = ref<string[]>([])
 
+  /** 跨分支关联列表（虚线连接） */
+  const crossBranchLinks = ref<CrossBranchLink[]>([])
+
   /** 是否已加载 */
   const isLoaded = ref(false)
 
@@ -93,6 +98,9 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
 
   /** 获取连线数量 */
   const edgeCount = computed(() => edges.value.length)
+
+  /** 获取跨分支关联数量 */
+  const crossLinkCount = computed(() => crossBranchLinks.value.length)
 
   /** 获取根节点（没有父节点的节点） */
   const rootNodes = computed(() => {
@@ -296,6 +304,291 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     removeNodes(nodeIds)
   }
 
+  /**
+   * 获取子节点列表
+   * @param parentId 父节点 ID
+   * @returns 子节点列表
+   */
+  function getChildren(parentId: string): FreeMindMapNode[] {
+    return nodes.value.filter(n => n.parentId === parentId)
+  }
+
+  /**
+   * 获取父节点
+   * @param childId 子节点 ID
+   * @returns 父节点，不存在则返回 null
+   */
+  function getParent(childId: string): FreeMindMapNode | null {
+    const node = nodes.value.find(n => n.id === childId)
+    if (!node || !node.parentId) return null
+    return nodes.value.find(n => n.id === node.parentId) || null
+  }
+
+  /**
+   * 设置父节点（建立父子关系）
+   * @param childId 子节点 ID
+   * @param parentId 父节点 ID
+   */
+  function setParent(childId: string, parentId: string): void {
+    const child = nodes.value.find(n => n.id === childId)
+    const parent = nodes.value.find(n => n.id === parentId)
+    if (!child || !parent) return
+
+    // 移除旧的父子关系
+    if (child.parentId) {
+      const oldParent = nodes.value.find(n => n.id === child.parentId)
+      if (oldParent && oldParent.data.childrenIds) {
+        oldParent.data.childrenIds = oldParent.data.childrenIds.filter(id => id !== childId)
+      }
+    }
+
+    // 建立新的父子关系
+    child.parentId = parentId
+    if (!parent.data.childrenIds) {
+      parent.data.childrenIds = []
+    }
+    if (!parent.data.childrenIds.includes(childId)) {
+      parent.data.childrenIds.push(childId)
+    }
+
+    // 创建连线（如果不存在）
+    const exists = edges.value.some(e => e.source === parentId && e.target === childId)
+    if (!exists) {
+      createEdge({ source: parentId, target: childId, type: 'default' })
+    }
+  }
+
+  /**
+   * 移除父节点（断开父子关系）
+   * @param childId 子节点 ID
+   */
+  function removeParent(childId: string): void {
+    const child = nodes.value.find(n => n.id === childId)
+    if (!child || !child.parentId) return
+
+    const parent = nodes.value.find(n => n.id === child.parentId)
+    if (parent && parent.data.childrenIds) {
+      parent.data.childrenIds = parent.data.childrenIds.filter(id => id !== childId)
+    }
+
+    // 删除父子连线
+    edges.value = edges.value.filter(e => !(e.source === child.parentId && e.target === childId))
+    child.parentId = undefined
+  }
+
+  /**
+   * 切换节点展开/折叠状态
+   * @param nodeId 节点 ID
+   */
+  function toggleNodeExpand(nodeId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    // 同时更新 collapsed 和 isExpanded 保持兼容
+    node.data.collapsed = !node.data.collapsed
+    node.data.isExpanded = !node.data.collapsed
+  }
+
+  /**
+   * 展开节点
+   * @param nodeId 节点 ID
+   */
+  function expandNode(nodeId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+    node.data.collapsed = false
+    node.data.isExpanded = true
+  }
+
+  /**
+   * 折叠节点
+   * @param nodeId 节点 ID
+   */
+  function collapseNode(nodeId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+    node.data.collapsed = true
+    node.data.isExpanded = false
+  }
+
+  /**
+   * 获取可见的子节点（考虑展开/折叠状态）
+   * @param nodeId 节点 ID
+   * @returns 可见的子节点列表
+   */
+  function getVisibleChildren(nodeId: string): FreeMindMapNode[] {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node || node.data.collapsed || !node.data.isExpanded) {
+      return []
+    }
+    return getChildren(nodeId)
+  }
+
+  /**
+   * 更新节点尺寸
+   * @param nodeId 节点 ID
+   * @param size 新尺寸
+   */
+  function updateNodeSize(nodeId: string, size: { width: number; height: number }): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    node.data.size = size
+    node.style = {
+      ...node.style,
+      width: `${size.width}px`,
+      height: `${size.height}px`
+    }
+  }
+
+  /**
+   * 将节点置于顶层
+   * @param nodeId 节点 ID
+   */
+  function bringToFront(nodeId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    const maxZ = Math.max(...nodes.value.map(n => n.zIndex || 0), 0)
+    node.zIndex = maxZ + 1
+    node.data.zIndex = maxZ + 1
+  }
+
+  /**
+   * 添加跨分支关联
+   * @param nodeId 节点 ID
+   * @param targetNodeId 目标节点 ID
+   * @param relationType 关联类型
+   * @param label 关联标签
+   */
+  function addNodeRelation(
+    nodeId: string,
+    targetNodeId: string,
+    relationType: 'dashed' | 'solid' = 'dashed',
+    label?: string
+  ): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    if (!node.data.relations) {
+      node.data.relations = []
+    }
+
+    const relation = {
+      id: `rel-${Date.now()}`,
+      targetNodeId: targetNodeId,
+      type: relationType,
+      label: label || ''
+    }
+
+    node.data.relations.push(relation)
+  }
+
+  /**
+   * 移除跨分支关联
+   * @param nodeId 节点 ID
+   * @param relationId 关联 ID
+   */
+  function removeNodeRelation(nodeId: string, relationId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node || !node.data.relations) return
+
+    node.data.relations = node.data.relations.filter(r => r.id !== relationId)
+  }
+
+  /**
+   * 创建跨分支关联（虚线连接）
+   * @param sourceNodeId 源节点 ID
+   * @param targetNodeId 目标节点 ID
+   * @param linkType 关联类型
+   * @param label 关联标签
+   * @param color 关联颜色
+   */
+  function createCrossBranchLink(
+    sourceNodeId: string,
+    targetNodeId: string,
+    linkType: CrossLinkType = 'relation',
+    label?: string,
+    color?: string
+  ): CrossBranchLink {
+    // 检查是否已存在
+    const exists = crossBranchLinks.value.some(
+      link => link.sourceNodeId === sourceNodeId && link.targetNodeId === targetNodeId
+    )
+    if (exists) {
+      throw new Error('该关联已存在')
+    }
+
+    const link: CrossBranchLink = {
+      id: `cross-${Date.now()}`,
+      sourceNodeId,
+      targetNodeId,
+      linkType,
+      label: label || '',
+      style: {
+        strokeDasharray: '5,5', // 虚线样式
+        stroke: color || '#FF6B6B', // 默认红色虚线
+        strokeWidth: 2,
+        hasArrow: true,
+        arrowColor: color || '#FF6B6B'
+      },
+      createdAt: Date.now()
+    }
+
+    crossBranchLinks.value.push(link)
+
+    // 同时在源节点上记录关联关系
+    const sourceNode = nodes.value.find(n => n.id === sourceNodeId)
+    if (sourceNode && !sourceNode.data.relations) {
+      sourceNode.data.relations = []
+    }
+    if (sourceNode) {
+      sourceNode.data.relations?.push({
+        id: link.id,
+        targetNodeId,
+        type: 'dashed',
+        label,
+        color
+      })
+    }
+
+    return link
+  }
+
+  /**
+   * 删除跨分支关联
+   * @param linkId 关联 ID
+   */
+  function removeCrossBranchLink(linkId: string): void {
+    // 从 crossBranchLinks 中删除
+    crossBranchLinks.value = crossBranchLinks.value.filter(l => l.id !== linkId)
+
+    // 从节点的 relations 中删除
+    nodes.value.forEach(node => {
+      if (node.data.relations) {
+        node.data.relations = node.data.relations.filter(r => r.id !== linkId)
+      }
+    })
+  }
+
+  /**
+   * 获取节点的所有跨分支关联
+   * @param nodeId 节点 ID
+   * @returns 关联列表
+   */
+  function getNodeCrossLinks(nodeId: string): CrossBranchLink[] {
+    return crossBranchLinks.value.filter(
+      link => link.sourceNodeId === nodeId || link.targetNodeId === nodeId
+    )
+  }
+
+  /**
+   * 获取所有跨分支关联（用于渲染）
+   */
+  function getAllCrossLinks(): CrossBranchLink[] {
+    return crossBranchLinks.value
+  }
+
 
   /**
    * 创建连线
@@ -465,6 +758,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     layout,
     nodes,
     edges,
+    crossBranchLinks,
     viewport,
     showGrid,
     showMiniMap,
@@ -478,6 +772,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     selectedNodes,
     nodeCount,
     edgeCount,
+    crossLinkCount,
     rootNodes,
     bounds,
     // Actions
@@ -488,6 +783,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     updateNode,
     removeNode,
     removeNodes,
+    deleteNodes,
     createEdge,
     removeEdge,
     selectNode,
@@ -500,6 +796,24 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     setLayout,
     setReadOnly,
     setShowGrid,
-    setShowMiniMap
+    setShowMiniMap,
+    // 新增：层级关系管理
+    getChildren,
+    getParent,
+    setParent,
+    removeParent,
+    toggleNodeExpand,
+    expandNode,
+    collapseNode,
+    getVisibleChildren,
+    updateNodeSize,
+    bringToFront,
+    addNodeRelation,
+    removeNodeRelation,
+    // 新增：跨分支关联管理
+    createCrossBranchLink,
+    removeCrossBranchLink,
+    getNodeCrossLinks,
+    getAllCrossLinks
   }
 })

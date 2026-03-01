@@ -5,7 +5,7 @@
  * 第 7 期升级：集成搜索和过滤功能
  */
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, provide } from 'vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -153,7 +153,30 @@ const autoSaveTimer = ref<number | null>(null)
 // 从 Store 获取选中节点用于右键菜单
 const { selectedNodeIds } = storeToRefs(store)
 
-// 使用搜索组合式函数
+// 计算属性 - 获取可见节点（考虑展开/折叠状态）
+const visibleNodes = computed(() => {
+  const hiddenNodeIds = new Set<string>()
+
+  // 收集所有被折叠节点的子节点 ID
+  nodes.value.forEach(node => {
+    if (node.data.collapsed || !node.data.isExpanded) {
+      // 如果节点被折叠，收集它的所有子孙节点 ID
+      const collectChildren = (parentId: string) => {
+        const children = nodes.value.filter(n => n.parentId === parentId)
+        children.forEach(child => {
+          hiddenNodeIds.add(child.id)
+          collectChildren(child.id)
+        })
+      }
+      collectChildren(node.id)
+    }
+  })
+
+  // 过滤掉隐藏的节点
+  return nodes.value.filter(n => !hiddenNodeIds.has(n.id))
+})
+
+// 使用搜索组合式函数（传入可见节点）
 const {
   searchQuery,
   searchOptions,
@@ -198,17 +221,25 @@ const backgroundColor = computed(() => {
 // 初始化加载
 onMounted(async () => {
   console.log('[FreeCanvasViewer] onMounted, blockId:', props.blockId);
-  console.log('[FreeCanvasViewer] 当前状态 - isLoading:', isLoading.value, 'nodes:', nodes.value?.length);
 
   if (!props.blockId) {
-    console.warn('[FreeCanvasViewer] blockId 为空，跳过加载');
+    console.warn('[FreeCanvasViewer] blockId 为空，显示空状态');
     return;
   }
 
-  await store.loadMindMap(props.blockId)
-  isInitialized.value = true
+  isLoading.value = true;
+  console.log('[FreeCanvasViewer] 当前状态 - isLoading:', isLoading.value, 'nodes:', nodes.value?.length);
 
-  console.log('[FreeCanvasViewer] 加载完成 - isLoaded:', isLoaded.value, 'nodes:', nodes.value?.length);
+  try {
+    await store.loadMindMap(props.blockId)
+    isInitialized.value = true
+    console.log('[FreeCanvasViewer] 加载完成 - isLoaded:', isLoaded.value, 'nodes:', nodes.value?.length);
+  } catch (error) {
+    console.error('[FreeCanvasViewer] 加载失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '加载失败';
+  } finally {
+    isLoading.value = false;
+  }
 
   // 启动自动保存
   startAutoSave()
@@ -299,12 +330,14 @@ function handlePostMessage(event: MessageEvent): void {
 }
 
 /**
- * 节点单击
+ * 节点单击 - 置于顶层
  */
 function onNodeClick(event: NodeClickEvent): void {
   const node = event.node as FreeMindMapNode
   emit('nodeClick', node)
   store.selectNode(node.id, false)
+  // 点击节点时置于顶层（叠加管理）
+  store.bringToFront(node.id)
 }
 
 /**
@@ -424,15 +457,21 @@ function onEdgeMouseLeave(_event: EdgeMouseEvent): void {
 }
 
 /**
- * 连接处理
+ * 连接处理 - 建立父子关系
  */
 function onConnect(connection: Connection): void {
   if (connection.source && connection.target) {
+    // 创建连线
     store.createEdge({
       source: connection.source,
       target: connection.target,
       type: 'default'
     })
+
+    // 建立父子关系（源节点为父节点，目标节点为子节点）
+    store.setParent(connection.target, connection.source)
+
+    console.log('[FreeCanvasViewer] 建立父子关系:', connection.source, '->', connection.target)
   }
 }
 
@@ -590,6 +629,131 @@ function handleContextMenuZoomToFit(): void {
  */
 function handleContextMenuCenterView(): void {
   setTransform({ x: 0, y: 0, zoom: 1 })
+}
+
+/**
+ * 合并到父节点
+ */
+function handleContextMenuMergeToParent(): void {
+  if (selectedNodeIds.value.length === 1) {
+    const nodeId = selectedNodeIds.value[0]
+    const node = nodes.value.find(n => n.id === nodeId)
+    const parent = node?.parentId ? nodes.value.find(n => n.id === node.parentId) : null
+
+    if (node && parent) {
+      // 将当前节点内容合并到父节点
+      const newContent = parent.data.title + '\n\n' + node.data.content
+      store.updateNode({
+        id: parent.id,
+        title: parent.data.title,
+        content: newContent
+      })
+
+      // 删除当前节点
+      store.removeNode(nodeId)
+      debouncedSave()
+    }
+  }
+}
+
+/**
+ * 从父节点拆分
+ */
+function handleContextMenuSplitFromParent(): void {
+  if (selectedNodeIds.value.length === 1) {
+    const nodeId = selectedNodeIds.value[0]
+    const node = nodes.value.find(n => n.id === nodeId)
+
+    if (node && node.parentId) {
+      // 创建新的独立节点
+      store.createNode({
+        type: node.type as FreeMindMapNodeType,
+        title: node.data.title,
+        content: node.data.content,
+        position: {
+          x: node.position.x + 50,
+          y: node.position.y + 50
+        },
+        annotationId: node.data.annotationId,
+        cardId: node.data.cardId
+      })
+
+      // 清空原节点内容
+      store.updateNode({
+        id: nodeId,
+        title: '',
+        content: ''
+      })
+      debouncedSave()
+    }
+  }
+}
+
+/**
+ * 合并选中节点
+ */
+function handleContextMenuMergeSelected(): void {
+  if (selectedNodeIds.value.length >= 2) {
+    // 收集所有节点内容
+    const contents: string[] = []
+    let firstNode: FreeMindMapNode | undefined
+
+    selectedNodeIds.value.forEach(id => {
+      const node = nodes.value.find(n => n.id === id)
+      if (node) {
+        if (!firstNode) firstNode = node
+        contents.push(`${node.data.title}: ${node.data.content || ''}`)
+      }
+    })
+
+    if (firstNode) {
+      // 更新第一个节点为合并内容
+      store.updateNode({
+        id: firstNode.id,
+        title: '合并的节点',
+        content: contents.join('\n\n---\n\n')
+      })
+
+      // 删除其他节点
+      selectedNodeIds.value.slice(1).forEach(id => {
+        store.removeNode(id)
+      })
+
+      debouncedSave()
+    }
+  }
+}
+
+/**
+ * 提取子节点
+ */
+function handleContextMenuExtractChildren(): void {
+  if (selectedNodeIds.value.length === 1) {
+    const nodeId = selectedNodeIds.value[0]
+    const node = nodes.value.find(n => n.id === nodeId)
+
+    if (node) {
+      const children = nodes.value.filter(n => n.parentId === nodeId)
+
+      if (children.length > 0) {
+        // 将子节点内容合并到当前节点
+        const contents = children.map(c => `${c.data.title}: ${c.data.content || ''}`).join('\n\n---\n\n')
+        const currentContent = node.data.content || ''
+        store.updateNode({
+          id: nodeId,
+          title: node.data.title,
+          content: currentContent + '\n\n' + contents
+        })
+
+        // 删除子节点
+        children.forEach(child => {
+          store.removeNode(child.id)
+        })
+
+        debouncedSave()
+      }
+    }
+  }
 }
 
 // ==================== 工具栏操作 ====================
@@ -775,6 +939,14 @@ function addNodeAtPosition(
   })
 }
 
+/**
+ * 处理节点展开/折叠切换
+ */
+function handleToggleExpand(nodeId: string): void {
+  store.toggleNodeExpand(nodeId)
+  console.log('[FreeCanvasViewer] 切换节点展开/折叠:', nodeId)
+}
+
 // 暴露方法给父组件
 defineExpose({
   addNodeAtPosition,
@@ -786,6 +958,36 @@ defineExpose({
   handleToolbarToggleSearch,
   handleToolbarToggleFilter
 })
+
+// 提供事件处理函数给子节点组件
+provide('onToggleExpand', handleToggleExpand)
+provide('onResizeStart', handleResizeStart)
+provide('onResize', handleResize)
+provide('onResizeEnd', handleResizeEnd)
+
+/**
+ * 处理节点缩放开始
+ */
+function handleResizeStart(nodeId: string): void {
+  console.log('[FreeCanvasViewer] 开始缩放节点:', nodeId)
+  // 将节点置于顶层
+  store.bringToFront(nodeId)
+}
+
+/**
+ * 处理节点缩放
+ */
+function handleResize(nodeId: string, size: { width: number; height: number }): void {
+  store.updateNodeSize(nodeId, size)
+}
+
+/**
+ * 处理节点缩放结束
+ */
+function handleResizeEnd(nodeId: string): void {
+  console.log('[FreeCanvasViewer] 结束缩放节点:', nodeId)
+  debouncedSave()
+}
 </script>
 
 <template>
@@ -805,7 +1007,7 @@ defineExpose({
 
     <!-- 错误状态 -->
     <div
-      v-else-if="errorMessage && nodes.length === 0"
+      v-else-if="errorMessage && nodes?.length === 0"
       class="freemind-error"
     >
       <span class="freemind-error-icon">⚠️</span>
@@ -839,7 +1041,7 @@ defineExpose({
 
     <!-- 空状态提示 - 当没有节点且不在加载中时显示 -->
     <div
-      v-if="!isLoading && nodes.length === 0"
+      v-if="!isLoading && (!nodes || nodes.length === 0)"
       class="freemind-empty-state"
     >
       <div class="empty-illustration">
@@ -867,9 +1069,9 @@ defineExpose({
 
     <!-- Vue Flow 画布 -->
     <VueFlow
-      v-if="nodes && nodes.length > 0"
-      :nodes="nodes"
-      :edges="edges"
+      v-if="visibleNodes && visibleNodes.length > 0"
+      :nodes="visibleNodes"
+      :edges="edges || []"
       :node-types="nodeTypes"
       :default-zoom="1"
       :min-zoom="0.1"
@@ -884,7 +1086,7 @@ defineExpose({
       :delete-key-code="['Backspace', 'Delete']"
       :multi-selection-key-code="['Shift', 'Meta', 'Control']"
       :selection-key-code="['Shift']"
-      :snap-to-grid="true"
+      :snap-to-grid="false"
       :snap-grid="[15, 15]"
       :nodes-draggable="!readOnly"
       :nodes-connectable="!readOnly"
@@ -893,6 +1095,8 @@ defineExpose({
       :auto-connect="true"
       :elevate-nodes-on-select="true"
       :only-render-visible-elements="true"
+      :connection-radius="30"
+      :select-nodes-on-connect="false"
       @connect="onConnect"
       @node-click="onNodeClick"
       @node-double-click="onNodeDoubleClick"
@@ -945,10 +1149,10 @@ defineExpose({
       <span class="freemind-stats-divider">|</span>
       <span>连线：{{ edges?.length || 0 }}</span>
       <span v-if="hasActiveSearch" class="freemind-stats-search">
-        | 搜索：{{ searchResult?.matchedNodeIds.length || 0 }}
+        | 搜索：{{ searchResult?.matchedNodeIds?.length || 0 }}
       </span>
       <span v-if="hasActiveFilter" class="freemind-stats-filter">
-        | 过滤：{{ filteredNodes.length }}
+        | 过滤：{{ filteredNodes?.length || 0 }}
       </span>
     </div>
 
@@ -978,6 +1182,10 @@ defineExpose({
       @create-connection="handleContextMenuCreateConnection"
       @zoom-to-fit="handleContextMenuZoomToFit"
       @center-view="handleContextMenuCenterView"
+      @merge-to-parent="handleContextMenuMergeToParent"
+      @split-from-parent="handleContextMenuSplitFromParent"
+      @merge-selected="handleContextMenuMergeSelected"
+      @extract-children="handleContextMenuExtractChildren"
     />
   </div>
 </template>
