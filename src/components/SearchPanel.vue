@@ -109,6 +109,9 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../types/card';
 import { cardService } from '../services/cardService';
+import { globalSearchService } from '../services/globalSearchService';
+import { searchHistoryService, addSearchHistory } from '../services/searchHistoryService';
+import type { SearchHistoryItem, GlobalSearchResult, SearchResultItem } from '../types/search';
 
 interface SearchResult {
   id: string;

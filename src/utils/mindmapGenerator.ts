@@ -1,5 +1,5 @@
 // src/utils/mindmapGenerator.ts
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 
 /**
  * 思维导图节点接口
@@ -8,21 +8,106 @@ export interface MindmapNode {
   id: string;
   content: string;
   level: string;
-  annotationId?: string; // 关联的标注ID
+  annotationId?: string; // 关联的标注 ID
   children?: MindmapNode[];
   page?: number; // 标注所在页码
-  pdfName?: string; // PDF名称
+  pdfName?: string; // PDF 名称
   sortOrder?: number; // 排序序号
 }
 
 /**
- * 将标注数据转换为Markmap可用的Markdown格式
+ * 将标注数据转换为 Markmap 可用的 Markdown 格式
+ * 按照 MarginNote 的方式，使用标注内容作为标题而不是页码
  */
-export function generateMindmapMarkdown(annotations: PDFAnnotation[]): string {
-  // 使用层次化结构生成思维导图
-  const rootNode = generateHierarchicalMindmapStructure(annotations);
-  return convertToMarkdown(rootNode);
+export function generateMindmapMarkdown(annotations: PDFAnnotation[] | undefined): string {
+  // 处理空值情况
+  if (!annotations || annotations.length === 0) {
+    return '# 📚 暂无标注\n';
+  }
+
+  // 过滤掉无效的标注
+  const validAnnotations = annotations.filter(ann => ann && ann.id);
+
+  if (validAnnotations.length === 0) {
+    return '# 📚 暂无标注\n';
+  }
+
+  // 按 PDF 分组
+  const pdfGroups = new Map<string, PDFAnnotation[]>();
+  validAnnotations.forEach(ann => {
+    const key = ann.pdfName || 'Unknown PDF';
+    if (!pdfGroups.has(key)) {
+      pdfGroups.set(key, []);
+    }
+    pdfGroups.get(key)!.push(ann);
+  });
+
+  // 生成 Markdown
+  let markdown = '# 📚 PDF 学习笔记\n\n';
+
+  pdfGroups.forEach((pdfAnnotations, pdfName) => {
+    // 按页码排序
+    pdfAnnotations.sort((a, b) => a.page - b.page);
+
+    // 生成 PDF 节点
+    markdown += `## 📄 ${pdfName}\n\n`;
+
+    // 直接生成标注树，不按页码分组
+    const rootAnnotations = pdfAnnotations.filter(ann => !ann.parentId);
+    rootAnnotations.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+    rootAnnotations.forEach(rootAnn => {
+      markdown += buildAnnotationTreeWithContent(rootAnn, annotations);
+    });
+  });
+
+  return markdown;
 }
+
+/**
+ * 递归构建标注树（带内容标题）
+ * 修复：统一使用列表格式，markmap 不支持混用标题和列表
+ */
+function buildAnnotationTreeWithContent(annotation: PDFAnnotation, allAnnotations: PDFAnnotation[], depth = 0): string {
+  let markdown = '';
+
+  // 根据标注级别选择图标
+  const levelIcons: Record<string, string> = {
+    'title': '🎯',
+    'h1': '📌',
+    'h2': '📍',
+    'h3': '📎',
+    'h4': '🏷️',
+    'h5': '🔖',
+    'text': '💬'
+  };
+  const icon = levelIcons[annotation.level] || levelIcons['text'];
+
+  // 内容处理 - 优先使用 text，其次 note
+  let content = annotation.text || annotation.note || 'Untitled';
+
+  // 截断过长的文本，避免节点过大
+  if (content.length > 100) {
+    content = content.substring(0, 100) + '...';
+  }
+
+  // 统一使用列表格式，通过缩进表示层级
+  // markmap 使用列表语法而不是标题语法
+  const indent = '  '.repeat(depth);
+  markdown = `${indent}- ${icon} ${content}\n`;
+
+  // 查找并添加子节点
+  const children = allAnnotations
+    .filter(child => child.parentId === annotation.id)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  children.forEach(child => {
+    markdown += buildAnnotationTreeWithContent(child, allAnnotations, depth + 1);
+  });
+
+  return markdown;
+}
+
 
 /**
  * 生成层次化的思维导图结构，保留父子关系
@@ -36,7 +121,7 @@ export const generateHierarchicalMindmapStructure = (annotations: PDFAnnotation[
     children: []
   };
 
-  // 按父级ID分组标注
+  // 按父级 ID 分组标注
   const annotationsMap = new Map<string, PDFAnnotation>();
   const childrenMap = new Map<string, PDFAnnotation[]>();
 
@@ -68,7 +153,7 @@ export const generateHierarchicalMindmapStructure = (annotations: PDFAnnotation[
 
     // 添加子节点
     const children = childrenMap.get(annotation.id) || [];
-    // 按sortOrder排序
+    // 按 sortOrder 排序
     children.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     children.forEach(child => {
       node.children?.push(buildTree(child));
@@ -77,7 +162,7 @@ export const generateHierarchicalMindmapStructure = (annotations: PDFAnnotation[
     return node;
   };
 
-  // 按sortOrder排序根节点
+  // 按 sortOrder 排序根节点
   rootAnnotations.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   // 构建根级节点
@@ -87,43 +172,6 @@ export const generateHierarchicalMindmapStructure = (annotations: PDFAnnotation[
 
   return rootNode;
 };
-
-/**
- * 将思维导图节点转换为Markdown格式
- */
-const convertToMarkdown = (node: MindmapNode, depth = 0): string => {
-  const indent = '  '.repeat(depth);
-  // 在内容后添加页码和PDF信息
-  let contentWithInfo = node.content;
-  if (node.page !== undefined && node.pdfName) {
-    contentWithInfo += ` (${node.pdfName} P${node.page})`;
-  }
-  let markdown = `${indent}- ${contentWithInfo}\n`;
-
-  if (node.children) {
-    node.children.forEach(child => {
-      markdown += convertToMarkdown(child, depth + 1);
-    });
-  }
-
-  return markdown;
-};
-
-/**
- * 获取标题前缀
- */
-function getHeadingPrefix(level: string | undefined): string {
-  if (!level) return '';
-  const prefixes: Record<string, string> = {
-    'title': '',
-    'h1': '# ',
-    'h2': '## ',
-    'h3': '### ',
-    'h4': '#### ',
-    'h5': '##### '
-  };
-  return prefixes[level] || '';
-}
 
 /**
  * 将标注数据转换为思维导图节点结构
@@ -141,7 +189,7 @@ export function generateMindmapStructure(annotations: PDFAnnotation[]): MindmapN
   const buildNode = (ann: PDFAnnotation): MindmapNode => {
     const children = annotations
       .filter(child => child.parentId === ann.id)
-      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)); // 按sortOrder排序
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
     const node: MindmapNode = {
       id: ann.id,
@@ -157,7 +205,7 @@ export function generateMindmapStructure(annotations: PDFAnnotation[]): MindmapN
     return node;
   };
 
-  // 按sortOrder排序根节点
+  // 按 sortOrder 排序根节点
   const sortedRootNodes = rootNodes.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   rootNode.children = sortedRootNodes.map(buildNode);
 

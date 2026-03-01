@@ -1,163 +1,176 @@
+<!-- src/components/CardBoxBoard.vue - 卡片盒看板视图 -->
 <template>
   <div class="card-box-board">
     <!-- 工具栏 -->
     <div class="card-box-board__toolbar">
-      <div class="card-box-board__toolbar-left">
-        <div class="card-box-board__view-toggle">
-          <button
-            :class="['card-box-board__view-btn', { active: viewMode === 'board' }]"
-            @click="viewMode = 'board'"
-            title="看板视图"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/>
-            </svg>
-          </button>
-          <button
-            :class="['card-box-board__view-btn', { active: viewMode === 'list' }]"
-            @click="viewMode = 'list'"
-            title="列表视图"
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <div class="card-box-board__toolbar-right">
-        <div class="card-box-board__filter">
-          <select v-model="filterStudySet" class="card-box-board__select">
-            <option value="">全部学习集</option>
-            <option v-for="ss in studySets" :key="ss.id" :value="ss.id">
-              {{ ss.name }}
-            </option>
-          </select>
-          <select v-model="filterTag" class="card-box-board__select">
-            <option value="">全部标签</option>
-            <option v-for="tag in allTags" :key="tag" :value="tag">
-              #{{ tag }}
-            </option>
-          </select>
-        </div>
-        <button class="b3-button b3-button--primary b3-button--small" @click="handleCreateCard">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      <!-- 视图切换 -->
+      <div class="view-switcher">
+        <button
+          :class="['view-btn', { active: currentView === 'board' }]"
+          @click="currentView = 'board'"
+          title="看板视图"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
           </svg>
-          新建卡片
         </button>
+        <button
+          :class="['view-btn', { active: currentView === 'list' }]"
+          @click="currentView = 'list'"
+          title="列表视图"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+          </svg>
+        </button>
+        <button
+          :class="['view-btn', { active: currentView === 'timeline' }]"
+          @click="currentView = 'timeline'"
+          title="时间线视图"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M23 12l-2.44-2.78.34-3.68-3.61-.82-1.89-3.18L12 3 8.6 1.54 6.71 4.72l-3.61.81.34 3.68L1 12l2.44 2.78-.34 3.68 3.61.82 1.89 3.18L12 21l3.4 1.46 1.89-3.18 3.61-.82-.34-3.68L23 12zm-10 5h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 分组方式 -->
+      <div class="group-selector" v-if="currentView === 'board'">
+        <span class="group-selector__label">分组：</span>
+        <select v-model="groupBy" class="group-select">
+          <option value="tag">按标签</option>
+          <option value="status">按状态</option>
+          <option value="difficulty">按难度</option>
+          <option value="source">按来源</option>
+        </select>
+      </div>
+
+      <!-- 排序方式 -->
+      <div class="sort-selector">
+        <span class="sort-selector__label">排序：</span>
+        <select v-model="sortBy" class="sort-select">
+          <option value="created">创建时间</option>
+          <option value="updated">更新时间</option>
+          <option value="nextReview">下次复习</option>
+          <option value="difficulty">难度</option>
+          <option value="alphabetical">字母顺序</option>
+        </select>
+        <button
+          :class="['sort-order-btn', { reverse: sortOrder === 'desc' }]"
+          @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'"
+        >
+          <svg v-if="sortOrder === 'asc'" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 筛选器 -->
+      <div class="filter-section">
+        <button class="filter-btn" @click="showFilterPanel = !showFilterPanel">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+          </svg>
+          筛选
+        </button>
+      </div>
+
+      <!-- 搜索框 -->
+      <div class="search-box">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="搜索卡片..."
+          class="search-input"
+        />
       </div>
     </div>
 
+    <!-- 筛选面板 -->
+    <transition name="slide-down">
+      <div v-if="showFilterPanel" class="filter-panel">
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">状态</span>
+          <div class="filter-options">
+            <label
+              v-for="status in statusOptions"
+              :key="status.value"
+              class="filter-option"
+            >
+              <input
+                type="checkbox"
+                :value="status.value"
+                v-model="filters.status"
+              />
+              <span class="filter-option__label">{{ status.label }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">难度</span>
+          <div class="difficulty-filter">
+            <input
+              type="range"
+              min="1"
+              max="5"
+              v-model.number="filters.difficultyMin"
+              class="difficulty-range"
+            />
+            <span class="difficulty-value">≥ {{ filters.difficultyMin }}</span>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">标签</span>
+          <div class="tag-filter">
+            <select v-model="filters.tags" multiple class="tag-select">
+              <option v-for="tag in allTags" :key="tag" :value="tag">{{ tag }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-panel__actions">
+          <button class="clear-filters-btn" @click="clearFilters">清除筛选</button>
+        </div>
+      </div>
+    </transition>
+
     <!-- 看板视图 -->
-    <div v-if="viewMode === 'board'" class="card-box-board__kanban">
-      <!-- 新卡片列 -->
-      <div class="kanban-column kanban-column--new">
-        <div class="kanban-column__header">
-          <span class="kanban-column__icon">🆕</span>
-          <span class="kanban-column__title">新卡片</span>
-          <span class="kanban-column__count">{{ newCards.length }}</span>
+    <div v-if="currentView === 'board' && groupedCards.length > 0" class="board-view">
+      <div
+        v-for="group in groupedCards"
+        :key="group.key"
+        class="board-column"
+      >
+        <div class="board-column__header">
+          <span class="board-column__title">{{ group.title }}</span>
+          <span class="board-column__count">{{ group.cards.length }}</span>
         </div>
-        <div class="kanban-column__content">
+        <div class="board-column__content">
           <div
-            v-for="card in newCards"
+            v-for="card in group.cards"
             :key="card.id"
-            :class="['kanban-card', { 'kanban-card--selected': selectedCardId === card.id }]"
-            @click="handleCardSelect(card)"
-            @dragstart="handleDragStart($event, card)"
+            :class="['card-item', `card-item--${card.status}`]"
+            @click="handleCardClick(card)"
           >
-            <div class="kanban-card__content">
-              <span class="kanban-card__text">{{ truncateText(card.content, 60) }}</span>
-              <div class="kanban-card__meta">
-                <span class="kanban-card__tag" v-if="card.tags?.length">
-                  #{{ card.tags[0] }}
-                </span>
-                <span class="kanban-card__time">{{ formatTime(card.created) }}</span>
-              </div>
+            <div class="card-item__title">{{ card.title || '无标题' }}</div>
+            <div class="card-item__content" v-if="card.content">
+              {{ truncateText(card.content, 50) }}
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 学习中列 -->
-      <div class="kanban-column kanban-column--learning">
-        <div class="kanban-column__header">
-          <span class="kanban-column__icon">📖</span>
-          <span class="kanban-column__title">学习中</span>
-          <span class="kanban-column__count">{{ learningCards.length }}</span>
-        </div>
-        <div class="kanban-column__content">
-          <div
-            v-for="card in learningCards"
-            :key="card.id"
-            :class="['kanban-card', { 'kanban-card--selected': selectedCardId === card.id }]"
-            @click="handleCardSelect(card)"
-            @dragstart="handleDragStart($event, card)"
-          >
-            <div class="kanban-card__content">
-              <span class="kanban-card__text">{{ truncateText(card.content, 60) }}</span>
-              <div class="kanban-card__meta">
-                <span class="kanban-card__tag" v-if="card.tags?.length">
-                  #{{ card.tags[0] }}
+            <div class="card-item__meta">
+              <span v-if="card.tags.length > 0" class="card-item__tags">
+                <span v-for="tag in card.tags.slice(0, 3)" :key="tag" class="card-item__tag">
+                  {{ tag }}
                 </span>
-                <span class="kanban-card__time">{{ formatTime(card.updated) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 复习中列 -->
-      <div class="kanban-column kanban-column--review">
-        <div class="kanban-column__header">
-          <span class="kanban-column__icon">⏰</span>
-          <span class="kanban-column__title">复习中</span>
-          <span class="kanban-column__count">{{ reviewCards.length }}</span>
-        </div>
-        <div class="kanban-column__content">
-          <div
-            v-for="card in reviewCards"
-            :key="card.id"
-            :class="['kanban-card', { 'kanban-card--selected': selectedCardId === card.id }]"
-            @click="handleCardSelect(card)"
-            @dragstart="handleDragStart($event, card)"
-          >
-            <div class="kanban-card__content">
-              <span class="kanban-card__text">{{ truncateText(card.content, 60) }}</span>
-              <div class="kanban-card__meta">
-                <span class="kanban-card__tag" v-if="card.tags?.length">
-                  #{{ card.tags[0] }}
+              </span>
+              <div class="card-item__info">
+                <span class="card-item__difficulty" :class="`difficulty-${card.difficulty}`">
+                  {{ '★'.repeat(card.difficulty) }}{{ '☆'.repeat(5 - card.difficulty) }}
                 </span>
-                <span class="kanban-card__time" :class="{ 'kanban-card__time--due': isDue(card) }">
-                  {{ formatNextReview(card.srs?.nextReview) }}
+                <span v-if="card.nextReview" class="card-item__review">
+                  {{ formatNextReview(card.nextReview) }}
                 </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 已完成列 -->
-      <div class="kanban-column kanban-column--mastered">
-        <div class="kanban-column__header">
-          <span class="kanban-column__icon">✅</span>
-          <span class="kanban-column__title">已掌握</span>
-          <span class="kanban-column__count">{{ masteredCards.length }}</span>
-        </div>
-        <div class="kanban-column__content">
-          <div
-            v-for="card in masteredCards"
-            :key="card.id"
-            :class="['kanban-card', { 'kanban-card--selected': selectedCardId === card.id }]"
-            @click="handleCardSelect(card)"
-            @dragstart="handleDragStart($event, card)"
-          >
-            <div class="kanban-card__content">
-              <span class="kanban-card__text">{{ truncateText(card.content, 60) }}</span>
-              <div class="kanban-card__meta">
-                <span class="kanban-card__tag" v-if="card.tags?.length">
-                  #{{ card.tags[0] }}
-                </span>
-                <span class="kanban-card__time">{{ formatTime(card.updated) }}</span>
               </div>
             </div>
           </div>
@@ -166,297 +179,559 @@
     </div>
 
     <!-- 列表视图 -->
-    <div v-else class="card-box-board__list">
-      <div class="list-header">
-        <div class="list-header__cell list-header__cell--content">内容</div>
-        <div class="list-header__cell list-header__cell--status">状态</div>
-        <div class="list-header__cell list-header__cell--tags">标签</div>
-        <div class="list-header__cell list-header__cell--study-set">学习集</div>
-        <div class="list-header__cell list-header__cell--updated">更新时间</div>
-        <div class="list-header__cell list-header__cell--actions">操作</div>
-      </div>
-      <div class="list-body">
-        <div
-          v-for="card in filteredCards"
-          :key="card.id"
-          :class="['list-row', { 'list-row--selected': selectedCardId === card.id }]"
-          @click="handleCardSelect(card)"
-        >
-          <div class="list-row__cell list-row__cell--content">
-            {{ truncateText(card.content, 80) }}
-          </div>
-          <div class="list-row__cell list-row__cell--status">
-            <span :class="['status-badge', `status-badge--${card.status}`]">
-              {{ getStatusLabel(card.status) }}
-            </span>
-          </div>
-          <div class="list-row__cell list-row__cell--tags">
-            <span v-for="tag in card.tags?.slice(0, 3)" :key="tag" class="tag-badge">
-              #{{ tag }}
-            </span>
-          </div>
-          <div class="list-row__cell list-row__cell--study-set">
-            {{ getStudySetName(card.studySetId) }}
-          </div>
-          <div class="list-row__cell list-row__cell--updated">
-            {{ formatTime(card.updated) }}
-          </div>
-          <div class="list-row__cell list-row__cell--actions">
-            <button class="icon-btn" @click.stop="handleEditCard(card)" title="编辑">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-              </svg>
-            </button>
-            <button class="icon-btn" @click.stop="handleDeleteCard(card)" title="删除">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-            </button>
+    <div v-else-if="currentView === 'list'" class="list-view">
+      <table class="card-table">
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>内容</th>
+            <th>状态</th>
+            <th>标签</th>
+            <th>难度</th>
+            <th>下次复习</th>
+            <th>更新时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="card in filteredAndSortedCards"
+            :key="card.id"
+            @click="handleCardClick(card)"
+            class="card-table__row"
+          >
+            <td class="card-table__cell">{{ card.title || '无标题' }}</td>
+            <td class="card-table__cell card-table__cell--content">
+              {{ truncateText(card.content, 30) }}
+            </td>
+            <td class="card-table__cell">
+              <span :class="['status-badge', `status-${card.status}`]">
+                {{ getStatusLabel(card.status) }}
+              </span>
+            </td>
+            <td class="card-table__cell">
+              <span v-for="tag in card.tags.slice(0, 3)" :key="tag" class="table-tag">
+                {{ tag }}
+              </span>
+            </td>
+            <td class="card-table__cell">
+              <span :class="`difficulty-${card.difficulty}`">
+                {{ '★'.repeat(card.difficulty) }}
+              </span>
+            </td>
+            <td class="card-table__cell">{{ formatNextReview(card.nextReview) }}</td>
+            <td class="card-table__cell">{{ formatTime(card.updatedAt) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 时间线视图 -->
+    <div v-else-if="currentView === 'timeline'" class="timeline-view">
+      <div
+        v-for="(group, date) in timelineGroups"
+        :key="date"
+        class="timeline-group"
+      >
+        <div class="timeline-group__header">
+          <span class="timeline-group__date">{{ formatDateGroup(date) }}</span>
+          <span class="timeline-group__count">{{ group.length }} 张卡片</span>
+        </div>
+        <div class="timeline-group__content">
+          <div
+            v-for="card in group"
+            :key="card.id"
+            :class="['timeline-item', `timeline-item--${card.status}`]"
+            @click="handleCardClick(card)"
+          >
+            <div class="timeline-item__marker"></div>
+            <div class="timeline-item__content">
+              <div class="timeline-item__title">{{ card.title || '无标题' }}</div>
+              <div class="timeline-item__meta">
+                <span class="timeline-item__time">{{ formatTime(card.createdAt) }}</span>
+                <span v-if="card.tags.length > 0" class="timeline-item__tags">
+                  <span v-for="tag in card.tags.slice(0, 3)" :key="tag" class="timeline-item__tag">
+                    {{ tag }}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 批量操作工具栏 -->
-    <div v-if="selectedCards.length > 0" class="card-box-board__bulk-actions">
-      <span class="bulk-actions__count">已选择 {{ selectedCards.length }} 张卡片</span>
-      <div class="bulk-actions__buttons">
-        <button class="b3-button b3-button--outline b3-button--small" @click="handleBulkMove">
-          移动学习集
-        </button>
-        <button class="b3-button b3-button--outline b3-button--small" @click="handleBulkAddTag">
-          添加标签
-        </button>
-        <button class="b3-button b3-button--outline b3-button--small" @click="handleBulkDelete">
-          删除
-        </button>
+    <!-- 空状态 -->
+    <div v-else class="empty-state">
+      <div class="empty-state__icon">📭</div>
+      <div class="empty-state__title">暂无卡片</div>
+      <div class="empty-state__desc">
+        {{ searchQuery ? '没有找到匹配的卡片' : '开始创建你的第一张卡片吧' }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import type { Card, StudySet } from '../types';
-import { cardService } from '../services/cardService';
-import { studySetService } from '../services/studySetService';
-import { truncateText } from '../utils';
+import { ref, computed, onMounted } from 'vue';
+import { useCardStore } from '../stores/cardStore';
+import type { Card } from '../types/card';
 
 interface Props {
   studySetId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  studySetId: '',
+  studySetId: undefined,
 });
 
 const emit = defineEmits<{
-  (e: 'card-select', card: Card): void;
-  (e: 'card-create'): void;
-  (e: 'card-edit', card: Card): void;
-  (e: 'card-delete', card: Card): void;
-  (e: 'cards-move', cardIds: string[], studySetId: string): void;
-  (e: 'cards-delete', cardIds: string[]): void;
+  (e: 'card-click', card: Card): void;
 }>();
 
-// 视图模式
-const viewMode = ref<'board' | 'list'>('board');
+const cardStore = useCardStore();
 
-// 筛选
-const filterStudySet = ref('');
-const filterTag = ref('');
+// 视图状态
+const currentView = ref<'board' | 'list' | 'timeline'>('board');
+const showFilterPanel = ref(false);
 
-// 选中状态
-const selectedCardId = ref<string | null>(null);
-const selectedCards = ref<string[]>([]);
+// 分组和排序
+const groupBy = ref<'tag' | 'status' | 'difficulty' | 'source'>('status');
+const sortBy = ref<'created' | 'updated' | 'nextReview' | 'difficulty' | 'alphabetical'>('updated');
+const sortOrder = ref<'asc' | 'desc'>('desc');
 
-// 数据
-const cards = ref<Card[]>([]);
-const studySets = ref<StudySet[]>([]);
+// 搜索和筛选
+const searchQuery = ref('');
+const filters = ref({
+  status: [] as string[],
+  tags: [] as string[],
+  difficultyMin: 1,
+});
 
-// 加载数据
-const loadCards = async () => {
-  // TODO: 从 API 加载卡片
-  cards.value = cardService.getAllCards();
-};
+// 状态选项
+const statusOptions = [
+  { value: 'new', label: '新卡片' },
+  { value: 'learning', label: '学习中' },
+  { value: 'review', label: '复习中' },
+  { value: 'suspended', label: '已暂停' },
+];
 
-const loadStudySets = async () => {
-  // TODO: 从 API 加载学习集
-  studySets.value = studySetService.getAllStudySets();
-};
-
-watch(() => props.studySetId, loadCards, { immediate: true });
-loadStudySets();
-
-// 所有标签
+// 计算属性：所有标签
 const allTags = computed(() => {
-  const tags = new Set<string>();
+  const tagSet = new Set<string>();
   cards.value.forEach(card => {
-    card.tags?.forEach(tag => tags.add(tag));
+    card.tags?.forEach(tag => tagSet.add(tag));
   });
-  return Array.from(tags);
+  return Array.from(tagSet).sort();
 });
 
-// 筛选后的卡片
-const filteredCards = computed(() => {
-  return cards.value.filter(card => {
-    if (props.studySetId && card.studySetId !== props.studySetId) return false;
-    if (filterStudySet.value && card.studySetId !== filterStudySet.value) return false;
-    if (filterTag.value && !card.tags?.includes(filterTag.value)) return false;
-    return true;
-  });
-});
+// 计算属性：卡片列表
+const cards = computed(() => {
+  let result = props.studySetId
+    ? cardStore.cards.filter(c => c.studySetId === props.studySetId)
+    : cardStore.cards;
 
-// 按状态分组的卡片
-const newCards = computed(() => filteredCards.value.filter(c => c.status === 'new'));
-const learningCards = computed(() => filteredCards.value.filter(c => c.status === 'learning'));
-const reviewCards = computed(() => filteredCards.value.filter(c => c.status === 'review'));
-const masteredCards = computed(() => filteredCards.value.filter(c => c.status === 'mastered'));
-
-// 事件处理
-const handleCardSelect = (card: Card) => {
-  selectedCardId.value = card.id;
-  emit('card-select', card);
-};
-
-const handleCreateCard = () => {
-  emit('card-create');
-};
-
-const handleEditCard = (card: Card) => {
-  emit('card-edit', card);
-};
-
-const handleDeleteCard = (card: Card) => {
-  emit('card-delete', card);
-};
-
-// 拖拽相关
-const handleDragStart = (event: DragEvent, card: Card) => {
-  event.dataTransfer?.setData('text/plain', card.id);
-};
-
-// 批量操作
-const handleBulkMove = () => {
-  // TODO: 显示学习集选择对话框
-  console.log('批量移动:', selectedCards.value);
-};
-
-const handleBulkAddTag = () => {
-  // TODO: 显示标签输入对话框
-  console.log('批量添加标签:', selectedCards.value);
-};
-
-const handleBulkDelete = () => {
-  if (confirm(`确定删除选中的 ${selectedCards.value.length} 张卡片吗？`)) {
-    emit('cards-delete', selectedCards.value);
+  // 应用筛选
+  if (filters.value.status.length > 0) {
+    result = result.filter(c => filters.value.status.includes(c.status));
   }
-};
+  if (filters.value.tags.length > 0) {
+    result = result.filter(c =>
+      c.tags?.some(tag => filters.value.tags.includes(tag))
+    );
+  }
+  if (filters.value.difficultyMin > 1) {
+    result = result.filter(c => c.difficulty >= filters.value.difficultyMin);
+  }
 
-// 辅助函数
-const getStatusLabel = (status: string): string => {
+  // 应用搜索
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(c =>
+      c.title?.toLowerCase().includes(query) ||
+      c.content?.toLowerCase().includes(query)
+    );
+  }
+
+  // 应用排序
+  result = [...result].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy.value) {
+      case 'created':
+        comparison = (a.createdAt || 0) - (b.createdAt || 0);
+        break;
+      case 'updated':
+        comparison = (a.updatedAt || 0) - (b.updatedAt || 0);
+        break;
+      case 'nextReview':
+        comparison = (a.nextReview || 0) - (b.nextReview || 0);
+        break;
+      case 'difficulty':
+        comparison = (a.difficulty || 0) - (b.difficulty || 0);
+        break;
+      case 'alphabetical':
+        comparison = (a.title || '').localeCompare(b.title || '');
+        break;
+    }
+    return sortOrder.value === 'asc' ? comparison : -comparison;
+  });
+
+  return result;
+});
+
+// 计算属性：筛选和排序后的卡片
+const filteredAndSortedCards = computed(() => cards.value);
+
+// 计算属性：分组卡片（看板视图）
+const groupedCards = computed(() => {
+  const groups: Map<string, Card[]> = new Map();
+
+  cards.value.forEach(card => {
+    let key: string;
+    let title: string;
+
+    switch (groupBy.value) {
+      case 'tag':
+        key = card.tags?.[0] || '无标签';
+        title = key;
+        break;
+      case 'status':
+        key = card.status;
+        title = getStatusLabel(card.status);
+        break;
+      case 'difficulty':
+        key = String(card.difficulty);
+        title = `难度 ${card.difficulty}`;
+        break;
+      case 'source':
+        key = card.sourceId || 'unknown';
+        title = '来源';
+        break;
+      default:
+        key = 'other';
+        title = '其他';
+    }
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(card);
+  });
+
+  return Array.from(groups.entries()).map(([key, cards]) => ({
+    key,
+    title,
+    cards,
+  }));
+});
+
+// 计算属性：时间线分组
+const timelineGroups = computed(() => {
+  const groups: Map<string, Card[]> = new Map();
+
+  cards.value.forEach(card => {
+    const date = new Date(card.createdAt || Date.now()).toISOString().split('T')[0];
+    if (!groups.has(date)) {
+      groups.set(date, []);
+    }
+    groups.get(date)!.push(card);
+  });
+
+  // 按日期排序
+  return new Map(
+    Array.from(groups.entries()).sort((a, b) =>
+      sortOrder.value === 'asc'
+        ? a[0].localeCompare(b[0])
+        : b[0].localeCompare(a[0])
+    )
+  );
+});
+
+// 方法
+function truncateText(text: string, length: number): string {
+  if (!text) return '';
+  return text.length > length ? text.slice(0, length) + '...' : text;
+}
+
+function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     new: '新卡片',
     learning: '学习中',
     review: '复习中',
-    mastered: '已掌握',
+    suspended: '已暂停',
   };
   return labels[status] || status;
-};
+}
 
-const getStudySetName = (studySetId?: string): string => {
-  if (!studySetId) return '-';
-  const ss = studySets.value.find(s => s.id === studySetId);
-  return ss?.name || '-';
-};
-
-const isDue = (card: Card): boolean => {
-  if (!card.srs?.nextReview) return false;
-  return card.srs.nextReview <= Date.now();
-};
-
-const formatNextReview = (nextReview?: number): string => {
-  if (!nextReview) return '-';
-  const diff = nextReview - Date.now();
-  if (diff <= 0) return '待复习';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟后`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时后`;
-  return `${Math.floor(diff / 86400000)}天后`;
-};
-
-const formatTime = (timestamp: number): string => {
+function formatNextReview(timestamp?: number): string {
+  if (!timestamp) return '-';
   const date = new Date(timestamp);
   const now = new Date();
-  const diff = now.getTime() - date.getTime();
+  const diff = date.getTime() - now.getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
-  if (diff < 60000) return '刚刚';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+  if (days < 0) return '已到期';
+  if (days === 0) return '今天';
+  if (days === 1) return '明天';
+  if (days <= 7) return `${days}天后`;
+  return date.toLocaleDateString('zh-CN');
+}
 
-  return date.toLocaleDateString();
-};
+function formatTime(timestamp?: number): string {
+  if (!timestamp) return '-';
+  return new Date(timestamp).toLocaleString('zh-CN');
+}
+
+function formatDateGroup(date: string): string {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+  if (date === today) return '今天';
+  if (date === yesterday) return '昨天';
+
+  const d = new Date(date);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (days < 7) return `${days}天前`;
+  if (days < 30) return `${Math.floor(days / 7)}周前`;
+  return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+}
+
+function clearFilters() {
+  filters.value = {
+    status: [],
+    tags: [],
+    difficultyMin: 1,
+  };
+  searchQuery.value = '';
+}
+
+function handleCardClick(card: Card) {
+  emit('card-click', card);
+}
+
+// 生命周期
+onMounted(async () => {
+  if (cardStore.cards.length === 0) {
+    await cardStore.fetchCards();
+  }
+});
 </script>
 
 <style scoped lang="scss">
-@import '../styles/variables.scss';
-
 .card-box-board {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.02), rgba(139, 92, 246, 0.02));
-  overflow: hidden;
-}
-
-.card-box-board__toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--b3-theme-border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent);
-  backdrop-filter: blur(8px);
-}
-
-.card-box-board__view-toggle {
-  display: flex;
-  border: 1px solid var(--b3-theme-border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.card-box-board__view-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
   background: var(--b3-theme-background);
-  color: var(--b3-theme-color-light);
-  cursor: pointer;
+  overflow: hidden;
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--b3-theme-divider);
+    flex-wrap: wrap;
+  }
+}
+
+.view-switcher {
+  display: flex;
+  gap: 4px;
+
+  .view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-primary-light);
+      border-color: var(--b3-theme-primary);
+    }
+
+    &.active {
+      background: var(--b3-theme-primary);
+      border-color: var(--b3-theme-primary);
+      color: white;
+    }
+  }
+}
+
+.group-selector,
+.sort-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &__label {
+    font-size: 13px;
+    color: var(--b3-theme-color-light);
+  }
+
+  .group-select,
+  .sort-select {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    font-size: 13px;
+    cursor: pointer;
+
+    &:focus {
+      outline: none;
+      border-color: var(--b3-theme-primary);
+    }
+  }
+}
+
+.sort-order-btn {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 6px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-color);
+  cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: var(--b3-theme-surface);
+    background: var(--b3-theme-primary-light);
+    border-color: var(--b3-theme-primary);
   }
 
-  &.active {
-    background: var(--b3-theme-primary);
-    color: white;
+  &.reverse {
+    transform: rotate(180deg);
   }
 }
 
-.card-box-board__filter {
+.filter-section {
+  .filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-primary-light);
+      border-color: var(--b3-theme-primary);
+    }
+  }
+}
+
+.search-box {
+  margin-left: auto;
+
+  .search-input {
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    font-size: 13px;
+    width: 200px;
+
+    &:focus {
+      outline: none;
+      border-color: var(--b3-theme-primary);
+      width: 250px;
+    }
+  }
+}
+
+.filter-panel {
   display: flex;
-  gap: 8px;
-  margin-right: 12px;
+  gap: 24px;
+  padding: 16px;
+  background: var(--b3-theme-surface);
+  border-bottom: 1px solid var(--b3-theme-divider);
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--b3-theme-color-light);
+    text-transform: uppercase;
+  }
+
+  &__actions {
+    margin-left: auto;
+  }
 }
 
-.card-box-board__select {
-  padding: 6px 10px;
-  border: 1px solid var(--b3-theme-border);
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  &__label {
+    font-size: 13px;
+    color: var(--b3-theme-color);
+  }
+}
+
+.difficulty-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .difficulty-range {
+    width: 120px;
+    cursor: pointer;
+  }
+
+  .difficulty-value {
+    font-size: 13px;
+    color: var(--b3-theme-color);
+    min-width: 30px;
+  }
+}
+
+.tag-select {
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid var(--b3-theme-divider);
   border-radius: 6px;
   background: var(--b3-theme-background);
   color: var(--b3-theme-color);
@@ -469,7 +744,25 @@ const formatTime = (timestamp: number): string => {
   }
 }
 
-.card-box-board__kanban {
+.clear-filters-btn {
+  height: 30px;
+  padding: 0 16px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 6px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-color);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--b3-theme-error-light);
+    border-color: var(--b3-theme-error);
+    color: var(--b3-theme-error);
+  }
+}
+
+.board-view {
   display: flex;
   gap: 16px;
   padding: 16px;
@@ -477,219 +770,160 @@ const formatTime = (timestamp: number): string => {
   height: 100%;
 }
 
-.kanban-column {
+.board-column {
   min-width: 280px;
   max-width: 280px;
   display: flex;
   flex-direction: column;
-  background: var(--b3-theme-background-light);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(99, 102, 241, 0.1);
-  overflow: hidden;
-  transition: all 0.2s $ease-default;
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: rgba(99, 102, 241, 0.2);
-  }
+  background: var(--b3-theme-surface);
+  border-radius: 8px;
+  max-height: 100%;
 
   &__header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    padding: 14px 16px;
-    font-weight: 600;
-    font-size: 14px;
-    border-bottom: 2px solid var(--b3-theme-border);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent);
-
-    .title {
-      background: linear-gradient(90deg, var(--b3-theme-color), var(--b3-theme-color-light));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-  }
-
-  &__icon {
-    font-size: 18px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--b3-theme-divider);
+    flex-shrink: 0;
   }
 
   &__title {
-    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--b3-theme-color);
-    font-weight: 600;
   }
 
   &__count {
-    padding: 2px 10px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.08));
-    border-radius: 12px;
     font-size: 12px;
-    font-weight: 600;
-    color: #6366f1;
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--b3-theme-color-light);
+    background: var(--b3-theme-background);
+    padding: 2px 8px;
+    border-radius: 10px;
   }
 
   &__content {
     flex: 1;
-    padding: 10px;
+    padding: 8px;
     overflow-y: auto;
-    background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.02));
-  }
-
-  &--new &__header {
-    border-bottom-color: #10b981;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent);
-  }
-
-  &--learning &__header {
-    border-bottom-color: #6366f1;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent);
-  }
-
-  &--review &__header {
-    border-bottom-color: #f59e0b;
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), transparent);
-  }
-
-  &--mastered &__header {
-    border-bottom-color: #10b981;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent);
-  }
-}
-
-.kanban-card {
-  padding: 14px;
-  background: linear-gradient(135deg, var(--b3-theme-surface), rgba(255, 255, 255, 0.5));
-  border: 1px solid rgba(99, 102, 241, 0.15);
-  border-radius: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: all 0.2s $ease-spring;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
-  &:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
-    transform: translateY(-2px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &--selected {
-    border-color: #6366f1;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(99, 102, 241, 0.05));
-    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.2);
-  }
-
-  &__content {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-  }
-
-  &__text {
-    font-size: 13px;
-    color: var(--b3-theme-color);
-    line-height: 1.6;
-    font-weight: 400;
-  }
-
-  &__meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  &__tag {
-    font-size: 11px;
-    padding: 3px 8px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
-    border-radius: 6px;
-    color: #6366f1;
-    font-weight: 500;
-    border: 1px solid rgba(99, 102, 241, 0.15);
-  }
-
-  &__time {
-    font-size: 11px;
-    color: var(--b3-theme-color-light);
-
-    &--due {
-      color: #f59e0b;
-      font-weight: 600;
-      background: rgba(245, 158, 11, 0.1);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
   }
 }
 
-// 列表视图
-.card-box-board__list {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.list-header {
-  display: flex;
-  padding: 10px 16px;
-  background: var(--b3-theme-background-light);
-  border-bottom: 1px solid var(--b3-theme-border);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--b3-theme-color-light);
-
-  &__cell {
-    padding: 0 8px;
-
-    &--content { flex: 2; }
-    &--status { width: 80px; }
-    &--tags { width: 150px; }
-    &--study-set { width: 120px; }
-    &--updated { width: 100px; }
-    &--actions { width: 80px; }
-  }
-}
-
-.list-body {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.list-row {
-  display: flex;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--b3-theme-border);
+.card-item {
+  padding: 12px;
+  background: var(--b3-theme-background);
+  border-radius: 6px;
+  border: 2px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: var(--b3-theme-background-light);
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  &--selected {
-    background: var(--b3-theme-primary-lightest);
+  &__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--b3-theme-color);
+    margin-bottom: 8px;
+  }
+
+  &__content {
+    font-size: 13px;
+    color: var(--b3-theme-color-light);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  &__tag {
+    font-size: 11px;
+    color: var(--b3-theme-primary);
+    background: var(--b3-theme-primary-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  &__info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__difficulty {
+    font-size: 12px;
+    color: var(--b3-theme-warning);
+
+    &.difficulty-1 { color: #9e9e9e; }
+    &.difficulty-2 { color: #ff9800; }
+    &.difficulty-3 { color: #ffc107; }
+    &.difficulty-4 { color: #ff9800; }
+    &.difficulty-5 { color: #f44336; }
+  }
+
+  &__review {
+    font-size: 11px;
+    color: var(--b3-theme-color-light);
+  }
+
+  &--new { border-left: 3px solid var(--b3-theme-primary); }
+  &--learning { border-left: 3px solid var(--b3-theme-warning); }
+  &--review { border-left: 3px solid var(--b3-theme-success); }
+  &--suspended { border-left: 3px solid var(--b3-theme-color-light); }
+}
+
+.list-view {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+.card-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--b3-theme-color-light);
+    border-bottom: 2px solid var(--b3-theme-divider);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--b3-theme-divider);
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-primary-light);
+    }
   }
 
   &__cell {
-    padding: 0 8px;
-    display: flex;
-    align-items: center;
+    padding: 12px 16px;
     font-size: 13px;
     color: var(--b3-theme-color);
 
     &--content {
-      flex: 2;
+      max-width: 300px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -698,81 +932,160 @@ const formatTime = (timestamp: number): string => {
 }
 
 .status-badge {
-  padding: 3px 8px;
-  border-radius: 4px;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
   font-size: 11px;
   font-weight: 500;
 
-  &--new {
-    background: var(--b3-theme-success-light);
-    color: var(--b3-theme-success);
-  }
-
-  &--learning {
-    background: var(--b3-theme-primary-light);
-    color: var(--b3-theme-primary);
-  }
-
-  &--review {
-    background: var(--b3-theme-warning-light);
-    color: var(--b3-theme-warning);
-  }
-
-  &--mastered {
-    background: var(--b3-theme-success-light);
-    color: var(--b3-theme-success);
-  }
+  &.status-new { background: var(--b3-theme-primary-light); color: var(--b3-theme-primary); }
+  &.status-learning { background: var(--b3-theme-warning-light); color: var(--b3-theme-warning); }
+  &.status-review { background: var(--b3-theme-success-light); color: var(--b3-theme-success); }
+  &.status-suspended { background: var(--b3-theme-background); color: var(--b3-theme-color-light); }
 }
 
-.tag-badge {
-  padding: 2px 6px;
-  background: var(--b3-theme-surface);
-  border-radius: 4px;
+.table-tag {
+  display: inline-block;
   font-size: 11px;
-  color: var(--b3-theme-color-light);
+  color: var(--b3-theme-primary);
+  background: var(--b3-theme-primary-light);
+  padding: 2px 6px;
+  border-radius: 4px;
   margin-right: 4px;
 }
 
-.icon-btn {
-  padding: 4px;
-  border: none;
-  background: transparent;
-  color: var(--b3-theme-color-light);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
+.timeline-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
 
-  &:hover {
-    background: var(--b3-theme-surface);
-    color: var(--b3-theme-primary);
+.timeline-group {
+  margin-bottom: 24px;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--b3-theme-divider);
+  }
+
+  &__date {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--b3-theme-color);
+  }
+
+  &__count {
+    font-size: 12px;
+    color: var(--b3-theme-color-light);
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
-// 批量操作
-.card-box-board__bulk-actions {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+.timeline-item {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
+  gap: 12px;
+  padding: 12px;
   background: var(--b3-theme-surface);
-  border: 1px solid var(--b3-theme-border);
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  z-index: 100;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
 
-  &__count {
-    font-size: 13px;
-    color: var(--b3-theme-color);
+  &:hover {
+    background: var(--b3-theme-primary-light);
+  }
+
+  &__marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--b3-theme-primary);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 14px;
     font-weight: 500;
+    color: var(--b3-theme-color);
+    margin-bottom: 4px;
   }
 
-  &__buttons {
+  &__meta {
     display: flex;
-    gap: 8px;
+    gap: 12px;
+    align-items: center;
   }
+
+  &__time {
+    font-size: 12px;
+    color: var(--b3-theme-color-light);
+  }
+
+  &__tags {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__tag {
+    font-size: 11px;
+    color: var(--b3-theme-primary);
+    background: var(--b3-theme-primary-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  &--new { &__marker { background: var(--b3-theme-primary); } }
+  &--learning { &__marker { background: var(--b3-theme-warning); } }
+  &--review { &__marker { background: var(--b3-theme-success); } }
+  &--suspended { &__marker { background: var(--b3-theme-color-light); } }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+
+  &__icon {
+    font-size: 64px;
+  }
+
+  &__title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--b3-theme-color);
+  }
+
+  &__desc {
+    font-size: 14px;
+    color: var(--b3-theme-color-light);
+  }
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.2s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

@@ -1,4 +1,5 @@
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 
 /**
  * 根据 Vue 组件创建 DOM 元素
@@ -7,7 +8,9 @@ import { createApp } from 'vue';
  */
 export function getDomByVueComponent(component: any): HTMLElement {
   const div = document.createElement('div');
+  const pinia = createPinia();
   const app = createApp(component);
+  app.use(pinia);
   app.mount(div);
   return div;
 }
@@ -19,8 +22,6 @@ export function getDomByVueComponent(component: any): HTMLElement {
  */
 export function formatTimestamp(timestamp: number): string {
   const date = new Date(timestamp);
-  const now = Date.now();
-  const diff = now - timestamp;
 
   // 今天
   if (isToday(timestamp)) {
@@ -96,6 +97,18 @@ function isThisWeek(timestamp: number): boolean {
  */
 export function generateId(prefix: string = ''): string {
   return `${prefix}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * 生成 UUID
+ * @returns UUID 字符串
+ */
+export function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 /**
@@ -220,3 +233,34 @@ export function extractPlainText(markdown: string): string {
     .replace(/~~([^~]+)~~/g, '$1') // 移除删除线标记
     .trim();
 }
+
+// 导出 VueUse 工具函数
+export * from './vueUseHelpers';
+
+// 导出数据迁移工具
+export * from './migration';
+
+// 导出错误处理工具
+export {
+  ErrorType,
+  handleError,
+  handleErrorWithRetry,
+  getFriendlyMessage,
+  toAppError,
+  getErrorTypeByStatus,
+  showErrorToast,
+  configureErrorHandler,
+  registerGlobalHandlers,
+  createAsyncHandler,
+} from './errorHandler';
+
+// 导出性能优化工具
+export {
+  useVirtualScroll,
+  useLazyLoad,
+  useLazyImage,
+  usePagination,
+  createWeakCache,
+  createLruCache,
+  createBatchProcessor,
+} from './performance';

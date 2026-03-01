@@ -1,295 +1,349 @@
-<!-- src/components/QuickCaptureMenu.vue -->
+<!-- src/components/QuickCaptureMenu.vue - 快速捕获菜单组件 -->
 <template>
-  <div v-if="visible" class="quick-capture-menu" :style="positionStyle" ref="menuRef">
-    <!-- 菜单主体 -->
-    <div class="quick-capture-menu__body">
-      <!-- 选中内容预览 -->
-      <div v-if="selectedText" class="quick-capture-menu__preview">
-        <div class="quick-capture-menu__preview-text">
-          {{ truncatedText }}
+  <div v-if="visible" class="quick-capture-menu" :style="positionStyle" @click.stop>
+    <!-- 触发按钮 -->
+    <button class="quick-capture-menu__trigger" @click="toggleMenu">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H8l4-4 4 4h-3v4h-2z"/>
+      </svg>
+    </button>
+
+    <!-- 菜单面板 -->
+    <transition name="slide-fade">
+      <div v-if="menuOpen" class="quick-capture-menu__panel">
+        <!-- 快捷操作 -->
+        <div class="quick-actions">
+          <button
+            v-for="action in quickActions"
+            :key="action.id"
+            :class="['quick-action', { active: action.active }]"
+            @click="executeAction(action)"
+            :title="action.tooltip"
+          >
+            <span class="quick-action__icon">{{ action.icon }}</span>
+            <span class="quick-action__label">{{ action.label }}</span>
+          </button>
         </div>
-        <button @click="clearSelection" class="quick-capture-menu__clear" title="清除选择">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-          </svg>
-        </button>
-      </div>
 
-      <!-- 学习集选择 -->
-      <div class="quick-capture-menu__field">
-        <select v-model="selectedStudySetId" class="quick-capture-menu__select">
-          <option value="">选择学习集...</option>
-          <option v-for="set in studySets" :key="set.id" :value="set.id">
-            {{ set.name }}
-          </option>
-        </select>
-      </div>
+        <!-- 分隔线 -->
+        <div class="divider"></div>
 
-      <!-- 快捷操作按钮 -->
-      <div class="quick-capture-menu__actions">
-        <button
-          @click="handleCapture('card')"
-          class="quick-capture-menu__action-btn"
-          :disabled="!canCapture"
-          title="创建普通卡片 (Alt+1)"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
-          </svg>
-          <span>卡片</span>
-        </button>
-        <button
-          @click="handleCapture('flashcard')"
-          class="quick-capture-menu__action-btn"
-          :disabled="!canCapture"
-          title="创建闪卡 (Alt+2)"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm0-4h-2v-4h2v4zm0-6h-2V7h2v2z"/>
-          </svg>
-          <span>闪卡</span>
-        </button>
-        <button
-          @click="handleCapture('excerpt')"
-          class="quick-capture-menu__action-btn"
-          :disabled="!canCapture"
-          title="创建摘录卡片 (Alt+3)"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-          </svg>
-          <span>摘录</span>
-        </button>
-      </div>
+        <!-- 学习集选择 -->
+        <div class="study-set-selector">
+          <label class="selector-label">保存到</label>
+          <select v-model="selectedStudySetId" class="selector-select">
+            <option value="" disabled>选择学习集</option>
+            <option
+              v-for="studySet in studySets"
+              :key="studySet.id"
+              :value="studySet.id"
+            >
+              {{ studySet.name }}
+            </option>
+          </select>
+          <button class="create-btn" @click="showCreateDialog = true" title="创建新学习集">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+          </button>
+        </div>
 
-      <!-- 更多选项 -->
-      <div class="quick-capture-menu__more">
-        <button @click="showFullEditor" class="quick-capture-menu__more-btn">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-          </svg>
-          <span>完整编辑器...</span>
-          <span class="quick-capture-menu__shortcut">Alt+E</span>
-        </button>
-      </div>
-    </div>
+        <!-- 分隔线 -->
+        <div class="divider"></div>
 
-    <!-- 底部提示 -->
-    <div class="quick-capture-menu__footer">
-      <span class="quick-capture-menu__hint">按 Esc 关闭</span>
+        <!-- 卡片类型选择 -->
+        <div class="card-type-selector">
+          <label class="selector-label">卡片类型</label>
+          <div class="type-options">
+            <button
+              :class="['type-option', { active: selectedCardType === 'normal' }]"
+              @click="selectedCardType = 'normal'"
+            >
+              <span class="type-option__icon">📝</span>
+              <span class="type-option__label">普通卡片</span>
+            </button>
+            <button
+              :class="['type-option', { active: selectedCardType === 'flashcard' }]"
+              @click="selectedCardType = 'flashcard'"
+            >
+              <span class="type-option__icon">🃏</span>
+              <span class="type-option__label">闪卡</span>
+            </button>
+            <button
+              :class="['type-option', { active: selectedCardType === 'excerpt' }]"
+              @click="selectedCardType = 'excerpt'"
+            >
+              <span class="type-option__icon">📄</span>
+              <span class="type-option__label">摘录卡片</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 分隔线 -->
+        <div class="divider"></div>
+
+        <!-- 标签快速选择 -->
+        <div class="quick-tags">
+          <label class="selector-label">快速标签</label>
+          <div class="tags-list">
+            <span
+              v-for="tag in recentTags"
+              :key="tag"
+              :class="['quick-tag', { selected: selectedTags.includes(tag) }]"
+              @click="toggleTag(tag)"
+            >
+              #{{ tag }}
+            </span>
+            <input
+              v-model="newTagInput"
+              type="text"
+              class="new-tag-input"
+              placeholder="输入标签..."
+              @keyup.enter="addNewTag"
+            />
+          </div>
+        </div>
+
+        <!-- 分隔线 -->
+        <div class="divider"></div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+          <button class="cancel-btn" @click="closeMenu">取消</button>
+          <button class="confirm-btn" @click="confirmCapture">
+            快速捕获
+            <span class="confirm-btn__shortcut">⌘+Enter</span>
+          </button>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 创建学习集对话框 -->
+    <div v-if="showCreateDialog" class="create-dialog-overlay" @click="showCreateDialog = false">
+      <div class="create-dialog" @click.stop>
+        <h4 class="create-dialog__title">创建新学习集</h4>
+        <div class="create-dialog__form">
+          <div class="form-item">
+            <label class="form-item__label">名称</label>
+            <input
+              v-model="newStudySetName"
+              type="text"
+              class="form-item__input"
+              placeholder="输入学习集名称"
+            />
+          </div>
+          <div class="form-item">
+            <label class="form-item__label">描述</label>
+            <textarea
+              v-model="newStudySetDesc"
+              class="form-item__textarea"
+              placeholder="可选描述"
+              rows="2"
+            ></textarea>
+          </div>
+        </div>
+        <div class="create-dialog__actions">
+          <button class="cancel-btn" @click="showCreateDialog = false">取消</button>
+          <button class="confirm-btn" @click="createStudySet">创建</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { StudySet } from '../types/studySet';
-import type { Card, FlashCard } from '../types/card';
-import { cardService } from '../services/cardService';
-import { createNewSRSParams } from '../review/sm2';
 
 interface Props {
-  visible: boolean;
-  x: number;
-  y: number;
-  selectedText: string | null;
-  studySets: StudySet[];
-  sourceLocation?: {
-    docId?: string;
-    blockId?: string;
-    pdfPath?: string;
-    page?: number;
-    rect?: [number, number, number, number];
-  };
+  visible?: boolean;
+  x?: number;
+  y?: number;
+  selectedText?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  sourceLocation: () => ({}),
+  visible: false,
+  x: 0,
+  y: 0,
+  selectedText: '',
 });
 
 const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void;
-  (e: 'captured', card: Card | FlashCard): void;
-  (e: 'open-editor', data: { text: string; sourceLocation: any }): void;
-  (e: 'closed'): void;
+  (e: 'capture', data: {
+    type: 'normal' | 'flashcard' | 'excerpt';
+    content: string;
+    studySetId: string;
+    tags: string[];
+  }): void;
+  (e: 'close'): void;
 }>();
 
-const menuRef = ref<HTMLElement>();
+// 状态
+const menuOpen = ref(false);
 const selectedStudySetId = ref('');
+const selectedCardType = ref<'normal' | 'flashcard' | 'excerpt'>('normal');
+const selectedTags = ref<string[]>([]);
+const newTagInput = ref('');
+const showCreateDialog = ref(false);
+const newStudySetName = ref('');
+const newStudySetDesc = ref('');
 
-// 菜单位置
-const positionStyle = computed(() => {
-  if (!props.visible) return {};
+// 学习集列表
+const studySets = ref<StudySet[]>([]);
 
-  // 考虑菜单尺寸和屏幕边界
-  const menuWidth = 320;
-  const menuHeight = 280;
-  const padding = 8;
+// 最近使用的标签
+const recentTags = ref<string[]>(['重要', '待复习', '难点', '公式', '概念']);
 
-  let x = props.x;
-  let y = props.y + padding;
+// 快捷操作
+const quickActions = ref([
+  { id: 'card', icon: '📝', label: '制卡', tooltip: '创建卡片', active: false },
+  { id: 'tag', icon: '🏷️', label: '标签', tooltip: '添加标签', active: false },
+  { id: 'link', icon: '🔗', label: '链接', tooltip: '创建链接', active: false },
+  { id: 'note', icon: '📌', label: '备注', tooltip: '添加备注', active: false },
+]);
 
-  // 检查是否超出右边界
-  if (x + menuWidth > window.innerWidth - padding) {
-    x = window.innerWidth - menuWidth - padding;
+// 计算属性
+const positionStyle = computed(() => ({
+  left: `${props.x}px`,
+  top: `${props.y}px`,
+}));
+
+// 方法
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value;
+}
+
+function closeMenu() {
+  menuOpen.value = false;
+  emit('close');
+}
+
+function executeAction(action: typeof quickActions.value[0]) {
+  // 执行快捷操作
+  console.log('执行操作:', action);
+}
+
+function toggleTag(tag: string) {
+  const index = selectedTags.value.indexOf(tag);
+  if (index > -1) {
+    selectedTags.value.splice(index, 1);
+  } else {
+    selectedTags.value.push(tag);
   }
+}
 
-  // 检查是否超出下边界
-  if (y + menuHeight > window.innerHeight - padding) {
-    y = props.y - menuHeight - padding;
+function addNewTag() {
+  const tag = newTagInput.value.trim();
+  if (tag && !recentTags.value.includes(tag)) {
+    recentTags.value.unshift(tag);
   }
-
-  // 确保不超出左边界
-  if (x < padding) {
-    x = padding;
+  if (tag && !selectedTags.value.includes(tag)) {
+    selectedTags.value.push(tag);
   }
+  newTagInput.value = '';
+}
 
-  // 确保不超出上边界
-  if (y < padding) {
-    y = padding;
-  }
-
-  return {
-    left: `${x}px`,
-    top: `${y}px`,
-  };
-});
-
-// 截断的文本
-const truncatedText = computed(() => {
-  if (!props.selectedText) return '';
-  if (props.selectedText.length <= 100) return props.selectedText;
-  return props.selectedText.slice(0, 100) + '...';
-});
-
-// 是否可以捕获
-const canCapture = computed(() => {
-  return !!props.selectedText && !!selectedStudySetId.value;
-});
-
-// 键盘事件处理
-function handleKeyDown(e: KeyboardEvent) {
-  if (!props.visible) return;
-
-  // Esc 关闭
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    handleClose();
+function confirmCapture() {
+  if (!selectedStudySetId.value) {
+    alert('请选择学习集');
     return;
   }
 
-  // Alt + 数字快捷键
-  if (e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-    switch (e.key) {
-      case '1':
-        e.preventDefault();
-        handleCapture('card');
-        break;
-      case '2':
-        e.preventDefault();
-        handleCapture('flashcard');
-        break;
-      case '3':
-        e.preventDefault();
-        handleCapture('excerpt');
-        break;
-      case 'e':
-      case 'E':
-        e.preventDefault();
-        showFullEditor();
-        break;
+  emit('capture', {
+    type: selectedCardType.value,
+    content: props.selectedText || '',
+    studySetId: selectedStudySetId.value,
+    tags: selectedTags.value,
+  });
+
+  closeMenu();
+}
+
+function createStudySet() {
+  if (!newStudySetName.value.trim()) {
+    alert('请输入学习集名称');
+    return;
+  }
+
+  const newStudySet: StudySet = {
+    id: Date.now().toString(),
+    name: newStudySetName.value,
+    description: newStudySetDesc.value,
+    cardCount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  studySets.value.push(newStudySet);
+  selectedStudySetId.value = newStudySet.id;
+  showCreateDialog.value = false;
+  newStudySetName.value = '';
+  newStudySetDesc.value = '';
+}
+
+function loadStudySets() {
+  // 从 localStorage 加载学习集
+  const stored = localStorage.getItem('study-sets');
+  if (stored) {
+    try {
+      studySets.value = JSON.parse(stored);
+    } catch (e) {
+      console.error('加载学习集失败:', e);
     }
+  }
+}
+
+function loadTags() {
+  // 从 localStorage 加载最近使用的标签
+  const stored = localStorage.getItem('recent-tags');
+  if (stored) {
+    try {
+      recentTags.value = JSON.parse(stored);
+    } catch (e) {
+      console.error('加载标签失败:', e);
+    }
+  }
+}
+
+function saveTags() {
+  localStorage.setItem('recent-tags', JSON.stringify(recentTags.value));
+}
+
+// 键盘快捷键
+function handleKeydown(e: KeyboardEvent) {
+  // Cmd/Ctrl + Enter 确认
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    if (menuOpen.value) {
+      e.preventDefault();
+      confirmCapture();
+    }
+  }
+  // Escape 关闭
+  if (e.key === 'Escape' && menuOpen.value) {
+    e.preventDefault();
+    closeMenu();
   }
 }
 
 // 点击外部关闭
 function handleClickOutside(e: MouseEvent) {
-  if (!props.visible) return;
-  if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
-    handleClose();
+  const target = e.target as HTMLElement;
+  if (!target.closest('.quick-capture-menu')) {
+    closeMenu();
   }
 }
-
-// 清除选择
-function clearSelection() {
-  emit('update:visible', false);
-  emit('closed');
-}
-
-// 关闭
-function handleClose() {
-  emit('update:visible', false);
-  emit('closed');
-}
-
-// 捕获处理
-async function handleCapture(type: 'card' | 'flashcard' | 'excerpt') {
-  if (!canCapture.value || !props.selectedText) return;
-
-  try {
-    let card: Card | FlashCard;
-
-    if (type === 'flashcard') {
-      // 闪卡模式：使用选中文本作为正面
-      card = await cardService.createFlashCard(
-        props.selectedText.trim(),
-        '', // 反面留空，用户后续补充
-        selectedStudySetId.value,
-        props.selectedText,
-        props.sourceLocation || { docId: '', blockId: '' }
-      );
-    } else if (type === 'excerpt') {
-      // 摘录卡片模式
-      card = await cardService.createCard(
-        props.selectedText.trim(),
-        selectedStudySetId.value,
-        props.sourceLocation || { docId: '', blockId: '' },
-        'excerpt'
-      );
-    } else {
-      // 普通卡片模式
-      card = await cardService.createCard(
-        props.selectedText.trim(),
-        selectedStudySetId.value,
-        props.sourceLocation || { docId: '', blockId: '' }
-      );
-    }
-
-    emit('captured', card);
-    handleClose();
-  } catch (error) {
-    console.error('创建卡片失败:', error);
-    alert('创建失败，请重试');
-  }
-}
-
-// 显示完整编辑器
-function showFullEditor() {
-  emit('open-editor', {
-    text: props.selectedText || '',
-    sourceLocation: props.sourceLocation,
-  });
-  handleClose();
-}
-
-// 监听 visible 变化
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    // 如果有已选的学习集，默认选中
-    if (!selectedStudySetId.value && props.studySets.length > 0) {
-      selectedStudySetId.value = props.studySets[0].id;
-    }
-  }
-});
 
 // 生命周期
 onMounted(() => {
-  document.addEventListener('keydown', handleKeyDown);
+  loadStudySets();
+  loadTags();
+  document.addEventListener('keydown', handleKeydown);
   document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('keydown', handleKeydown);
   document.removeEventListener('click', handleClickOutside);
 });
 </script>
@@ -297,73 +351,334 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .quick-capture-menu {
   position: fixed;
-  z-index: 10001;
-  background: var(--b3-theme-surface);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--b3-border-color);
-  overflow: hidden;
-  animation: quickCaptureMenuAppear 0.15s ease;
-  min-width: 280px;
-  max-width: 320px;
+  z-index: 9999;
 
-  &__body {
-    padding: 12px;
-  }
-
-  &__preview {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 10px 12px;
-    background: var(--b3-theme-background);
-    border-radius: 8px;
-    margin-bottom: 12px;
-    max-height: 100px;
-    overflow-y: auto;
-  }
-
-  &__preview-text {
-    flex: 1;
-    font-size: 13px;
-    color: var(--b3-theme-on-surface);
-    line-height: 1.5;
-    word-break: break-word;
-  }
-
-  &__clear {
+  &__trigger {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: transparent;
-    color: var(--b3-theme-on-surface-light);
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 50%;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
     cursor: pointer;
-    border-radius: 4px;
-    flex-shrink: 0;
-    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s;
 
     &:hover {
-      background: var(--b3-theme-error-light);
-      color: var(--b3-theme-error);
+      background: var(--b3-theme-primary);
+      border-color: var(--b3-theme-primary);
+      color: white;
+      transform: scale(1.1);
     }
   }
 
-  &__field {
-    margin-bottom: 12px;
+  &__panel {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    width: 280px;
+    padding: 12px;
+    background: var(--b3-theme-background);
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 8px;
+  background: var(--b3-theme-surface);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--b3-theme-primary-light);
+    border-color: var(--b3-theme-primary);
   }
 
-  &__select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--b3-border-color);
-    border-radius: 8px;
+  &.active {
+    background: var(--b3-theme-primary);
+    border-color: var(--b3-theme-primary);
+    color: white;
+  }
+
+  &__icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  &__label {
+    font-size: 11px;
+  }
+}
+
+.divider {
+  height: 1px;
+  margin: 12px 0;
+  background: var(--b3-theme-divider);
+}
+
+.study-set-selector,
+.card-type-selector,
+.quick-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selector-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--b3-theme-color-light);
+}
+
+.selector-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 6px;
+  background: var(--b3-theme-surface);
+  color: var(--b3-theme-color);
+  font-size: 13px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--b3-theme-primary);
+  }
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 6px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-color);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--b3-theme-primary);
+    border-color: var(--b3-theme-primary);
+    color: white;
+  }
+}
+
+.type-options {
+  display: flex;
+  gap: 8px;
+}
+
+.type-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 8px;
+  background: var(--b3-theme-surface);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: var(--b3-theme-primary-light);
+    border-color: var(--b3-theme-primary);
+  }
+
+  &.active {
+    background: var(--b3-theme-primary);
+    border-color: var(--b3-theme-primary);
+    color: white;
+  }
+
+  &__icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  &__label {
+    font-size: 11px;
+  }
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-tag {
+  padding: 4px 10px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 12px;
+  background: var(--b3-theme-surface);
+  color: var(--b3-theme-color);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: var(--b3-theme-primary);
+    color: var(--b3-theme-primary);
+  }
+
+  &.selected {
+    background: var(--b3-theme-primary);
+    border-color: var(--b3-theme-primary);
+    color: white;
+  }
+}
+
+.new-tag-input {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px dashed var(--b3-theme-divider);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--b3-theme-color);
+  font-size: 12px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--b3-theme-primary);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cancel-btn,
+.confirm-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: var(--b3-theme-surface);
+  color: var(--b3-theme-color);
+
+  &:hover {
     background: var(--b3-theme-background);
-    color: var(--b3-theme-on-surface);
-    font-size: 14px;
-    cursor: pointer;
-    transition: border-color 0.15s;
+  }
+}
+
+.confirm-btn {
+  background: var(--b3-theme-primary);
+  border-color: var(--b3-theme-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:hover {
+    background: var(--b3-theme-primary-dark);
+  }
+
+  &__shortcut {
+    font-size: 11px;
+    opacity: 0.8;
+  }
+}
+
+.create-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.create-dialog {
+  width: 320px;
+  padding: 20px;
+  background: var(--b3-theme-background);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--b3-theme-color);
+    margin: 0 0 16px;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--b3-theme-color-light);
+  }
+
+  &__input,
+  &__textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-surface);
+    color: var(--b3-theme-color);
+    font-size: 13px;
+    font-family: inherit;
 
     &:focus {
       outline: none;
@@ -371,97 +686,8 @@ onUnmounted(() => {
     }
   }
 
-  &__actions {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  &__action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 12px 8px;
-    border: 1px solid var(--b3-border-color);
-    border-radius: 8px;
-    background: var(--b3-theme-background);
-    color: var(--b3-theme-on-surface);
-    cursor: pointer;
-    transition: all 0.15s;
-    font-size: 13px;
-
-    &:hover:not(:disabled) {
-      background: var(--b3-theme-primary-light);
-      border-color: var(--b3-theme-primary);
-      color: var(--b3-theme-primary);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    svg {
-      opacity: 0.8;
-    }
-  }
-
-  &__more {
-    border-top: 1px solid var(--b3-border-color);
-    padding-top: 8px;
-  }
-
-  &__more-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--b3-border-color);
-    border-radius: 8px;
-    background: var(--b3-theme-background);
-    color: var(--b3-theme-on-surface);
-    cursor: pointer;
-    transition: all 0.15s;
-    font-size: 13px;
-
-    &:hover {
-      background: var(--b3-theme-primary-light);
-      border-color: var(--b3-theme-primary);
-      color: var(--b3-theme-primary);
-    }
-  }
-
-  &__shortcut {
-    font-size: 11px;
-    color: var(--b3-theme-on-surface-light);
-    padding: 2px 6px;
-    background: var(--b3-theme-surface);
-    border-radius: 4px;
-  }
-
-  &__footer {
-    padding: 8px 12px;
-    background: var(--b3-theme-background);
-    border-top: 1px solid var(--b3-border-color);
-  }
-
-  &__hint {
-    font-size: 11px;
-    color: var(--b3-theme-on-surface-light);
-  }
-}
-
-@keyframes quickCaptureMenuAppear {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+  &__textarea {
+    resize: vertical;
   }
 }
 </style>

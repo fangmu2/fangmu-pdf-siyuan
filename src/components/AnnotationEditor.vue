@@ -42,6 +42,71 @@
             placeholder="添加笔记..."
           ></textarea>
         </div>
+
+        <!-- 批注区域 -->
+        <div class="form-item comments-section">
+          <label class="comments-label">
+            <span>批注</span>
+            <span class="comments-count" v-if="comments.length > 0">({{ comments.length }})</span>
+          </label>
+
+          <!-- 批注列表 -->
+          <div v-if="comments.length > 0" class="comments-list">
+            <div
+              v-for="comment in comments"
+              :key="comment.id"
+              class="comment-item"
+              :class="[`comment-priority-${comment.priority}`, `comment-status-${comment.status}`]"
+            >
+              <div class="comment-header">
+                <span class="comment-priority" :style="{ color: getPriorityColor(comment.priority) }">
+                  {{ getPriorityLabel(comment.priority) }}
+                </span>
+                <span class="comment-status" :style="{ color: getStatusColor(comment.status) }">
+                  {{ getStatusLabel(comment.status) }}
+                </span>
+                <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
+              </div>
+              <div class="comment-text">{{ comment.text }}</div>
+              <div v-if="comment.tags && comment.tags.length > 0" class="comment-tags">
+                <span v-for="tag in comment.tags" :key="tag" class="comment-tag">#{{ tag }}</span>
+              </div>
+              <div class="comment-actions">
+                <button class="comment-action-btn" @click="resolveComment(comment.id)" v-if="comment.status === 'active'" title="标记已解决">
+                  ✅
+                </button>
+                <button class="comment-action-btn" @click="reopenComment(comment.id)" v-else title="重新打开">
+                  🔄
+                </button>
+                <button class="comment-action-btn delete" @click="removeComment(comment.id)" title="删除">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 添加批注 -->
+          <div class="add-comment">
+            <textarea
+              v-model="newCommentText"
+              class="b3-text-field fn__block new-comment-input"
+              rows="2"
+              placeholder="添加批注..."
+            ></textarea>
+            <div class="comment-options">
+              <select v-model="newCommentPriority" class="b3-select">
+                <option v-for="p in priorityOptions" :key="p.value" :value="p.value">{{ p.label }}</option>
+              </select>
+              <button
+                class="b3-button b3-button--primary add-comment-btn"
+                @click="addComment"
+                :disabled="!newCommentText.trim()"
+              >
+                添加批注
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="dialog-footer">
@@ -53,9 +118,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import type { PDFAnnotation, AnnotationColor } from '../types/annotaion';
-import { updateAnnotationNote, updateAnnotationColor } from '../api/annotationApi';
+import { ref, watch, computed } from 'vue';
+import type { PDFAnnotation, AnnotationColor, AnnotationComment, CommentPriority, CommentStatus } from '../types/annotation';
+import {
+  updateAnnotationNote,
+  updateAnnotationColor,
+  getAnnotationComments,
+  addAnnotationComment,
+  updateAnnotationComment,
+  deleteAnnotationComment
+} from '../api/annotationApi';
+import { COMMENT_PRIORITIES, COMMENT_STATUSES } from '../types/annotation';
 
 const props = defineProps<{
   annotation: PDFAnnotation | null;
@@ -69,6 +142,10 @@ const emit = defineEmits<{
 
 const note = ref('');
 const selectedColor = ref<AnnotationColor>('yellow');
+const comments = ref<AnnotationComment[]>([]);
+const newCommentText = ref('');
+const newCommentPriority = ref<CommentPriority>('normal');
+const loadingComments = ref(false);
 
 const colors = [
   { value: 'red' as AnnotationColor, hex: '#ff6b6b', label: '关键内容' },
@@ -78,11 +155,125 @@ const colors = [
   { value: 'purple' as AnnotationColor, hex: '#9b59b6', label: '评论/思考' }
 ];
 
+const priorityOptions = COMMENT_PRIORITIES;
+
+// 获取优先级颜色
+const getPriorityColor = (priority: CommentPriority): string => {
+  return COMMENT_PRIORITIES.find(p => p.value === priority)?.color || '#909399';
+};
+
+// 获取优先级标签
+const getPriorityLabel = (priority: CommentPriority): string => {
+  return COMMENT_PRIORITIES.find(p => p.value === priority)?.label || '普通';
+};
+
+// 获取状态颜色
+const getStatusColor = (status: CommentStatus): string => {
+  return COMMENT_STATUSES.find(s => s.value === status)?.color || '#909399';
+};
+
+// 获取状态标签
+const getStatusLabel = (status: CommentStatus): string => {
+  return COMMENT_STATUSES.find(s => s.value === status)?.label || '活跃';
+};
+
+// 格式化时间
+const formatTime = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
+// 加载批注
+const loadComments = async () => {
+  if (!props.annotation?.blockId) return;
+
+  loadingComments.value = true;
+  try {
+    comments.value = await getAnnotationComments(props.annotation.blockId);
+  } catch (e) {
+    console.error('加载批注失败:', e);
+    comments.value = [];
+  } finally {
+    loadingComments.value = false;
+  }
+};
+
+// 添加批注
+const addComment = async () => {
+  if (!props.annotation?.blockId || !newCommentText.value.trim()) return;
+
+  try {
+    const newComment = await addAnnotationComment(props.annotation.blockId, {
+      text: newCommentText.value.trim(),
+      priority: newCommentPriority.value,
+    });
+    comments.value.push(newComment);
+    newCommentText.value = '';
+    newCommentPriority.value = 'normal';
+  } catch (e) {
+    console.error('添加批注失败:', e);
+    alert('添加批注失败');
+  }
+};
+
+// 解决批注
+const resolveComment = async (commentId: string) => {
+  if (!props.annotation?.blockId) return;
+
+  try {
+    const updated = await updateAnnotationComment(props.annotation.blockId, commentId, { status: 'resolved' });
+    if (updated) {
+      const index = comments.value.findIndex(c => c.id === commentId);
+      if (index !== -1) {
+        comments.value[index] = updated;
+      }
+    }
+  } catch (e) {
+    console.error('更新批注失败:', e);
+  }
+};
+
+// 重新打开批注
+const reopenComment = async (commentId: string) => {
+  if (!props.annotation?.blockId) return;
+
+  try {
+    const updated = await updateAnnotationComment(props.annotation.blockId, commentId, { status: 'active' });
+    if (updated) {
+      const index = comments.value.findIndex(c => c.id === commentId);
+      if (index !== -1) {
+        comments.value[index] = updated;
+      }
+    }
+  } catch (e) {
+    console.error('更新批注失败:', e);
+  }
+};
+
+// 删除批注
+const removeComment = async (commentId: string) => {
+  if (!props.annotation?.blockId) return;
+
+  if (!confirm('确定要删除这条批注吗？')) return;
+
+  try {
+    const success = await deleteAnnotationComment(props.annotation.blockId, commentId);
+    if (success) {
+      comments.value = comments.value.filter(c => c.id !== commentId);
+    }
+  } catch (e) {
+    console.error('删除批注失败:', e);
+  }
+};
+
 // 监听标注变化，初始化表单
 watch(() => props.annotation, (ann) => {
   if (ann) {
-    note.value = ann.note;
+    note.value = ann.note || '';
     selectedColor.value = ann.color;
+    loadComments();
+  } else {
+    comments.value = [];
   }
 }, { immediate: true });
 
@@ -206,5 +397,137 @@ const handleSave = async () => {
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid var(--b3-border-color);
+}
+
+/* 批注区域样式 */
+.comments-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--b3-border-color);
+}
+
+.comments-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comments-count {
+  font-size: 12px;
+  color: var(--b3-theme-on-surface-light);
+  font-weight: normal;
+}
+
+.comments-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.comment-item {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--b3-theme-surface-light);
+  border-radius: 6px;
+  border-left: 3px solid var(--b3-theme-primary);
+}
+
+.comment-item.comment-status-resolved {
+  opacity: 0.7;
+  background: var(--b3-theme-background);
+}
+
+.comment-item.comment-priority-urgent {
+  border-left-color: #F56C6C;
+}
+
+.comment-item.comment-priority-high {
+  border-left-color: #E6A23C;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.comment-priority {
+  font-weight: 500;
+}
+
+.comment-status {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--b3-theme-surface);
+}
+
+.comment-time {
+  margin-left: auto;
+  color: var(--b3-theme-on-surface-light);
+}
+
+.comment-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--b3-theme-on-background);
+}
+
+.comment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.comment-tag {
+  font-size: 11px;
+  color: var(--b3-theme-primary);
+  background: var(--b3-theme-primary-light);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.comment-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.comment-action-btn:hover {
+  background: var(--b3-theme-surface-light);
+}
+
+.comment-action-btn.delete:hover {
+  background: #fef2f2;
+}
+
+.add-comment {
+  margin-top: 12px;
+}
+
+.new-comment-input {
+  margin-bottom: 8px;
+}
+
+.comment-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-comment-btn {
+  margin-left: auto;
 }
 </style>

@@ -1,6 +1,6 @@
 // src/utils/annotationParser.ts
 import type { SiYuanBlock } from '../types/siyuan';
-import type { PDFAnnotation, AnnotationColor, AnnotationLevel } from '../types/annotaion';
+import type { PDFAnnotation, AnnotationColor, AnnotationLevel } from '../types/annotation';
 
 /**
  * 解析思源的 IAL 字符串为对象

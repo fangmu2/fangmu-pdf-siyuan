@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 import { getKernelBase } from '../api/siyuanApi';
 
 const props = defineProps<{
@@ -107,16 +107,16 @@ const isValidImagePath = (path: string | undefined): boolean => {
 // 获取图片URL
 const getImageUrl = (imagePath: string): string => {
   const kernelBase = getKernelBase();
-  
+
   let path = imagePath;
   if (path.startsWith('/data/')) {
     path = path.slice(6);
   }
-  
+
   if (path.startsWith('assets/')) {
     return `${kernelBase}/${path}`;
   }
-  
+
   return `${kernelBase}/api/file/getFile?path=${encodeURIComponent('/data/' + path)}`;
 };
 

@@ -215,7 +215,7 @@ import { studySetService } from '../services/studySetService';
 import { cardService } from '../services/cardService';
 import type { StudySet } from '../types/studySet';
 import type { Card, FlashCard } from '../types/card';
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 import CardList from './CardList.vue';
 import MindMapEditor from './MindMapEditor.vue';
 import CardBoxBoard from './CardBoxBoard.vue';

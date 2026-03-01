@@ -3,6 +3,19 @@
   <div class="mindmap-editor" ref="editorRef">
     <!-- 工具栏 -->
     <div class="mindmap-toolbar">
+      <!-- 布局选择器 -->
+      <div class="toolbar-group">
+        <select v-model="currentLayout" @change="changeLayout" class="layout-select" title="选择布局">
+          <option value="mindmap">🧠 思维导图</option>
+          <option value="tree">🌳 树状图</option>
+          <option value="fishbone">🐟 鱼骨图</option>
+          <option value="timeline">📅 时间轴</option>
+          <option value="vertical">⬇️ 垂直图</option>
+        </select>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
       <div class="toolbar-group">
         <button @click="fitView" class="toolbar-btn" title="适应视图 (F)">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -82,8 +95,18 @@
 
       <div class="toolbar-group toolbar-info">
         <span class="zoom-level">{{ Math.round(zoomLevel * 100) }}%</span>
+        <span class="layout-indicator" :title="layoutNames[currentLayout]">
+          {{ layoutNames[currentLayout] }}
+        </span>
       </div>
     </div>
+
+    <!-- 布局提示 -->
+    <transition name="fade">
+      <div v-if="showLayoutTip" class="layout-tip">
+        <span>已切换到{{ layoutNames[currentLayout] }}</span>
+      </div>
+    </transition>
 
     <!-- 编辑对话框 -->
     <div v-if="showEditDialog" class="edit-dialog-overlay" @click="closeEditDialog">
@@ -125,7 +148,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue';
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 import { generateMindmapMarkdown, generateMindmapStructure, MindmapNode } from '../utils/mindmapGenerator';
 
 // 动态导入 markmap 库
@@ -165,6 +188,80 @@ const showEditDialog = ref(false);
 const editContent = ref('');
 const editNodeId = ref<string | null>(null);
 
+// 布局相关
+const currentLayout = ref<string>('mindmap');
+const showLayoutTip = ref(false);
+
+// 布局名称映射
+const layoutNames: Record<string, string> = {
+  mindmap: '思维导图',
+  tree: '树状图',
+  fishbone: '鱼骨图',
+  timeline: '时间轴',
+  vertical: '垂直图'
+};
+
+// 不同布局的配置
+const layoutConfigs: Record<string, any> = {
+  mindmap: {
+    direction: 'right',
+    spacingHorizontal: 120,
+    spacingVertical: 12,
+    nodeMinHeight: 24,
+    paddingX: 20,
+    paddingY: 10,
+    lineWidth: 2,
+    lineCurve: 0.5
+  },
+  tree: {
+    direction: 'down',
+    spacingHorizontal: 50,
+    spacingVertical: 60,
+    nodeMinHeight: 24,
+    paddingX: 24,
+    paddingY: 8,
+    lineWidth: 1.5,
+    lineCurve: 0.3
+  },
+  fishbone: {
+    direction: 'right',
+    spacingHorizontal: 80,
+    spacingVertical: 40,
+    nodeMinHeight: 28,
+    paddingX: 20,
+    paddingY: 12,
+    lineWidth: 2,
+    lineCurve: 0.2,
+    fishbone: true
+  },
+  timeline: {
+    direction: 'right',
+    spacingHorizontal: 150,
+    spacingVertical: 60,
+    nodeMinHeight: 32,
+    paddingX: 16,
+    paddingY: 10,
+    lineWidth: 3,
+    lineCurve: 0,
+    timeline: true
+  },
+  vertical: {
+    direction: 'down',
+    spacingHorizontal: 40,
+    spacingVertical: 50,
+    nodeMinHeight: 22,
+    paddingX: 20,
+    paddingY: 8,
+    lineWidth: 1.5,
+    lineCurve: 0.4
+  }
+};
+
+// 获取当前布局配置
+const getCurrentLayoutConfig = () => {
+  return layoutConfigs[currentLayout.value] || layoutConfigs.mindmap;
+};
+
 // 节点颜色
 const nodeColors = [
   '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
@@ -179,6 +276,9 @@ const initMarkmap = async () => {
   try {
     // 创建 Transformer 实例
     transformer = new Transformer();
+
+    // 获取当前布局配置
+    const config = getCurrentLayoutConfig();
 
     // 创建 Markmap 实例
     mm = Markmap.create(svgContainerRef.value, {
@@ -195,13 +295,25 @@ const initMarkmap = async () => {
         };
         return levelColors[d.data?.level || 'text'] || nodeColors[6];
       },
-      nodeMinHeight: 24,
-      spacingVertical: 12,
-      spacingHorizontal: 120,
-      duration: 300,
+      nodeMinHeight: config.nodeMinHeight,
+      spacingVertical: config.spacingVertical,
+      spacingHorizontal: config.spacingHorizontal,
+      duration: 500,
       autoFit: false,
       fitRatio: 0.9,
       initialExpandLevel: 2,
+
+      // 布局方向
+      direction: config.direction,
+
+      // 线条样式
+      lineWidth: config.lineWidth,
+      lineCurve: config.lineCurve,
+
+      // 特殊布局标记
+      isFishbone: config.fishbone || false,
+      isTimeline: config.timeline || false,
+
       // 交互事件
       onClickNode: (node: any) => {
         handleNodeClick(node);
@@ -589,6 +701,25 @@ const exportSVG = () => {
   link.click();
 };
 
+// 切换布局
+const changeLayout = () => {
+  // 显示布局提示
+  showLayoutTip.value = true;
+  setTimeout(() => {
+    showLayoutTip.value = false;
+  }, 1500);
+
+  // 重新初始化 markmap 以应用新布局
+  if (mm) {
+    mm.destroy?.();
+    mm = null;
+  }
+
+  nextTick(() => {
+    initMarkmap();
+  });
+};
+
 // 监听数据变化
 watch(() => props.annotations, () => {
   nextTick(() => {
@@ -598,6 +729,15 @@ watch(() => props.annotations, () => {
 
 onMounted(() => {
   initMarkmap();
+});
+
+// 暴露方法
+defineExpose({
+  getCurrentLayout: () => currentLayout.value,
+  setLayout: (layout: string) => {
+    currentLayout.value = layout;
+    changeLayout();
+  }
 });
 
 onUnmounted(() => {
@@ -610,17 +750,17 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+// CSS 隔离：所有样式嵌套在根类名下
 .mindmap-editor {
   display: flex;
   flex-direction: column;
   height: 100%;
   background: var(--b3-theme-background);
   overflow: hidden;
-}
 
-/* 工具栏样式 */
-.mindmap-toolbar {
+  /* 工具栏样式 */
+  .mindmap-toolbar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -639,27 +779,89 @@ onUnmounted(() => {
   border-right: 1px solid var(--b3-border-color);
 }
 
-.toolbar-group:last-child {
-  border-right: none;
-}
+  .toolbar-group:last-child {
+    border-right: none;
+  }
 
-.toolbar-spacer {
+  .toolbar-spacer {
   flex: 1;
 }
 
-.toolbar-info {
-  display: flex;
-  align-items: center;
-  color: var(--b3-theme-on-surface);
-  font-size: 12px;
-}
+  .toolbar-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--b3-theme-on-surface);
+    font-size: 12px;
+  }
 
-.zoom-level {
+  .zoom-level {
   min-width: 45px;
   text-align: center;
 }
 
-.toolbar-btn {
+  .layout-indicator {
+    padding: 2px 8px;
+    background: var(--b3-theme-surface-hover);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--b3-theme-primary);
+  }
+
+  /* 布局选择器 */
+  .layout-select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--b3-border-color);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-on-background);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+
+  &:focus {
+    border-color: var(--b3-theme-primary);
+  }
+
+    &:hover {
+      border-color: var(--b3-theme-primary);
+    }
+  }
+
+  .toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--b3-border-color);
+  margin: 0 4px;
+}
+
+  /* 布局提示 */
+  .layout-tip {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: var(--b3-theme-primary);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+  .fade-enter-active,
+  .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  .toolbar-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -683,29 +885,29 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
-.toolbar-btn-danger:hover:not(:disabled) {
-  background: rgba(244, 67, 54, 0.15);
-  color: #f44336;
-}
+  .toolbar-btn-danger:hover:not(:disabled) {
+    background: rgba(244, 67, 54, 0.15);
+    color: #f44336;
+  }
 
-/* 内容区域 */
-.mindmap-content {
+  /* 内容区域 */
+  .mindmap-content {
   flex: 1;
   overflow: hidden;
   position: relative;
 }
 
-:deep(svg) {
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-}
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
 
-:deep(svg:active) {
-  cursor: grabbing;
-}
+  :deep(svg:active) {
+    cursor: grabbing;
+  }
 
-:deep(.mm-node) {
+  :deep(.mm-node) {
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -719,14 +921,14 @@ onUnmounted(() => {
   stroke-width: 3px;
 }
 
-:deep(.mm-node.highlighted) {
-  stroke: #FF9800;
-  stroke-width: 3px;
-  filter: drop-shadow(0 0 8px rgba(255, 152, 0, 0.5));
-}
+  :deep(.mm-node.highlighted) {
+    stroke: #FF9800;
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 8px rgba(255, 152, 0, 0.5));
+  }
 
-/* 空状态 */
-.empty-state {
+  /* 空状态 */
+  .empty-state {
   position: absolute;
   top: 0;
   left: 0;
@@ -740,18 +942,18 @@ onUnmounted(() => {
   text-align: center;
 }
 
-.empty-state-icon {
-  margin-bottom: 16px;
-}
+  .empty-state-icon {
+    margin-bottom: 16px;
+  }
 
-.empty-state-hint {
+  .empty-state-hint {
   margin-top: 8px;
   font-size: 12px;
   opacity: 0.7;
 }
 
-/* 编辑对话框 */
-.edit-dialog-overlay {
+  /* 编辑对话框 */
+  .edit-dialog-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -764,8 +966,8 @@ onUnmounted(() => {
   z-index: 1000;
 }
 
-.edit-dialog {
-  background: var(--b3-theme-background);
+  .edit-dialog {
+    background: var(--b3-theme-background);
   border-radius: 12px;
   width: 90%;
   max-width: 500px;
@@ -773,21 +975,21 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.edit-dialog-header {
-  display: flex;
+  .edit-dialog-header {
+    display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--b3-border-color);
 }
 
-.edit-dialog-header h3 {
+  .edit-dialog-header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 500;
 }
 
-.close-btn {
+  .close-btn {
   width: 28px;
   height: 28px;
   border: none;
@@ -801,15 +1003,15 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.close-btn:hover {
-  background: var(--b3-theme-surface);
-}
+  .close-btn:hover {
+    background: var(--b3-theme-surface);
+  }
 
-.edit-dialog-body {
+  .edit-dialog-body {
   padding: 20px;
 }
 
-.edit-dialog-body textarea {
+  .edit-dialog-body textarea {
   width: 100%;
   min-height: 100px;
   padding: 12px;
@@ -822,12 +1024,12 @@ onUnmounted(() => {
   font-family: inherit;
 }
 
-.edit-dialog-body textarea:focus {
+  .edit-dialog-body textarea:focus {
   outline: none;
   border-color: var(--b3-theme-primary);
 }
 
-.edit-dialog-footer {
+  .edit-dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -835,8 +1037,8 @@ onUnmounted(() => {
   border-top: 1px solid var(--b3-border-color);
 }
 
-.btn-cancel,
-.btn-confirm {
+  .btn-cancel,
+  .btn-confirm {
   padding: 8px 20px;
   border-radius: 6px;
   font-size: 14px;
@@ -850,7 +1052,7 @@ onUnmounted(() => {
   color: var(--b3-theme-on-surface);
 }
 
-.btn-cancel:hover {
+  .btn-cancel:hover {
   background: var(--b3-theme-surface);
 }
 
@@ -860,7 +1062,8 @@ onUnmounted(() => {
   color: white;
 }
 
-.btn-confirm:hover {
-  opacity: 0.9;
+  .btn-confirm:hover {
+    opacity: 0.9;
+  }
 }
 </style>

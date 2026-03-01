@@ -325,9 +325,9 @@ export async function getBlockAttrs(
 
 // **************************************** SQL ****************************************
 
-export async function sql(sql: string): Promise<any[]> {
+export async function sql(stmt: string): Promise<any[]> {
   let sqldata = {
-    stmt: sql,
+    stmt: stmt,
   };
   let url = "/api/query/sql";
   return request(url, sqldata);
@@ -336,8 +336,8 @@ export async function sql(sql: string): Promise<any[]> {
 /**
  * SQL 查询（别名，兼容 dataPersistenceService.ts）
  */
-export async function sqlQuery(sql: string): Promise<any[]> {
-  return sql(sql);
+export async function sqlQuery(stmt: string): Promise<any[]> {
+  return sql(stmt);
 }
 
 /**
@@ -347,10 +347,37 @@ export async function updateBlockAttrs(id: BlockId, attrs: { [key: string]: stri
   return setBlockAttrs(id, attrs);
 }
 
+/**
+ * 获取块（别名，兼容 freeMindMapService.ts）
+ * @param blockId 块 ID
+ */
+export async function getBlock(blockId: string): Promise<Block | null> {
+  let sqlScript = `select * from blocks where id ='${blockId}'`;
+  let data = await sql(sqlScript);
+  return data?.[0] || null;
+}
+
+/**
+ * 获取块ByID（向后兼容）
+ */
 export async function getBlockByID(blockId: string): Promise<Block> {
   let sqlScript = `select * from blocks where id ='${blockId}'`;
   let data = await sql(sqlScript);
   return data[0];
+}
+
+/**
+ * 创建块（别名，兼容 freeMindMapService.ts）
+ * @param dataType 数据类型
+ * @param data 数据内容
+ * @param parentID 父块 ID
+ */
+export async function createBlock(
+  dataType: DataType,
+  data: string,
+  parentID: BlockId | DocumentId
+): Promise<IResdoOperations[]> {
+  return appendBlock(dataType, data, parentID);
 }
 
 // **************************************** Template ****************************************

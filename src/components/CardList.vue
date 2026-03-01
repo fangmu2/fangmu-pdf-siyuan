@@ -131,6 +131,14 @@
 
           <!-- 操作按钮 -->
           <div class="card-item__actions">
+            <button
+              v-if="card.sourceLocation?.pdfPath"
+              class="card-item__action-btn card-item__action-btn--pdf"
+              @click.stop="handleNavigateToPdf(card)"
+              title="跳转到PDF源位置"
+            >
+              📄 定位
+            </button>
             <button class="card-item__action-btn" @click.stop="handleEdit(card)">
               编辑
             </button>
@@ -149,11 +157,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import type { Card, FlashCard } from '../types/card';
 import { cardService } from '../services/cardService';
 import { truncateText } from '../utils';
 import { formatNextReview } from '../review/sm2';
+import { navigateToCardPdf } from '../services/pdfExcerptService';
 
 interface Props {
   cards: Card[];
@@ -284,6 +293,18 @@ function handleBulkDelete() {
     }
   });
   selectedCards.value = [];
+}
+
+// 跳转到 PDF 源位置
+async function handleNavigateToPdf(card: Card) {
+  try {
+    const success = await navigateToCardPdf(card);
+    if (!success) {
+      console.warn('[CardList] 无法跳转到 PDF，卡片可能不是 PDF 摘录');
+    }
+  } catch (error) {
+    console.error('[CardList] 跳转到 PDF 失败:', error);
+  }
 }
 </script>
 
@@ -609,6 +630,16 @@ function handleBulkDelete() {
 
       &:hover {
         background: var(--b3-theme-primary);
+        color: white;
+      }
+    }
+
+    &--pdf {
+      border-color: #8b5cf6;
+      color: #8b5cf6;
+
+      &:hover {
+        background: #8b5cf6;
         color: white;
       }
     }

@@ -1,5 +1,5 @@
 // src/utils/markdownGenerator.ts
-import type { PDFAnnotation, AnnotationGroup, AnnotationColor } from '../types/annotaion';
+import type { PDFAnnotation, AnnotationGroup, AnnotationColor } from '../types/annotation';
 
 /**
  * 颜色到标签的映射

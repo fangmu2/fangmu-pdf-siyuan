@@ -1,5 +1,6 @@
 import { Plugin } from "siyuan";
 import { createApp, h } from "vue";
+import { createPinia } from "pinia";
 import App from "./App.vue";
 import "./styles/app.css"; // 引入面板样式
 
@@ -39,9 +40,11 @@ export default class PDFMindMapPlugin extends Plugin {
 
     // 2. 创建并挂载 Vue 应用
     // 使用 h 函数渲染 App 组件，并传入 plugin 实例，方便在组件内调用 API
+    const pinia = createPinia();
     this.vueApp = createApp({
       render: () => h(App, { plugin: this }),
     });
+    this.vueApp.use(pinia);
     this.vueApp.mount(this.panelEl);
 
     // 3. 添加拖动调整宽度功能

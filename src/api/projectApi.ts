@@ -1,7 +1,7 @@
 // src/api/projectApi.ts
 import { postApi, getPluginData, setPluginData, getCurrentDocId, checkDocExists } from './siyuanApi';
 import type { PDFProject, ProjectListItem, ProjectStorage, ProjectPdf } from '../types/project';
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 
 const PROJECTS_STORAGE_KEY = 'pdf-projects-v3';  // 版本号，使用思源持久化存储
 const ANNOTATIONS_DOC_PREFIX = 'pdf-annotations-';
@@ -84,7 +84,7 @@ export async function createProject(options: {
   if (!cachedStorage) {
     cachedStorage = await getProjectStorageAsync();
   }
-  
+
   const storage = cachedStorage;
 
   // 创建PDF条目
@@ -112,7 +112,7 @@ export async function createProject(options: {
   // 先保存项目
   storage.projects.unshift(project);
   storage.currentProjectId = project.id;
-  
+
   // 更新缓存并保存到思源
   cachedStorage = storage;
   await saveProjectStorageAsync(storage);
@@ -140,22 +140,22 @@ export async function createProject(options: {
  * 向现有项目添加PDF
  */
 export async function addPdfToProject(
-  projectId: string, 
+  projectId: string,
   options: { pdfPath: string; pdfName: string }
 ): Promise<ProjectPdf | null> {
   // 确保数据已加载
   if (!cachedStorage || cachedStorage.projects.length === 0) {
     cachedStorage = await getProjectStorageAsync();
   }
-  
+
   const storage = cachedStorage;
   const project = storage.projects.find(p => p.id === projectId);
-  
+
   if (!project) {
     console.error('[addPdfToProject] 找不到项目:', projectId);
     return null;
   }
-  
+
   // 检查是否已存在相同路径的PDF
   const existing = project.pdfs.find(p => p.path === options.pdfPath);
   if (existing) {
@@ -180,7 +180,7 @@ export async function addPdfToProject(
   project.pdfs.push(newPdf);
   project.currentPdfId = pdfId;
   project.updated = Date.now();
-  
+
   // 更新缓存并保存
   cachedStorage = storage;
   await saveProjectStorageAsync(storage);
@@ -195,7 +195,7 @@ async function getAvailableNotebookId(): Promise<string | null> {
   try {
     // 使用 /api/notebook/lsNotebooks 获取笔记本列表
     const result = await postApi<any>('/api/notebook/lsNotebooks', {});
-    
+
     // 处理不同的返回格式
     let notebooks: any[] = [];
     if (Array.isArray(result)) {
@@ -205,7 +205,7 @@ async function getAvailableNotebookId(): Promise<string | null> {
     } else if (result && Array.isArray(result.data)) {
       notebooks = result.data;
     }
-    
+
     // 找到第一个可用的笔记本
     for (const nb of notebooks) {
       // 检查笔记本是否有效（可能是对象或字符串）
@@ -215,7 +215,7 @@ async function getAvailableNotebookId(): Promise<string | null> {
         return nb.id || nb.box || nb.uuid;
       }
     }
-    
+
     // 如果没有找到，尝试使用默认笔记本
     console.warn('[getAvailableNotebookId] 未找到可用笔记本，尝试使用默认');
     return null;
@@ -231,14 +231,14 @@ async function getAvailableNotebookId(): Promise<string | null> {
 async function createAnnotationDocument(project: PDFProject): Promise<string | null> {
   try {
     const notebookId = await getAvailableNotebookId();
-    
+
     if (!notebookId) {
       console.warn('[createAnnotationDocument] 无法获取笔记本ID，跳过文档创建');
       return null;
     }
-    
+
     const docName = `${project.name}-标注`;
-    
+
     // 创建文档
     const result = await postApi<any>('/api/filetree/createDocWithMd', {
       notebook: notebookId,
@@ -248,7 +248,7 @@ async function createAnnotationDocument(project: PDFProject): Promise<string | n
 
     // 从返回结果中获取文档ID
     let docId: string | null = null;
-    
+
     if (result) {
       // 尝试多种格式
       if (result.rootId || result.root_id) {
@@ -333,9 +333,9 @@ export function switchProject(projectId: string): PDFProject | null {
 export function switchProjectPdf(projectId: string, pdfId: string): PDFProject | null {
   const storage = getProjectStorage();
   const project = storage.projects.find(p => p.id === projectId);
-  
+
   if (!project) return null;
-  
+
   const pdf = project.pdfs.find(p => p.id === pdfId);
   if (pdf) {
     project.currentPdfId = pdfId;
@@ -350,24 +350,24 @@ export function switchProjectPdf(projectId: string, pdfId: string): PDFProject |
  * 更新项目中的PDF信息
  */
 export function updateProjectPdf(
-  projectId: string, 
-  pdfId: string, 
+  projectId: string,
+  pdfId: string,
   updates: Partial<ProjectPdf>
 ): PDFProject | null {
   const storage = getProjectStorage();
   const project = storage.projects.find(p => p.id === projectId);
-  
+
   if (!project) return null;
-  
+
   const pdfIndex = project.pdfs.findIndex(p => p.id === pdfId);
   if (pdfIndex === -1) return null;
-  
+
   project.pdfs[pdfIndex] = {
     ...project.pdfs[pdfIndex],
     ...updates
   };
   project.updated = Date.now();
-  
+
   saveProjectStorage(storage);
   return project;
 }
@@ -380,17 +380,17 @@ export function updateProject(projectId: string, updates: Partial<PDFProject>): 
     console.warn('[updateProject] 缓存为空');
     return null;
   }
-  
+
   const index = cachedStorage.projects.findIndex(p => p.id === projectId);
-  
+
   if (index === -1) return null;
-  
+
   cachedStorage.projects[index] = {
     ...cachedStorage.projects[index],
     ...updates,
     updated: Date.now()
   };
-  
+
   // 异步保存到思源
   saveProjectStorageAsync(cachedStorage);
   return cachedStorage.projects[index];
@@ -402,26 +402,26 @@ export function updateProject(projectId: string, updates: Partial<PDFProject>): 
 export function removePdfFromProject(projectId: string, pdfId: string): PDFProject | null {
   const storage = getProjectStorage();
   const project = storage.projects.find(p => p.id === projectId);
-  
+
   if (!project) return null;
-  
+
   const pdfIndex = project.pdfs.findIndex(p => p.id === pdfId);
   if (pdfIndex === -1) return null;
-  
+
   if (project.pdfs.length <= 1) {
     console.warn('[removePdfFromProject] 项目至少需要一个PDF');
     return null;
   }
-  
+
   project.pdfs.splice(pdfIndex, 1);
-  
+
   if (project.currentPdfId === pdfId) {
     project.currentPdfId = project.pdfs[0]?.id || null;
   }
-  
+
   project.updated = Date.now();
   saveProjectStorage(storage);
-  
+
   return project;
 }
 
@@ -431,11 +431,11 @@ export function removePdfFromProject(projectId: string, pdfId: string): PDFProje
 export async function deleteProject(projectId: string): Promise<boolean> {
   const storage = getProjectStorage();
   const index = storage.projects.findIndex(p => p.id === projectId);
-  
+
   if (index === -1) return false;
-  
+
   const project = storage.projects[index];
-  
+
   // 删除对应的标注文档
   if (project.annotationDocId) {
     try {
@@ -450,18 +450,18 @@ export async function deleteProject(projectId: string): Promise<boolean> {
       console.error('[deleteProject] 删除标注文档失败:', e);
     }
   }
-  
+
   // 删除本地存储的标注数据
   const annotationKey = `${ANNOTATIONS_DOC_PREFIX}${projectId}`;
   localStorage.removeItem(annotationKey);
-  
+
   // 从项目列表中移除
   storage.projects.splice(index, 1);
-  
+
   if (storage.currentProjectId === projectId) {
     storage.currentProjectId = storage.projects.length > 0 ? storage.projects[0].id : null;
   }
-  
+
   saveProjectStorage(storage);
   return true;
 }
@@ -499,19 +499,19 @@ export async function saveAnnotationToProject(
 
   if (!docId) {
     console.warn('[saveAnnotationToProject] 未找到目标文档');
-    return { 
-      blockId: null, 
-      error: '请先选择一个目标文档，在工具栏中选择要保存到的思源笔记文档' 
+    return {
+      blockId: null,
+      error: '请先选择一个目标文档，在工具栏中选择要保存到的思源笔记文档'
     };
   }
-  
+
   // 检查文档是否存在
   const exists = await checkDocExists(docId);
   if (!exists) {
     console.warn('[saveAnnotationToProject] 文档不存在:', docId);
-    return { 
-      blockId: null, 
-      error: '目标文档不存在或已被删除，请重新选择' 
+    return {
+      blockId: null,
+      error: '目标文档不存在或已被删除，请重新选择'
     };
   }
 
@@ -540,8 +540,8 @@ export async function saveAnnotationToProject(
 
     if (blockId) {
       // 更新项目的标注数量
-      updateProject(project.id, { 
-        annotationCount: (project.annotationCount || 0) + 1 
+      updateProject(project.id, {
+        annotationCount: (project.annotationCount || 0) + 1
       });
     } else {
       console.warn('[saveAnnotationToProject] 未获取到 blockId');
@@ -550,9 +550,9 @@ export async function saveAnnotationToProject(
     return { blockId };
   } catch (e: any) {
     console.error('[saveAnnotationToProject] 保存失败:', e);
-    return { 
-      blockId: null, 
-      error: `保存失败: ${e.message || '未知错误'}` 
+    return {
+      blockId: null,
+      error: `保存失败: ${e.message || '未知错误'}`
     };
   }
 }
@@ -563,15 +563,15 @@ export async function saveAnnotationToProject(
 function buildAnnotationMarkdown(annotation: PDFAnnotation): string {
   const rectString = annotation.rect.join(',');
   const fileAnnotationRef = `assets/${annotation.pdfName}?path=${annotation.pdfPath}&page=${annotation.page}&rect=${encodeURIComponent(rectString)}`;
-  
+
   let markdown = '';
-  
+
   if (annotation.isImage && annotation.imagePath) {
-    const imagePath = annotation.imagePath.startsWith('/data/') 
-      ? annotation.imagePath.slice(6) 
+    const imagePath = annotation.imagePath.startsWith('/data/')
+      ? annotation.imagePath.slice(6)
       : annotation.imagePath;
     const imageMarkdown = `![PDF截图](${imagePath})`;
-    
+
     switch (annotation.level) {
       case 'title':
         markdown = `\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${annotation.level}" custom-image="true" custom-page="${annotation.page}"`;
@@ -637,7 +637,7 @@ export async function getProjectAnnotationsAsync(projectId: string): Promise<PDF
   if (annotationsCache.has(projectId)) {
     return annotationsCache.get(projectId)!;
   }
-  
+
   const key = `${ANNOTATIONS_DOC_PREFIX}${projectId}`;
   try {
     const saved = await getPluginData<PDFAnnotation[]>(key);

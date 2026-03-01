@@ -7,7 +7,7 @@ export type ExtractMode = 'text' | 'image';
 
 /**
  * 标注颜色类型
- * 思源PDF标注支持的颜色
+ * 思源 PDF 标注支持的颜色
  */
 export type AnnotationColor =
   | 'red'      // 红色 - 关键内容
@@ -44,15 +44,15 @@ export const ANNOTATION_LEVELS: { value: AnnotationLevel; label: string; prefix:
 
 /**
  * 解析后的标注数据
- * 这是我们插件内部使用的统一格式
+ * 这是我们内部使用的统一格式
  */
 export interface PDFAnnotation {
-  id: string;                    // 标注块的ID
-  blockId: string;               // 关联的思源块ID
+  id: string;                    // 标注块的 ID
+  blockId: string;               // 关联的思源块 ID
 
-  // PDF定位信息
-  pdfPath: string;               // PDF文件路径（完整路径）
-  pdfName: string;               // PDF文件名
+  // PDF 定位信息
+  pdfPath: string;               // PDF 文件路径（完整路径）
+  pdfName: string;               // PDF 文件名
   page: number;                  // 页码
   rect: [number, number, number, number]; // 坐标矩形
 
@@ -61,13 +61,13 @@ export interface PDFAnnotation {
   note: string;                  // 用户添加的笔记（可选）
   color: AnnotationColor;        // 颜色
   level: AnnotationLevel;        // 标注级别
-  
+
   // 图片摘录相关
   isImage?: boolean;             // 是否为图片摘录
-  imagePath?: string;            // 图片路径（思源assets路径）
+  imagePath?: string;            // 图片路径（思源 assets 路径）
 
   // 拖拽合并相关
-  parentId?: string | null;      // 父标注ID（用于嵌套合并）
+  parentId?: string | null;      // 父标注 ID（用于嵌套合并）
   sortOrder?: number;            // 在父级下的排序顺序
   children?: PDFAnnotation[];    // 子标注列表（运行时计算）
   isExpanded?: boolean;          // 是否展开（运行时状态）
@@ -77,8 +77,8 @@ export interface PDFAnnotation {
   updated: number;               // 更新时间戳
 
   // 思源相关
-  boxId?: string;                // 所在笔记本ID
-  rootId?: string;               // 所在文档ID
+  boxId?: string;                // 所在笔记本 ID
+  rootId?: string;               // 所在文档 ID
   parentHPath?: string;          // 父级路径
 }
 
@@ -94,6 +94,57 @@ export interface AnnotationGroup {
 }
 
 /**
+ * 批注类型
+ */
+export type CommentType = 'text' | 'voice' | 'image';
+
+/**
+ * 批注优先级
+ */
+export type CommentPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+/**
+ * 批注状态
+ */
+export type CommentStatus = 'active' | 'resolved' | 'archived';
+
+/**
+ * 批注数据
+ * 支持为标注添加多条批注
+ */
+export interface AnnotationComment {
+  /** 批注 ID */
+  id: string;
+  /** 批注类型 */
+  type: CommentType;
+  /** 批注文本内容 */
+  text: string;
+  /** 创建时间 */
+  createdAt: number;
+  /** 更新时间 */
+  updatedAt: number;
+  /** 作者 */
+  author?: string;
+  /** 优先级 */
+  priority: CommentPriority;
+  /** 状态 */
+  status: CommentStatus;
+  /** 标签 */
+  tags?: string[];
+  /** 语音数据（type=voice 时） */
+  voiceData?: {
+    url: string;
+    duration: number;
+    transcript?: string;
+  };
+  /** 图片数据（type=image 时） */
+  imageData?: {
+    url: string;
+    caption?: string;
+  };
+}
+
+/**
  * 标注统计数据
  */
 export interface AnnotationStats {
@@ -101,3 +152,22 @@ export interface AnnotationStats {
   byColor: Record<AnnotationColor, number>;
   byPage: Record<number, number>;
 }
+
+/**
+ * 批注优先级配置
+ */
+export const COMMENT_PRIORITIES: { value: CommentPriority; label: string; color: string }[] = [
+  { value: 'low', label: '低', color: '#909399' },
+  { value: 'normal', label: '普通', color: '#409EFF' },
+  { value: 'high', label: '高', color: '#E6A23C' },
+  { value: 'urgent', label: '紧急', color: '#F56C6C' },
+];
+
+/**
+ * 批注状态配置
+ */
+export const COMMENT_STATUSES: { value: CommentStatus; label: string; color: string }[] = [
+  { value: 'active', label: '活跃', color: '#67C23A' },
+  { value: 'resolved', label: '已解决', color: '#909399' },
+  { value: 'archived', label: '已归档', color: '#C0C4CC' },
+];

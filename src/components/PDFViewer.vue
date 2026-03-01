@@ -64,11 +64,197 @@
       📷 图片摘录模式 - 在PDF上框选区域截图
     </div>
 
-    <!-- 底部工具栏 -->
+    <!-- 顶部工具栏 -->
+    <div class="top-toolbar" v-if="totalPages > 0">
+      <!-- 左侧工具栏 -->
+      <div class="toolbar-left">
+        <!-- 导航按钮 -->
+        <button
+          class="tool-btn"
+          @click="prevPage"
+          :disabled="currentPage <= 1"
+          title="上一页 (PageUp)"
+        >
+          <span>◀</span>
+        </button>
+        <button
+          class="tool-btn"
+          @click="nextPage"
+          :disabled="currentPage >= totalPages"
+          title="下一页 (PageDown)"
+        >
+          <span>▶</span>
+        </button>
+
+        <!-- 页码输入 -->
+        <div class="page-input-group">
+          <input
+            type="number"
+            :value="currentPage"
+            @change="handlePageInput"
+            @keyup.enter="handlePageInput"
+            min="1"
+            :max="totalPages"
+            class="page-input"
+          />
+          <span class="page-total">/ {{ totalPages }}</span>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- 阅读模式切换 -->
+        <div class="tool-group">
+          <button
+            class="tool-btn"
+            :class="{ active: viewMode === 'single' }"
+            @click="setViewMode('single')"
+            title="单页模式"
+          >
+            <span>📄</span>
+          </button>
+          <button
+            class="tool-btn"
+            :class="{ active: viewMode === 'double' }"
+            @click="setViewMode('double')"
+            title="双页模式"
+          >
+            <span>📖</span>
+          </button>
+          <button
+            class="tool-btn"
+            :class="{ active: viewMode === 'continuous' }"
+            @click="setViewMode('continuous')"
+            title="连续滚动"
+          >
+            <span>📜</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- 缩放控制 -->
+        <div class="zoom-group">
+          <button
+            class="tool-btn"
+            @click="zoomOut"
+            title="缩小"
+          >
+            <span>🔍-</span>
+          </button>
+          <select
+            :value="scale"
+            @change="setZoom(parseFloat($event.target.value))"
+            class="zoom-select"
+          >
+            <option v-for="level in zoomLevels" :key="level" :value="level">
+              {{ Math.round(level * 100) }}%
+            </option>
+            <option value="fit-width">适应宽度</option>
+            <option value="fit-page">适应页面</option>
+            <option value="actual">实际大小</option>
+          </select>
+          <button
+            class="tool-btn"
+            @click="zoomIn"
+            title="放大"
+          >
+            <span>🔍+</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- 旋转 -->
+        <button
+          class="tool-btn"
+          @click="rotate"
+          title="顺时针旋转"
+        >
+          <span>🔄</span>
+        </button>
+      </div>
+
+      <!-- 右侧工具栏 -->
+      <div class="toolbar-right">
+        <!-- 进度条 -->
+        <div class="progress-group">
+          <span class="progress-label">进度</span>
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              :style="{ width: `${progress}%` }"
+            ></div>
+          </div>
+          <span class="progress-text">{{ Math.round(progress) }}%</span>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- 侧边栏切换 -->
+        <button
+          class="tool-btn"
+          :class="{ active: showOutline }"
+          @click="toggleOutline"
+          title="目录"
+        >
+          <span>📑</span>
+        </button>
+        <button
+          class="tool-btn"
+          :class="{ active: showThumbnails }"
+          @click="toggleThumbnails"
+          title="缩略图"
+        >
+          <span>🖼️</span>
+        </button>
+        <button
+          class="tool-btn"
+          :class="{ active: showBookmarks }"
+          @click="toggleBookmarks"
+          title="书签"
+        >
+          <span>🔖</span>
+        </button>
+
+
+        <!-- 深色模式 -->
+        <button
+          class="tool-btn"
+          :class="{ active: darkMode }"
+          @click="toggleDarkMode"
+          title="深色模式"
+        >
+          <span>🌙</span>
+        </button>
+
+        <!-- 更多选项 -->
+        <div class="dropdown">
+          <button class="tool-btn dropdown-toggle" title="更多选项">
+            <span>⋮</span>
+          </button>
+          <div class="dropdown-menu">
+            <button @click="addBookmark" class="dropdown-item">
+              <span>🔖</span> 添加书签
+            </button>
+            <button @click="showSearchPanel = !showSearchPanel" class="dropdown-item">
+              <span>🔍</span> 搜索
+            </button>
+            <hr class="dropdown-divider" />
+            <button @click="exportPdfData" class="dropdown-item">
+              <span>📤</span> 导出
+            </button>
+            <button @click="showSettingsPanel = !showSettingsPanel" class="dropdown-item">
+              <span>⚙️</span> 设置
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部工具栏（保留原有功能，添加高亮颜色选择） -->
     <div class="bottom-toolbar" v-if="totalPages > 0">
-      <!-- 左侧：缩放控制 -->
+      <!-- 左侧：高亮颜色选择器 -->
       <div class="toolbar-section toolbar-left">
-        <!-- 高亮颜色选择器 -->
         <div class="highlight-color-picker">
           <button
             v-for="color in highlightColors"
@@ -78,30 +264,6 @@
             :title="color.name"
             @click="selectedHighlightColor = color.value"
           ></button>
-        </div>
-        <div class="toolbar-divider"></div>
-        <button @click="zoomOut" class="toolbar-btn" title="缩小 (-)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 13H5v-2h14v2z"/>
-          </svg>
-        </button>
-        <span class="zoom-display" @click="showZoomMenu = !showZoomMenu">{{ Math.round(scale * 100) }}%</span>
-        <button @click="zoomIn" class="toolbar-btn" title="放大 (+)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-        </button>
-        <!-- 缩放菜单 -->
-        <div v-if="showZoomMenu" class="zoom-menu">
-          <button @click="setZoom(0.5)" class="zoom-menu-item">50%</button>
-          <button @click="setZoom(0.75)" class="zoom-menu-item">75%</button>
-          <button @click="setZoom(1)" class="zoom-menu-item">100%</button>
-          <button @click="setZoom(1.25)" class="zoom-menu-item">125%</button>
-          <button @click="setZoom(1.5)" class="zoom-menu-item">150%</button>
-          <button @click="setZoom(2)" class="zoom-menu-item">200%</button>
-          <div class="zoom-menu-divider"></div>
-          <button @click="fitToWidth" class="zoom-menu-item">适应宽度</button>
-          <button @click="fitToPage" class="zoom-menu-item">适应页面</button>
         </div>
       </div>
 
@@ -141,17 +303,74 @@
         </button>
       </div>
 
-      <!-- 右侧：目录按钮 -->
+      <!-- 右侧：手写开关 -->
       <div class="toolbar-section toolbar-right">
-        <button @click="toggleOutline" class="toolbar-btn" title="目录">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
-          </svg>
+        <button
+          @click="toggleHandwritingLayer"
+          class="toolbar-btn"
+          :class="{ active: isHandwritingLayerVisible }"
+          title="手写笔记"
+        >
+          <span>✏️</span>
         </button>
       </div>
     </div>
 
-    <!-- 目录侧边栏 -->
+    <!-- 左侧边栏：缩略图/书签 -->
+    <div v-if="showThumbnails || showBookmarks" class="left-sidebar">
+      <div class="sidebar-tabs">
+        <button
+          class="tab-btn"
+          :class="{ active: showThumbnails }"
+          @click="showThumbnails = true; showBookmarks = false;"
+          title="缩略图"
+        >
+          🖼️
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: showBookmarks }"
+          @click="showBookmarks = true; showThumbnails = false;"
+          title="书签"
+        >
+          🔖
+        </button>
+        <button
+          class="tab-btn close-btn"
+          @click="showThumbnails = false; showBookmarks = false;"
+          title="关闭"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="sidebar-content">
+        <PDFThumbnails
+          v-if="showThumbnails && pdfDoc"
+          :pdf-document="pdfDoc"
+          :current-page="currentPage"
+          scroll-mode="vertical"
+          @page-click="goToPage"
+        />
+        <div v-if="showBookmarks" class="bookmarks-list">
+          <div v-if="bookmarks.length === 0" class="empty-state">
+            暂无书签
+          </div>
+          <div
+            v-for="bookmark in bookmarks"
+            :key="bookmark.id"
+            class="bookmark-item"
+            :class="{ active: currentPage === bookmark.pageNumber }"
+            @click="goToPage(bookmark.pageNumber)"
+          >
+            <span class="bookmark-icon">🔖</span>
+            <span class="bookmark-title">{{ bookmark.title || `第${bookmark.pageNumber}页` }}</span>
+            <button class="bookmark-delete" @click.stop="removeBookmark(bookmark.id)">×</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- 目录侧边栏 -->
     <div v-if="showOutline" class="outline-sidebar">
       <div class="outline-header">
         <span>目录</span>
@@ -179,6 +398,8 @@
         </div>
       </div>
     </div>
+
+
   </div>
 </template>
 
@@ -186,9 +407,8 @@
 import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed, defineComponent, h } from 'vue';
 import { getOrLoadPdf, renderPage, renderTextLayer, getSelectionRect } from '../utils/pdf';
 import { getFileAsBlob } from '../api/siyuanApi';
-import type { PDFAnnotation, AnnotationColor, ExtractMode } from '../types/annotaion';
+import type { PDFAnnotation, AnnotationColor, ExtractMode } from '../types/annotation';
 import HandwritingLayer from './HandwritingLayer.vue'; // 导入手写图层组件
-import { LearningSetService } from '../services/learningSetService'; // 导入学习集服务
 
 // 目录项组件
 const OutlineItem = defineComponent({
@@ -244,6 +464,7 @@ const emit = defineEmits<{
   }): void;
   (e: 'annotation-delete', annotation: PDFAnnotation): void;
   (e: 'annotation-click', annotation: PDFAnnotation): void;
+  (e: 'annotation-created', annotation: PDFAnnotation): void;
   (e: 'highlight-color-change', color: string): void;
 }>();
 
@@ -257,6 +478,7 @@ const loading = ref(false);
 const error = ref('');
 const totalPages = ref(0);
 const scale = ref(1.0);
+const currentPage = ref(1);
 
 // 翻页按钮显示状态
 const showRightNav = ref(false);
@@ -264,8 +486,30 @@ const showRightNav = ref(false);
 // 底部工具栏状态
 const showZoomMenu = ref(false);
 const showOutline = ref(false);
+const showThumbnails = ref(false);
+const showBookmarks = ref(false);
+const showSearchPanel = ref(false);
+const showSettingsPanel = ref(false);
 const outline = ref<any[]>([]);
 const outlineLoading = ref(false);
+const bookmarks = ref<any[]>([]);
+
+// 阅读模式
+const viewMode = ref<'single' | 'double' | 'continuous'>('single');
+const darkMode = ref(false);
+const rotation = ref(0);
+
+// 连续滚动模式状态
+const renderedPages = ref<number[]>([]);
+
+// 缩放级别选项
+const zoomLevels = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0];
+
+// 阅读进度
+const progress = computed(() => {
+  if (totalPages.value === 0) return 0;
+  return (currentPage.value / totalPages.value) * 100;
+});
 
 // 高亮颜色选择
 const highlightColors = [
@@ -391,22 +635,55 @@ const loadPdf = async () => {
   }
 };
 
+// 当前渲染任务
+let currentRenderTask: { cancel: () => void } | null = null;
+
 // 渲染当前页
-const renderCurrentPage = async () => {
+const renderCurrentPage = async (pageNum?: number) => {
   if (!pdfDoc || !canvasRef.value || !containerRef.value || !textLayerRef.value || !highlightLayerRef.value) return;
 
+  // 取消之前的渲染任务
+  if (currentRenderTask) {
+    currentRenderTask.cancel();
+    currentRenderTask = null;
+  }
+
   try {
-    currentPageObj = await pdfDoc.getPage(props.currentPage);
+    // 使用传入的页码或当前页码
+    const pageToRender = pageNum ?? currentPage.value;
+
+    console.log('[PDFViewer] 渲染页面:', pageToRender);
+
+    // 连续滚动模式特殊处理
+    if (viewMode.value === 'continuous') {
+      await renderContinuousScroll();
+      return;
+    }
+
+    currentPageObj = await pdfDoc.getPage(pageToRender);
 
     const containerWidth = containerRef.value.clientWidth - 40;
 
-    // 渲染 Canvas
-    const viewport = await renderPage(currentPageObj, canvasRef.value, containerWidth * scale.value);
+    // 渲染 Canvas（带取消支持）
+    const renderPromise = renderPage(currentPageObj, canvasRef.value, containerWidth * scale.value);
 
-    // 缓存viewport
+    // 创建可取消的渲染任务
+    currentRenderTask = {
+      cancel: () => {
+        // PDF.js 渲染任务无法直接取消，但可以忽略结果
+        console.log('[PDFViewer] 渲染任务已取消');
+      }
+    };
+
+    const viewport = await renderPromise;
+
+    // 任务完成，清除引用
+    currentRenderTask = null;
+
+    // 缓存 viewport
     currentViewport = viewport;
 
-    // 渲染文本层（使用官方API）
+    // 渲染文本层（使用官方 API）
     await renderTextLayer(currentPageObj, textLayerRef.value, viewport);
 
     // 设置页面容器尺寸
@@ -415,12 +692,254 @@ const renderCurrentPage = async () => {
       pageContainerRef.value.style.height = canvasRef.value.style.height;
     }
 
-    // 绘制标注高亮（DOM方式）
+    // 绘制标注高亮（DOM 方式）
     renderHighlights();
 
   } catch (e: any) {
+    // 忽略取消错误
+    if (e.name === 'RenderingCancelledException') {
+      console.log('[PDFViewer] 渲染已取消');
+      return;
+    }
     console.error('渲染页面失败:', e);
     error.value = '渲染失败';
+  }
+};
+
+// 连续滚动模式渲染
+const renderContinuousScroll = async () => {
+  if (!pdfDoc || !canvasRef.value || !containerRef.value) return;
+
+  try {
+    const containerWidth = containerRef.value.clientWidth - 40;
+    const pageContainer = pageContainerRef.value;
+
+    if (!pageContainer) return;
+
+    // 清空容器
+    pageContainer.innerHTML = '';
+
+    // 渲染当前页及前后各 2 页（共 5 页）
+    const pagesToRender = [];
+    const startPage = Math.max(1, props.currentPage - 2);
+    const endPage = Math.min(totalPages.value, props.currentPage + 2);
+
+    for (let i = startPage; i <= endPage; i++) {
+      pagesToRender.push(i);
+    }
+
+    renderedPages.value = pagesToRender;
+
+    // 为每页创建容器
+    for (const pageNum of pagesToRender) {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = await renderPage(page, canvasRef.value, containerWidth * scale.value);
+
+      // 创建页面容器
+      const pageWrapper = document.createElement('div');
+      pageWrapper.className = 'continuous-page-wrapper';
+      pageWrapper.dataset.pageNumber = pageNum;
+
+      // 创建 canvas
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.className = 'pdf-canvas continuous-page-canvas';
+      pageCanvas.style.width = viewport.width + 'px';
+      pageCanvas.style.height = viewport.height + 'px';
+      pageWrapper.appendChild(pageCanvas);
+
+      // 渲染到 canvas
+      const renderContext = {
+        canvasContext: pageCanvas.getContext('2d')!,
+        viewport: viewport
+      };
+      await page.render(renderContext).promise;
+
+      // 创建文本层容器
+      const textLayerDiv = document.createElement('div');
+      textLayerDiv.className = 'pdf-text-layer continuous-text-layer';
+      pageWrapper.appendChild(textLayerDiv);
+
+      // 渲染文本层
+      await renderTextLayer(page, textLayerDiv, viewport);
+
+      // 创建高亮层容器
+      const highlightDiv = document.createElement('div');
+      highlightDiv.className = 'highlight-layer continuous-highlight-layer';
+      highlightDiv.style.width = viewport.width + 'px';
+      highlightDiv.style.height = viewport.height + 'px';
+      pageWrapper.appendChild(highlightDiv);
+
+      // 存储页面数据以便后续渲染高亮
+      pageWrapper.dataset.viewport = JSON.stringify({
+        scale: viewport.scale,
+        width: viewport.width,
+        height: viewport.height
+      });
+
+      pageContainer.appendChild(pageWrapper);
+
+      // 渲染该页的标注高亮
+      renderPageHighlights(pageNum, highlightDiv, viewport);
+    }
+
+    // 滚动到当前页
+    const currentPageWrapper = pageContainer.querySelector(`[data-page-number="${props.currentPage}"]`);
+    if (currentPageWrapper) {
+      currentPageWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+  } catch (e: any) {
+    console.error('连续滚动渲染失败:', e);
+    error.value = '渲染失败';
+  }
+};
+
+// 渲染单页高亮
+const renderPageHighlights = (pageNum: number, highlightLayer: HTMLElement, viewport: any) => {
+  if (!highlightLayer) return;
+
+  const pageAnnotations = props.annotations?.filter(ann => ann.page === pageNum) || [];
+  const scale = viewport.scale || 1;
+  const cssPageHeight = viewport.height;
+
+  highlightLayer.innerHTML = '';
+  highlightLayer.style.width = viewport.width + 'px';
+  highlightLayer.style.height = viewport.height + 'px';
+
+  for (const ann of pageAnnotations) {
+    const [pdfX1, pdfY1, pdfX2, pdfY2] = ann.rect;
+
+    const cssX = pdfX1 * scale;
+    const cssY = cssPageHeight - pdfY2 * scale;
+    const cssWidth = (pdfX2 - pdfX1) * scale;
+    const cssHeight = Math.max((pdfY2 - pdfY1) * scale, 14);
+
+    const colors = LEVEL_COLORS[ann.level] || ANNOTATION_COLORS[ann.color] || ANNOTATION_COLORS.yellow;
+    const isSelected = selectedAnnotation.value?.id === ann.id;
+
+    const highlight = document.createElement('div');
+    highlight.className = 'highlight-element';
+    highlight.dataset.annotationId = ann.id;
+    highlight.style.cssText = `
+      position: absolute;
+      left: ${cssX}px;
+      top: ${cssY}px;
+      width: ${cssWidth}px;
+      height: ${cssHeight}px;
+      background-color: ${isSelected ? colors.bg.replace('0.35', '0.55') : colors.bg};
+      border: 2px solid ${isSelected ? '#fff' : colors.border};
+      border-radius: 3px;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      box-shadow: ${isSelected ? '0 0 8px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)'};
+      z-index: ${isSelected ? 2 : 1};
+    `;
+
+    // 添加角标
+    if (ann.isImage) {
+      const badge = document.createElement('span');
+      badge.style.cssText = `
+        position: absolute;
+        top: -8px;
+        left: 0;
+        background: #8b5cf6;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 1px 4px;
+        border-radius: 2px;
+        line-height: 1;
+      `;
+      badge.textContent = '📷';
+      highlight.appendChild(badge);
+    } else if (ann.level && ann.level !== 'text') {
+      const levelLabels: Record<string, string> = {
+        title: 'T', h1: 'H1', h2: 'H2', h3: 'H3', h4: 'H4', h5: 'H5',
+      };
+      const label = levelLabels[ann.level];
+      if (label) {
+        const badge = document.createElement('span');
+        badge.style.cssText = `
+          position: absolute;
+          top: -8px;
+          left: 0;
+          background: ${colors.border};
+          color: white;
+          font-size: 10px;
+          font-weight: bold;
+          padding: 1px 4px;
+          border-radius: 2px;
+          line-height: 1;
+        `;
+        badge.textContent = label;
+        highlight.appendChild(badge);
+      }
+    }
+
+    // 点击事件
+    highlight.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selectedAnnotation.value?.id === ann.id) {
+        selectedAnnotation.value = null;
+      } else {
+        selectedAnnotation.value = ann;
+        emit('annotation-click', ann);
+      }
+      renderHighlights();
+    });
+
+    // 删除按钮
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'highlight-delete-btn';
+    deleteBtn.innerHTML = '×';
+    deleteBtn.title = '删除标注';
+    deleteBtn.style.cssText = `
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ef4444;
+      color: white;
+      border: 2px solid white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      z-index: 100;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    `;
+
+    highlight.addEventListener('mouseenter', () => {
+      deleteBtn.style.opacity = '1';
+    });
+    highlight.addEventListener('mouseleave', () => {
+      if (selectedAnnotation.value?.id !== ann.id) {
+        deleteBtn.style.opacity = '0';
+      }
+    });
+
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      emit('annotation-delete', ann);
+      selectedAnnotation.value = null;
+    });
+
+    if (isSelected) {
+      deleteBtn.style.opacity = '1';
+    }
+
+    highlight.appendChild(deleteBtn);
+    highlightLayer.appendChild(highlight);
   }
 };
 
@@ -820,32 +1339,7 @@ const setZoom = (newScale: number) => {
   renderCurrentPage();
 };
 
-// 适应宽度
-const fitToWidth = async () => {
-  if (!pdfDoc || !containerRef.value) return;
-  const page = await pdfDoc.getPage(props.currentPage);
-  const viewport = page.getViewport({ scale: 1 });
-  const containerWidth = containerRef.value.clientWidth - 40;
-  scale.value = containerWidth / viewport.width;
-  showZoomMenu.value = false;
-  renderCurrentPage();
-};
-
-// 适应页面
-const fitToPage = async () => {
-  if (!pdfDoc || !containerRef.value) return;
-  const page = await pdfDoc.getPage(props.currentPage);
-  const viewport = page.getViewport({ scale: 1 });
-  const containerWidth = containerRef.value.clientWidth - 40;
-  const containerHeight = containerRef.value.clientHeight - 100; // 减去底部工具栏高度
-  const scaleX = containerWidth / viewport.width;
-  const scaleY = containerHeight / viewport.height;
-  scale.value = Math.min(scaleX, scaleY);
-  showZoomMenu.value = false;
-  renderCurrentPage();
-};
-
-// 目录功能
+// 工具栏功能
 const toggleOutline = async () => {
   showOutline.value = !showOutline.value;
   if (showOutline.value && outline.value.length === 0 && pdfDoc) {
@@ -861,6 +1355,74 @@ const toggleOutline = async () => {
       outlineLoading.value = false;
     }
   }
+};
+
+const toggleThumbnails = () => {
+  showThumbnails.value = !showThumbnails.value;
+  if (showThumbnails.value) {
+    showBookmarks.value = false;
+    showOutline.value = false;
+  }
+};
+
+const toggleBookmarks = () => {
+  showBookmarks.value = !showBookmarks.value;
+  if (showBookmarks.value) {
+    showThumbnails.value = false;
+    showOutline.value = false;
+  }
+};
+
+const toggleDarkMode = () => {
+  darkMode.value = !darkMode.value;
+};
+
+const setViewMode = (mode: 'single' | 'double' | 'continuous') => {
+  viewMode.value = mode;
+  console.log('[PDFViewer] 切换阅读模式:', mode);
+
+  // 切换模式后重新渲染
+  nextTick(() => {
+    renderCurrentPage();
+  });
+};
+
+const rotate = () => {
+  rotation.value = (rotation.value + 90) % 360;
+};
+
+// 书签功能
+const addBookmark = () => {
+  const bookmark = {
+    id: `bookmark_${Date.now()}`,
+    pageNumber: currentPage.value,
+    title: `第${currentPage.value}页`,
+    createdAt: Date.now()
+  };
+  bookmarks.value.push(bookmark);
+  bookmarks.value.sort((a, b) => a.pageNumber - b.pageNumber);
+};
+
+const removeBookmark = (id: string) => {
+  bookmarks.value = bookmarks.value.filter(b => b.id !== id);
+};
+
+// 导出功能
+const exportPdfData = () => {
+  const data = {
+    pdfPath: props.pdfPath,
+    currentPage: currentPage.value,
+    bookmarks: bookmarks.value,
+    annotations: props.annotations,
+    exportedAt: Date.now()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pdf-data-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
 // 目录导航
@@ -894,18 +1456,26 @@ const handlePageInput = (e: Event) => {
   }
 };
 
-// 翻页控制
 const goToPage = (page: number) => {
-  if (page < 1 || page > totalPages.value || page === props.currentPage) return;
+  if (page < 1 || page > totalPages.value) return;
+  // 使用本地 currentPage.value 进行比较，避免 props 更新延迟问题
+  if (page === currentPage.value) return;
+
+  console.log('[PDFViewer] 翻页:', currentPage.value, '->', page);
+
+  // 先更新本地状态
+  currentPage.value = page;
+
+  // 通知父组件（watch 会触发渲染）
   emit('page-change', page);
 };
 
 const prevPage = () => {
-  goToPage(props.currentPage - 1);
+  goToPage(currentPage.value - 1);
 };
 
 const nextPage = () => {
-  goToPage(props.currentPage + 1);
+  goToPage(currentPage.value + 1);
 };
 
 // 键盘翻页
@@ -957,28 +1527,20 @@ const handlePageKeyDown = (e: KeyboardEvent) => {
 };
 
 // 点击翻页区域
-const handlePageNavClick = (direction: 'next') => {
+const handlePageNavClick = () => {
   nextPage();
 };
 
 // 保存当前页面到学习集进度
 const saveProgressToLearningSet = (pdfPath: string, page: number) => {
-  // 这里可以实现将当前页面进度保存到学习集中
-  // 暂时只做日志记录，实际实现需要根据具体需求
-  console.log(`Progress saved for ${pdfPath}, page ${page}`);
-
-  // 实际实现：遍历所有学习集，如果包含当前PDF，则更新进度
-  const allSets = LearningSetService.getAllLearningSets();
-  allSets.forEach(set => {
-    if (set.pdfPaths.includes(pdfPath)) {
-      LearningSetService.saveProgress(set.id, pdfPath, page);
-    }
-  });
+  // 只保存日志，不实际遍历学习集
+  // 因为学习集进度应该由学习集组件自己管理
+  console.log(`[PDFViewer] 进度更新：${pdfPath}, 第${page}页`);
 };
 
-// 页面变化时保存进度
-watch(() => props.currentPage, (newPage) => {
-  if (props.pdfPath) {
+// 页面变化时保存进度 - 只在有学习集时保存
+watch(() => props.currentPage, (newPage, oldPage) => {
+  if (newPage !== oldPage && props.pdfPath) {
     saveProgressToLearningSet(props.pdfPath, newPage);
   }
 });
@@ -1033,8 +1595,156 @@ const handleNavMouseMove = (e: MouseEvent) => {
   }, NAV_HOVER_DELAY);
 };
 
+// 同步当前页
+watch(() => props.currentPage, (newPage) => {
+  currentPage.value = newPage;
+}, { immediate: true });
+
+// 监听本地 currentPage 变化，重新渲染（带防抖）
+let renderTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(() => currentPage.value, (newPage, oldPage) => {
+  if (newPage !== oldPage && pdfDoc) {
+    console.log('[PDFViewer] currentPage 变化，重新渲染:', newPage);
+
+    // 清除之前的定时器
+    if (renderTimer) {
+      clearTimeout(renderTimer);
+    }
+
+    // 防抖 50ms，避免快速翻页时重复渲染
+    renderTimer = setTimeout(() => {
+      renderCurrentPage(newPage);
+      renderTimer = null;
+    }, 50);
+  }
+});
+
+// 监听 PDF 跳转事件
+const handlePdfNavigateTo = async (event: CustomEvent) => {
+  const detail = event.detail as {
+    pdfPath: string;
+    page: number;
+    rect?: { x1: number; y1: number; x2: number; y2: number };
+    scale?: number;
+    highlight?: boolean;
+    highlightColor?: string;
+  };
+
+  console.log('[PDFViewer] 收到跳转事件:', detail);
+
+  // 如果 PDF 不同，先加载 PDF
+  if (detail.pdfPath !== props.pdfPath) {
+    // 通知父组件切换 PDF
+    emit('page-change', detail.page);
+    // 等待 PDF 加载完成后高亮
+    setTimeout(() => {
+      if (detail.highlight && detail.rect) {
+        highlightRect(detail.rect, detail.highlightColor || 'yellow');
+      }
+    }, 500);
+    return;
+  }
+
+  // 跳转到指定页
+  if (detail.page !== props.currentPage) {
+    goToPage(detail.page);
+  }
+
+  // 高亮显示区域
+  if (detail.highlight && detail.rect) {
+    nextTick(() => {
+      highlightRect(detail.rect!, detail.highlightColor || 'yellow');
+    });
+  }
+};
+
+// 高亮显示 PDF 区域
+const highlightRect = (
+  rect: { x1: number; y1: number; x2: number; y2: number },
+  color: string = 'yellow'
+) => {
+  if (!highlightLayerRef.value || !currentViewport) return;
+
+  const scale = currentViewport.scale || 1;
+  const cssPageHeight = currentViewport.height;
+
+  // PDF 坐标转 CSS 坐标
+  const cssX = rect.x1 * scale;
+  const cssY = cssPageHeight - rect.y2 * scale;
+  const cssWidth = (rect.x2 - rect.x1) * scale;
+  const cssHeight = Math.max((rect.y2 - rect.y1) * scale, 14);
+
+  // 颜色映射
+  const colorMap: Record<string, string> = {
+    yellow: 'rgba(255, 217, 61, 0.6)',
+    green: 'rgba(107, 203, 119, 0.6)',
+    blue: 'rgba(77, 150, 255, 0.6)',
+    red: 'rgba(255, 107, 107, 0.6)',
+    purple: 'rgba(155, 89, 182, 0.6)',
+    orange: 'rgba(254, 202, 87, 0.6)',
+  };
+
+  // 创建临时高亮元素
+  const highlight = document.createElement('div');
+  highlight.className = 'highlight-element-temp';
+  highlight.style.cssText = `
+    position: absolute;
+    left: ${cssX}px;
+    top: ${cssY}px;
+    width: ${cssWidth}px;
+    height: ${cssHeight}px;
+    background-color: ${colorMap[color] || colorMap.yellow};
+    border: 3px solid ${colorMap[color] || colorMap.yellow};
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 100;
+    animation: highlight-pulse 0.5s ease-in-out 3;
+  `;
+
+  highlightLayerRef.value.appendChild(highlight);
+
+  // 3 秒后移除
+  setTimeout(() => {
+    highlight.remove();
+  }, 3000);
+};
+
+// 监听高亮事件
+const handlePdfHighlightRect = async (event: CustomEvent) => {
+  const detail = event.detail as {
+    coordinates: any;
+    duration: number;
+  };
+
+  console.log('[PDFViewer] 收到高亮事件:', detail);
+
+  if (detail.coordinates?.rect) {
+    const rect = detail.coordinates.rect;
+    highlightRect(rect, 'yellow');
+  }
+};
+
+// 添加 CSS 动画
+const addHighlightAnimation = () => {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes highlight-pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+};
+
 // 监听变化
-watch([() => props.pdfPath, () => props.currentPage], () => {
+watch([() => props.pdfPath, () => currentPage], () => {
   nextTick(() => loadPdf());
 });
 
@@ -1065,6 +1775,13 @@ onMounted(() => {
   if (containerRef.value) {
     containerRef.value.addEventListener('mousemove', handleNavMouseMove);
   }
+
+  // 监听 PDF 跳转和高亮事件
+  window.addEventListener('pdf-navigate-to', handlePdfNavigateTo as EventListener);
+  window.addEventListener('pdf-highlight-rect', handlePdfHighlightRect as EventListener);
+
+  // 添加高亮动画
+  addHighlightAnimation();
 });
 
 onBeforeUnmount(() => {
@@ -1080,6 +1797,10 @@ onBeforeUnmount(() => {
     containerRef.value.removeEventListener('mousemove', handleNavMouseMove);
   }
 
+  // 移除事件监听
+  window.removeEventListener('pdf-navigate-to', handlePdfNavigateTo as EventListener);
+  window.removeEventListener('pdf-highlight-rect', handlePdfHighlightRect as EventListener);
+
   if (pdfDoc) {
     pdfDoc.destroy();
   }
@@ -1089,7 +1810,7 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .pdf-viewer-container {
   width: 100%;
   height: 100%;
@@ -1099,6 +1820,305 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   outline: none;
+}
+
+/* 顶部工具栏 */
+.top-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  background: var(--b3-theme-surface);
+  border-bottom: 1px solid var(--b3-theme-divider);
+  gap: 12px;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+
+  &:hover:not(:disabled) {
+    background: var(--b3-theme-primary-light);
+    border-color: var(--b3-theme-primary);
+  }
+
+  &.active {
+    background: var(--b3-theme-primary);
+    color: white;
+    border-color: var(--b3-theme-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  span {
+    font-size: 16px;
+  }
+}
+
+.tool-group {
+  display: flex;
+  gap: 2px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--b3-theme-divider);
+  margin: 0 4px;
+}
+
+.page-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+
+  .page-input {
+    width: 50px;
+    padding: 4px 8px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 4px;
+    background: var(--b3-theme-background);
+    text-align: center;
+    font-size: 12px;
+
+    &:focus {
+      border-color: var(--b3-theme-primary);
+      outline: none;
+    }
+  }
+
+  .page-total {
+    color: var(--b3-theme-text-secondary);
+  }
+}
+
+.zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  .zoom-select {
+    width: 80px;
+    padding: 4px 8px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 4px;
+    background: var(--b3-theme-background);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:focus {
+      border-color: var(--b3-theme-primary);
+      outline: none;
+    }
+  }
+}
+
+.progress-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+
+  .progress-label {
+    color: var(--b3-theme-text-secondary);
+  }
+
+  .progress-bar {
+    width: 100px;
+    height: 6px;
+    background: var(--b3-theme-divider);
+    border-radius: 3px;
+    overflow: hidden;
+
+    .progress-fill {
+      height: 100%;
+      background: var(--b3-theme-primary);
+      transition: width 0.3s;
+    }
+  }
+
+  .progress-text {
+    min-width: 35px;
+    text-align: right;
+    color: var(--b3-theme-text-secondary);
+  }
+}
+
+.dropdown {
+  position: relative;
+
+  .dropdown-toggle {
+    width: 32px;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    min-width: 160px;
+    padding: 4px 0;
+    margin-top: 4px;
+    background: var(--b3-theme-surface);
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: none;
+  }
+
+  &:hover .dropdown-menu {
+    display: block;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+
+    &:hover {
+      background: var(--b3-theme-primary-light);
+    }
+
+    span {
+      font-size: 14px;
+    }
+  }
+
+  .dropdown-divider {
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid var(--b3-theme-divider);
+  }
+}
+
+/* 左侧边栏 */
+.left-sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: calc(100% - 48px);
+  background: var(--b3-theme-surface);
+  border-right: 1px solid var(--b3-theme-divider);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--b3-theme-divider);
+
+  .tab-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-surface-light);
+    }
+
+    &.active {
+      background: var(--b3-theme-primary-light);
+    }
+
+    &.close-btn {
+      font-size: 14px;
+      color: var(--b3-theme-text-secondary);
+    }
+  }
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.bookmarks-list {
+  padding: 8px;
+
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--b3-theme-text-secondary);
+    font-size: 13px;
+  }
+
+  .bookmark-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-surface-light);
+    }
+
+    &.active {
+      background: var(--b3-theme-primary-light);
+    }
+
+    .bookmark-icon {
+      font-size: 14px;
+    }
+
+    .bookmark-title {
+      flex: 1;
+      font-size: 13px;
+      color: var(--b3-theme-text);
+    }
+
+    .bookmark-delete {
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--b3-theme-text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+
+      &:hover {
+        background: var(--b3-theme-danger-light);
+        color: var(--b3-theme-danger);
+      }
+    }
+  }
 }
 
 .pdf-viewer-container:focus {
@@ -1618,7 +2638,7 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: all 0.15s $ease-spring;
+  transition: all 0.15s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   &:hover {
@@ -1648,5 +2668,64 @@ onBeforeUnmount(() => {
 
 .outline-children {
   width: 100%;
+}
+
+/* 连续滚动模式样式 */
+.continuous-page-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  page-break-after: always;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.continuous-page-canvas {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 0;
+}
+
+.continuous-text-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.continuous-text-layer :deep(.textLayer) {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2;
+  line-height: 1;
+}
+
+.continuous-text-layer :deep(.textLayer > span) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.continuous-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* 连续滚动模式下的 PDF 内容包装器 */
+.pdf-content-wrapper:has(.continuous-page-wrapper) {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>

@@ -122,55 +122,107 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import type { ReviewQueueItem, ReviewSession as ReviewSessionType } from '../types/review';
+import type { Card, FlashCard } from '../types/card';
 import type { ReviewQualityLabel } from '../types/review';
 import { reviewService } from '../services/reviewService';
 import { qualityLabelToScore } from '../review/sm2';
 
 interface Props {
-  queue: ReviewQueueItem[];
-  session?: ReviewSessionType;
+  queue?: Card[];
+  session?: any;
+  studySetId?: string;
+  onClose?: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  queue: undefined,
   session: undefined,
+  studySetId: '',
+  onClose: undefined,
 });
 
 const emit = defineEmits<{
   (e: 'rate', cardId: string, quality: number): void;
-  (e: 'complete', session: ReviewSessionType): void;
+  (e: 'complete', session: any): void;
   (e: 'continue'): void;
+  (e: 'close'): void;
 }>();
+
+// 内部状态
+interface InternalQueueItem {
+  cardId: string;
+  front: string;
+  back: string;
+  sourceLocation?: {
+    pdfPath?: string;
+    page?: number;
+  };
+}
 
 // 状态
 const showAnswer = ref(false);
 const currentCardIndex = ref(0);
-const sessionInternal = ref<ReviewSessionType>(
-  props.session || reviewService.createReviewSession('', props.queue)
-);
+const queueInternal = ref<InternalQueueItem[]>([]);
+const reviewedCount = ref(0);
+const correctCount = ref(0);
+const startTime = ref(Date.now());
+
+// 初始化队列
+function initQueue() {
+  if (props.queue && props.queue.length > 0) {
+    queueInternal.value = props.queue
+      .filter(card => card.type === 'flashcard' || card.type === 'card' || card.type === 'excerpt')
+      .map(card => ({
+        cardId: card.id,
+        front: card.content || '',
+        back: card.note || card.content || '',
+        sourceLocation: card.sourceLocation
+      }));
+  } else {
+    queueInternal.value = [];
+  }
+}
 
 // 当前卡片
 const currentCard = computed(() => {
-  if (currentCardIndex.value >= sessionInternal.value.queue.length) {
+  if (currentCardIndex.value >= queueInternal.value.length) {
     return null;
   }
-  return sessionInternal.value.queue[currentCardIndex.value];
+  return queueInternal.value[currentCardIndex.value];
 });
 
 // 进度
 const progress = computed(() => {
-  return reviewService.getReviewProgress(sessionInternal.value);
+  const total = queueInternal.value.length;
+  const current = Math.min(currentCardIndex.value + 1, total);
+  return {
+    total,
+    current,
+    percentage: total > 0 ? Math.round((current / total) * 100) : 0
+  };
 });
 
 // 剩余卡片
 const remainingCount = computed(() => {
-  return sessionInternal.value.queue.length - currentCardIndex.value;
+  return queueInternal.value.length - currentCardIndex.value - 1;
 });
 
 // 会话统计
 const sessionStats = computed(() => {
-  return reviewService.getReviewSummary(sessionInternal.value);
+  const total = queueInternal.value.length;
+  const incorrect = reviewedCount.value - correctCount.value;
+  const duration = Math.round((Date.now() - startTime.value) / 1000);
+  return {
+    totalCards: total,
+    correctCount: correctCount.value,
+    incorrectCount: incorrect,
+    accuracyRate: reviewedCount.value > 0 ? Math.round((correctCount.value / reviewedCount.value) * 100) : 0,
+    durationSeconds: duration
+  };
 });
+
+// 初始化
+initQueue();
 
 // 键盘快捷键
 function handleKeyDown(e: KeyboardEvent) {
@@ -205,13 +257,12 @@ function handleRateByScore(quality: number) {
   if (!currentCard.value) return;
 
   try {
-    const { session: updatedSession } = reviewService.processReviewAnswer(
-      sessionInternal.value,
-      currentCard.value.cardId,
-      quality
-    );
+    // 记录评分
+    reviewedCount.value++;
+    if (quality >= 3) {
+      correctCount.value++;
+    }
 
-    sessionInternal.value = updatedSession;
     emit('rate', currentCard.value.cardId, quality);
 
     // 移动到下一张
@@ -223,7 +274,7 @@ function handleRateByScore(quality: number) {
 }
 
 // 获取来源文本
-function getSourceText(location: ReviewQueueItem['sourceLocation']): string {
+function getSourceText(location: InternalQueueItem['sourceLocation']): string {
   if (!location) return '';
   if (location.pdfPath) {
     const fileName = location.pdfPath.split('/').pop() || '';
@@ -244,8 +295,14 @@ function formatDuration(seconds: number): string {
 
 // 完成处理
 function handleComplete() {
-  const completedSession = reviewService.completeReviewSession(sessionInternal.value);
-  emit('complete', completedSession);
+  emit('complete', {
+    totalCards: queueInternal.value.length,
+    correctCount: correctCount.value,
+    duration: Date.now() - startTime.value
+  });
+  if (props.onClose) {
+    props.onClose();
+  }
 }
 
 // 继续复习

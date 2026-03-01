@@ -1,0 +1,355 @@
+/**
+ * MarginNote 风格动画效果
+ * 全局动画样式定义
+ */
+
+// ==================== 卡片动画 ====================
+
+// 卡片创建动画 - 淡入 + 缩放
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// 卡片删除动画 - 淡出 + 缩小
+@keyframes cardDisappear {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+}
+
+// 卡片强调动画 - 用于高亮/选中
+@keyframes cardEmphasis {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(64, 158, 255, 0.4);
+  }
+}
+
+// 卡片抖动动画 - 用于错误提示
+@keyframes cardShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+// ==================== 分组容器动画 ====================
+
+// 分组容器创建动画
+@keyframes groupAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 分组展开动画
+@keyframes groupExpand {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+// ==================== 连线动画 ====================
+
+// 连线流动动画
+@keyframes linkFlow {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+// 连线创建动画
+@keyframes linkAppear {
+  from {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+// 连线脉冲动画
+@keyframes linkPulse {
+  0%, 100% {
+    stroke-width: 2;
+    opacity: 0.6;
+  }
+  50% {
+    stroke-width: 3;
+    opacity: 1;
+  }
+}
+
+// ==================== 连接点动画 ====================
+
+// 连接点呼吸动画
+@keyframes handleBreathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+// 连接点激活动画
+@keyframes handleActivate {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// ==================== 工具栏动画 ====================
+
+// 工具栏滑入动画
+@keyframes toolbarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 工具栏按钮悬停动画
+@keyframes buttonHover {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+// ==================== 加载动画 ====================
+
+// 脉冲加载动画
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+// 旋转加载动画
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 弹跳加载动画
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+// ==================== 视图切换动画 ====================
+
+// 缩放进入动画
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 缩放退出动画
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+// 平移进入动画
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// 平移进入动画（右）
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// ==================== 工具类 ====================
+
+// 动画时长变量
+$animation-duration-fast: 0.15s;
+$animation-duration-normal: 0.25s;
+$animation-duration-slow: 0.4s;
+
+// 缓动函数
+$ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+$ease-in-out-cubic: cubic-bezier(0.65, 0, 0.35, 1);
+$ease-spring: cubic-bezier(0.4, 0, 0.2, 1);
+
+// ==================== 应用动画类 ====================
+
+// 卡片动画类
+.marginnote-card-appear {
+  animation: cardAppear $animation-duration-slow $ease-spring;
+}
+
+.marginnote-card-disappear {
+  animation: cardDisappear $animation-duration-slow $ease-spring reverse;
+}
+
+.marginnote-card-emphasis {
+  animation: cardEmphasis 0.6s $ease-spring;
+}
+
+.marginnote-card-shake {
+  animation: cardShake 0.3s $ease-spring;
+}
+
+// 分组动画类
+.marginnote-group-appear {
+  animation: groupAppear $animation-duration-slow $ease-spring;
+}
+
+.marginnote-group-expand {
+  animation: groupExpand $animation-duration-slow $ease-spring;
+}
+
+// 连线动画类
+.marginnote-link-flow {
+  stroke-dasharray: 10;
+  animation: linkFlow 1s linear infinite;
+}
+
+.marginnote-link-appear {
+  animation: linkAppear $animation-duration-slow $ease-spring forwards;
+}
+
+.marginnote-link-pulse {
+  animation: linkPulse 1.5s ease-in-out infinite;
+}
+
+// 连接点动画类
+.marginnote-handle-breathe {
+  animation: handleBreathe 2s ease-in-out infinite;
+}
+
+.marginnote-handle-activate {
+  animation: handleActivate 0.3s $ease-spring;
+}
+
+// 工具栏动画类
+.marginnote-toolbar-slide-in {
+  animation: toolbarSlideIn $animation-duration-normal $ease-spring;
+}
+
+.marginnote-button-hover {
+  animation: buttonHover 0.3s $ease-spring;
+}
+
+// 加载动画类
+.marginnote-loading-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.marginnote-loading-spin {
+  animation: spin 1s linear infinite;
+}
+
+.marginnote-loading-bounce {
+  animation: bounce 0.6s ease-in-out infinite;
+}
+
+// 视图切换动画类
+.marginnote-zoom-in {
+  animation: zoomIn $animation-duration-slow $ease-spring;
+}
+
+.marginnote-zoom-out {
+  animation: zoomOut $animation-duration-slow $ease-spring;
+}
+
+.marginnote-slide-in-left {
+  animation: slideInLeft $animation-duration-slow $ease-spring;
+}
+
+.marginnote-slide-in-right {
+  animation: slideInRight $animation-duration-slow $ease-spring;
+}

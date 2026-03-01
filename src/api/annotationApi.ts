@@ -1,7 +1,7 @@
 // src/api/annotationApi.ts
 import { postApi } from './siyuanApi';
 import type { SiYuanBlock } from '../types/siyuan';
-import type { PDFAnnotation, AnnotationStats, AnnotationColor, AnnotationLevel } from '../types/annotaion';
+import type { PDFAnnotation, AnnotationStats, AnnotationColor, AnnotationLevel, AnnotationComment, CommentPriority, CommentStatus } from '../types/annotation';
 import { parseAnnotationFromBlock } from '../utils/annotationParser';
 
 /**
@@ -124,7 +124,7 @@ export async function createAnnotation(options: {
   imagePath?: string;
 }): Promise<string> {
   const level = options.level || 'text';
-  
+
   // 构建 file-annotation-ref 字符串
   const rectString = options.rect.join(',');
   const fileAnnotationRef = `assets/${options.pdfName}?path=${options.pdfPath}&page=${options.page}&rect=${encodeURIComponent(rectString)}`;
@@ -136,11 +136,11 @@ export async function createAnnotation(options: {
   if (options.isImage && options.imagePath) {
     // 图片摘录 - 直接显示图片
     // 图片路径应该是 assets/xxx.png 格式，用于Markdown引用
-    const imagePath = options.imagePath.startsWith('/data/') 
-      ? options.imagePath.slice(6) 
+    const imagePath = options.imagePath.startsWith('/data/')
+      ? options.imagePath.slice(6)
       : options.imagePath;
     const imageMarkdown = `![PDF截图](${imagePath})`;
-    
+
     switch (level) {
       case 'title':
         markdown = `${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
@@ -323,4 +323,153 @@ export function getAnnotationStats(annotations: PDFAnnotation[]): AnnotationStat
   }
 
   return stats;
+}
+
+/** 批注存储属性名 */
+const COMMENTS_ATTR_NAME = 'custom-comments';
+
+/** 生成唯一 ID */
+const generateCommentId = (): string => {
+  return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+};
+
+/**
+ * 获取标注的所有批注
+ */
+export async function getAnnotationComments(blockId: string): Promise<AnnotationComment[]> {
+  try {
+    const result = await postApi<{ [key: string]: string }>(
+      '/api/attr/getBlockAttrs',
+      { id: blockId }
+    );
+
+    const commentsJson = result?.[COMMENTS_ATTR_NAME];
+    if (!commentsJson) {
+      return [];
+    }
+
+    return JSON.parse(commentsJson) as AnnotationComment[];
+  } catch (error) {
+    console.error('获取批注失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 添加批注
+ */
+export async function addAnnotationComment(
+  blockId: string,
+  params: {
+    text: string;
+    type?: 'text' | 'voice' | 'image';
+    priority?: CommentPriority;
+    tags?: string[];
+    voiceData?: AnnotationComment['voiceData'];
+    imageData?: AnnotationComment['imageData'];
+  }
+): Promise<AnnotationComment> {
+  const comments = await getAnnotationComments(blockId);
+
+  const now = Date.now();
+  const newComment: AnnotationComment = {
+    id: generateCommentId(),
+    type: params.type || 'text',
+    text: params.text,
+    createdAt: now,
+    updatedAt: now,
+    priority: params.priority || 'normal',
+    status: 'active',
+    tags: params.tags || [],
+    voiceData: params.voiceData,
+    imageData: params.imageData,
+  };
+
+  comments.push(newComment);
+
+  await postApi('/api/attr/setBlockAttrs', {
+    id: blockId,
+    attrs: {
+      [COMMENTS_ATTR_NAME]: JSON.stringify(comments),
+      'custom-updated': now.toString(),
+    },
+  });
+
+  return newComment;
+}
+
+/**
+ * 更新批注
+ */
+export async function updateAnnotationComment(
+  blockId: string,
+  commentId: string,
+  params: {
+    text?: string;
+    priority?: CommentPriority;
+    status?: CommentStatus;
+    tags?: string[];
+  }
+): Promise<AnnotationComment | null> {
+  const comments = await getAnnotationComments(blockId);
+  const index = comments.findIndex(c => c.id === commentId);
+
+  if (index === -1) {
+    return null;
+  }
+
+  const now = Date.now();
+  comments[index] = {
+    ...comments[index],
+    ...params,
+    updatedAt: now,
+  };
+
+  await postApi('/api/attr/setBlockAttrs', {
+    id: blockId,
+    attrs: {
+      [COMMENTS_ATTR_NAME]: JSON.stringify(comments),
+      'custom-updated': now.toString(),
+    },
+  });
+
+  return comments[index];
+}
+
+/**
+ * 删除批注
+ */
+export async function deleteAnnotationComment(
+  blockId: string,
+  commentId: string
+): Promise<boolean> {
+  const comments = await getAnnotationComments(blockId);
+  const index = comments.findIndex(c => c.id === commentId);
+
+  if (index === -1) {
+    return false;
+  }
+
+  comments.splice(index, 1);
+
+  await postApi('/api/attr/setBlockAttrs', {
+    id: blockId,
+    attrs: {
+      [COMMENTS_ATTR_NAME]: comments.length > 0 ? JSON.stringify(comments) : '',
+      'custom-updated': Date.now().toString(),
+    },
+  });
+
+  return true;
+}
+
+/**
+ * 更新批注状态
+ */
+export async function updateCommentStatus(
+  blockId: string,
+  commentId: string,
+  status: CommentStatus
+): Promise<AnnotationComment | null> {
+  return updateAnnotationComment(blockId, commentId, { status });
 }

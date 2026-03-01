@@ -2,6 +2,7 @@ import {
   Plugin,
 } from "siyuan";
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 
 let plugin = null
@@ -24,7 +25,11 @@ export function init(plugin: Plugin) {
   const div = document.createElement('div')
   div.classList.toggle('fangmu-pdf-siyuan-app')
   div.id = this.name
+
+  // 创建 Pinia 实例并挂载应用
+  const pinia = createPinia()
   app = createApp(App)
+  app.use(pinia)
   app.mount(div)
   document.body.appendChild(div)
 }

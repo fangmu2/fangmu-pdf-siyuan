@@ -22,8 +22,11 @@ export type {
 export type {
   PDFAnnotation,
   AnnotationLevel,
-  AnnotationWithChildren,
-} from './annotaion';
+  AnnotationColor,
+  ExtractMode,
+  AnnotationGroup,
+  AnnotationStats,
+} from './annotation';
 
 // 卡片系统类型
 export type {

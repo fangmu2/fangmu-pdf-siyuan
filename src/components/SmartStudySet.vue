@@ -1,161 +1,226 @@
-<!-- src/components/SmartStudySet.vue -->
+<!-- src/components/SmartStudySet.vue - 智能学习集组件 -->
 <template>
   <div class="smart-study-set">
-    <!-- 智能学习集头部 -->
-    <div class="smart-header">
-      <div class="header-left">
-        <svg class="smart-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-        </svg>
-        <div class="header-info">
-          <h3 class="header-title">智能学习集</h3>
-          <p class="header-desc">根据规则自动筛选和管理卡片</p>
-        </div>
+    <!-- 智能学习集列表 -->
+    <div class="smart-study-set__list">
+      <div class="smart-study-set__header">
+        <h3 class="smart-study-set__title">📚 智能学习集</h3>
+        <button class="smart-study-set__add-btn" @click="showCreateDialog = true" title="创建智能学习集">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
       </div>
-      <button @click="showRuleEditor = true" class="add-rule-btn">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-        </svg>
-        添加规则
-      </button>
-    </div>
 
-    <!-- 规则列表 -->
-    <div class="rules-section">
-      <h4 class="section-title">筛选规则</h4>
-      <div class="rules-list">
-        <div v-if="rules.length === 0" class="empty-rules">
-          <p>暂无规则，点击"添加规则"创建</p>
+      <div v-if="smartSets.length === 0" class="smart-study-set__empty">
+        <span class="smart-study-set__empty-icon">💡</span>
+        <p class="smart-study-set__empty-text">暂无智能学习集</p>
+        <p class="smart-study-set__empty-hint">创建基于筛选条件的智能学习集</p>
+      </div>
+
+      <div
+        v-for="set in smartSets"
+        :key="set.id"
+        :class="['smart-study-set__item', { active: selectedSetId === set.id }]"
+        @click="selectSmartSet(set)"
+      >
+        <div class="smart-study-set__item-info">
+          <span class="smart-study-set__item-name">{{ set.name }}</span>
+          <span class="smart-study-set__item-count">{{ set.cardCount || 0 }} 张卡片</span>
         </div>
-        <div
-          v-for="(rule, index) in rules"
-          :key="rule.id"
-          class="rule-item"
-        >
-          <div class="rule-content">
-            <span class="rule-operator" v-if="index > 0">{{ rule.operator === 'and' ? '且' : '或' }}</span>
-            <div class="rule-condition">
-              <span class="rule-field">{{ getFieldLabel(rule.field) }}</span>
-              <span class="rule-comparator">{{ getComparatorLabel(rule.comparator) }}</span>
-              <span class="rule-value">{{ formatValue(rule.value) }}</span>
-            </div>
-          </div>
-          <div class="rule-actions">
-            <button @click="editRule(rule)" class="action-btn" title="编辑">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-              </svg>
-            </button>
-            <button @click="removeRule(rule)" class="action-btn delete" title="删除">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              </svg>
-            </button>
-          </div>
+        <div class="smart-study-set__item-actions">
+          <button
+            class="smart-study-set__item-btn"
+            @click.stop="editSmartSet(set)"
+            title="编辑"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+          </button>
+          <button
+            class="smart-study-set__item-btn"
+            @click.stop="deleteSmartSet(set)"
+            title="删除"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- 匹配结果预览 -->
-    <div class="preview-section">
-      <h4 class="section-title">
-        匹配预览
-        <span class="match-count">{{ matchedCards.length }} 张卡片</span>
-      </h4>
-      <div class="preview-cards">
-        <div v-if="matchedCards.length === 0" class="empty-preview">
-          <p>没有卡片匹配当前规则</p>
+    <!-- 筛选条件预览 -->
+    <div v-if="selectedSet" class="smart-study-set__preview">
+      <div class="smart-study-set__preview-header">
+        <h4 class="smart-study-set__preview-title">筛选条件</h4>
+        <button class="smart-study-set__refresh-btn" @click="refreshPreview" title="刷新">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="smart-study-set__conditions">
+        <div v-if="selectedSet.filters.status?.length" class="condition-item">
+          <span class="condition-item__label">状态：</span>
+          <span class="condition-item__value">
+            <span
+              v-for="status in selectedSet.filters.status"
+              :key="status"
+              :class="['condition-tag', `condition-tag--${status}`]"
+            >
+              {{ getStatusLabel(status) }}
+            </span>
+          </span>
         </div>
-        <div
-          v-for="card in matchedCards.slice(0, 10)"
-          :key="card.id"
-          class="preview-card"
-        >
-          <div class="preview-card-content">{{ truncateText(card.content, 50) }}</div>
-          <div class="preview-card-meta">
-            <span class="card-status" :class="card.status">{{ getStatusLabel(card.status) }}</span>
-            <span class="card-date">{{ formatDate(card.createdAt) }}</span>
-          </div>
+
+        <div v-if="selectedSet.filters.tags?.length" class="condition-item">
+          <span class="condition-item__label">标签：</span>
+          <span class="condition-item__value">
+            <span
+              v-for="tag in selectedSet.filters.tags"
+              :key="tag"
+              class="condition-tag"
+            >
+              {{ tag }}
+            </span>
+          </span>
         </div>
-        <div v-if="matchedCards.length > 10" class="more-cards">
-          还有 {{ matchedCards.length - 10 }} 张卡片...
+
+        <div v-if="selectedSet.filters.difficultyMin" class="condition-item">
+          <span class="condition-item__label">难度：</span>
+          <span class="condition-item__value">
+            ≥ {{ selectedSet.filters.difficultyMin }} 星
+          </span>
         </div>
+
+        <div v-if="selectedSet.filters.sourceDocId" class="condition-item">
+          <span class="condition-item__label">来源：</span>
+          <span class="condition-item__value">
+            {{ getSourceName(selectedSet.filters.sourceDocId) }}
+          </span>
+        </div>
+
+        <div class="condition-item condition-item--sort">
+          <span class="condition-item__label">排序：</span>
+          <span class="condition-item__value">
+            {{ getSortLabel(selectedSet.sortBy) }} {{ selectedSet.sortOrder === 'asc' ? '↑' : '↓' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="smart-study-set__preview-actions">
+        <button class="apply-filters-btn" @click="applyFilters">
+          应用筛选条件
+        </button>
       </div>
     </div>
 
-    <!-- 保存选项 -->
-    <div class="save-section">
-      <button @click="saveAsSmartSet" class="save-btn">
-        保存为智能学习集
-      </button>
-      <button @click="addToExistingSet" class="add-to-set-btn">
-        添加到现有学习集
-      </button>
-    </div>
-
-    <!-- 规则编辑器对话框 -->
-    <div v-if="showRuleEditor" class="dialog-overlay" @click="closeRuleEditor">
-      <div class="dialog rule-editor" @click.stop>
-        <div class="dialog-header">
-          <h3>{{ editingRule ? '编辑规则' : '添加规则' }}</h3>
-          <button @click="closeRuleEditor" class="close-btn">×</button>
+    <!-- 创建/编辑对话框 -->
+    <div v-if="showCreateDialog" class="dialog-overlay" @click="closeDialog">
+      <div class="dialog" @click.stop>
+        <div class="dialog__header">
+          <h3 class="dialog__title">{{ editingSet ? '编辑智能学习集' : '创建智能学习集' }}</h3>
+          <button class="dialog__close" @click="closeDialog">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
         </div>
-        <div class="dialog-body">
-          <!-- 逻辑运算符 -->
-          <div class="form-group" v-if="rules.length > 0 && !editingRule">
-            <label>逻辑关系</label>
-            <div class="operator-options">
-              <label class="operator-option">
-                <input type="radio" v-model="newRule.operator" value="and" />
-                <span>且 (同时满足)</span>
-              </label>
-              <label class="operator-option">
-                <input type="radio" v-model="newRule.operator" value="or" />
-                <span>或 (满足任一)</span>
-              </label>
-            </div>
-          </div>
 
-          <!-- 字段选择 -->
-          <div class="form-group">
-            <label>筛选字段</label>
-            <select v-model="newRule.field" class="form-select">
-              <option value="status">卡片状态</option>
-              <option value="type">卡片类型</option>
-              <option value="createdAt">创建日期</option>
-              <option value="updatedAt">更新日期</option>
-              <option value="srs.nextReview">下次复习时间</option>
-              <option value="srs.interval">复习间隔</option>
-              <option value="srs.ease">难度系数</option>
-              <option value="tags">标签</option>
-              <option value="content">内容包含</option>
-            </select>
-          </div>
-
-          <!-- 比较器选择 -->
-          <div class="form-group">
-            <label>比较方式</label>
-            <select v-model="newRule.comparator" class="form-select">
-              <option v-for="comp in availableComparators" :key="comp.value" :value="comp.value">
-                {{ comp.label }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 值输入 -->
-          <div class="form-group">
-            <label>值</label>
-            <component
-              :is="getValueInputType()"
-              v-model="newRule.value"
+        <div class="dialog__content">
+          <div class="form-item">
+            <label class="form-item__label">名称</label>
+            <input
+              v-model="formData.name"
+              type="text"
               class="form-input"
-              :placeholder="getValuePlaceholder()"
+              placeholder="例如：待复习卡片、重点难点..."
             />
           </div>
+
+          <div class="form-item">
+            <label class="form-item__label">描述（可选）</label>
+            <textarea
+              v-model="formData.description"
+              class="form-textarea"
+              placeholder="描述这个智能学习集的用途..."
+            ></textarea>
+          </div>
+
+          <div class="form-section">
+            <label class="form-section__title">筛选条件</label>
+
+            <div class="form-item">
+              <label class="form-item__label">状态</label>
+              <div class="checkbox-group">
+                <label
+                  v-for="status in statusOptions"
+                  :key="status.value"
+                  class="checkbox-item"
+                >
+                  <input
+                    type="checkbox"
+                    :value="status.value"
+                    v-model="formData.filters.status"
+                  />
+                  <span>{{ status.label }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-item">
+              <label class="form-item__label">标签</label>
+              <select v-model="formData.filters.tags" multiple class="form-select">
+                <option v-for="tag in allTags" :key="tag" :value="tag">{{ tag }}</option>
+              </select>
+              <span class="form-item__hint">按住 Ctrl/Cmd 多选</span>
+            </div>
+
+            <div class="form-item">
+              <label class="form-item__label">最小难度</label>
+              <div class="range-input">
+                <input
+                  v-model.number="formData.filters.difficultyMin"
+                  type="range"
+                  min="1"
+                  max="5"
+                  class="form-range"
+                />
+                <span class="range-value">{{ formData.filters.difficultyMin }} 星</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <label class="form-section__title">排序设置</label>
+
+            <div class="form-item form-item--inline">
+              <label class="form-item__label">排序方式</label>
+              <select v-model="formData.sortBy" class="form-select form-select--inline">
+                <option value="created">创建时间</option>
+                <option value="updated">更新时间</option>
+                <option value="nextReview">下次复习</option>
+                <option value="difficulty">难度</option>
+                <option value="alphabetical">字母顺序</option>
+              </select>
+
+              <label class="form-item__label form-item__label--margin">顺序</label>
+              <select v-model="formData.sortOrder" class="form-select form-select--inline">
+                <option value="asc">升序 ↑</option>
+                <option value="desc">降序 ↓</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div class="dialog-footer">
-          <button @click="closeRuleEditor" class="btn-cancel">取消</button>
-          <button @click="saveRule" class="btn-confirm">确定</button>
+
+        <div class="dialog__footer">
+          <button class="btn btn--secondary" @click="closeDialog">取消</button>
+          <button class="btn btn--primary" @click="saveSmartSet">
+            {{ editingSet ? '保存' : '创建' }}
+          </button>
         </div>
       </div>
     </div>
@@ -163,572 +228,482 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import type { Card, CardStatus, CardType } from '../types/card';
-import type { FlashCard } from '../types/card';
+import { ref, computed, onMounted } from 'vue';
+import { useCardStore } from '../stores/cardStore';
+import type { Card } from '../types/card';
 
-interface Rule {
+// 智能学习集接口
+interface SmartStudySetItem {
   id: string;
-  field: string;
-  comparator: string;
-  value: any;
-  operator?: 'and' | 'or';
+  name: string;
+  description?: string;
+  filters: {
+    status?: string[];
+    tags?: string[];
+    difficultyMin?: number;
+    sourceDocId?: string;
+  };
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  cardCount?: number;
 }
-
-interface Comparator {
-  value: string;
-  label: string;
-  applicableFields: string[];
-}
-
-const props = defineProps<{
-  cards: Card[];
-  studySetId?: string;
-}>();
 
 const emit = defineEmits<{
-  (e: 'save', rules: Rule[]): void;
-  (e: 'add-to-set', rules: Rule[], studySetId: string): void;
+  (e: 'apply-filters', filters: SmartStudySetItem['filters'], sort: { by: string; order: string }): void;
 }>();
 
-// 状态
-const rules = ref<Rule[]>([]);
-const showRuleEditor = ref(false);
-const editingRule = ref<Rule | null>(null);
+const cardStore = useCardStore();
 
-const newRule = ref<Rule>({
+// 状态
+const smartSets = ref<SmartStudySetItem[]>([]);
+const selectedSetId = ref<string>('');
+const showCreateDialog = ref(false);
+const editingSet = ref<SmartStudySetItem | null>(null);
+
+// 表单数据
+const formData = ref<SmartStudySetItem>({
   id: '',
-  field: 'status',
-  comparator: 'equals',
-  value: '',
-  operator: 'and',
+  name: '',
+  description: '',
+  filters: {
+    status: [],
+    tags: [],
+    difficultyMin: 1,
+  },
+  sortBy: 'updated',
+  sortOrder: 'desc',
 });
 
-// 比较器定义
-const comparators: Comparator[] = [
-  { value: 'equals', label: '等于', applicableFields: ['status', 'type'] },
-  { value: 'not_equals', label: '不等于', applicableFields: ['status', 'type'] },
-  { value: 'contains', label: '包含', applicableFields: ['content', 'tags'] },
-  { value: 'not_contains', label: '不包含', applicableFields: ['content', 'tags'] },
-  { value: 'greater_than', label: '大于', applicableFields: ['srs.interval', 'srs.ease', 'createdAt', 'updatedAt', 'srs.nextReview'] },
-  { value: 'less_than', label: '小于', applicableFields: ['srs.interval', 'srs.ease', 'createdAt', 'updatedAt', 'srs.nextReview'] },
-  { value: 'before', label: '早于', applicableFields: ['createdAt', 'updatedAt', 'srs.nextReview'] },
-  { value: 'after', label: '晚于', applicableFields: ['createdAt', 'updatedAt', 'srs.nextReview'] },
-  { value: 'is_empty', label: '为空', applicableFields: ['tags'] },
-  { value: 'is_not_empty', label: '不为空', applicableFields: ['tags'] },
+// 状态选项
+const statusOptions = [
+  { value: 'new', label: '新卡片' },
+  { value: 'learning', label: '学习中' },
+  { value: 'review', label: '复习中' },
+  { value: 'suspended', label: '已暂停' },
 ];
 
-// 可用比较器
-const availableComparators = computed(() => {
-  return comparators.filter(c => c.applicableFields.includes(newRule.value.field));
-});
+// 计算属性
+const selectedSet = computed(() =>
+  smartSets.value.find(s => s.id === selectedSetId.value)
+);
 
-// 匹配结果预览
-const matchedCards = computed(() => {
-  if (rules.value.length === 0) return [];
-
-  return props.cards.filter(card => {
-    return rules.value.every((rule, index) => {
-      const matches = evaluateRule(card, rule);
-
-      if (index === 0) return matches;
-
-      if (rule.operator === 'and') {
-        return matches;
-      } else {
-        return matches;
-      }
-    });
+const allTags = computed(() => {
+  const tagSet = new Set<string>();
+  cardStore.cards.forEach(card => {
+    card.tags?.forEach(tag => tagSet.add(tag));
   });
+  return Array.from(tagSet).sort();
 });
 
-// 评估规则
-const evaluateRule = (card: Card, rule: Rule): boolean => {
-  const value = getFieldValue(card, rule.field);
-
-  switch (rule.comparator) {
-    case 'equals':
-      return value === rule.value;
-    case 'not_equals':
-      return value !== rule.value;
-    case 'contains':
-      return String(value).includes(String(rule.value));
-    case 'not_contains':
-      return !String(value).includes(String(rule.value));
-    case 'greater_than':
-      return Number(value) > Number(rule.value);
-    case 'less_than':
-      return Number(value) < Number(rule.value);
-    case 'before':
-      return new Date(value) < new Date(rule.value);
-    case 'after':
-      return new Date(value) > new Date(rule.value);
-    case 'is_empty':
-      return !value || (Array.isArray(value) && value.length === 0);
-    case 'is_not_empty':
-      return !!value && (!Array.isArray(value) || value.length > 0);
-    default:
-      return false;
-  }
-};
-
-// 获取字段值
-const getFieldValue = (card: Card, field: string): any => {
-  const parts = field.split('.');
-  let value: any = card;
-
-  for (const part of parts) {
-    if (value === null || value === undefined) return null;
-    value = value[part];
-  }
-
-  return value;
-};
-
-// 字段标签
-const getFieldLabel = (field: string): string => {
+// 方法
+function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    'status': '状态',
-    'type': '类型',
-    'createdAt': '创建日期',
-    'updatedAt': '更新日期',
-    'srs.nextReview': '下次复习',
-    'srs.interval': '复习间隔',
-    'srs.ease': '难度系数',
-    'tags': '标签',
-    'content': '内容',
-  };
-  return labels[field] || field;
-};
-
-// 比较器标签
-const getComparatorLabel = (comparator: string): string => {
-  const comp = comparators.find(c => c.value === comparator);
-  return comp?.label || comparator;
-};
-
-// 格式化值
-const formatValue = (value: any): string => {
-  if (value === null || value === undefined) return '空';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') return String(value);
-  if (value instanceof Date) return value.toLocaleDateString('zh-CN');
-  return JSON.stringify(value);
-};
-
-// 状态标签
-const getStatusLabel = (status: CardStatus): string => {
-  const labels: Record<CardStatus, string> = {
-    'new': '新学',
-    'learning': '学习',
-    'review': '复习',
-    'mastered': '已掌握',
+    new: '新卡片',
+    learning: '学习中',
+    review: '复习中',
+    suspended: '已暂停',
   };
   return labels[status] || status;
-};
+}
 
-// 获取值输入类型
-const getValueInputType = (): string => {
-  const field = newRule.value.field;
-  if (['createdAt', 'updatedAt', 'srs.nextReview'].includes(field)) {
-    return 'input type="date"';
-  }
-  if (['status', 'type'].includes(field)) {
-    return 'select';
-  }
-  return 'input';
-};
-
-// 获取值占位符
-const getValuePlaceholder = (): string => {
-  const field = newRule.value.field;
-  if (field === 'status') return '选择状态...';
-  if (field === 'type') return '选择类型...';
-  if (['createdAt', 'updatedAt', 'srs.nextReview'].includes(field)) return '选择日期...';
-  return '输入值...';
-};
-
-// 截断文本
-const truncateText = (text: string, maxLength: number): string => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-};
-
-// 格式化日期
-const formatDate = (timestamp: number): string => {
-  return new Date(timestamp).toLocaleDateString('zh-CN');
-};
-
-// 编辑规则
-const editRule = (rule: Rule) => {
-  editingRule.value = rule;
-  newRule.value = { ...rule };
-  showRuleEditor.value = true;
-};
-
-// 移除规则
-const removeRule = (rule: Rule) => {
-  const index = rules.value.findIndex(r => r.id === rule.id);
-  if (index >= 0) {
-    rules.value.splice(index, 1);
-  }
-};
-
-// 关闭规则编辑器
-const closeRuleEditor = () => {
-  showRuleEditor.value = false;
-  editingRule.value = null;
-  newRule.value = {
-    id: '',
-    field: 'status',
-    comparator: 'equals',
-    value: '',
-    operator: 'and',
+function getSortLabel(sortBy: string): string {
+  const labels: Record<string, string> = {
+    created: '创建时间',
+    updated: '更新时间',
+    nextReview: '下次复习',
+    difficulty: '难度',
+    alphabetical: '字母顺序',
   };
-};
+  return labels[sortBy] || sortBy;
+}
 
-// 保存规则
-const saveRule = () => {
-  if (!newRule.value.value && newRule.value.comparator !== 'is_empty' && newRule.value.comparator !== 'is_not_empty') {
-    alert('请输入值');
-    return;
+function getSourceName(docId: string): string {
+  // TODO: 从文档列表中获取名称
+  return '文档';
+}
+
+function selectSmartSet(set: SmartStudySetItem) {
+  selectedSetId.value = set.id;
+}
+
+function editSmartSet(set: SmartStudySetItem) {
+  editingSet.value = set;
+  formData.value = { ...set };
+  showCreateDialog.value = true;
+}
+
+function deleteSmartSet(set: SmartStudySetItem) {
+  if (confirm(`确定要删除智能学习集"${set.name}"吗？`)) {
+    smartSets.value = smartSets.value.filter(s => s.id !== set.id);
+    if (selectedSetId.value === set.id) {
+      selectedSetId.value = '';
+    }
+    saveToStorage();
+  }
+}
+
+function refreshPreview() {
+  if (selectedSet.value) {
+    const cards = filterCards(selectedSet.value.filters);
+    selectedSet.value.cardCount = cards.length;
+  }
+}
+
+function filterCards(filters: SmartStudySetItem['filters']): Card[] {
+  let result = [...cardStore.cards];
+
+  if (filters.status?.length) {
+    result = result.filter(c => filters.status!.includes(c.status));
+  }
+  if (filters.tags?.length) {
+    result = result.filter(c =>
+      c.tags?.some(tag => filters.tags!.includes(tag))
+    );
+  }
+  if (filters.difficultyMin && filters.difficultyMin > 1) {
+    result = result.filter(c => c.difficulty >= filters.difficultyMin);
+  }
+  if (filters.sourceDocId) {
+    result = result.filter(c => c.sourceId === filters.sourceDocId);
   }
 
-  if (editingRule.value) {
-    const index = rules.value.findIndex(r => r.id === editingRule.value?.id);
-    if (index >= 0) {
-      rules.value[index] = { ...newRule.value, id: editingRule.value.id };
-    }
-  } else {
-    rules.value.push({
-      ...newRule.value,
-      id: `rule_${Date.now()}`,
+  return result;
+}
+
+function applyFilters() {
+  if (selectedSet.value) {
+    emit('apply-filters', selectedSet.value.filters, {
+      by: selectedSet.value.sortBy,
+      order: selectedSet.value.sortOrder,
     });
   }
+}
 
-  closeRuleEditor();
-};
-
-// 保存为智能学习集
-const saveAsSmartSet = () => {
-  if (rules.value.length === 0) {
-    alert('请至少添加一条规则');
+function saveSmartSet() {
+  if (!formData.value.name.trim()) {
+    alert('请输入名称');
     return;
   }
-  emit('save', rules.value);
-};
 
-// 添加到现有学习集
-const addToExistingSet = () => {
-  if (rules.value.length === 0) {
-    alert('请至少添加一条规则');
-    return;
+  if (editingSet.value) {
+    // 编辑模式
+    const index = smartSets.value.findIndex(s => s.id === editingSet.value!.id);
+    if (index !== -1) {
+      smartSets.value[index] = { ...formData.value, id: editingSet.value.id };
+    }
+  } else {
+    // 创建模式
+    const newSet: SmartStudySetItem = {
+      ...formData.value,
+      id: `smart_${Date.now()}`,
+    };
+    smartSets.value.push(newSet);
+    selectedSetId.value = newSet.id;
   }
-  // TODO: 显示学习集选择器
-  emit('add-to-set', rules.value, props.studySetId || '');
-};
+
+  saveToStorage();
+  closeDialog();
+}
+
+function saveToStorage() {
+  localStorage.setItem('smart-study-sets', JSON.stringify(smartSets.value));
+}
+
+function loadFromStorage() {
+  const stored = localStorage.getItem('smart-study-sets');
+  if (stored) {
+    try {
+      smartSets.value = JSON.parse(stored);
+    } catch (e) {
+      console.error('加载智能学习集失败:', e);
+    }
+  }
+}
+
+function closeDialog() {
+  showCreateDialog.value = false;
+  editingSet.value = null;
+  formData.value = {
+    id: '',
+    name: '',
+    description: '',
+    filters: {
+      status: [],
+      tags: [],
+      difficultyMin: 1,
+    },
+    sortBy: 'updated',
+    sortOrder: 'desc',
+  };
+}
+
+// 生命周期
+onMounted(() => {
+  loadFromStorage();
+  if (cardStore.cards.length === 0) {
+    cardStore.fetchCards();
+  }
+});
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .smart-study-set {
+  display: flex;
+  gap: 16px;
+  height: 100%;
   padding: 16px;
   background: var(--b3-theme-background);
+
+  &__list {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--b3-theme-color);
+    margin: 0;
+  }
+
+  &__add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-primary);
+      border-color: var(--b3-theme-primary);
+      color: white;
+    }
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+
+    &-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    &-text {
+      font-size: 14px;
+      color: var(--b3-theme-color);
+      margin: 0 0 4px;
+    }
+
+    &-hint {
+      font-size: 12px;
+      color: var(--b3-theme-color-light);
+    }
+  }
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--b3-theme-surface);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+
+    &:hover {
+      background: var(--b3-theme-primary-light);
+    }
+
+    &.active {
+      border-color: var(--b3-theme-primary);
+      background: var(--b3-theme-primary-light);
+    }
+
+    &-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    &-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--b3-theme-color);
+    }
+
+    &-count {
+      font-size: 11px;
+      color: var(--b3-theme-color-light);
+    }
+
+    &-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    &:hover &-actions {
+      opacity: 1;
+    }
+
+    &-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--b3-theme-divider);
+      border-radius: 4px;
+      background: var(--b3-theme-background);
+      color: var(--b3-theme-color);
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--b3-theme-primary);
+        border-color: var(--b3-theme-primary);
+        color: white;
+      }
+    }
+  }
+
+  &__preview {
+    flex: 1;
+    background: var(--b3-theme-surface);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  &__preview-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--b3-theme-color);
+    margin: 0;
+  }
+
+  &__refresh-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--b3-theme-divider);
+    border-radius: 6px;
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-primary);
+      border-color: var(--b3-theme-primary);
+      color: white;
+    }
+  }
+
+  &__conditions {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__preview-actions {
+    margin-top: auto;
+    padding-top: 16px;
+  }
 }
 
-/* 头部样式 */
-.smart-header {
+.condition-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--b3-border-color);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.smart-icon {
-  color: var(--b3-theme-primary);
-}
-
-.header-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.header-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--b3-theme-on-surface);
-}
-
-.header-desc {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--b3-theme-on-surface-light);
-}
-
-.add-rule-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--b3-theme-primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.add-rule-btn:hover {
-  opacity: 0.9;
-}
-
-/* 规则列表 */
-.rules-section {
-  margin-bottom: 20px;
-}
-
-.section-title {
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--b3-theme-on-surface);
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-}
-
-.match-count {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--b3-theme-primary);
-}
-
-.rules-list {
-  background: var(--b3-theme-surface);
-  border-radius: 8px;
-  padding: 8px;
-}
-
-.empty-rules {
-  padding: 24px;
-  text-align: center;
-  color: var(--b3-theme-on-surface-light);
-  font-size: 13px;
-}
-
-.rule-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--b3-theme-background);
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.rule-item:last-child {
-  margin-bottom: 0;
-}
-
-.rule-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.rule-operator {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--b3-theme-primary);
-  background: var(--b3-theme-primary-light);
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.rule-condition {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.rule-field {
-  color: var(--b3-theme-on-surface);
-}
-
-.rule-comparator {
-  color: var(--b3-theme-on-surface-light);
-}
-
-.rule-value {
-  color: var(--b3-theme-primary);
-  font-weight: 500;
-}
-
-.rule-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.rule-item:hover .rule-actions {
-  opacity: 1;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  color: var(--b3-theme-on-surface);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-}
-
-.action-btn:hover {
-  background: var(--b3-theme-surface-hover);
-}
-
-.action-btn.delete:hover {
-  background: rgba(244, 67, 54, 0.15);
-  color: #f44336;
-}
-
-/* 预览区域 */
-.preview-section {
-  margin-bottom: 20px;
-}
-
-.preview-cards {
-  background: var(--b3-theme-surface);
-  border-radius: 8px;
-  padding: 8px;
-}
-
-.empty-preview {
-  padding: 24px;
-  text-align: center;
-  color: var(--b3-theme-on-surface-light);
-  font-size: 13px;
-}
-
-.preview-card {
   padding: 12px;
   background: var(--b3-theme-background);
-  border-radius: 6px;
-  margin-bottom: 8px;
+  border-radius: 8px;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--b3-theme-color-light);
+    flex-shrink: 0;
+  }
+
+  &__value {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+  }
+
+  &--sort {
+    margin-top: auto;
+    background: var(--b3-theme-primary-light);
+  }
 }
 
-.preview-card:last-child {
-  margin-bottom: 0;
-}
-
-.preview-card-content {
-  font-size: 13px;
-  color: var(--b3-theme-on-surface);
-  margin-bottom: 8px;
-  line-height: 1.5;
-}
-
-.preview-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.card-status {
+.condition-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
   font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--b3-theme-surface-hover);
+  font-weight: 500;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-color);
+
+  &--new { background: var(--b3-theme-primary-light); color: var(--b3-theme-primary); }
+  &--learning { background: var(--b3-theme-warning-light); color: var(--b3-theme-warning); }
+  &--review { background: var(--b3-theme-success-light); color: var(--b3-theme-success); }
+  &--suspended { background: var(--b3-theme-background); color: var(--b3-theme-color-light); }
 }
 
-.card-status.new {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4CAF50;
-}
-
-.card-status.learning {
-  background: rgba(33, 150, 243, 0.15);
-  color: #2196F3;
-}
-
-.card-status.review {
-  background: rgba(255, 152, 0, 0.15);
-  color: #FF9800;
-}
-
-.card-status.mastered {
-  background: rgba(158, 158, 158, 0.15);
-  color: #9E9E9E;
-}
-
-.card-date {
-  font-size: 11px;
-  color: var(--b3-theme-on-surface-light);
-  margin-left: auto;
-}
-
-.more-cards {
-  padding: 8px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--b3-theme-on-surface-light);
-}
-
-/* 保存选项 */
-.save-section {
-  display: flex;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--b3-border-color);
-}
-
-.save-btn {
-  flex: 1;
-  padding: 10px 20px;
+.apply-filters-btn {
+  width: 100%;
+  padding: 12px;
   background: var(--b3-theme-primary);
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
+  transition: all 0.2s;
 
-.save-btn:hover {
-  opacity: 0.9;
-}
-
-.add-to-set-btn {
-  flex: 1;
-  padding: 10px 20px;
-  background: var(--b3-theme-surface);
-  color: var(--b3-theme-on-surface);
-  border: 1px solid var(--b3-border-color);
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.add-to-set-btn:hover {
-  background: var(--b3-theme-surface-hover);
+  &:hover {
+    background: var(--b3-theme-primary-dark);
+  }
 }
 
 /* 对话框样式 */
@@ -746,125 +721,207 @@ const addToExistingSet = () => {
 }
 
 .dialog {
-  background: var(--b3-theme-background);
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
+  width: 500px;
   max-height: 80vh;
-  overflow: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--b3-border-color);
-}
-
-.dialog-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.close-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  color: var(--b3-theme-on-surface);
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.close-btn:hover {
   background: var(--b3-theme-surface);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--b3-theme-divider);
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--b3-theme-color);
+    margin: 0;
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--b3-theme-color);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--b3-theme-background);
+    }
+  }
+
+  &__content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--b3-theme-divider);
+  }
 }
 
-.dialog-body {
-  padding: 20px;
-}
-
-.form-group {
+.form-item {
   margin-bottom: 16px;
+
+  &__label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--b3-theme-color);
+    margin-bottom: 8px;
+  }
+
+  &__hint {
+    display: block;
+    font-size: 11px;
+    color: var(--b3-theme-color-light);
+    margin-top: 4px;
+  }
+
+  &--inline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__label--margin {
+    margin-left: 12px;
+  }
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: var(--b3-theme-on-surface);
-}
-
-.form-select,
-.form-input {
+.form-input,
+.form-textarea,
+.form-select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--b3-border-color);
-  border-radius: 8px;
-  background: var(--b3-theme-surface);
-  color: var(--b3-theme-on-surface);
-  font-size: 14px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 6px;
+  background: var(--b3-theme-background);
+  color: var(--b3-theme-color);
+  font-size: 13px;
   font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: var(--b3-theme-primary);
+  }
 }
 
-.form-select:focus,
-.form-input:focus {
-  outline: none;
-  border-color: var(--b3-theme-primary);
+.form-textarea {
+  min-height: 80px;
+  resize: vertical;
 }
 
-.operator-options {
+.form-select {
+  cursor: pointer;
+
+  &--inline {
+    width: auto;
+    min-width: 120px;
+  }
+}
+
+.checkbox-group {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.operator-option {
+.checkbox-item {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--b3-theme-on-surface);
+  color: var(--b3-theme-color);
   cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
 }
 
-.dialog-footer {
+.range-input {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 20px;
-  border-top: 1px solid var(--b3-border-color);
+  align-items: center;
+  gap: 12px;
+
+  .form-range {
+    flex: 1;
+    cursor: pointer;
+  }
+
+  .range-value {
+    font-size: 13px;
+    color: var(--b3-theme-color);
+    min-width: 50px;
+  }
 }
 
-.btn-cancel,
-.btn-confirm {
-  padding: 8px 20px;
+.form-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--b3-theme-divider);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &__title {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--b3-theme-color-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+}
+
+.btn {
+  padding: 10px 20px;
   border-radius: 6px;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
+  transition: all 0.2s;
 
-.btn-cancel {
-  background: transparent;
-  border: 1px solid var(--b3-border-color);
-  color: var(--b3-theme-on-surface);
-}
+  &--secondary {
+    background: var(--b3-theme-background);
+    color: var(--b3-theme-color);
+    border: 1px solid var(--b3-theme-divider);
 
-.btn-cancel:hover {
-  background: var(--b3-theme-surface);
-}
+    &:hover {
+      background: var(--b3-theme-divider);
+    }
+  }
 
-.btn-confirm {
-  background: var(--b3-theme-primary);
-  border: 1px solid var(--b3-theme-primary);
-  color: white;
-}
+  &--primary {
+    background: var(--b3-theme-primary);
+    color: white;
+    border: none;
 
-.btn-confirm:hover {
-  opacity: 0.9;
+    &:hover {
+      background: var(--b3-theme-primary-dark);
+    }
+  }
 }
 </style>

@@ -11,7 +11,7 @@ import type {
   CardFilter,
   CardSortOptions,
 } from '../types/card';
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 import { sm2Algorithm, createNewSRSParams } from '../review/sm2';
 import {
   createCardBlock,

@@ -7,7 +7,7 @@
  */
 
 import type { MindMap, MindMapNode, MindMapLayout, CreateMindMapOptions } from '../types/mindmap';
-import type { PDFAnnotation } from '../types/annotaion';
+import type { PDFAnnotation } from '../types/annotation';
 
 /**
  * 脑图服务类
@@ -38,10 +38,11 @@ export class MindMapService {
     // 创建根节点
     const rootNode: MindMapNode = {
       id: `root-${Date.now()}`,
-      text: rootTitle,
+      cardId: '',
+      title: rootTitle,
+      position: { x: 0, y: 0 },
+      collapsed: false,
       children: [],
-      layout: 'right',
-      expanded: true,
     };
 
     // 按级别分组
@@ -58,25 +59,22 @@ export class MindMapService {
     for (const [level, levelAnnotations] of groupedByLevel) {
       const levelNode: MindMapNode = {
         id: `level-${level}`,
-        text: this.getLevelLabel(level),
+        cardId: '',
+        title: this.getLevelLabel(level),
+        position: { x: 0, y: 0 },
+        collapsed: false,
         children: [],
-        layout: 'right',
-        expanded: true,
       };
 
       // 为该级别的每个标注创建子节点
       for (const ann of levelAnnotations) {
         const childNode: MindMapNode = {
           id: ann.id,
-          text: ann.text || (ann.isImage ? '[图片]' : ''),
+          cardId: ann.blockId,
+          title: ann.text || (ann.isImage ? '[图片]' : ''),
+          position: { x: 0, y: 0 },
+          collapsed: false,
           children: [],
-          layout: 'right',
-          expanded: true,
-          data: {
-            annotationId: ann.id,
-            pdfPath: ann.pdfPath,
-            page: ann.page,
-          },
         };
 
         levelNode.children.push(childNode);
@@ -383,8 +381,8 @@ export class MindMapService {
   exportToOpml(mindMap: MindMap): string {
     const nodeToOutline = (node: MindMapNode, indent = 0): string => {
       const prefix = '  '.repeat(indent);
-      const text = node.text.replace(/"/g, '"');
-      let result = `${prefix}<outline text="${text}"`;\n
+      const nodeText = (node.title || node.text || '').replace(/"/g, '"');
+      let result = `${prefix}<outline text="${nodeText}"`;
 
       if (node.children.length > 0) {
         result += '>\n';
@@ -402,7 +400,7 @@ export class MindMapService {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head>
-    <title>${mindMap.title}</title>
+    <title>${mindMap.title || 'Mind Map'}</title>
   </head>
   <body>
 ${nodeToOutline(mindMap.root, 2)}  </body>
