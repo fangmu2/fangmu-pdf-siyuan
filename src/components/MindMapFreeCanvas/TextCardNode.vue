@@ -20,6 +20,13 @@ const emit = defineEmits<{
   (e: 'resize-start', nodeId: string): void
   (e: 'resize', nodeId: string, size: { width: number; height: number }): void
   (e: 'resize-end', nodeId: string): void
+  (e: 'node-click', payload: {
+    nodeId: string
+    pdfPath?: string
+    page?: number
+    rect?: [number, number, number, number]
+    annotationId?: string
+  }): void
 }>()
 
 const { data } = toRefs(props)
@@ -33,6 +40,67 @@ const onResizeEnd = inject<(nodeId: string) => void>('onResizeEnd')
 // 展开/折叠状态
 const isExpanded = computed(() => {
   return data.value.isExpanded !== false && !data.value.collapsed
+})
+
+// 节点旋转角度
+const rotation = computed(() => {
+  return data.value.rotation || 0
+})
+
+// 计算背景样式
+const backgroundStyle = computed(() => {
+  const bg = data.value.backgroundImage
+  if (!bg?.url) {
+    return {}
+  }
+
+  const style: Record<string, string> = {
+    backgroundImage: `url(${bg.url})`,
+    backgroundSize: bg.mode === 'tile' ? 'auto' : bg.mode,
+    backgroundRepeat: bg.mode === 'tile' ? 'repeat' : 'no-repeat',
+    backgroundPosition: bg.position ? `${bg.position.x}px ${bg.position.y}px` : 'center',
+    opacity: String(bg.opacity ?? 1)
+  }
+
+  return style
+})
+
+// 是否为引用节点（视觉区分）
+const isReferenceNode = computed(() => {
+  return data.value.nodeType === 'reference'
+})
+
+// 是否为克隆节点（视觉标识）
+const isCloneNode = computed(() => {
+  return data.value.nodeType === 'clone'
+})
+
+// 节点卡片样式
+const cardBodyStyle = computed(() => {
+  const baseStyle: Record<string, string> = {}
+  
+  // 优先使用自定义边框样式
+  if (data.value.borderStyle && data.value.borderStyle !== 'none') {
+    const borderWidth = data.value.borderWidth ?? 2
+    const borderColor = data.value.borderColor || '#333333'
+    baseStyle['borderStyle'] = data.value.borderStyle
+    baseStyle['borderWidth'] = `${borderWidth}px`
+    baseStyle['borderColor'] = borderColor
+  } else {
+    // 引用节点：蓝色边框
+    if (isReferenceNode.value) {
+      baseStyle['border'] = '2px solid #409eff'
+      baseStyle['box-shadow'] = '0 0 8px rgba(64, 158, 255, 0.3)'
+    }
+    
+    // 克隆节点：虚线边框
+    if (isCloneNode.value) {
+      baseStyle['border'] = '2px dashed #909399'
+      baseStyle['opacity'] = '0.85'
+    }
+  }
+  
+  return baseStyle
 })
 
 // 节点尺寸（默认值）
@@ -60,32 +128,87 @@ const resizeHandleStyle = computed(() => {
 // 是否正在拖拽缩放
 const isResizing = ref(false)
 
-// 计算节点颜色样式
-const nodeStyle = computed(() => {
-  const style: Record<string, string> = {}
+// 是否正在旋转
+const isRotating = ref(false)
 
-  if (data.value.color) {
-    style.borderLeftColor = data.value.color
-    style.borderLeftWidth = '4px'
+// 旋转手柄样式
+const rotateHandleStyle = computed(() => {
+  return {
+    position: 'absolute' as const,
+    right: '4px',
+    top: '-20px',
+    width: '24px',
+    height: '24px',
+    cursor: 'grab',
+    zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(64, 158, 255, 0.8)',
+    borderRadius: '50%',
+    border: '2px solid #fff',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
   }
-
-  if (data.value.customStyle) {
-    if (data.value.customStyle.backgroundColor) {
-      style.backgroundColor = data.value.customStyle.backgroundColor
-    }
-    if (data.value.customStyle.borderColor) {
-      style.borderColor = data.value.customStyle.borderColor
-    }
-    if (data.value.customStyle.fontSize) {
-      style.fontSize = data.value.customStyle.fontSize
-    }
-    if (data.value.customStyle.fontWeight) {
-      style.fontWeight = data.value.customStyle.fontWeight
-    }
-  }
-
-  return style
 })
+
+// 点击节点处理 - 跳转到 PDF
+function handleNodeClick(event: MouseEvent): void {
+  // 检查是否有文档引用信息
+  // 字段映射：data.value.pdfPath -> pdfPath, data.value.page -> page
+  const pdfPath = data.value.pdfPath
+  const page = data.value.page
+  
+  if (pdfPath && page) {
+    // 发送跳转事件到父组件
+    emit('node-click', {
+      nodeId: props.id,
+      pdfPath,
+      page,
+      rect: data.value.rect || undefined,
+      annotationId: data.value.annotationId || undefined
+    })
+  }
+}
+
+// 旋转移处理
+function handleRotateMove(event: MouseEvent): void {
+  if (!isRotating.value) return
+
+  // 获取节点中心点
+  const target = event.target as HTMLElement
+  const nodeElement = target.closest('.marginnote-text-card-wrapper')
+  
+  if (nodeElement) {
+    const rect = nodeElement.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    
+    // 计算旋转角度
+    const rad = Math.atan2(event.clientY - centerY, event.clientX - centerX)
+    let deg = rad * (180 / Math.PI) + 90
+    
+    // 吸附到 15°倍数
+    deg = Math.round(deg / 15) * 15
+    
+    // 直接更新 data.value.rotation（响应式）
+    data.value.rotation = deg
+  }
+}
+
+// 旋转结束处理
+function handleRotateEnd(): void {
+  if (!isRotating.value) return
+  isRotating.value = false
+
+  // 移除全局事件监听
+  document.removeEventListener('mousemove', handleRotateMove)
+  document.removeEventListener('mouseup', handleRotateEnd)
+}
+
+// 双击重置旋转角度
+function handleRotateReset(): void {
+  data.value.rotation = 0
+}
 
 // 计算页码显示
 const showPage = computed(() => {
@@ -168,8 +291,29 @@ const capsuleStyle = computed(() => {
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
   }
+})
+
+// 引用/克隆节点样式
+const referenceNodeStyle = computed(() => {
+  const style: Record<string, string> = {}
+  
+  // 引用节点：蓝色边框和发光效果
+  if (isReferenceNode.value) {
+    style.border = '2px solid #409eff'
+    style.boxShadow = '0 0 12px rgba(64, 158, 255, 0.5)'
+  }
+  
+  // 克隆节点：虚线边框和半透明
+  if (isCloneNode.value) {
+    style.border = '2px dashed #909399'
+    style.opacity = '0.85'
+  }
+  
+  return style
 })
 
 // 展开/折叠图标
@@ -197,6 +341,11 @@ const nodeContainerStyle = computed(() => {
 
   if (data.value.size?.height) {
     style.height = `${data.value.size.height}px`
+  }
+
+  // 合并背景样式
+  if (backgroundStyle.value) {
+    Object.assign(style, backgroundStyle.value)
   }
 
   return style
@@ -263,9 +412,19 @@ function handleResizeEnd(): void {
     class="marginnote-text-card-wrapper"
     :style="nodeContainerStyle"
   >
+    <!-- 背景图片层（如果有背景） -->
+    <div
+      v-if="data.backgroundImage?.url"
+      class="background-overlay"
+      :style="{
+        opacity: data.backgroundImage.opacity ?? 1
+      }"
+    ></div>
+
     <div
       class="marginnote-text-card"
-      :style="capsuleStyle"
+      :style="[capsuleStyle, referenceNodeStyle]"
+      @click="handleNodeClick"
     >
       <!-- 左侧白色圆点装饰（MarginNote4 特色） -->
       <div class="mn-dot"></div>
@@ -335,6 +494,17 @@ function handleResizeEnd(): void {
       />
     </div>
 
+    <!-- 旋转手柄 -->
+    <div
+      class="rotate-handle"
+      @mousedown="handleRotateStart"
+      :title="'拖拽旋转（双击重置）'"
+    >
+      <svg viewBox="0 0 24 24" class="rotate-icon">
+        <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
     <!-- 缩放手柄 -->
     <div
       class="resize-handle"
@@ -357,6 +527,7 @@ function handleResizeEnd(): void {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   animation: cardAppear 0.3s ease-out;
   cursor: pointer;
+  z-index: 1; /* 确保在背景之上 */
 }
 
 /* 卡片创建动画 */
@@ -516,6 +687,67 @@ function handleResizeEnd(): void {
 .marginnote-text-card-wrapper {
   position: relative;
   display: inline-block;
+}
+
+/* 背景图片覆盖层 */
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* 旋转手柄样式 */
+.rotate-handle {
+  position: absolute;
+  right: 4px;
+  top: -20px;
+  width: 24px;
+  height: 24px;
+  background: rgba(64, 158, 255, 0.8);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.marginnote-text-card-wrapper:hover .rotate-handle {
+  opacity: 1;
+}
+
+.rotate-handle:hover {
+  background: rgba(64, 158, 255, 0.95);
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+.rotate-handle:active {
+  cursor: grabbing;
+}
+
+.rotate-icon {
+  width: 14px;
+  height: 14px;
+  color: #fff;
+}
+
+/* 旋转中的样式 */
+.marginnote-text-card-wrapper.rotating .rotate-handle {
+  opacity: 1;
+  background: rgba(64, 158, 255, 0.95);
 }
 
 /* 缩放手柄 */

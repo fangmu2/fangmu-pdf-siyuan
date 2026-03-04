@@ -47,6 +47,13 @@ interface Emits {
   (e: 'copy'): void
   (e: 'cut'): void
   (e: 'paste'): void
+  // 标签和批注功能
+  (e: 'editTags'): void
+  (e: 'editAnnotations'): void
+  // 边框样式功能
+  (e: 'editBorder'): void
+  // 背景图片功能
+  (e: 'editBackground'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -256,6 +263,29 @@ function handlePaste(): void {
   emit('paste')
   emit('update:modelValue', false)
 }
+
+// 标签和批注操作
+function handleEditTags(): void {
+  emit('editTags')
+  emit('update:modelValue', false)
+}
+
+function handleEditAnnotations(): void {
+  emit('editAnnotations')
+  emit('update:modelValue', false)
+}
+
+// 边框样式操作
+function handleEditBorder(): void {
+  emit('editBorder')
+  emit('update:modelValue', false)
+}
+
+// 背景图片操作
+function handleEditBackground(): void {
+  emit('editBackground')
+  emit('update:modelValue', false)
+}
 </script>
 
 <template>
@@ -413,6 +443,41 @@ function handlePaste(): void {
             >
               <span class="freemind-menu-icon">🔗</span>
               <span>创建连线</span>
+            </button>
+          </div>
+
+          <!-- 标签和批注操作 -->
+          <div class="freemind-menu-section">
+            <button
+              v-if="isSingleSelection"
+              class="freemind-menu-item"
+              @click="handleEditTags"
+            >
+              <span class="freemind-menu-icon">🏷️</span>
+              <span>编辑标签</span>
+            </button>
+            <button
+              v-if="isSingleSelection"
+              class="freemind-menu-item"
+              @click="handleEditAnnotations"
+            >
+              <span class="freemind-menu-icon">📝</span>
+              <span>查看批注</span>
+            </button>
+            <button
+              class="freemind-menu-item"
+              @click="handleEditBorder"
+            >
+              <span class="freemind-menu-icon">🔲</span>
+              <span>边框样式</span>
+            </button>
+            <button
+              v-if="isSingleSelection"
+              class="freemind-menu-item"
+              @click="handleEditBackground"
+            >
+              <span class="freemind-menu-icon">🖼️</span>
+              <span>背景图片</span>
             </button>
           </div>
 

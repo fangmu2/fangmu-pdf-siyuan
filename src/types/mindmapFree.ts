@@ -65,6 +65,27 @@ export interface FreeMindMapNodeData {
   tags?: string[]
   /** 节点批注列表 */
   annotations?: NodeAnnotation[]
+  /** 背景图片配置 */
+  backgroundImage?: {
+    /** 图片 URL 或 Base64 */
+    url: string
+    /** 显示模式 */
+    mode: 'cover' | 'contain' | 'tile'
+    /** 透明度（0-1） */
+    opacity: number
+    /** 背景位置（可选） */
+    position?: {
+      x: number
+      y: number
+    }
+  }
+  /** === 边框样式字段 === */
+  /** 边框样式 */
+  borderStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'none'
+  /** 边框粗细（1-5px） */
+  borderWidth?: number
+  /** 边框颜色 */
+  borderColor?: string
   /** === MarginNote 4 兼容性字段 === */
   /** 节点类型（普通/克隆/引用/子脑图/自由） */
   nodeType?: 'normal' | 'clone' | 'reference' | 'submap' | 'free'

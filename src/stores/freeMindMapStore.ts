@@ -16,7 +16,8 @@ import type {
   CreateEdgeParams,
   CrossBranchLink,
   CrossLinkType,
-  NodeAnnotation
+  NodeAnnotation,
+  FreeMindMapNodeData
 } from '@/types/mindmapFree'
 
 /**
@@ -41,6 +42,8 @@ import {
   calculateNodeBounds
 } from '@/services/freeMindMapService'
 import { clipboardService, generateNewNodeId, generateNewEdgeId } from '@/services/clipboardService'
+import type { ConceptMapConfig } from '@/utils/conceptMapLayout'
+import { applyConceptMapLayout } from '@/utils/conceptMapLayout'
 
 /**
  * 自由画布思维导图 Store
@@ -105,6 +108,20 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
 
   /** 错误信息 */
   const errorMessage = ref<string>('')
+
+  /** 概念图布局配置 */
+  const conceptMapConfig = ref<ConceptMapConfig>({
+    repulsion: 500,
+    springLength: 100,
+    springStrength: 0.1,
+    damping: 0.9,
+    maxIterations: 300,
+    canvasWidth: 2000,
+    canvasHeight: 2000
+  })
+
+  /** 概念图布局是否在运行 */
+  const isConceptMapLayoutRunning = ref(false)
 
   /** 画布边界（无限扩展） */
   const canvasBounds = ref<CanvasBounds>({
@@ -381,6 +398,61 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     nodes.value.push(rootNode)
 
     await saveMindMap()
+  }
+
+  /**
+   * 为节点设置背景图片
+   * @param nodeId 节点 ID
+   * @param background 背景配置
+   */
+  function setNodeBackground(nodeId: string, background: {
+    url: string
+    mode: 'cover' | 'contain' | 'tile'
+    opacity: number
+    position?: {
+      x: number
+      y: number
+    }
+  }): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    if (!node.data) {
+      node.data = {} as FreeMindMapNodeData
+    }
+
+    node.data.backgroundImage = background
+  }
+
+  /**
+   * 移除节点背景图片
+   * @param nodeId 节点 ID
+   */
+  function removeNodeBackground(nodeId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node?.data?.backgroundImage) return
+
+    delete node.data.backgroundImage
+  }
+
+  /**
+   * 为节点设置背景图片（公开方法）
+   * @param nodeId 节点 ID
+   * @param background 背景配置
+   */
+  function updateNodeBackground(
+    nodeId: string,
+    background: {
+      url: string
+      mode: 'cover' | 'contain' | 'tile'
+      opacity: number
+      position?: {
+        x: number
+        y: number
+      }
+    }
+  ): void {
+    setNodeBackground(nodeId, background)
   }
 
   /**
@@ -934,6 +1006,53 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
   }
 
   /**
+   * 更新节点边框样式
+   * @param nodeId 节点 ID
+   * @param border 边框样式（style/width/color）
+   */
+  function updateNodeBorder(
+    nodeId: string,
+    border: {
+      style?: string
+      width?: number
+      color?: string
+    }
+  ): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    if (!node.data) node.data = {}
+
+    if (border.style !== undefined) {
+      node.data.borderStyle = border.style as 'solid' | 'dashed' | 'dotted' | 'double' | 'none'
+    }
+    if (border.width !== undefined) {
+      node.data.borderWidth = border.width
+    }
+    if (border.color !== undefined) {
+      node.data.borderColor = border.color
+    }
+  }
+
+  /**
+   * 批量应用边框样式到选中节点
+   * @param border 边框样式（style/width/color）
+   */
+  function applyBorderToSelected(border: {
+    style: string
+    width: number
+    color: string
+  }): void {
+    selectedNodeIds.value.forEach(id => {
+      updateNodeBorder(id, {
+        style: border.style === 'none' ? 'none' : border.style,
+        width: border.style === 'none' ? 0 : border.width,
+        color: border.style === 'none' ? 'transparent' : border.color
+      })
+    })
+  }
+
+  /**
    * 收集所有标签
    */
   function collectAllTags(): void {
@@ -1026,6 +1145,93 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
       zoom: 1,
       x: -bounds.minX + 100,
       y: -bounds.minY + 100
+    }
+  }
+
+  /**
+   * 应用概念图布局（力导向布局）
+   * @param config 布局配置（可选）
+   */
+  function applyConceptMap(config?: Partial<ConceptMapConfig>): void {
+    isConceptMapLayoutRunning.value = true
+    
+    try {
+      const finalConfig = { ...conceptMapConfig.value, ...config }
+      const result = applyConceptMapLayout(nodes.value, edges.value, finalConfig)
+      nodes.value = result.nodes
+      
+      // 居中视图
+      const bounds = calculateNodeBounds(nodes.value)
+      viewport.value = {
+        zoom: 1,
+        x: -bounds.minX + 100,
+        y: -bounds.minY + 100
+      }
+    } catch (error) {
+      console.error('[FreeMindMapStore] 概念图布局失败:', error)
+      errorMessage.value = error instanceof Error ? error.message : '布局失败'
+    } finally {
+      isConceptMapLayoutRunning.value = false
+    }
+  }
+
+  /**
+   * 更新概念图布局配置
+   * @param config 新配置
+   */
+  function updateConceptMapConfig(config: Partial<ConceptMapConfig>): void {
+    conceptMapConfig.value = {
+      ...conceptMapConfig.value,
+      ...config
+    }
+  }
+
+  /**
+   * 重置概念图布局配置
+   */
+  function resetConceptMapConfig(): void {
+    conceptMapConfig.value = {
+      repulsion: 500,
+      springLength: 100,
+      springStrength: 0.1,
+      damping: 0.9,
+      maxIterations: 300,
+      canvasWidth: 2000,
+      canvasHeight: 2000
+    }
+  }
+
+  /**
+   * 应用时间轴布局
+   * @param orientation 时间轴方向
+   * @param timeScale 时间刻度类型
+   */
+  function applyTimeline(orientation: TimelineOrientation = 'horizontal', timeScale: TimeScale = 'auto'): void {
+    try {
+      const result = applyTimelineLayout(nodes.value, edges.value, {
+        orientation,
+        timeScale,
+        showTimeLabels: true,
+        canvasWidth: 3000,
+        canvasHeight: 3000,
+        centerPosition: 400
+      })
+      
+      nodes.value = result.nodes
+      edges.value = result.edges
+      
+      // 居中视图
+      const bounds = calculateNodeBounds(nodes.value)
+      viewport.value = {
+        zoom: 1,
+        x: -bounds.minX + 100,
+        y: -bounds.minY + 100
+      }
+      
+      console.log('[FreeMindMapStore] 时间轴布局已应用:', orientation, timeScale)
+    } catch (error) {
+      console.error('[FreeMindMapStore] 时间轴布局失败:', error)
+      errorMessage.value = error instanceof Error ? error.message : '布局失败'
     }
   }
 
@@ -1374,6 +1580,18 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     updateNodeAnnotation,
     removeNodeAnnotation,
     getNodeAnnotations,
-    collectAllTags
+    collectAllTags,
+    // 新增：概念图布局功能
+    conceptMapConfig,
+    isConceptMapLayoutRunning,
+    applyConceptMap,
+    updateConceptMapConfig,
+    resetConceptMapConfig,
+    // 新增：背景图片功能
+    updateNodeBackground,
+    removeNodeBackground,
+    // 新增：边框样式功能
+    updateNodeBorder,
+    applyBorderToSelected
   }
 })
