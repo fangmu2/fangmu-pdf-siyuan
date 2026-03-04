@@ -9,14 +9,13 @@ import type {
   FreeMindMapOptions,
   FreeMindMapNode,
   FreeMindMapEdge,
-  FreeMindMapNodeType,
   FreeMindMapLayout,
   MindMapViewport,
   CreateNodeParams,
   UpdateNodeParams,
   CreateEdgeParams,
-  NodeRelation,
-  CrossBranchLink
+  CrossBranchLink,
+  CrossLinkType
 } from '@/types/mindmapFree'
 import {
   getFreeMindMap,
@@ -30,6 +29,7 @@ import {
   autoLayout,
   calculateNodeBounds
 } from '@/services/freeMindMapService'
+import { clipboardService, generateNewNodeId, generateNewEdgeId } from '@/services/clipboardService'
 
 /**
  * 自由画布思维导图 Store
@@ -572,6 +572,59 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
   }
 
   /**
+   * 更新跨分支关联
+   * @param linkId 关联 ID
+   * @param updateData 更新数据
+   * @returns 更新后的关联
+   */
+  function updateCrossBranchLink(
+    linkId: string,
+    updateData: Partial<CrossBranchLink>
+  ): CrossBranchLink | null {
+    const linkIndex = crossBranchLinks.value.findIndex(l => l.id === linkId)
+    if (linkIndex === -1) {
+      console.warn('[FreeMindMapStore] 未找到关联:', linkId)
+      return null
+    }
+
+    const link = crossBranchLinks.value[linkIndex]
+    const updatedLink: CrossBranchLink = {
+      ...link,
+      ...updateData,
+      style: {
+        ...link.style,
+        ...(updateData.style || {})
+      }
+    }
+
+    crossBranchLinks.value[linkIndex] = updatedLink
+
+    // 同时更新节点的 relations 中的标签
+    if (updateData.label !== undefined) {
+      const sourceNode = nodes.value.find(n => n.id === updatedLink.sourceNodeId)
+      if (sourceNode?.data.relations) {
+        const relation = sourceNode.data.relations.find(r => r.id === linkId)
+        if (relation) {
+          relation.label = updateData.label
+        }
+      }
+    }
+
+    // 同时更新颜色
+    if (updateData.style?.stroke) {
+      const sourceNode = nodes.value.find(n => n.id === updatedLink.sourceNodeId)
+      if (sourceNode?.data.relations) {
+        const relation = sourceNode.data.relations.find(r => r.id === linkId)
+        if (relation) {
+          relation.color = updateData.style.stroke
+        }
+      }
+    }
+
+    return updatedLink
+  }
+
+  /**
    * 获取节点的所有跨分支关联
    * @param nodeId 节点 ID
    * @returns 关联列表
@@ -751,6 +804,185 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     showMiniMap.value = value
   }
 
+  /**
+   * 复制节点到剪贴板
+   * @param nodeIds 要复制的节点 ID 列表
+   */
+  function copyNodes(nodeIds: string[]): void {
+    const nodesToCopy = nodes.value.filter(n => nodeIds.includes(n.id))
+    if (nodesToCopy.length === 0) {
+      console.warn('[FreeMindMapStore] 没有要复制的节点')
+      return
+    }
+
+    // 获取相关的连线
+    const edgesToCopy = edges.value.filter(
+      e => nodesToCopy.some(n => n.id === e.source || n.id === e.target)
+    )
+
+    clipboardService.copy(nodesToCopy, edgesToCopy, studySetId.value, currentMindMapId.value)
+    console.log(`[FreeMindMapStore] 已复制 ${nodesToCopy.length} 个节点`)
+  }
+
+  /**
+   * 剪切节点到剪贴板
+   * @param nodeIds 要剪切的节点 ID 列表
+   */
+  function cutNodes(nodeIds: string[]): void {
+    const nodesToCut = nodes.value.filter(n => nodeIds.includes(n.id))
+    if (nodesToCut.length === 0) {
+      console.warn('[FreeMindMapStore] 没有要剪切的节点')
+      return
+    }
+
+    // 获取相关的连线
+    const edgesToCut = edges.value.filter(
+      e => nodesToCut.some(n => n.id === e.source || n.id === e.target)
+    )
+
+    // 复制到剪贴板
+    clipboardService.copy(nodesToCut, edgesToCut, studySetId.value, currentMindMapId.value)
+
+    // 删除原节点
+    deleteNodes(nodeIds)
+    console.log(`[FreeMindMapStore] 已剪切 ${nodesToCut.length} 个节点`)
+  }
+
+  /**
+   * 从剪贴板粘贴节点
+   * @param targetPosition 粘贴位置（可选，默认在视图中心）
+   * @returns 新创建的节点 ID 列表
+   */
+  function pasteNodes(targetPosition?: { x: number; y: number }): string[] {
+    const clipboardData = clipboardService.paste()
+    if (!clipboardData || clipboardData.data.nodes.length === 0) {
+      console.log('[FreeMindMapStore] 剪贴板为空，无法粘贴')
+      return []
+    }
+
+    const { nodes: sourceNodes, edges: sourceEdges } = clipboardData.data
+
+    // 计算粘贴偏移量
+    const offset = calculatePasteOffset(sourceNodes, targetPosition)
+
+    // 创建节点 ID 映射（旧 ID -> 新 ID）
+    const idMap = new Map<string, string>()
+
+    // 创建新节点
+    const newNodes: FreeMindMapNode[] = []
+    sourceNodes.forEach(node => {
+      const newId = generateNewNodeId()
+      idMap.set(node.id, newId)
+
+      const newNode: FreeMindMapNode = {
+        ...JSON.parse(JSON.stringify(node)), // 深度克隆
+        id: newId,
+        position: {
+          x: node.position.x + offset.x,
+          y: node.position.y + offset.y
+        },
+        parentId: undefined, // 清除父子关系（跨画布时）
+        selected: false
+      }
+
+      newNodes.push(newNode)
+    })
+
+    // 添加新节点到画布
+    nodes.value.push(...newNodes)
+
+    // 创建新连线
+    const newEdges: FreeMindMapEdge[] = []
+    sourceEdges.forEach(edge => {
+      const newSource = idMap.get(edge.source)
+      const newTarget = idMap.get(edge.target)
+
+      if (!newSource || !newTarget) {
+        // 如果连线的一端不在复制的节点中，跳过该连线
+        return
+      }
+
+      const newEdge: FreeMindMapEdge = {
+        ...JSON.parse(JSON.stringify(edge)),
+        id: generateNewEdgeId(),
+        source: newSource,
+        target: newTarget,
+        selected: false
+      }
+
+      newEdges.push(newEdge)
+    })
+
+    // 添加新连线到画布
+    edges.value.push(...newEdges)
+
+    // 选中新创建的节点
+    const newNodeIds = newNodes.map(n => n.id)
+    selectedNodeIds.value = newNodeIds
+
+    console.log(`[FreeMindMapStore] 已粘贴 ${newNodes.length} 个节点和 ${newEdges.length} 个连线`)
+    return newNodeIds
+  }
+
+  /**
+   * 清空剪贴板
+   */
+  function clearClipboard(): void {
+    clipboardService.clear()
+  }
+
+  /**
+   * 检查剪贴板是否有数据
+   */
+  function hasClipboardData(): boolean {
+    return clipboardService.hasData()
+  }
+
+  /**
+   * 计算粘贴偏移量
+   * @param nodes 要粘贴的节点列表
+   * @param targetPosition 目标位置
+   * @returns 偏移量
+   */
+  function calculatePasteOffset(
+    nodes: FreeMindMapNode[],
+    targetPosition?: { x: number; y: number }
+  ): { x: number; y: number } {
+    if (targetPosition) {
+      return { x: targetPosition.x, y: targetPosition.y }
+    }
+
+    // 如果没有目标位置，使用视图中心
+    if (nodes.length === 0) {
+      return { x: 100, y: 100 }
+    }
+
+    // 计算节点中心
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+
+    nodes.forEach(node => {
+      if (node.position.x < minX) minX = node.position.x
+      if (node.position.y < minY) minY = node.position.y
+      if (node.position.x > maxX) maxX = node.position.x
+      if (node.position.y > maxY) maxY = node.position.y
+    })
+
+    const centerX = (minX + maxX) / 2
+    const centerY = (minY + maxY) / 2
+
+    // 计算视图中心的偏移
+    const viewportCenterX = -viewport.value.x / viewport.value.zoom
+    const viewportCenterY = -viewport.value.y / viewport.value.zoom
+
+    return {
+      x: viewportCenterX - centerX + 50, // 50px 偏移避免完全重叠
+      y: viewportCenterY - centerY + 50
+    }
+  }
+
   return {
     // State
     currentMindMapId,
@@ -813,7 +1045,14 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     // 新增：跨分支关联管理
     createCrossBranchLink,
     removeCrossBranchLink,
+    updateCrossBranchLink,
     getNodeCrossLinks,
-    getAllCrossLinks
+    getAllCrossLinks,
+    // 新增：剪贴板功能
+    copyNodes,
+    cutNodes,
+    pasteNodes,
+    clearClipboard,
+    hasClipboardData
   }
 })

@@ -6,6 +6,7 @@
 
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import type { FreeMindMapNode } from '@/types/mindmapFree'
+import { clipboardService } from '@/services/clipboardService'
 
 interface Props {
   /** 是否显示菜单 */
@@ -18,6 +19,8 @@ interface Props {
   selectedNodes: FreeMindMapNode[]
   /** 是否只读模式 */
   readOnly?: boolean
+  /** 右键菜单目标类型 */
+  menuTarget?: { type: 'node' | 'pane' | 'edge'; nodeId?: string; edgeId?: string }
 }
 
 interface Emits {
@@ -25,6 +28,8 @@ interface Emits {
   (e: 'edit'): void
   (e: 'delete'): void
   (e: 'duplicate'): void
+  (e: 'createClone'): void
+  (e: 'createReference'): void
   (e: 'color', color: string): void
   (e: 'level', level: string): void
   (e: 'addGroup'): void
@@ -36,11 +41,18 @@ interface Emits {
   (e: 'splitFromParent'): void
   (e: 'mergeSelected'): void
   (e: 'extractChildren'): void
+  // 跨分支关联
+  (e: 'deleteCrossLink'): void
+  // 剪贴板功能
+  (e: 'copy'): void
+  (e: 'cut'): void
+  (e: 'paste'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   readOnly: false,
-  selectedNodes: () => []
+  selectedNodes: () => [],
+  menuTarget: () => ({ type: 'pane' })
 })
 
 const emit = defineEmits<Emits>()
@@ -100,6 +112,16 @@ const hasSelection = computed(() => selectedCount.value > 0)
 // 是否单个节点选中
 const isSingleSelection = computed(() => selectedCount.value === 1)
 
+// 是否是跨分支关联的右键菜单
+const isCrossLinkMenu = computed(() => {
+  return props.menuTarget?.type === 'edge' && !!props.menuTarget?.edgeId
+})
+
+// 剪贴板是否有数据
+const hasClipboardData = computed(() => {
+  return clipboardService.hasData()
+})
+
 // 监听显示状态
 watch(
   () => props.modelValue,
@@ -142,13 +164,23 @@ function handleEdit(): void {
   emit('update:modelValue', false)
 }
 
-function handleDelete(): void {
-  emit('delete')
+function handleDuplicate(): void {
+  emit('duplicate')
   emit('update:modelValue', false)
 }
 
-function handleDuplicate(): void {
-  emit('duplicate')
+function handleCreateClone(): void {
+  emit('createClone')
+  emit('update:modelValue', false)
+}
+
+function handleCreateReference(): void {
+  emit('createReference')
+  emit('update:modelValue', false)
+}
+
+function handleDelete(): void {
+  emit('delete')
   emit('update:modelValue', false)
 }
 
@@ -202,6 +234,28 @@ function handleExtractChildren(): void {
   emit('extractChildren')
   emit('update:modelValue', false)
 }
+
+// 跨分支关联操作
+function handleDeleteCrossLink(): void {
+  emit('deleteCrossLink')
+  emit('update:modelValue', false)
+}
+
+// 剪贴板操作
+function handleCopy(): void {
+  emit('copy')
+  emit('update:modelValue', false)
+}
+
+function handleCut(): void {
+  emit('cut')
+  emit('update:modelValue', false)
+}
+
+function handlePaste(): void {
+  emit('paste')
+  emit('update:modelValue', false)
+}
 </script>
 
 <template>
@@ -244,10 +298,54 @@ function handleExtractChildren(): void {
             </button>
             <button
               class="freemind-menu-item"
-              @click="handleDuplicate"
+              @click="handleCopy"
             >
               <span class="freemind-menu-icon">📋</span>
               <span>复制节点</span>
+              <span class="freemind-shortcut">Ctrl+C</span>
+            </button>
+            <button
+              class="freemind-menu-item"
+              @click="handleCut"
+            >
+              <span class="freemind-menu-icon">✂️</span>
+              <span>剪切节点</span>
+              <span class="freemind-shortcut">Ctrl+X</span>
+            </button>
+            <button
+              class="freemind-menu-item"
+              @click="handlePaste"
+              :disabled="!hasClipboardData"
+              :class="{ 'freemind-menu-item-disabled': !hasClipboardData }"
+            >
+              <span class="freemind-menu-icon">📥</span>
+              <span>粘贴节点</span>
+              <span class="freemind-shortcut">Ctrl+V</span>
+            </button>
+            <button
+              class="freemind-menu-item"
+              @click="handleDuplicate"
+            >
+              <span class="freemind-menu-icon">📋</span>
+              <span>快速复制</span>
+            </button>
+            <button
+              v-if="isSingleSelection"
+              class="freemind-menu-item"
+              @click="handleCreateClone"
+              title="复制节点内容，修改不同步"
+            >
+              <span class="freemind-menu-icon">👥</span>
+              <span>创建克隆节点</span>
+            </button>
+            <button
+              v-if="isSingleSelection"
+              class="freemind-menu-item"
+              @click="handleCreateReference"
+              title="创建镜像节点，修改实时同步"
+            >
+              <span class="freemind-menu-icon">🔗</span>
+              <span>创建引用节点</span>
             </button>
             <button
               class="freemind-menu-item freemind-menu-item-danger"
@@ -380,6 +478,22 @@ function handleExtractChildren(): void {
             >
               <span class="freemind-menu-icon">📍</span>
               <span>居中视图</span>
+            </button>
+          </div>
+        </template>
+
+        <!-- 跨分支关联操作 -->
+        <template v-if="isCrossLinkMenu">
+          <div class="freemind-menu-section">
+            <div class="freemind-menu-header">
+              <span>跨分支关联</span>
+            </div>
+            <button
+              class="freemind-menu-item freemind-menu-item-danger"
+              @click="handleDeleteCrossLink"
+            >
+              <span class="freemind-menu-icon">🗑️</span>
+              <span>删除关联</span>
             </button>
           </div>
         </template>

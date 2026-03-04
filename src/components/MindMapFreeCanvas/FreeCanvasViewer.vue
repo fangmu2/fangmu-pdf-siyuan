@@ -1236,6 +1236,48 @@ function handleContextMenuDeleteCrossLink(): void {
   }
 }
 
+/**
+ * 复制节点
+ */
+function handleContextMenuCopy(): void {
+  if (selectedNodeIds.value.length === 0) {
+    console.log('[FreeCanvasViewer] 没有选中的节点')
+    return
+  }
+
+  store.copyNodes(selectedNodeIds.value)
+  console.log(`[FreeCanvasViewer] 已复制 ${selectedNodeIds.value.length} 个节点`)
+}
+
+/**
+ * 剪切节点
+ */
+function handleContextMenuCut(): void {
+  if (selectedNodeIds.value.length === 0) {
+    console.log('[FreeCanvasViewer] 没有选中的节点')
+    return
+  }
+
+  store.cutNodes(selectedNodeIds.value)
+  console.log(`[FreeCanvasViewer] 已剪切 ${selectedNodeIds.value.length} 个节点`)
+}
+
+/**
+ * 粘贴节点
+ */
+function handleContextMenuPaste(): void {
+  if (!store.hasClipboardData()) {
+    console.log('[FreeCanvasViewer] 剪贴板为空')
+    return
+  }
+
+  const newNodeIds = store.pasteNodes()
+  if (newNodeIds.length > 0) {
+    console.log(`[FreeCanvasViewer] 已粘贴 ${newNodeIds.length} 个节点`)
+    debouncedSave()
+  }
+}
+
 // ==================== 工具栏操作 ====================
 
 /**
