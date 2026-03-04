@@ -48,6 +48,23 @@
           @mousemove="updateImageSelect"
           @mouseup="endImageSelect"
         ></div>
+        <!-- 形状标注层 -->
+        <PdfShapeOverlay
+          v-if="currentPageShapes.length > 0 || shapeTool || previewShape"
+          :shapes="currentPageShapes"
+          :preview-shape="previewShape"
+          :container-width="currentViewport?.width || 0"
+          :container-height="currentViewport?.height || 0"
+          :scale="scale"
+          :css-page-height="currentViewport?.height || 0"
+          @shape-click="handleShapeClick"
+          @shape-select="handleShapeSelect"
+          @shape-move="handleShapeMove"
+          @shape-resize="handleShapeResize"
+          @drawing-start="handleDrawingStart"
+          @drawing-update="handleDrawingUpdate"
+          @drawing-end="handleDrawingEnd"
+        />
         <!-- 手写图层 -->
         <HandwritingLayer
           v-if="isHandwritingLayerEnabled"
@@ -267,6 +284,54 @@
             <span class="type-label">{{ type.label }}</span>
           </button>
         </div>
+
+        <div class="toolbar-divider-vertical"></div>
+
+        <!-- 形状工具 -->
+        <div class="shape-tools">
+          <button
+            :class="['shape-btn', { active: shapeTool === 'rectangle' }]"
+            title="矩形标注"
+            @click="setShapeTool('rectangle')"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+            </svg>
+          </button>
+          <button
+            :class="['shape-btn', { active: shapeTool === 'circle' }]"
+            title="圆形标注"
+            @click="setShapeTool('circle')"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+          </button>
+          <button
+            :class="['shape-btn', { active: shapeTool === 'arrow' }]"
+            title="箭头标注"
+            @click="setShapeTool('arrow')"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 中间：形状颜色选择器 -->
+      <div class="toolbar-section toolbar-center" v-if="shapeTool">
+        <div class="shape-color-picker">
+          <button
+            v-for="color in shapeColors"
+            :key="color.value"
+            :class="['color-btn', { active: selectedShapeColor === color.value }]"
+            :style="{ backgroundColor: color.hex }"
+            :title="color.name"
+            @click="selectedShapeColor = color.value"
+          ></button>
+        </div>
       </div>
 
       <!-- 中间：高亮颜色选择器 -->
@@ -423,8 +488,9 @@
 import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed, defineComponent, h } from 'vue';
 import { getOrLoadPdf, renderPage, renderTextLayer, getSelectionRect } from '../utils/pdf';
 import { getFileAsBlob } from '../api/siyuanApi';
-import type { PDFAnnotation, AnnotationColor, ExtractMode } from '../types/annotation';
+import type { PDFAnnotation, AnnotationColor, ExtractMode, ShapeAnnotation, ResizeHandle } from '../types/annotation';
 import HandwritingLayer from './HandwritingLayer.vue'; // 导入手写图层组件
+import PdfShapeOverlay from './PdfShapeOverlay.vue'; // 导入形状叠加层组件
 
 // 目录项组件
 const OutlineItem = defineComponent({
@@ -489,6 +555,8 @@ const emit = defineEmits<{
   (e: 'annotation-created', annotation: PDFAnnotation): void;
   (e: 'highlight-color-change', color: string): void;
   (e: 'annotation-type-change', type: 'highlight' | 'underline' | 'strikethrough' | 'wavy'): void;
+  (e: 'shape-tool-change', tool: 'rectangle' | 'circle' | 'arrow' | null): void;
+  (e: 'shape-created', shape: ShapeAnnotation): void;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement>();
@@ -554,6 +622,30 @@ const annotationTypes = [
 ];
 const selectedAnnotationType = ref<'highlight' | 'underline' | 'strikethrough' | 'wavy'>('highlight');
 
+// 形状工具状态
+const shapeTool = ref<'rectangle' | 'circle' | 'arrow' | null>(null);
+const selectedShapeColor = ref('#ef4444');
+const selectedShapeLineWidth = ref(2);
+
+// 形状颜色选项
+const shapeColors = [
+  { value: '#ef4444', name: '红色', hex: '#ef4444' },
+  { value: '#3b82f6', name: '蓝色', hex: '#3b82f6' },
+  { value: '#22c55e', name: '绿色', hex: '#22c55e' },
+  { value: '#f59e0b', name: '橙色', hex: '#f59e0b' },
+  { value: '#8b5cf6', name: '紫色', hex: '#8b5cf6' },
+  { value: '#000000', name: '黑色', hex: '#000000' },
+];
+
+// 形状标注列表
+const shapeAnnotations = ref<ShapeAnnotation[]>([]);
+const previewShape = ref<ShapeAnnotation | null>(null);
+
+// 当前页的形状标注
+const currentPageShapes = computed(() => {
+  return shapeAnnotations.value.filter(shape => shape.page === props.currentPage);
+});
+
 // 监听颜色变化并通知父组件
 watch(selectedHighlightColor, (newColor) => {
   emit('highlight-color-change', newColor);
@@ -562,6 +654,11 @@ watch(selectedHighlightColor, (newColor) => {
 // 监听标注类型变化并通知父组件
 watch(selectedAnnotationType, (newType) => {
   emit('annotation-type-change', newType);
+}, { immediate: true });
+
+// 监听形状工具变化并通知父组件
+watch(shapeTool, (newTool) => {
+  emit('shape-tool-change', newTool);
 }, { immediate: true });
 
 let pdfDoc: any = null;
@@ -1604,6 +1701,172 @@ const handleResetLearning = () => {
   pageAnnotations.forEach(ann => {
     emit('annotation-delete', ann);
   });
+};
+
+// ========== 形状工具相关方法 ==========
+/**
+ * 设置形状工具
+ */
+const setShapeTool = (tool: 'rectangle' | 'circle' | 'arrow' | null) => {
+  shapeTool.value = tool;
+  console.log('[PDFViewer] 设置形状工具:', tool);
+};
+
+/**
+ * 开始绘制
+ */
+const handleDrawingStart = (point: { x: number; y: number }) => {
+  console.log('[PDFViewer] 开始绘制:', point);
+};
+
+/**
+ * 更新绘制
+ */
+const handleDrawingUpdate = (point: { x: number; y: number }) => {
+  // 绘制中的实时更新由 PdfShapeOverlay 组件处理
+};
+
+/**
+ * 结束绘制
+ */
+const handleDrawingEnd = () => {
+  console.log('[PDFViewer] 结束绘制');
+  
+  // 从 previewShape 获取最终形状数据
+  if (previewShape.value) {
+    // 验证形状是否有效
+    const isValid = validateShape(previewShape.value);
+    if (isValid) {
+      // 添加到形状列表
+      shapeAnnotations.value.push({ ...previewShape.value });
+      // 触发创建事件
+      emit('shape-created', previewShape.value);
+    }
+    previewShape.value = null;
+  }
+};
+
+/**
+ * 验证形状是否有效
+ */
+const validateShape = (shape: ShapeAnnotation): boolean => {
+  const minSize = 10;
+  
+  if (shape.shapeType === 'rectangle' || shape.shapeType === 'circle') {
+    return (shape.width || 0) >= minSize && (shape.height || 0) >= minSize;
+  } else if (shape.shapeType === 'arrow') {
+    const dx = (shape.endX || 0) - (shape.startX || 0);
+    const dy = (shape.endY || 0) - (shape.startY || 0);
+    const length = Math.sqrt(dx * dx + dy * dy);
+    return length >= minSize;
+  }
+  
+  return false;
+};
+
+/**
+ * 形状点击
+ */
+const handleShapeClick = (shape: ShapeAnnotation) => {
+  console.log('[PDFViewer] 形状点击:', shape);
+  // 选中形状
+  handleShapeSelect(shape);
+};
+
+/**
+ * 形状选中
+ */
+const handleShapeSelect = (shape: ShapeAnnotation | null) => {
+  console.log('[PDFViewer] 形状选中:', shape);
+  // 更新形状的选中状态
+  shapeAnnotations.value.forEach(s => {
+    s.isSelected = s.id === shape?.id;
+  });
+};
+
+/**
+ * 形状移动
+ */
+const handleShapeMove = (shape: ShapeAnnotation, dx: number, dy: number) => {
+  console.log('[PDFViewer] 形状移动:', shape.id, dx, dy);
+  
+  // 将 CSS 坐标准换回 PDF 坐标（考虑 scale）
+  const pdfDx = dx / scale.value;
+  const pdfDy = -dy / scale.value; // Y 轴翻转
+  
+  if (shape.shapeType === 'rectangle' || shape.shapeType === 'circle') {
+    if (shape.x !== undefined) shape.x += pdfDx;
+    if (shape.y !== undefined) shape.y += pdfDy;
+  } else if (shape.shapeType === 'arrow') {
+    if (shape.startX !== undefined) shape.startX += pdfDx;
+    if (shape.startY !== undefined) shape.startY += pdfDy;
+    if (shape.endX !== undefined) shape.endX += pdfDx;
+    if (shape.endY !== undefined) shape.endY += pdfDy;
+  }
+  
+  shape.updated = Date.now();
+};
+
+/**
+ * 形状调整大小
+ */
+const handleShapeResize = (shape: ShapeAnnotation, handleType: ResizeHandle, dx: number, dy: number) => {
+  console.log('[PDFViewer] 形状调整:', shape.id, handleType, dx, dy);
+  
+  // 将 CSS 坐标准换回 PDF 坐标
+  const pdfDx = dx / scale.value;
+  const pdfDy = -dy / scale.value; // Y 轴翻转
+  
+  const minSize = 10;
+  
+  if (shape.shapeType === 'rectangle' || shape.shapeType === 'circle') {
+    switch (handleType) {
+      case 'nw':
+        if (shape.x !== undefined) shape.x += pdfDx;
+        if (shape.y !== undefined) shape.y += pdfDy;
+        if (shape.width !== undefined) shape.width = Math.max(shape.width - pdfDx, minSize);
+        if (shape.height !== undefined) shape.height = Math.max(shape.height - pdfDy, minSize);
+        break;
+      case 'n':
+        if (shape.y !== undefined) shape.y += pdfDy;
+        if (shape.height !== undefined) shape.height = Math.max(shape.height - pdfDy, minSize);
+        break;
+      case 'ne':
+        if (shape.y !== undefined) shape.y += pdfDy;
+        if (shape.width !== undefined) shape.width = Math.max(shape.width + pdfDx, minSize);
+        if (shape.height !== undefined) shape.height = Math.max(shape.height - pdfDy, minSize);
+        break;
+      case 'e':
+        if (shape.width !== undefined) shape.width = Math.max(shape.width + pdfDx, minSize);
+        break;
+      case 'se':
+        if (shape.width !== undefined) shape.width = Math.max(shape.width + pdfDx, minSize);
+        if (shape.height !== undefined) shape.height = Math.max(shape.height + pdfDy, minSize);
+        break;
+      case 's':
+        if (shape.height !== undefined) shape.height = Math.max(shape.height + pdfDy, minSize);
+        break;
+      case 'sw':
+        if (shape.x !== undefined) shape.x += pdfDx;
+        if (shape.width !== undefined) shape.width = Math.max(shape.width - pdfDx, minSize);
+        if (shape.height !== undefined) shape.height = Math.max(shape.height + pdfDy, minSize);
+        break;
+      case 'w':
+        if (shape.x !== undefined) shape.x += pdfDx;
+        if (shape.width !== undefined) shape.width = Math.max(shape.width - pdfDx, minSize);
+        break;
+    }
+  } else if (shape.shapeType === 'arrow') {
+    if (handleType === 'nw') {
+      if (shape.startX !== undefined) shape.startX += pdfDx;
+      if (shape.startY !== undefined) shape.startY += pdfDy;
+    } else if (handleType === 'se') {
+      if (shape.endX !== undefined) shape.endX += pdfDx;
+      if (shape.endY !== undefined) shape.endY += pdfDy;
+    }
+  }
+  
+  shape.updated = Date.now();
 };
 
 // 鼠标移动时检测是否在右边缘停留
@@ -2721,17 +2984,86 @@ onBeforeUnmount(() => {
   border: 2px solid rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: scale(1.15);
+    border-color: rgba(0, 0, 0, 0.3);
   }
 
   &.active {
-    border-color: var(--b3-theme-primary);
+    border-color: var(--b3-theme-on-surface);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
-    transform: scale(1.15);
+    transform: scale(1.1);
+  }
+}
+
+/* ======================================== 形状工具 ======================================== */
+.toolbar-divider-vertical {
+  width: 1px;
+  height: 24px;
+  background: var(--b3-theme-divider);
+  margin: 0 8px;
+}
+
+.shape-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shape-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--b3-theme-on-surface);
+
+  &:hover {
+    background: var(--b3-theme-primary-light);
+    border-color: var(--b3-theme-primary);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: var(--b3-theme-primary);
+    color: white;
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* ======================================== 形状颜色选择器 ======================================== */
+.shape-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ======================================== 形状叠加层 ======================================== */
+.pdf-shape-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 10;
+
+  g {
+    pointer-events: auto;
+
+    &:hover {
+      opacity: 0.9;
+    }
   }
 }
 

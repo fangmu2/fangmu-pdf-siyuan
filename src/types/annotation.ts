@@ -9,7 +9,10 @@ export type AnnotationType =
   | 'strikethrough'  // 删除线
   | 'wavy'           // 波浪线
   | 'text'           // 文本批注
-  | 'image';         // 图片摘录
+  | 'image'          // 图片摘录
+  | 'rectangle'      // 矩形标注
+  | 'circle'         // 圆形标注
+  | 'arrow';         // 箭头标注
 
 /**
  * 摘录模式类型
@@ -183,3 +186,49 @@ export const COMMENT_STATUSES: { value: CommentStatus; label: string; color: str
   { value: 'resolved', label: '已解决', color: '#909399' },
   { value: 'archived', label: '已归档', color: '#C0C4CC' },
 ];
+
+/**
+ * 形状标注数据
+ * 用于矩形、圆形、箭头等几何形状标注
+ */
+export interface ShapeAnnotation {
+  id: string;                    // 标注 ID
+  shapeType: 'rectangle' | 'circle' | 'arrow';  // 形状类型
+  color: string;                 // 线条颜色
+  lineWidth: number;             // 线条宽度（px）
+  opacity: number;               // 透明度（0-1）
+  
+  // 矩形和圆形使用
+  x?: number;                    // 左上角 X 坐标（PDF 单位）
+  y?: number;                    // 左上角 Y 坐标（PDF 单位）
+  width?: number;                // 宽度（PDF 单位）
+  height?: number;               // 高度（PDF 单位）
+  
+  // 箭头使用
+  startX?: number;               // 起点 X 坐标（PDF 单位）
+  startY?: number;               // 起点 Y 坐标（PDF 单位）
+  endX?: number;                 // 终点 X 坐标（PDF 单位）
+  endY?: number;                 // 终点 Y 坐标（PDF 单位）
+  
+  // 元数据
+  page: number;                  // 页码
+  pdfPath: string;               // PDF 文件路径
+  created: number;               // 创建时间戳
+  updated: number;               // 更新时间戳
+  
+  // 运行时状态
+  isSelected?: boolean;          // 是否选中
+}
+
+/**
+ * 形状控制点位置
+ */
+export type ResizeHandle = 
+  | 'nw'  // 左上
+  | 'n'   // 上中
+  | 'ne'  // 右上
+  | 'e'   // 右中
+  | 'se'  // 右下
+  | 's'   // 下中
+  | 'sw'  // 左下
+  | 'w';  // 左中

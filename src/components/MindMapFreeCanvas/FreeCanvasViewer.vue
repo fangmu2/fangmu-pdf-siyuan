@@ -5,22 +5,26 @@
  * 第 7 期升级：集成搜索和过滤功能
  */
 
-import { ref, computed, onMounted, onUnmounted, watch, provide } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, provide, nextTick } from 'vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import type {
   Connection,
   Edge as VueFlowEdge,
+  Node as VueFlowNode,
   NodeDragEvent,
   NodeClickEvent,
   PaneClickEvent,
   NodeMouseEvent,
-  EdgeMouseEvent
+  EdgeMouseEvent,
+  ViewportTransform
 } from '@vue-flow/core'
 import { storeToRefs } from 'pinia'
 import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
 import { useSnapToGrid } from '@/composables/useSnapToGrid'
+import { useVirtualRendering } from '@/composables/useVirtualRendering'
+import { calculateGridRange, drawGridOnCanvas } from '@/utils/gridRenderer'
 import TextCardNode from './TextCardNode.vue'
 import ImageCardNode from './ImageCardNode.vue'
 import GroupNode from './GroupNode.vue'
@@ -31,6 +35,7 @@ import EdgeContextMenu from './EdgeContextMenu.vue'
 import CanvasToolbar from './CanvasToolbar.vue'
 import MindMapSearch from './MindMapSearch.vue'
 import NodeFilterPanel from './NodeFilterPanel.vue'
+import CanvasNavigator from './CanvasNavigator.vue'
 import { useMindMapSearch } from '@/composables/useMindMapSearch'
 import type {
   FreeMindMapNode,
@@ -156,6 +161,29 @@ const isFullscreen = ref(false)
 const showSearchUI = ref(props.showSearch)
 const showFilterUI = ref(props.showFilter)
 
+// 画布导航器显示状态
+const showNavigator = ref(false)
+
+// 容器尺寸
+const containerSize = ref({ width: 800, height: 600 })
+
+// 当前视口状态（从 Vue Flow 同步）
+const currentViewport = ref({
+  x: 0,
+  y: 0,
+  zoom: 1
+})
+
+// 使用虚拟渲染组合式函数
+const virtualRendering = useVirtualRendering(visibleNodes, {
+  bufferSize: 200,
+  enabled: true,
+  minNodeThreshold: 50
+})
+
+// Canvas Navigator 引用
+const canvasNavigatorRef = ref<InstanceType<typeof CanvasNavigator> | null>(null)
+
 // 使用 Store
 const store = useFreeMindMapStore()
 const dragStore = useMindMapDragStore()
@@ -174,8 +202,31 @@ const {
   fitView: vueFlowFitView,
   zoomIn,
   zoomOut,
-  setTransform
+  setTransform,
+  getViewport
 } = useVueFlow()
+
+/**
+ * 同步视口信息
+ */
+function syncViewport(): void {
+  const vp = getViewport.value
+  if (vp) {
+    currentViewport.value = {
+      x: vp.x,
+      y: vp.y,
+      zoom: vp.zoom
+    }
+    
+    // 更新虚拟渲染视口
+    virtualRendering.updateViewport({
+      x: -vp.x / vp.zoom,
+      y: -vp.y / vp.zoom,
+      width: containerSize.value.width / vp.zoom,
+      height: containerSize.value.height / vp.zoom
+    })
+  }
+}
 
 // 本地状态
 const containerRef = ref<HTMLElement | null>(null)
@@ -368,6 +419,19 @@ onMounted(async () => {
   // 添加键盘事件监听（用于 Shift 键临时禁用吸附）
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('keyup', handleKeyUp)
+  
+  // 监听容器尺寸变化
+  updateContainerSize()
+  window.addEventListener('resize', updateContainerSize)
+  
+  // 启动视口同步
+  syncViewport()
+  const viewportSyncInterval = setInterval(syncViewport, 100)
+  
+  // 清理定时器
+  onUnmounted(() => {
+    clearInterval(viewportSyncInterval)
+  })
 })
 
 // 清理
@@ -400,6 +464,10 @@ watch([showSearchUI, showFilterUI], ([showS, showF]) => {
 watch([nodes, edges], () => {
   if (isInitialized.value) {
     debouncedSave()
+    // 更新画布边界
+    store.updateCanvasBounds()
+    // 刷新导航器
+    canvasNavigatorRef.value?.refresh()
   }
 }, { deep: true })
 
@@ -718,6 +786,9 @@ function onNodeDragStart(event: NodeDragEvent): void {
   // 启动拖拽状态
   dragStore.startDrag([event.node.id])
   console.log('[思维导图] 开始拖拽节点:', event.node.id)
+  
+  // 检查并扩展画布边界
+  checkAndExpandCanvasBounds(event.node.position)
 }
 
 /**
@@ -736,6 +807,9 @@ function onNodeDrag(event: NodeDragEvent): void {
       draggedNode.position = snappedPosition
     }
   }
+  
+  // 检查并扩展画布边界
+  checkAndExpandCanvasBounds(draggedNode.position)
   
   // 计算拖拽目标
   const mousePosition = {
@@ -1362,6 +1436,13 @@ function handleToolbarToggleFilter(): void {
 }
 
 /**
+ * 切换导航器
+ */
+function handleToolbarToggleNavigator(): void {
+  handleToggleNavigator()
+}
+
+/**
  * 保存
  */
 function handleToolbarSave(): void {
@@ -1607,12 +1688,17 @@ function addNodeAtPosition(
   type: 'textCard' | 'imageCard',
   position: { x: number; y: number }
 ): void {
-  store.createNode({
+  const newNode = store.createNode({
     type,
     title,
     content,
     position
   })
+  
+  // 检查并扩展画布边界
+  checkAndExpandCanvasBounds(position)
+  
+  console.log('[FreeCanvasViewer] 创建新节点:', newNode.id, '位置:', position)
 }
 
 /**
@@ -1682,6 +1768,52 @@ function handleKeyUp(event: KeyboardEvent): void {
     isShiftPressed.value = false
     console.log('[FreeCanvasViewer] Shift 键释放，恢复网格吸附')
   }
+}
+
+/**
+ * 更新容器尺寸
+ */
+function updateContainerSize(): void {
+  if (containerRef.value) {
+    containerSize.value = {
+      width: containerRef.value.clientWidth,
+      height: containerRef.value.clientHeight
+    }
+  }
+}
+
+/**
+ * 检查并扩展画布边界（节点拖拽时）
+ */
+function checkAndExpandCanvasBounds(position: { x: number; y: number }): void {
+  if (store.checkAndExpandBounds(position)) {
+    // 边界已扩展，刷新导航器
+    canvasNavigatorRef.value?.refresh()
+  }
+}
+
+/**
+ * 处理导航器定位
+ */
+function handleNavigatorNavigate(position: { x: number; y: number }): void {
+  // 将视图中心定位到点击位置
+  const zoom = currentViewport.value.zoom
+  const centerX = containerSize.value.width / 2
+  const centerY = containerSize.value.height / 2
+  
+  setTransform({
+    x: centerX - position.x * zoom,
+    y: centerY - position.y * zoom,
+    zoom: zoom
+  })
+}
+
+/**
+ * 切换导航器显示
+ */
+function handleToggleNavigator(): void {
+  showNavigator.value = !showNavigator.value
+  console.log('[FreeCanvasViewer] 导航器', showNavigator.value ? '已显示' : '已隐藏')
 }
 
 /**
@@ -1794,6 +1926,7 @@ function handleContextMenuCreateReference(): void {
       @toggle-fullscreen="handleToolbarToggleFullscreen"
       @toggle-search="handleToolbarToggleSearch"
       @toggle-filter="handleToolbarToggleFilter"
+      @toggle-navigator="handleToolbarToggleNavigator"
       @save="handleToolbarSave"
       @export="handleToolbarExport"
     />
@@ -1952,6 +2085,15 @@ function handleContextMenuCreateReference(): void {
         | 过滤：{{ filteredNodes?.length || 0 }}
       </span>
     </div>
+
+    <!-- 画布导航器 -->
+    <CanvasNavigator
+      ref="canvasNavigatorRef"
+      :visible="showNavigator"
+      :viewport="currentViewport"
+      :container-size="containerSize"
+      @navigate="handleNavigatorNavigate"
+    />
 
     <!-- 编辑对话框 -->
     <NodeEditDialog

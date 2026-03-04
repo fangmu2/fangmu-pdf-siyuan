@@ -15,8 +15,19 @@ import type {
   UpdateNodeParams,
   CreateEdgeParams,
   CrossBranchLink,
-  CrossLinkType
+  CrossLinkType,
+  NodeAnnotation
 } from '@/types/mindmapFree'
+
+/**
+ * 画布边界接口
+ */
+export interface CanvasBounds {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
 import {
   getFreeMindMap,
   saveFreeMindMap,
@@ -77,6 +88,15 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
   /** 跨分支关联列表（虚线连接） */
   const crossBranchLinks = ref<CrossBranchLink[]>([])
 
+  /** 所有标签集合（用于过滤） */
+  const allTags = ref<string[]>([])
+
+  /** 当前过滤的标签 */
+  const filterTag = ref<string>('')
+
+  /** 隐藏的节点 ID 列表（用于过滤） */
+  const hiddenNodeIds = ref<string[]>([])
+
   /** 是否已加载 */
   const isLoaded = ref(false)
 
@@ -85,6 +105,23 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
 
   /** 错误信息 */
   const errorMessage = ref<string>('')
+
+  /** 画布边界（无限扩展） */
+  const canvasBounds = ref<CanvasBounds>({
+    minX: -5000,
+    minY: -5000,
+    maxX: 5000,
+    maxY: 5000
+  })
+
+  /** 是否启用自动扩展 */
+  const autoExpandEnabled = ref(true)
+
+  /** 画布扩展阈值（距离边界多近时触发扩展） */
+  const expandThreshold = ref(200)
+
+  /** 画布扩展量（每次扩展多少像素） */
+  const expandAmount = ref(2000)
 
   // ==================== Getters ====================
 
@@ -111,7 +148,133 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
   /** 获取节点边界 */
   const bounds = computed(() => calculateNodeBounds(nodes.value))
 
+  /** 获取当前画布边界 */
+  const currentCanvasBounds = computed(() => canvasBounds.value)
+
+  /** 获取可见节点（过滤后的） */
+  const visibleNodes = computed(() => {
+    if (hiddenNodeIds.value.length === 0) {
+      return nodes.value
+    }
+    return nodes.value.filter(n => !hiddenNodeIds.value.includes(n.id))
+  })
+
+  /** 获取所有唯一标签 */
+  const uniqueTags = computed(() => {
+    const tags = new Set<string>()
+    nodes.value.forEach(node => {
+      node.data.tags?.forEach(tag => tags.add(tag))
+    })
+    return Array.from(tags).sort()
+  })
+
   // ==================== Actions ====================
+
+  /**
+   * 更新画布边界（根据所有节点位置）
+   */
+  function updateCanvasBounds(): void {
+    const padding = 500  // 边缘留白
+    
+    let minX = Infinity, minY = Infinity
+    let maxX = -Infinity, maxY = -Infinity
+    
+    if (nodes.value.length === 0) {
+      // 没有节点时使用默认边界
+      canvasBounds.value = {
+        minX: -5000,
+        minY: -5000,
+        maxX: 5000,
+        maxY: 5000
+      }
+      return
+    }
+    
+    // 性能优化：节点数量多时使用分批计算
+    if (nodes.value.length > 1000) {
+      const batchSize = 500
+      for (let i = 0; i < nodes.value.length; i += batchSize) {
+        const batch = nodes.value.slice(i, i + batchSize)
+        batch.forEach(node => {
+          const nodeWidth = node.style?.width ? parseFloat(node.style.width as string) : 200
+          const nodeHeight = node.style?.height ? parseFloat(node.style.height as string) : 60
+          
+          minX = Math.min(minX, node.position.x)
+          minY = Math.min(minY, node.position.y)
+          maxX = Math.max(maxX, node.position.x + nodeWidth)
+          maxY = Math.max(maxY, node.position.y + nodeHeight)
+        })
+      }
+    } else {
+      nodes.value.forEach(node => {
+        const nodeWidth = node.style?.width ? parseFloat(node.style.width as string) : 200
+        const nodeHeight = node.style?.height ? parseFloat(node.style.height as string) : 60
+        
+        minX = Math.min(minX, node.position.x)
+        minY = Math.min(minY, node.position.y)
+        maxX = Math.max(maxX, node.position.x + nodeWidth)
+        maxY = Math.max(maxY, node.position.y + nodeHeight)
+      })
+    }
+    
+    // 扩展画布边界
+    canvasBounds.value = {
+      minX: minX - padding,
+      minY: minY - padding,
+      maxX: maxX + padding,
+      maxY: maxY + padding
+    }
+    
+    console.log('[FreeMindMapStore] 画布边界已更新:', canvasBounds.value)
+  }
+
+  /**
+   * 检查并扩展画布边界
+   * @param position 需要检查的位置
+   */
+  function checkAndExpandBounds(position: { x: number; y: number }): boolean {
+    if (!autoExpandEnabled.value) {
+      return false
+    }
+    
+    const { minX, minY, maxX, maxY } = canvasBounds.value
+    let expanded = false
+    
+    if (position.x < minX + expandThreshold.value) {
+      canvasBounds.value.minX = position.x - expandAmount.value
+      expanded = true
+    }
+    if (position.y < minY + expandThreshold.value) {
+      canvasBounds.value.minY = position.y - expandAmount.value
+      expanded = true
+    }
+    if (position.x > maxX - expandThreshold.value) {
+      canvasBounds.value.maxX = position.x + expandAmount.value
+      expanded = true
+    }
+    if (position.y > maxY - expandThreshold.value) {
+      canvasBounds.value.maxY = position.y + expandAmount.value
+      expanded = true
+    }
+    
+    if (expanded) {
+      console.log('[FreeMindMapStore] 画布边界已扩展:', canvasBounds.value)
+    }
+    
+    return expanded
+  }
+
+  /**
+   * 重置画布边界到默认值
+   */
+  function resetCanvasBounds(): void {
+    canvasBounds.value = {
+      minX: -5000,
+      minY: -5000,
+      maxX: 5000,
+      maxY: 5000
+    }
+  }
 
   /**
    * 加载思维导图
@@ -642,6 +805,141 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     return crossBranchLinks.value
   }
 
+  // ==================== 标签和批注方法 ====================
+
+  /**
+   * 为节点添加标签
+   * @param nodeId 节点 ID
+   * @param tag 标签内容
+   */
+  function addNodeTag(nodeId: string, tag: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) return
+
+    if (!node.data.tags) {
+      node.data.tags = []
+    }
+
+    if (!node.data.tags.includes(tag)) {
+      node.data.tags.push(tag)
+      // 更新所有标签集合
+      allTags.value = uniqueTags.value
+    }
+  }
+
+  /**
+   * 从节点移除标签
+   * @param nodeId 节点 ID
+   * @param tag 标签内容
+   */
+  function removeNodeTag(nodeId: string, tag: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node || !node.data.tags) return
+
+    node.data.tags = node.data.tags.filter(t => t !== tag)
+    // 更新所有标签集合
+    allTags.value = uniqueTags.value
+  }
+
+  /**
+   * 按标签过滤节点
+   * @param tag 标签内容，空字符串显示所有节点
+   */
+  function filterNodesByTag(tag: string): void {
+    filterTag.value = tag
+    if (!tag) {
+      // 显示所有节点
+      hiddenNodeIds.value = []
+    } else {
+      // 隐藏不包含该标签的节点
+      hiddenNodeIds.value = nodes.value
+        .filter(n => !n.data.tags?.includes(tag))
+        .map(n => n.id)
+    }
+  }
+
+  /**
+   * 清除标签过滤
+   */
+  function clearTagFilter(): void {
+    filterTag.value = ''
+    hiddenNodeIds.value = []
+  }
+
+  /**
+   * 为节点添加批注
+   * @param nodeId 节点 ID
+   * @param content 批注内容（Markdown 格式）
+   */
+  function addNodeAnnotation(nodeId: string, content: string): NodeAnnotation {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node) {
+      throw new Error('节点不存在')
+    }
+
+    if (!node.data.annotations) {
+      node.data.annotations = []
+    }
+
+    const annotation: NodeAnnotation = {
+      id: `anno-${Date.now()}`,
+      nodeId,
+      content,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }
+
+    node.data.annotations.push(annotation)
+    return annotation
+  }
+
+  /**
+   * 更新节点批注
+   * @param nodeId 节点 ID
+   * @param annotation 更新后的批注
+   */
+  function updateNodeAnnotation(nodeId: string, annotation: NodeAnnotation): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node || !node.data.annotations) return
+
+    const index = node.data.annotations.findIndex(a => a.id === annotation.id)
+    if (index === -1) return
+
+    node.data.annotations[index] = {
+      ...annotation,
+      updatedAt: Date.now()
+    }
+  }
+
+  /**
+   * 删除节点批注
+   * @param nodeId 节点 ID
+   * @param annotationId 批注 ID
+   */
+  function removeNodeAnnotation(nodeId: string, annotationId: string): void {
+    const node = nodes.value.find(n => n.id === nodeId)
+    if (!node || !node.data.annotations) return
+
+    node.data.annotations = node.data.annotations.filter(a => a.id !== annotationId)
+  }
+
+  /**
+   * 获取节点的批注列表
+   * @param nodeId 节点 ID
+   * @returns 批注列表
+   */
+  function getNodeAnnotations(nodeId: string): NodeAnnotation[] {
+    const node = nodes.value.find(n => n.id === nodeId)
+    return node?.data.annotations || []
+  }
+
+  /**
+   * 收集所有标签
+   */
+  function collectAllTags(): void {
+    allTags.value = uniqueTags.value
+  }
+
 
   /**
    * 创建连线
@@ -1000,6 +1298,10 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     isLoaded,
     isLoading,
     errorMessage,
+    canvasBounds,
+    autoExpandEnabled,
+    expandThreshold,
+    expandAmount,
     // Getters
     selectedNodes,
     nodeCount,
@@ -1007,6 +1309,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     crossLinkCount,
     rootNodes,
     bounds,
+    currentCanvasBounds,
     // Actions
     loadMindMap,
     saveMindMap,
@@ -1029,6 +1332,9 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     setReadOnly,
     setShowGrid,
     setShowMiniMap,
+    updateCanvasBounds,
+    checkAndExpandBounds,
+    resetCanvasBounds,
     // 新增：层级关系管理
     getChildren,
     getParent,
@@ -1053,6 +1359,21 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     cutNodes,
     pasteNodes,
     clearClipboard,
-    hasClipboardData
+    hasClipboardData,
+    // 新增：标签和批注功能
+    allTags,
+    filterTag,
+    hiddenNodeIds,
+    uniqueTags,
+    visibleNodes,
+    addNodeTag,
+    removeNodeTag,
+    filterNodesByTag,
+    clearTagFilter,
+    addNodeAnnotation,
+    updateNodeAnnotation,
+    removeNodeAnnotation,
+    getNodeAnnotations,
+    collectAllTags
   }
 })

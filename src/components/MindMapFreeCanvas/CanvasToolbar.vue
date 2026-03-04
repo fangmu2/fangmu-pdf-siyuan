@@ -26,6 +26,12 @@ interface Props {
   gridSize?: number
   /** 是否启用吸附 */
   snapEnabled?: boolean
+  /** 所有标签列表 */
+  allTags?: string[]
+  /** 当前选中的过滤标签 */
+  selectedTag?: string
+  /** 是否显示导航器 */
+  showNavigator?: boolean
 }
 
 interface Emits {
@@ -43,9 +49,11 @@ interface Emits {
   (e: 'toggle-fullscreen'): void
   (e: 'toggle-search'): void
   (e: 'toggle-filter'): void
+  (e: 'toggle-navigator'): void
   (e: 'save'): void
   (e: 'export'): void
   (e: 'generate-from-pdf'): void  // 从 PDF 标注生成
+  (e: 'filter-by-tag', tag: string): void  // 按标签过滤
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -57,7 +65,10 @@ const props = withDefaults(defineProps<Props>(), {
   hasActiveSearch: false,
   hasActiveFilter: false,
   gridSize: 20,
-  snapEnabled: true
+  snapEnabled: true,
+  allTags: () => [],
+  selectedTag: '',
+  showNavigator: false
 })
 
 const emit = defineEmits<Emits>()
@@ -215,6 +226,14 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
       >
         <span class="freemind-toolbar-icon">{{ isFullscreen ? '📐' : '📐' }}</span>
       </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: showNavigator }"
+        @click="emit('toggle-navigator')"
+        title="显示画布导航器"
+      >
+        <span class="freemind-toolbar-icon">🗺️</span>
+      </button>
     </div>
 
     <div class="freemind-toolbar-divider" />
@@ -237,6 +256,21 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
       >
         <span class="freemind-toolbar-icon">🎛️</span>
       </button>
+      <!-- 标签过滤器 -->
+      <div v-if="allTags && allTags.length > 0" class="freemind-toolbar-group">
+        <div class="freemind-toolbar-divider" />
+        <select
+          class="freemind-toolbar-select"
+          :value="selectedTag"
+          @change="emit('filter-by-tag', ($event.target as HTMLSelectElement).value)"
+          title="按标签过滤"
+        >
+          <option value="">全部标签</option>
+          <option v-for="tag in allTags" :key="tag" :value="tag">
+            🏷️ {{ tag }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div class="freemind-toolbar-spacer" />
