@@ -1,7 +1,7 @@
 // src/api/annotationApi.ts
 import { postApi } from './siyuanApi';
 import type { SiYuanBlock } from '../types/siyuan';
-import type { PDFAnnotation, AnnotationStats, AnnotationColor, AnnotationLevel, AnnotationComment, CommentPriority, CommentStatus } from '../types/annotation';
+import type { PDFAnnotation, AnnotationStats, AnnotationColor, AnnotationLevel, AnnotationComment, CommentPriority, CommentStatus, AnnotationType } from '../types/annotation';
 import { parseAnnotationFromBlock } from '../utils/annotationParser';
 
 /**
@@ -122,6 +122,7 @@ export async function createAnnotation(options: {
   docId?: string;
   isImage?: boolean;
   imagePath?: string;
+  annotationType?: AnnotationType;  // 新增标注类型参数
 }): Promise<string> {
   const level = options.level || 'text';
 
@@ -199,11 +200,15 @@ export async function createAnnotation(options: {
     markdown += ` custom-color="${options.color}"`;
   }
 
+  if (options.annotationType && options.annotationType !== 'highlight') {
+    markdown += ` custom-annotation-type="${options.annotationType}"`;
+  }
+
   if (options.note) {
     markdown += ` custom-note="${options.note}"`;
   }
 
-  markdown += `}`;
+  markdown += ` }`;
 
   // 获取当前文档ID
   let docId = options.docId;
@@ -287,6 +292,22 @@ export async function updateAnnotationColor(
     id: blockId,
     attrs: {
       'custom-color': color,
+      'custom-updated': Date.now().toString()
+    }
+  });
+}
+
+/**
+ * 更新标注的类型
+ */
+export async function updateAnnotationType(
+  blockId: string,
+  annotationType: AnnotationType
+): Promise<void> {
+  await postApi('/api/attr/setBlockAttrs', {
+    id: blockId,
+    attrs: {
+      'custom-annotation-type': annotationType,
       'custom-updated': Date.now().toString()
     }
   });

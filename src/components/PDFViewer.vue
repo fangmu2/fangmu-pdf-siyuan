@@ -253,8 +253,24 @@
 
     <!-- 底部工具栏（保留原有功能，添加高亮颜色选择） -->
     <div class="bottom-toolbar" v-if="totalPages > 0">
-      <!-- 左侧：高亮颜色选择器 -->
+      <!-- 左侧：标注类型选择器 -->
       <div class="toolbar-section toolbar-left">
+        <div class="annotation-type-selector">
+          <button
+            v-for="type in annotationTypes"
+            :key="type.value"
+            :class="['type-btn', { active: selectedAnnotationType === type.value }]"
+            :title="type.label"
+            @click="selectedAnnotationType = type.value"
+          >
+            <span class="type-icon">{{ type.icon }}</span>
+            <span class="type-label">{{ type.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 中间：高亮颜色选择器 -->
+      <div class="toolbar-section toolbar-center">
         <div class="highlight-color-picker">
           <button
             v-for="color in highlightColors"
@@ -456,7 +472,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'loaded', numPages: number): void;
   (e: 'page-change', page: number): void;
-  (e: 'text-selected', data: { text: string; page: number; rect: [number, number, number, number] | null }): void;
+  (e: 'text-selected', data: { 
+    text: string; 
+    page: number; 
+    rect: [number, number, number, number] | null;
+    annotationType?: 'highlight' | 'underline' | 'strikethrough' | 'wavy';
+    color?: string;
+  }): void;
   (e: 'image-selected', data: {
     canvasRect: { x: number; y: number; width: number; height: number };
     pdfRect: [number, number, number, number];
@@ -466,6 +488,7 @@ const emit = defineEmits<{
   (e: 'annotation-click', annotation: PDFAnnotation): void;
   (e: 'annotation-created', annotation: PDFAnnotation): void;
   (e: 'highlight-color-change', color: string): void;
+  (e: 'annotation-type-change', type: 'highlight' | 'underline' | 'strikethrough' | 'wavy'): void;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement>();
@@ -522,9 +545,23 @@ const highlightColors = [
 ];
 const selectedHighlightColor = ref('yellow');
 
+// 标注类型选择
+const annotationTypes = [
+  { value: 'highlight' as const, label: '高亮', icon: '🖍️' },
+  { value: 'underline' as const, label: '下划线', icon: 'U̲' },
+  { value: 'strikethrough' as const, label: '删除线', icon: 'S̶' },
+  { value: 'wavy' as const, label: '波浪线', icon: '〰️' },
+];
+const selectedAnnotationType = ref<'highlight' | 'underline' | 'strikethrough' | 'wavy'>('highlight');
+
 // 监听颜色变化并通知父组件
 watch(selectedHighlightColor, (newColor) => {
   emit('highlight-color-change', newColor);
+}, { immediate: true });
+
+// 监听标注类型变化并通知父组件
+watch(selectedAnnotationType, (newType) => {
+  emit('annotation-type-change', newType);
 }, { immediate: true });
 
 let pdfDoc: any = null;
@@ -1203,7 +1240,9 @@ const handleTextSelection = () => {
   emit('text-selected', {
     text,
     page: props.currentPage,
-    rect
+    rect,
+    annotationType: selectedAnnotationType.value,
+    color: selectedHighlightColor.value,
   });
 
   // 延迟释放锁（但保留 lastEmittedText 用于去重）
@@ -2623,6 +2662,49 @@ onBeforeUnmount(() => {
 
 .outline-item:hover {
   background: var(--b3-theme-surface-light);
+}
+
+/* ======================================== 标注类型选择器 ======================================== */
+.annotation-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.type-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--b3-theme-divider);
+  border-radius: 4px;
+  background: var(--b3-theme-background);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 12px;
+  color: var(--b3-theme-on-surface);
+
+  &:hover {
+    background: var(--b3-theme-primary-light);
+    border-color: var(--b3-theme-primary);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: var(--b3-theme-primary);
+    color: white;
+    border-color: var(--b3-theme-primary);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  }
+
+  .type-icon {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .type-label {
+    white-space: nowrap;
+  }
 }
 
 /* ======================================== 高亮颜色选择器 ======================================== */

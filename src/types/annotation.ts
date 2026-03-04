@@ -1,6 +1,17 @@
 // src/types/annotation.ts
 
 /**
+ * 标注类型（MarginNote 4 风格）
+ */
+export type AnnotationType =
+  | 'highlight'      // 高亮
+  | 'underline'      // 下划线
+  | 'strikethrough'  // 删除线
+  | 'wavy'           // 波浪线
+  | 'text'           // 文本批注
+  | 'image';         // 图片摘录
+
+/**
  * 摘录模式类型
  */
 export type ExtractMode = 'text' | 'image';
@@ -61,6 +72,7 @@ export interface PDFAnnotation {
   note: string;                  // 用户添加的笔记（可选）
   color: AnnotationColor;        // 颜色
   level: AnnotationLevel;        // 标注级别
+  type: AnnotationType;          // 标注类型（新增）
 
   // 图片摘录相关
   isImage?: boolean;             // 是否为图片摘录

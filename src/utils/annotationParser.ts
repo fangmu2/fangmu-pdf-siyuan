@@ -1,6 +1,6 @@
 // src/utils/annotationParser.ts
 import type { SiYuanBlock } from '../types/siyuan';
-import type { PDFAnnotation, AnnotationColor, AnnotationLevel } from '../types/annotation';
+import type { PDFAnnotation, AnnotationColor, AnnotationLevel, AnnotationType } from '../types/annotation';
 
 /**
  * 解析思源的 IAL 字符串为对象
@@ -72,10 +72,11 @@ export function parseAnnotationFromBlock(
     // 5. 提取高亮的文本内容
     const text = block.content || '';
 
-    // 6. 提取用户笔记、颜色和级别
+    // 6. 提取用户笔记、颜色、级别和标注类型
     const note = ial['custom-note'] || '';
     const color = (ial['custom-color'] as AnnotationColor) || 'yellow';
     const level = (ial['custom-level'] as AnnotationLevel) || 'text';
+    const annotationType = (ial['custom-annotation-type'] as AnnotationType) || 'highlight';
 
     // 7. 构建标注对象
     const annotation: PDFAnnotation = {
@@ -89,6 +90,7 @@ export function parseAnnotationFromBlock(
       note: note,
       color: color,
       level: level,
+      type: annotationType,  // 新增标注类型
       created: ial['created'] ? parseInt(ial.created) : Date.now(),
       updated: ial['custom-updated']
         ? parseInt(ial['custom-updated'])
