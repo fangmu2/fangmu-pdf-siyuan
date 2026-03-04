@@ -54,6 +54,7 @@ interface Emits {
   (e: 'export'): void
   (e: 'generate-from-pdf'): void  // 从 PDF 标注生成
   (e: 'filter-by-tag', tag: string): void  // 按标签过滤
+  (e: 'open-template-manager'): void  // 打开布局模板管理器
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -78,11 +79,23 @@ const layoutOptions = [
   { value: 'free', label: '自由', icon: '🎨' },
   { value: 'tree', label: '树状', icon: '🌳' },
   { value: 'vertical', label: '垂直', icon: '⬇️' },
-  { value: 'horizontal', label: '水平', icon: '➡️' }
+  { value: 'horizontal', label: '水平', icon: '➡️' },
+  { value: 'concept', label: '概念图', icon: '🕸️' }
 ]
 
 // 计算缩放百分比
 const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
+
+// 处理布局点击
+function handleLayoutClick(value: string): void {
+  if (value === 'concept') {
+    emit('concept-layout')
+  } else if (value === 'tree') {
+    emit('tree-layout')
+  } else {
+    emit('auto-layout', value as 'horizontal' | 'vertical')
+  }
+}
 </script>
 
 <template>
@@ -135,6 +148,21 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
 
     <div class="freemind-toolbar-divider" />
 
+    <!-- 智能推荐 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        :disabled="readOnly"
+        @click="emit('smart-recommend')"
+        title="智能布局推荐"
+      >
+        <span class="freemind-toolbar-icon">💡</span>
+        <span class="freemind-toolbar-label">智能推荐</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
     <!-- 布局模式 -->
     <div class="freemind-toolbar-group">
       <div class="freemind-toolbar-label">布局：</div>
@@ -145,12 +173,21 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
           class="freemind-toolbar-btn freemind-toolbar-btn-icon"
           :class="{ active: layout === option.value }"
           :disabled="readOnly && option.value !== 'free'"
-          @click="emit('auto-layout', option.value as 'horizontal' | 'vertical')"
+          @click="handleLayoutClick(option.value)"
           :title="option.label + '布局'"
         >
           {{ option.icon }}
         </button>
       </div>
+      <button
+        v-if="layout === 'concept'"
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: showNavigator }"
+        @click="emit('toggle-concept-settings')"
+        title="概念图配置"
+      >
+        ⚙️
+      </button>
     </div>
 
     <div class="freemind-toolbar-divider" />
@@ -293,6 +330,20 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
       >
         <span class="freemind-toolbar-icon">📤</span>
         <span class="freemind-toolbar-label">导出</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 布局模板 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        @click="emit('open-template-manager')"
+        title="布局模板"
+      >
+        <span class="freemind-toolbar-icon">📋</span>
+        <span class="freemind-toolbar-label">模板</span>
       </button>
     </div>
   </div>

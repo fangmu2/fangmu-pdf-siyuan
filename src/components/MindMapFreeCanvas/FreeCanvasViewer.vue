@@ -36,6 +36,7 @@ import CanvasToolbar from './CanvasToolbar.vue'
 import MindMapSearch from './MindMapSearch.vue'
 import NodeFilterPanel from './NodeFilterPanel.vue'
 import CanvasNavigator from './CanvasNavigator.vue'
+import LayoutRecommendationPanel from './LayoutRecommendationPanel.vue'
 import { useMindMapSearch } from '@/composables/useMindMapSearch'
 import type {
   FreeMindMapNode,
@@ -163,6 +164,9 @@ const showFilterUI = ref(props.showFilter)
 
 // 画布导航器显示状态
 const showNavigator = ref(false)
+
+// 智能推荐面板状态
+const showRecommendPanel = ref(false)
 
 // 容器尺寸
 const containerSize = ref({ width: 800, height: 600 })
@@ -1457,6 +1461,42 @@ function handleToolbarExport(): void {
   console.log('导出思维导图')
 }
 
+/**
+ * 智能布局推荐
+ */
+function handleSmartRecommend(): void {
+  showRecommendPanel.value = true
+}
+
+/**
+ * 应用推荐布局
+ */
+function handleApplyRecommendLayout(layoutType: string): void {
+  // 根据布局类型应用不同的布局
+  if (layoutType === 'tree') {
+    store.setLayout('tree')
+    // 应用树状布局算法
+    applyTreeLayout(
+      nodes.value,
+      (nodeId, position) => {
+        store.updateNodePosition(nodeId, position.x, position.y)
+      }
+    )
+  } else if (layoutType === 'fishbone') {
+    // TODO: 实现鱼骨图布局
+    console.log('应用鱼骨图布局')
+  } else if (layoutType === 'timeline') {
+    // TODO: 实现时间轴布局
+    console.log('应用时间轴布局')
+  } else if (layoutType === 'concept') {
+    // TODO: 实现概念图布局
+    console.log('应用概念图布局')
+  }
+  
+  // 保存更改
+  debouncedSave()
+}
+
 // ==================== 关联线编辑处理 ====================
 
 /**
@@ -1918,6 +1958,7 @@ function handleContextMenuCreateReference(): void {
       @add-node="handleToolbarAddNode"
       @add-group="handleToolbarAddGroup"
       @auto-layout="handleToolbarAutoLayout"
+      @smart-recommend="handleSmartRecommend"
       @zoom-in="zoomIn"
       @zoom-out="zoomOut"
       @zoom-reset="() => setTransform({ x: 0, y: 0, zoom: 1 })"
@@ -2161,6 +2202,14 @@ function handleContextMenuCreateReference(): void {
       @width="handleEdgeWidth"
       @label="handleEdgeLabel"
       @toggle-arrow="handleToggleArrow"
+    />
+
+    <!-- 智能推荐面板 -->
+    <LayoutRecommendationPanel
+      v-model:visible="showRecommendPanel"
+      :nodes="nodes"
+      :edges="edges"
+      @apply-layout="handleApplyRecommendLayout"
     />
   </div>
 </template>

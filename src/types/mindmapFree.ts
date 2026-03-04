@@ -3,7 +3,6 @@
  * @fileoverview 定义自由画布思维导图的数据结构和接口
  */
 
-import type { Node as VueFlowNode, Edge as VueFlowEdge, Connection } from '@vue-flow/core'
 import type { Styles } from '@vue-flow/core'
 
 /**
@@ -58,8 +57,66 @@ export interface FreeMindMapNodeData {
   zIndex?: number
   /** 所属分组 ID */
   groupId?: string
+  /** 子节点 ID 列表（用于 MarginNote4 风格层级管理） */
+  childrenIds?: string[]
   /** 跨分支关联列表 */
   relations?: NodeRelation[]
+  /** 节点标签列表 */
+  tags?: string[]
+  /** 节点批注列表 */
+  annotations?: NodeAnnotation[]
+  /** === MarginNote 4 兼容性字段 === */
+  /** 节点类型（普通/克隆/引用/子脑图/自由） */
+  nodeType?: 'normal' | 'clone' | 'reference' | 'submap' | 'free'
+  /** 原始节点 ID（克隆/引用时使用） */
+  sourceNodeId?: string
+  /** 子脑图 ID（submap 类型使用） */
+  subMapId?: string
+  /** 是否同步修改（引用节点=true，克隆节点=false） */
+  syncChanges?: boolean
+  /** 子脑图标题摘要（显示在主脑图） */
+  subMapSummary?: string
+  /** 子脑图节点数量（用于显示统计） */
+  subMapNodeCount?: number
+  /** === PDF 文档引用 === */
+  /** PDF 文件路径 */
+  pdfPath?: string
+  /** PDF 页码（如果与第 24 行重复，使用该字段） */
+  pdfPage?: number
+  /** PDF 选区坐标 */
+  rect?: [number, number, number, number]
+  /** === 时间轴功能 === */
+  /** 时间戳（用于时间轴布局） */
+  timestamp?: number
+  /** 格式化时间标签 */
+  dateLabel?: string
+}
+
+/**
+ * 子脑图数据结构
+ * 用于嵌套脑图的独立存储
+ */
+export interface SubMindMap {
+  /** 子脑图唯一 ID */
+  id: string
+  /** 父脑图 ID */
+  parentMapId: string
+  /** 根节点 ID */
+  rootNodeId: string
+  /** 子脑图标题 */
+  title: string
+  /** 子脑图摘要（显示在主脑图） */
+  summary?: string
+  /** 子脑图节点列表 */
+  nodes: FreeMindMapNode[]
+  /** 子脑图连线列表 */
+  edges: FreeMindMapEdge[]
+  /** 创建时间 */
+  createdAt: number
+  /** 更新时间 */
+  updatedAt: number
+  /** 创建者 */
+  createdBy?: string
 }
 
 /**
@@ -71,6 +128,22 @@ export interface NodeRelation {
   type: 'dashed' | 'solid'  // 虚线/实线
   label?: string            // 关联标签
   color?: string            // 关联颜色
+}
+
+/**
+ * 节点批注
+ */
+export interface NodeAnnotation {
+  /** 批注 ID */
+  id: string
+  /** 节点 ID */
+  nodeId: string
+  /** 批注内容（Markdown 格式） */
+  content: string
+  /** 创建时间 */
+  createdAt: number
+  /** 更新时间 */
+  updatedAt: number
 }
 
 /**
@@ -209,7 +282,7 @@ export interface MindMapViewport {
 /**
  * 自由画布思维导图布局模式
  */
-export type FreeMindMapLayout = 'free' | 'tree' | 'vertical' | 'horizontal'
+export type FreeMindMapLayout = 'free' | 'tree' | 'vertical' | 'horizontal' | 'concept'
 
 /**
  * 自由画布思维导图配置
