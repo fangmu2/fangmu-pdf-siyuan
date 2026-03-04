@@ -20,6 +20,7 @@ import type {
 } from '@vue-flow/core'
 import { storeToRefs } from 'pinia'
 import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
+import { useSnapToGrid } from '@/composables/useSnapToGrid'
 import TextCardNode from './TextCardNode.vue'
 import ImageCardNode from './ImageCardNode.vue'
 import GroupNode from './GroupNode.vue'
@@ -181,6 +182,23 @@ const containerRef = ref<HTMLElement | null>(null)
 const isInitialized = ref(false)
 const autoSaveTimer = ref<number | null>(null)
 const shortcutManager = ref<ShortcutManager | null>(null)
+
+// 网格吸附功能
+const {
+  gridSize,
+  snapThreshold,
+  enabled: snapEnabled,
+  snapToGrid,
+  toggleEnabled,
+  setGridSize
+} = useSnapToGrid({
+  gridSize: 20,
+  snapThreshold: 10,
+  enabled: true
+})
+
+// Shift 键状态（用于临时禁用吸附）
+const isShiftPressed = ref(false)
 
 // 框选状态
 const selectionBox = ref({
@@ -346,6 +364,10 @@ onMounted(async () => {
   shortcutManager.value = new ShortcutManager(globalUndoManager, store)
   shortcutManager.value.listen()
   console.log('[FreeCanvasViewer] 快捷键管理器已启动（Ctrl+Z 撤销，Ctrl+Shift+Z 重做）')
+  
+  // 添加键盘事件监听（用于 Shift 键临时禁用吸附）
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
 })
 
 // 清理
@@ -355,6 +377,10 @@ onUnmounted(() => {
   window.removeEventListener('message', handlePostMessage)
   window.removeEventListener('annotation-created', handleAnnotationCreated as EventListener)
   console.log('[FreeCanvasViewer] 已移除事件监听')
+  
+  // 移除键盘事件监听
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
   
   // 销毁快捷键管理器
   if (shortcutManager.value) {
@@ -695,10 +721,21 @@ function onNodeDragStart(event: NodeDragEvent): void {
 }
 
 /**
- * 节点拖拽中 - 实时更新目标高亮
+ * 节点拖拽中 - 实时更新目标高亮并应用网格吸附
  */
 function onNodeDrag(event: NodeDragEvent): void {
   const draggedNode = event.node as FreeMindMapNode
+  
+  // 按下 Shift 键时临时禁用吸附
+  const shouldSnap = snapEnabled.value && !isShiftPressed.value
+  if (shouldSnap) {
+    // 应用网格吸附
+    const snappedPosition = snapToGrid(draggedNode.position)
+    if (snappedPosition.x !== draggedNode.position.x || snappedPosition.y !== draggedNode.position.y) {
+      // 更新节点位置到吸附位置
+      draggedNode.position = snappedPosition
+    }
+  }
   
   // 计算拖拽目标
   const mousePosition = {
@@ -1240,6 +1277,22 @@ function handleToolbarToggleGrid(): void {
 }
 
 /**
+ * 切换网格显示
+ */
+function handleToggleGrid(): void {
+  toggleEnabled()
+  console.log('[FreeCanvasViewer] 网格吸附', snapEnabled.value ? '已启用' : '已禁用')
+}
+
+/**
+ * 设置网格大小
+ */
+function handleSetGridSize(size: number): void {
+  setGridSize(size)
+  console.log('[FreeCanvasViewer] 网格大小设置为', size, 'px')
+}
+
+/**
  * 切换全屏
  */
 function handleToolbarToggleFullscreen(): void {
@@ -1564,6 +1617,32 @@ function handleResizeEnd(nodeId: string): void {
 }
 
 /**
+ * 处理键盘按下事件（Shift 键临时禁用吸附）
+ */
+function handleKeyDown(event: KeyboardEvent): void {
+  // 检查是否在输入框中
+  const target = event.target as HTMLElement
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+    return
+  }
+  
+  if (event.key === 'Shift') {
+    isShiftPressed.value = true
+    console.log('[FreeCanvasViewer] Shift 键按下，临时禁用网格吸附')
+  }
+}
+
+/**
+ * 处理键盘释放事件
+ */
+function handleKeyUp(event: KeyboardEvent): void {
+  if (event.key === 'Shift') {
+    isShiftPressed.value = false
+    console.log('[FreeCanvasViewer] Shift 键释放，恢复网格吸附')
+  }
+}
+
+/**
  * 右键菜单：创建克隆节点
  */
 function handleContextMenuCreateClone(): void {
@@ -1745,19 +1824,13 @@ function handleContextMenuCreateReference(): void {
       @node-mouse-leave="onNodeMouseLeave"
       @edge-mouse-enter="onEdgeMouseEnter"
       @edge-mouse-leave="onEdgeMouseLeave"
+      @node-drag-start="onNodeDragStart"
+      @node-drag="onNodeDrag"
       @node-drag-stop="onNodeDragStop"
       @pane-click="onPaneClick"
       @pane-mousedown="onPaneMouseDown"
       @contextmenu="onContextMenu"
     >
-      <!-- 背景网格 -->
-      <Background
-        v-if="showGrid"
-        :color="isDarkMode ? '#444' : '#ccc'"
-        :gap="20"
-        :size="1"
-      />
-
       <!-- 控制工具栏 -->
       <Controls
         v-if="showControls"
@@ -1777,6 +1850,32 @@ function handleContextMenuCreateReference(): void {
         }"
       />
     </VueFlow>
+
+    <!-- 自定义 SVG 网格层 -->
+    <svg
+      v-if="showGrid && visibleNodes && visibleNodes.length > 0"
+      class="grid-layer"
+      :width="containerRef?.clientWidth || '100%'"
+      :height="containerRef?.clientHeight || '100%'"
+    >
+      <defs>
+        <pattern
+          id="grid"
+          :width="gridSize"
+          :height="gridSize"
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            :d="`M ${gridSize} 0 L 0 0 0 ${gridSize}`"
+            fill="none"
+            stroke="var(--b3-border-color, #ccc)"
+            stroke-width="0.5"
+            stroke-opacity="0.3"
+          />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
 
     <!-- 搜索面板 -->
     <MindMapSearch
@@ -1846,6 +1945,9 @@ function handleContextMenuCreateReference(): void {
       @merge-selected="handleContextMenuMergeSelected"
       @extract-children="handleContextMenuExtractChildren"
       @delete-cross-link="handleContextMenuDeleteCrossLink"
+      @copy="handleContextMenuCopy"
+      @cut="handleContextMenuCut"
+      @paste="handleContextMenuPaste"
     />
 
     <!-- 关联线编辑对话框 -->
@@ -1894,6 +1996,17 @@ function handleContextMenuCreateReference(): void {
   min-height: 200px;
   background: v-bind(backgroundColor);
   overflow: hidden;
+}
+
+/* 网格层 */
+.grid-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .freemind-canvas-container.dark-mode {

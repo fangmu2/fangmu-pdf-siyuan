@@ -22,22 +22,30 @@ interface Props {
   hasActiveSearch?: boolean
   /** 是否有活动过滤器 */
   hasActiveFilter?: boolean
+  /** 网格大小 */
+  gridSize?: number
+  /** 是否启用吸附 */
+  snapEnabled?: boolean
 }
 
 interface Emits {
   (e: 'add-node', type: 'textCard' | 'imageCard'): void
   (e: 'add-group'): void
   (e: 'auto-layout', direction: 'horizontal' | 'vertical'): void
+  (e: 'tree-layout'): void  // 树状布局
   (e: 'zoom-in'): void
   (e: 'zoom-out'): void
   (e: 'zoom-reset'): void
   (e: 'fit-view'): void
   (e: 'toggle-grid'): void
+  (e: 'toggle-snap'): void
+  (e: 'set-grid-size', size: number): void
   (e: 'toggle-fullscreen'): void
   (e: 'toggle-search'): void
   (e: 'toggle-filter'): void
   (e: 'save'): void
   (e: 'export'): void
+  (e: 'generate-from-pdf'): void  // 从 PDF 标注生成
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -47,7 +55,9 @@ const props = withDefaults(defineProps<Props>(), {
   showGrid: true,
   isFullscreen: false,
   hasActiveSearch: false,
-  hasActiveFilter: false
+  hasActiveFilter: false,
+  gridSize: 20,
+  snapEnabled: true
 })
 
 const emit = defineEmits<Emits>()
@@ -94,6 +104,21 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
       >
         <span class="freemind-toolbar-icon">📁</span>
         <span class="freemind-toolbar-label">分组</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 从 PDF 生成 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        :disabled="readOnly"
+        @click="emit('generate-from-pdf')"
+        title="从当前 PDF 标注生成思维导图"
+      >
+        <span class="freemind-toolbar-icon">🧠</span>
+        <span class="freemind-toolbar-label">从 PDF 生成</span>
       </button>
     </div>
 
@@ -160,10 +185,28 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
         class="freemind-toolbar-btn freemind-toolbar-btn-icon"
         :class="{ active: showGrid }"
         @click="emit('toggle-grid')"
-        title="切换网格 (G)"
+        title="切换网格显示"
       >
         <span class="freemind-toolbar-icon">⊞</span>
       </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: snapEnabled }"
+        @click="emit('toggle-snap')"
+        title="切换网格吸附"
+      >
+        <span class="freemind-toolbar-icon">🧲</span>
+      </button>
+      <select
+        class="freemind-toolbar-select"
+        :value="gridSize"
+        @change="emit('set-grid-size', Number(($event.target as HTMLSelectElement).value))"
+        title="选择网格大小"
+      >
+        <option :value="10">10px</option>
+        <option :value="20">20px</option>
+        <option :value="50">50px</option>
+      </select>
       <button
         class="freemind-toolbar-btn freemind-toolbar-btn-icon"
         :class="{ active: isFullscreen }"
@@ -306,6 +349,29 @@ const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
   border-radius: 4px;
   min-width: 45px;
   text-align: center;
+}
+
+.freemind-toolbar-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--siyuan-text, #333);
+  background: var(--siyuan-bg-secondary, #f5f5f5);
+  border: 1px solid var(--siyuan-border, #e0e0e0);
+  border-radius: 4px;
+  min-width: 70px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.freemind-toolbar-select:hover {
+  border-color: var(--siyuan-primary, #409eff);
+}
+
+.freemind-toolbar-select:focus {
+  border-color: var(--siyuan-primary, #409eff);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 
 /* 滚动条样式 */

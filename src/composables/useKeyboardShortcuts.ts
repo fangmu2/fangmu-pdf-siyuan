@@ -1,4 +1,3 @@
-<script setup lang="ts">
 /**
  * 键盘快捷键组合式函数
  * MarginNote 风格的键盘快捷操作
