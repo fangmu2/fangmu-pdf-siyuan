@@ -46,6 +46,27 @@ const MINDMAP_ATTRS = {
 const MINDMAP_DATA_VERSION = '1.0.0'
 
 /**
+ * P0-2: 获取默认思维导图数据
+ */
+function createDefaultMindMapData(): {
+  nodes: FreeMindMapNode[]
+  edges: FreeMindMapEdge[]
+  viewport: { zoom: number, x: number, y: number }
+  layout: 'free' | 'tree' | 'vertical' | 'horizontal'
+} {
+  return {
+    nodes: [],
+    edges: [],
+    viewport: {
+      zoom: 1,
+      x: 0,
+      y: 0,
+    },
+    layout: 'free',
+  }
+}
+
+/**
  * 从思源块属性加载思维导图数据
  * @param blockId 思维导图块 ID
  *
@@ -61,15 +82,29 @@ export async function loadMindMapFromBlock(blockId: string): Promise<{
 
   // 检查是否是临时 ID（temp- 开头），临时 ID 不对应真实的思源块
   if (blockId.startsWith('temp-')) {
+    // Validate temporary ID format: temp-[alphanumeric]+
+    const tempIdRegex = /^temp-[a-zA-Z0-9_-]+$/
+    if (!tempIdRegex.test(blockId)) {
+      console.warn('[FreeMindMapDataIntegration] 无效的临时 ID 格式:', blockId)
+      return null
+    }
+    
     console.log('[FreeMindMapDataIntegration] 临时 ID，从 localStorage 加载数据')
-    // 从 localStorage 加载数据
     const storageKey = `freemindmap-data-${blockId}`
     const dataStr = localStorage.getItem(storageKey)
-    console.log('[FreeMindMapDataIntegration] localStorage key:', storageKey, 'data存在:', !!dataStr)
+    console.log('[FreeMindMapDataIntegration] localStorage key:', storageKey, 'data 存在:', !!dataStr)
+    
     if (dataStr) {
       try {
         const data = JSON.parse(dataStr)
-        console.log('[FreeMindMapDataIntegration] 从 localStorage 加载成功, nodes:', data.nodes?.length)
+        console.log('[FreeMindMapDataIntegration] 从 localStorage 加载成功，nodes:', data.nodes?.length)
+        
+        // Validate loaded data structure
+        if (!data.nodes || !Array.isArray(data.nodes)) {
+          console.warn('[FreeMindMapDataIntegration] localStorage 数据格式无效，使用默认数据')
+          return createDefaultMindMapData()
+        }
+        
         return {
           nodes: data.nodes || [],
           edges: data.edges || [],
@@ -82,10 +117,13 @@ export async function loadMindMapFromBlock(blockId: string): Promise<{
         }
       } catch (e) {
         console.error('[FreeMindMapDataIntegration] 解析 localStorage 数据失败:', e)
+        // Fallback to default data on parse error
+        return createDefaultMindMapData()
       }
     }
-    console.log('[FreeMindMapDataIntegration] localStorage 无数据，返回 null')
-    return null
+    
+    console.log('[FreeMindMapDataIntegration] localStorage 无数据，返回默认数据')
+    return createDefaultMindMapData()
   }
 
   // 验证块 ID 格式（思源标准格式：20240101120000-abc1234）
@@ -581,4 +619,25 @@ export function hasAnnotation(node: FreeMindMapNode): boolean {
  */
 export function getAnnotationContent(node: FreeMindMapNode): string | null {
   return node.data.content || node.data.title || null
+}
+
+/**
+ * 创建默认思维导图数据（用于降级处理）
+ */
+function createDefaultMindMapData(): {
+  nodes: FreeMindMapNode[]
+  edges: FreeMindMapEdge[]
+  viewport: { zoom: number, x: number, y: number }
+  layout: 'free' | 'tree' | 'vertical' | 'horizontal'
+} {
+  return {
+    nodes: [],
+    edges: [],
+    viewport: {
+      zoom: 1,
+      x: 0,
+      y: 0,
+    },
+    layout: 'free',
+  }
 }

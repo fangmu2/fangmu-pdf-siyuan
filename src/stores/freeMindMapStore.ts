@@ -32,7 +32,15 @@ import {
 import {
   autoLayout,
   calculateNodeBounds,
+  createEdge as createEdgeService,
+  createNode as createNodeService,
+  deleteEdge,
   deleteEdgeBySourceTarget,
+  deleteNode as deleteNodeService,
+} from '@/services/freeMindMapService'
+import {
+  getFreeMindMap,
+  saveFreeMindMap,
 } from '@/services/freeMindMapService'
 import { applyConceptMapLayout } from '@/utils/conceptMapLayout'
 
@@ -350,28 +358,62 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
   async function saveMindMap(): Promise<void> {
     if (!currentMindMapId.value) {
       errorMessage.value = '思维导图 ID 不存在'
-      return
+      console.error('[FreeMindMapStore] 保存失败：思维导图 ID 不存在')
+      throw new Error('思维导图 ID 不存在')
     }
 
-    try {
-      const options: FreeMindMapOptions = {
-        id: currentMindMapId.value,
-        studySetId: studySetId.value,
-        layout: layout.value,
-        nodes: nodes.value,
-        edges: edges.value,
-        viewport: viewport.value,
-        showGrid: showGrid.value,
-        showMiniMap: showMiniMap.value,
-        showControls: showControls.value,
-        readOnly: readOnly.value,
+    // Validate ID format (SiYuan block ID format: 20240101120000-abc1234)
+    const idRegex = /^\d{14}-[a-z0-9]{7}$/
+    if (!idRegex.test(currentMindMapId.value)) {
+      // Allow temp- prefix for unsaved mind maps
+      if (!currentMindMapId.value.startsWith('temp-')) {
+        errorMessage.value = '无效的思维导图 ID 格式'
+        console.error('[FreeMindMapStore] 保存失败：无效的 ID 格式:', currentMindMapId.value)
+        throw new Error('无效的思维导图 ID 格式')
       }
+    }
 
-      await saveFreeMindMap(options)
-    } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : '保存失败'
-      console.error('[FreeMindMapStore] 保存思维导图失败:', error)
-      throw error
+    const MAX_RETRIES = 3
+    const BASE_DELAY = 1000
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const options: FreeMindMapOptions = {
+          id: currentMindMapId.value,
+          studySetId: studySetId.value,
+          layout: layout.value,
+          nodes: nodes.value,
+          edges: edges.value,
+          viewport: viewport.value,
+          showGrid: showGrid.value,
+          showMiniMap: showMiniMap.value,
+          showControls: showControls.value,
+          readOnly: readOnly.value,
+        }
+
+        await saveFreeMindMap(options)
+        console.log(`[FreeMindMapStore] 保存成功 (尝试 ${attempt}/${MAX_RETRIES})`)
+        errorMessage.value = ''
+        return
+
+      } catch (error) {
+        const isLastAttempt = attempt === MAX_RETRIES
+        const waitTime = BASE_DELAY * Math.pow(2, attempt - 1)
+
+        console.error(
+          `[FreeMindMapStore] 保存失败 (尝试 ${attempt}/${MAX_RETRIES}):`,
+          error instanceof Error ? error.message : error,
+        )
+
+        if (isLastAttempt) {
+          errorMessage.value = error instanceof Error ? error.message : '保存失败，已达到最大重试次数'
+          console.error('[FreeMindMapStore] 保存失败：已达到最大重试次数')
+          throw error
+        }
+
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+      }
     }
   }
 
@@ -399,7 +441,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     isLoaded.value = true
 
     // 创建根节点
-    const rootNode = createNodeUtil({
+    const rootNode = createNode({
       type: 'textCard',
       title: '中心主题',
       content: '双击编辑内容',
@@ -473,7 +515,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
    * @param params 创建参数
    */
   function createNode(params: CreateNodeParams): FreeMindMapNode {
-    const node = createNodeUtil(params)
+    const node = createNodeService(params)
     nodes.value.push(node)
     return node
   }
@@ -491,12 +533,19 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     if (index === -1) return
 
     const node = nodes.value[index]
-    const updatedNode = updateNodeUtil(node, updateData)
-    nodes.value[index] = updatedNode
+    // 合并更新数据到节点
+    Object.assign(node.data, updateData)
+    if (updateData.style) {
+      node.style = { ...node.style, ...(updateData.style as any) }
+    }
+    if (updateData.position) {
+      node.position = updateData.position
+    }
+    nodes.value[index] = node
   }
 
   /**
-   * 删除节点
+   * 删除节点内部实现
    * @param nodeId 节点 ID
    */
   function _deleteNodeInternal(nodeId: string): void {
@@ -506,18 +555,10 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     )
 
     // 删除节点
-    nodes.value = deleteNodeUtil(nodes.value, nodeId)
+    nodes.value = deleteNodeService(nodes.value, nodeId)
 
     // 从选中列表移除
     selectedNodeIds.value = selectedNodeIds.value.filter((id) => id !== nodeId)
-  }
-
-  /**
-   * 删除节点（公开方法）
-   * @param nodeId 节点 ID
-   */
-  function deleteNode(nodeId: string): void {
-    _deleteNodeInternal(nodeId)
   }
 
   /**
@@ -1023,10 +1064,11 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
       // 更新所有标签集合
       allTags.value = uniqueTags.value
 
-      // 持久化到思源
-      if (node.data.blockId) {
-        await updateMindMapNodeTags(node.data.blockId, node.data.tags)
-      }
+    // 持久化到思源（如果节点有关联的块 ID）
+    const nodeBlockId = (node.data as any).blockId
+    if (nodeBlockId) {
+      await updateMindMapNodeTags(nodeBlockId, node.data.tags)
+    }
     }
   }
 
@@ -1043,9 +1085,10 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     // 更新所有标签集合
     allTags.value = uniqueTags.value
 
-    // 持久化到思源
-    if (node.data.blockId) {
-      await updateMindMapNodeTags(node.data.blockId, node.data.tags)
+    // 持久化到思源（如果节点有关联的块 ID）
+    const nodeBlockId = (node.data as any).blockId
+    if (nodeBlockId) {
+      await updateMindMapNodeTags(nodeBlockId, node.data.tags)
     }
   }
 
@@ -1157,7 +1200,18 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     const node = nodes.value.find((n) => n.id === nodeId)
     if (!node) return
 
-    if (!node.data) node.data = {}
+    if (!node.data) {
+      node.data = {
+        title: '',
+        content: '',
+        collapsed: false,
+        isExpanded: true,
+        sortOrder: 0,
+        zIndex: 0,
+        childrenIds: [],
+        relations: [],
+      }
+    }
 
     if (border.style !== undefined) {
       node.data.borderStyle = border.style as 'solid' | 'dashed' | 'dotted' | 'double' | 'none'
@@ -1493,7 +1547,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
     // 先删除已存在的连线
     edges.value = deleteEdgeBySourceTarget(edges.value, params.source, params.target)
 
-    const edge = createEdgeUtil(params)
+    const edge = createEdgeService(params)
     edges.value.push(edge)
     return edge
   }
@@ -1503,7 +1557,7 @@ export const useFreeMindMapStore = defineStore('freeMindMap', () => {
    * @param edgeId 连线 ID
    */
   function removeEdge(edgeId: string): void {
-    edges.value = deleteEdgeUtil(edges.value, edgeId)
+    edges.value = deleteEdge(edges.value, edgeId)
   }
 
   /**
