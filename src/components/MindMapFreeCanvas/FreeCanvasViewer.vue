@@ -15,11 +15,26 @@
 
     <!-- 错误状态 -->
     <div
-      v-else-if="errorMessage && nodes?.length === 0"
+      v-else-if="errorMessage"
       class="freemind-error"
     >
       <span class="freemind-error-icon">⚠️</span>
-      <span class="freemind-error-text">{{ errorMessage }}</span>
+      <div class="freemind-error-content">
+        <span class="freemind-error-text">{{ errorMessage }}</span>
+        <div v-if="errorDetails" class="freemind-error-details">
+          <p><strong>错误代码:</strong> {{ errorDetails.code || 'UNKNOWN' }}</p>
+          <p><strong>重试次数:</strong> {{ retryCount }}/{{ MAX_RETRY_COUNT }}</p>
+          <p><strong>时间:</strong> {{ new Date(errorDetails.timestamp).toLocaleString() }}</p>
+        </div>
+        <button
+          class="freemind-retry-btn"
+          :disabled="retryCount >= MAX_RETRY_COUNT"
+          @click="handleRetry"
+        >
+          <span v-if="retryCount < MAX_RETRY_COUNT">🔄 重试 ({{ retryCount }}/{{ MAX_RETRY_COUNT }})</span>
+          <span v-else>❌ 已达最大重试次数</span>
+        </button>
+      </div>
     </div>
 
     <!-- 工具栏 -->
@@ -564,6 +579,8 @@ interface Props {
   showSearch?: boolean
   /** 是否显示过滤器 */
   showFilter?: boolean
+  /** 重试回调函数 */
+  onRetry?: () => void
 }
 
 // 编辑对话框状态
@@ -700,6 +717,57 @@ const containerRef = ref<HTMLElement | null>(null)
 const isInitialized = ref(false)
 const autoSaveTimer = ref<number | null>(null)
 const shortcutManager = ref<ShortcutManager | null>(null)
+
+// P0-1: 错误边界状态
+const errorDetails = ref<{
+  message: string
+  code?: string
+  stack?: string
+  timestamp: number
+} | null>(null)
+const retryCount = ref(0)
+const MAX_RETRY_COUNT = 3
+
+/**
+ * P0-1: 显示错误详情
+ */
+function showError(error: Error, code?: string): void {
+  errorDetails.value = {
+    message: error.message,
+    code,
+    stack: error.stack,
+    timestamp: Date.now(),
+  }
+  retryCount.value = 0
+}
+
+/**
+ * P0-1: 处理重试
+ */
+async function handleRetry(): Promise<void> {
+  if (retryCount.value >= MAX_RETRY_COUNT) {
+    showError(new Error('已达到最大重试次数'), 'MAX_RETRY_EXCEEDED')
+    return
+  }
+  
+  retryCount.value++
+  isLoading.value = true
+  errorMessage.value = ''
+  errorDetails.value = null
+  
+  try {
+    await store.loadMindMap(props.blockId)
+    isInitialized.value = true
+    errorMessage.value = ''
+    errorDetails.value = null
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error('加载失败')
+    showError(err, 'RETRY_FAILED')
+    errorMessage.value = err.message
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // 网格吸附功能
 const {
@@ -866,7 +934,9 @@ onMounted(async () => {
     console.log('[FreeCanvasViewer] 加载完成 - isLoaded:', isLoaded.value, 'nodes:', nodes.value?.length)
   } catch (error) {
     console.error('[FreeCanvasViewer] 加载失败:', error)
-    errorMessage.value = error instanceof Error ? error.message : '加载失败'
+    const err = error instanceof Error ? error : new Error('加载失败')
+    showError(err, 'LOAD_FAILED')
+    errorMessage.value = err.message
   } finally {
     isLoading.value = false
   }
@@ -2680,9 +2750,57 @@ function handleContextMenuCreateReference(): void {
   font-size: 48px;
 }
 
+.freemind-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .freemind-error-text {
   font-size: 14px;
   color: #f56c6c;
+}
+
+.freemind-error-details {
+  background: var(--siyuan-block-bg, #f5f5f5);
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--siyuan-secondary-text, #666);
+  text-align: left;
+  max-width: 400px;
+}
+
+.freemind-error-details p {
+  margin: 4px 0;
+}
+
+.freemind-retry-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.freemind-retry-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.freemind-retry-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 空状态 */

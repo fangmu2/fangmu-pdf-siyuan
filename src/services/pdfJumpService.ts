@@ -6,6 +6,25 @@
 import { postApi } from '@/api/siyuanApi'
 
 /**
+ * 带超时的 Promise 包装器
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  operation: string,
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${operation}超时 (${timeoutMs}ms)`)),
+        timeoutMs,
+      ),
+    ),
+  ])
+}
+
+/**
  * PDF 位置信息
  */
 export interface PDFLocation {
@@ -29,30 +48,35 @@ export async function jumpToPDF(location: PDFLocation): Promise<boolean> {
   try {
     console.log('[PDF 跳转] 开始跳转到 PDF:', location)
 
-    // 1. 打开 PDF 文档
-    const opened = await openPDFDocument(location.pdfPath)
+    // 1. 打开 PDF 文档（10 秒超时）
+    const openPromise = openPDFDocument(location.pdfPath)
+    const opened = await withTimeout(openPromise, 10000, '打开 PDF 文档')
     if (!opened) {
       console.error('[PDF 跳转] 打开 PDF 失败')
       return false
     }
 
-    // 2. 跳转到指定页码
-    await navigateToPage(location.page)
+    // 2. 跳转到指定页码（5 秒超时）
+    const navigatePromise = navigateToPage(location.page)
+    await withTimeout(navigatePromise, 5000, '跳转页码')
 
-    // 3. 如果有选区，高亮显示
+    // 3. 如果有选区，高亮显示（5 秒超时）
     if (location.rect) {
-      await highlightRect(location.rect)
+      const highlightPromise = highlightRect(location.rect)
+      await withTimeout(highlightPromise, 5000, '高亮选区')
     }
 
-    // 4. 如果有块 ID，定位到块
+    // 4. 如果有块 ID，定位到块（5 秒超时）
     if (location.blockId) {
-      await focusBlock(location.blockId)
+      const focusPromise = focusBlock(location.blockId)
+      await withTimeout(focusPromise, 5000, '聚焦块')
     }
 
     console.log('[PDF 跳转] 跳转成功')
     return true
   } catch (error) {
-    console.error('[PDF 跳转] 跳转失败:', error)
+    const errorMsg = error instanceof Error ? error.message : '未知错误'
+    console.error('[PDF 跳转] 跳转失败:', errorMsg)
     return false
   }
 }
