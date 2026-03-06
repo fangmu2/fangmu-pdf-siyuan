@@ -1,5 +1,9 @@
 // src/utils/markdownGenerator.ts
-import type { PDFAnnotation, AnnotationGroup, AnnotationColor } from '../types/annotaion';
+import type {
+  AnnotationColor,
+  AnnotationGroup,
+  PDFAnnotation,
+} from '../types/annotation'
 
 /**
  * 颜色到标签的映射
@@ -9,8 +13,8 @@ const COLOR_LABELS: Record<AnnotationColor, string> = {
   yellow: '🟡 普通高亮',
   green: '🟢 重要概念',
   blue: '🔵 方法/数据',
-  purple: '🟣 评论/思考'
-};
+  purple: '🟣 评论/思考',
+}
 
 /**
  * 将标注导出为Markdown格式
@@ -18,53 +22,53 @@ const COLOR_LABELS: Record<AnnotationColor, string> = {
 export function generateMarkdown(
   annotations: PDFAnnotation[],
   options: {
-    groupBy: 'color' | 'page' | 'none';
-    includeNotes: boolean;
-    includeLocation: boolean;
-    pdfName?: string;
+    groupBy: 'color' | 'page' | 'none'
+    includeNotes: boolean
+    includeLocation: boolean
+    pdfName?: string
   } = {
     groupBy: 'color',
     includeNotes: true,
-    includeLocation: true
-  }
+    includeLocation: true,
+  },
 ): string {
-  const lines: string[] = [];
+  const lines: string[] = []
 
   // 标题
   if (options.pdfName) {
-    lines.push(`# ${options.pdfName} 摘录\n`);
+    lines.push(`# ${options.pdfName} 摘录\n`)
   } else {
-    lines.push(`# PDF 摘录\n`);
+    lines.push(`# PDF 摘录\n`)
   }
 
-  lines.push(`> 共 ${annotations.length} 条标注\n`);
+  lines.push(`> 共 ${annotations.length} 条标注\n`)
 
   // 分组
-  const groups = groupAnnotations(annotations, options.groupBy);
+  const groups = groupAnnotations(annotations, options.groupBy)
 
   // 按组生成
   for (const group of groups) {
-    lines.push(`\n## ${group.title}\n`);
+    lines.push(`\n## ${group.title}\n`)
 
     for (const ann of group.annotations) {
       // 标注文本
-      let line = `- ${ann.text}`;
+      let line = `- ${ann.text}`
 
       // 位置信息
       if (options.includeLocation) {
-        line += ` *(P${ann.page})*`;
+        line += ` *(P${ann.page})*`
       }
 
-      lines.push(line);
+      lines.push(line)
 
       // 笔记
       if (options.includeNotes && ann.note) {
-        lines.push(`  - 📝 ${ann.note}`);
+        lines.push(`  - 📝 ${ann.note}`)
       }
     }
   }
 
-  return lines.join('\n');
+  return lines.join('\n')
 }
 
 /**
@@ -72,68 +76,68 @@ export function generateMarkdown(
  */
 function groupAnnotations(
   annotations: PDFAnnotation[],
-  groupBy: 'color' | 'page' | 'none'
+  groupBy: 'color' | 'page' | 'none',
 ): AnnotationGroup[] {
   if (groupBy === 'none') {
     return [{
       title: '所有标注',
-      annotations: annotations
-    }];
+      annotations,
+    }]
   }
 
-  const groups: AnnotationGroup[] = [];
-  const groupMap = new Map<string, PDFAnnotation[]>();
+  const groups: AnnotationGroup[] = []
+  const groupMap = new Map<string, PDFAnnotation[]>()
 
   // 分组
   for (const ann of annotations) {
-    let key: string;
-    let title: string;
+    let key: string
+    let title: string
 
     if (groupBy === 'color') {
-      key = ann.color;
-      title = COLOR_LABELS[ann.color] || ann.color;
+      key = ann.color
+      title = COLOR_LABELS[ann.color] || ann.color
     } else {
-      key = `page-${ann.page}`;
-      title = `第 ${ann.page} 页`;
+      key = `page-${ann.page}`
+      title = `第 ${ann.page} 页`
     }
 
-    const group = groupMap.get(key) || [];
-    group.push(ann);
-    groupMap.set(key, group);
+    const group = groupMap.get(key) || []
+    group.push(ann)
+    groupMap.set(key, group)
   }
 
   // 转换为数组
   for (const [key, items] of groupMap) {
-    let title: string;
+    let title: string
 
     if (groupBy === 'color') {
-      title = COLOR_LABELS[key as AnnotationColor] || key;
+      title = COLOR_LABELS[key as AnnotationColor] || key
     } else {
-      const pageNum = parseInt(key.replace('page-', ''));
-      title = `第 ${pageNum} 页`;
+      const pageNum = Number.parseInt(key.replace('page-', ''))
+      title = `第 ${pageNum} 页`
     }
 
     groups.push({
       title,
       color: groupBy === 'color' ? key as AnnotationColor : undefined,
-      page: groupBy === 'page' ? parseInt(key.replace('page-', '')) : undefined,
-      annotations: items
-    });
+      page: groupBy === 'page' ? Number.parseInt(key.replace('page-', '')) : undefined,
+      annotations: items,
+    })
   }
 
   // 排序
   if (groupBy === 'color') {
-    const colorOrder: AnnotationColor[] = ['red', 'green', 'blue', 'yellow', 'purple'];
+    const colorOrder: AnnotationColor[] = ['red', 'green', 'blue', 'yellow', 'purple']
     groups.sort((a, b) => {
-      const colorA = a.color || 'yellow';
-      const colorB = b.color || 'yellow';
-      return colorOrder.indexOf(colorA) - colorOrder.indexOf(colorB);
-    });
+      const colorA = a.color || 'yellow'
+      const colorB = b.color || 'yellow'
+      return colorOrder.indexOf(colorA) - colorOrder.indexOf(colorB)
+    })
   } else if (groupBy === 'page') {
-    groups.sort((a, b) => a.page! - b.page!);
+    groups.sort((a, b) => a.page! - b.page!)
   }
 
-  return groups;
+  return groups
 }
 
 /**
@@ -141,18 +145,18 @@ function groupAnnotations(
  * 包含块引用，可以直接粘贴到思源中
  */
 export function generateSiyuanMarkdown(annotations: PDFAnnotation[]): string {
-  const lines: string[] = [];
+  const lines: string[] = []
 
-  lines.push('# PDF 标注导出\n');
+  lines.push('# PDF 标注导出\n')
 
   for (const ann of annotations) {
     // 使用思源的块引用语法
-    lines.push(`- ((${ann.blockId} "${ann.text}"))`);
+    lines.push(`- ((${ann.blockId} "${ann.text}"))`)
 
     if (ann.note) {
-      lines.push(`  - ${ann.note}`);
+      lines.push(`  - ${ann.note}`)
     }
   }
 
-  return lines.join('\n');
+  return lines.join('\n')
 }

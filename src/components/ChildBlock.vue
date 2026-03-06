@@ -5,7 +5,7 @@
     :class="{
       'drag-over': dragOverId === annotation.id,
       'dragging': draggingId === annotation.id,
-      'is-image': annotation.isImage
+      'is-image': annotation.isImage,
     }"
     draggable="true"
     @dragstart="onDragStart($event, annotation)"
@@ -20,44 +20,90 @@
       <!-- 图片类型 -->
       <template v-if="annotation.isImage">
         <img
-          v-if="(annotation.imageBase64 || isValidImagePath(annotation.imagePath)) && imageStatus[annotation.id] !== 'error'"
-          :src="getImageUrl(annotation.imagePath!, annotation.imageBase64)"
+          v-if="isValidImagePath(annotation.imagePath) && imageStatus[annotation.id] !== 'error'"
+          :src="getImageUrl(annotation.imagePath!)"
           class="excerpt-image"
           @load="onImageLoad(annotation.id)"
           @error="onImageError($event, annotation)"
         />
-        <div v-else class="image-placeholder">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+        <div
+          v-else
+          class="image-placeholder"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="currentColor"
+          >
+            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
           </svg>
           <span>图片加载失败</span>
         </div>
       </template>
       <!-- 文本类型 -->
       <template v-else>
-        <p class="paragraph-text">{{ annotation.text }}</p>
-        <div v-if="annotation.note" class="paragraph-note">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+        <p class="paragraph-text">
+          {{ annotation.text }}
+        </p>
+        <div
+          v-if="annotation.note"
+          class="paragraph-note"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="12"
+            height="12"
+            fill="currentColor"
+          >
+            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z" />
           </svg>
           <span>{{ annotation.note }}</span>
         </div>
       </template>
     </div>
     <div class="child-actions">
-      <button class="action-icon" @click.stop="onEdit(annotation)" title="编辑">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+      <button
+        class="action-icon"
+        title="编辑"
+        @click.stop="onEdit(annotation)"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="12"
+          height="12"
+          fill="currentColor"
+        >
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
         </svg>
       </button>
-      <button class="action-icon" @click.stop="onUnmerge(annotation)" v-if="annotation.parentId" title="取消合并">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-          <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+      <button
+        v-if="annotation.parentId"
+        class="action-icon"
+        title="取消合并"
+        @click.stop="onUnmerge(annotation)"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="12"
+          height="12"
+          fill="currentColor"
+        >
+          <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
         </svg>
       </button>
-      <button class="action-icon delete" @click.stop="onDelete(annotation)" title="删除">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+      <button
+        class="action-icon delete"
+        title="删除"
+        @click.stop="onDelete(annotation)"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="12"
+          height="12"
+          fill="currentColor"
+        >
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
         </svg>
       </button>
     </div>
@@ -65,79 +111,73 @@
 </template>
 
 <script setup lang="ts">
-import type { PDFAnnotation } from '../types/annotaion';
-import { getKernelBase } from '../api/siyuanApi';
+import type { PDFAnnotation } from '../types/annotation'
+import { getKernelBase } from '../api/siyuanApi'
 
 const props = defineProps<{
-  annotation: PDFAnnotation;
-  allAnnotations: PDFAnnotation[];
-  draggingId: string | null;
-  dragOverId: string | null;
-  imageStatus: Record<string, 'loading' | 'loaded' | 'error'>;
-}>();
+  annotation: PDFAnnotation
+  allAnnotations: PDFAnnotation[]
+  draggingId: string | null
+  dragOverId: string | null
+  imageStatus: Record<string, 'loading' | 'loaded' | 'error'>
+}>()
 
 const emit = defineEmits<{
-  (e: 'click', annotation: PDFAnnotation): void;
-  (e: 'dragstart', event: DragEvent, annotation: PDFAnnotation): void;
-  (e: 'dragend'): void;
-  (e: 'dragover', event: DragEvent, annotation: PDFAnnotation): void;
-  (e: 'dragleave'): void;
-  (e: 'drop', event: DragEvent, annotation: PDFAnnotation): void;
-  (e: 'edit', annotation: PDFAnnotation): void;
-  (e: 'unmerge', annotation: PDFAnnotation): void;
-  (e: 'delete', annotation: PDFAnnotation): void;
-  (e: 'image-load', annotationId: string): void;
-  (e: 'image-error', event: Event, annotation: PDFAnnotation): void;
-}>();
+  (e: 'click', annotation: PDFAnnotation): void
+  (e: 'dragstart', event: DragEvent, annotation: PDFAnnotation): void
+  (e: 'dragend'): void
+  (e: 'dragover', event: DragEvent, annotation: PDFAnnotation): void
+  (e: 'dragleave'): void
+  (e: 'drop', event: DragEvent, annotation: PDFAnnotation): void
+  (e: 'edit', annotation: PDFAnnotation): void
+  (e: 'unmerge', annotation: PDFAnnotation): void
+  (e: 'delete', annotation: PDFAnnotation): void
+  (e: 'image-load', annotationId: string): void
+  (e: 'image-error', event: Event, annotation: PDFAnnotation): void
+}>()
 
 // 检查图片路径是否有效（排除 blob URL、临时文件等无效路径）
 const isValidImagePath = (path: string | undefined): boolean => {
-  if (!path) return false;
+  if (!path) return false
   // 排除 blob URL
-  if (path.startsWith('blob:')) return false;
+  if (path.startsWith('blob:')) return false
   // 排除 file:// 协议
-  if (path.startsWith('file://')) return false;
+  if (path.startsWith('file://')) return false
   // 排除 Windows 临时文件路径（以 @ 开头）
-  if (path.startsWith('@')) return false;
+  if (path.startsWith('@')) return false
   // 排除 localhost 临时地址
-  if (path.includes('localhost') || path.includes('127.0.0.1')) return false;
-  return true;
-};
+  if (path.includes('localhost') || path.includes('127.0.0.1')) return false
+  return true
+}
 
 // 获取图片URL
-const getImageUrl = (imagePath: string, imageBase64?: string): string => {
-  // 优先使用 base64 数据（图片数据直接嵌入）
-  if (imageBase64) {
-    return imageBase64;
-  }
-  
-  // 如果没有 base64，尝试通过路径获取
-  const kernelBase = getKernelBase();
-  
-  let path = imagePath;
+const getImageUrl = (imagePath: string): string => {
+  const kernelBase = getKernelBase()
+
+  let path = imagePath
   if (path.startsWith('/data/')) {
-    path = path.slice(6);
+    path = path.slice(6)
   }
-  
+
   if (path.startsWith('assets/')) {
-    return `${kernelBase}/${path}`;
+    return `${kernelBase}/${path}`
   }
-  
-  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent('/data/' + path)}`;
-};
+
+  return `${kernelBase}/api/file/getFile?path=${encodeURIComponent(`/data/${path}`)}`
+}
 
 // 事件代理
-const onClick = (annotation: PDFAnnotation) => emit('click', annotation);
-const onDragStart = (e: DragEvent, annotation: PDFAnnotation) => emit('dragstart', e, annotation);
-const onDragEnd = () => emit('dragend');
-const onDragOver = (e: DragEvent, annotation: PDFAnnotation) => emit('dragover', e, annotation);
-const onDragLeave = () => emit('dragleave');
-const onDrop = (e: DragEvent, annotation: PDFAnnotation) => emit('drop', e, annotation);
-const onEdit = (annotation: PDFAnnotation) => emit('edit', annotation);
-const onUnmerge = (annotation: PDFAnnotation) => emit('unmerge', annotation);
-const onDelete = (annotation: PDFAnnotation) => emit('delete', annotation);
-const onImageLoad = (annotationId: string) => emit('image-load', annotationId);
-const onImageError = (e: Event, annotation: PDFAnnotation) => emit('image-error', e, annotation);
+const onClick = (annotation: PDFAnnotation) => emit('click', annotation)
+const onDragStart = (e: DragEvent, annotation: PDFAnnotation) => emit('dragstart', e, annotation)
+const onDragEnd = () => emit('dragend')
+const onDragOver = (e: DragEvent, annotation: PDFAnnotation) => emit('dragover', e, annotation)
+const onDragLeave = () => emit('dragleave')
+const onDrop = (e: DragEvent, annotation: PDFAnnotation) => emit('drop', e, annotation)
+const onEdit = (annotation: PDFAnnotation) => emit('edit', annotation)
+const onUnmerge = (annotation: PDFAnnotation) => emit('unmerge', annotation)
+const onDelete = (annotation: PDFAnnotation) => emit('delete', annotation)
+const onImageLoad = (annotationId: string) => emit('image-load', annotationId)
+const onImageError = (e: Event, annotation: PDFAnnotation) => emit('image-error', e, annotation)
 </script>
 
 <style scoped>

@@ -1,0 +1,137 @@
+/**
+ * 组件索引
+ * MarginNote 4 风格学习插件 - Vue 组件导出
+ */
+
+// AI 辅助组件（第十六阶段 - AI 辅助功能）
+export { default as AIAssistantPanel } from './AIAssistantPanel.vue'
+export { default as AnnotationEditor } from './AnnotationEditor.vue'
+export { default as AnnotationList } from './AnnotationList.vue'
+export { default as AnnotationStyleSelector } from './AnnotationStyleSelector.vue'
+
+export { default as Breadcrumb } from './Breadcrumb.vue'
+// 卡片系统增强组件（第九阶段）
+export { default as CardBatchOperations } from './CardBatchOperations.vue'
+export { default as CardBoxBoard } from './CardBoxBoard.vue'
+
+// 卡片盒看板组件（第十一阶段）
+export { default as CardBoxBoardView } from './CardBoxBoardView.vue'
+// 卡片组件
+export { default as CardEditor } from './CardEditor.vue'
+export { default as CardEditorDialog } from './CardEditorDialog.vue'
+export { default as CardList } from './CardList.vue'
+export { default as CardTimelineView } from './CardTimelineView.vue'
+
+// 子块组件（现有）
+export { default as ChildBlock } from './ChildBlock.vue'
+export { default as ConceptMap } from './ConceptMap.vue'
+// 高级功能组件（第五阶段）
+export { default as ContextView } from './ContextView.vue'
+// 数据同步组件（第十六阶段 - 数据同步与备份）
+export { default as DataSyncPanel } from './DataSyncPanel.vue'
+// 文档对比组件（第十八阶段 - 文档对比与多文档）
+export { default as DualPDFViewer } from './DualPDFViewer.vue'
+// FSRS 复习组件（第十二阶段）
+export { default as FSRSReviewSession } from './FSRSReviewSession.vue'
+// 手写层组件（现有）
+export { default as HandwritingLayer } from './HandwritingLayer.vue'
+export { default as InfiniteCanvas } from './InfiniteCanvas.vue'
+export { default as KeywordLibrary } from './KeywordLibrary.vue'
+export { default as LearningSetManager } from './LearningSetManager.vue'
+export { default as MemoryContext } from './MemoryContext.vue'
+
+// 脑图增强组件（第十阶段）
+export { default as MindMapBacklinks } from './MindMapBacklinks.vue'
+export { default as MindMapEditor } from './MindMapEditor.vue'
+// 思维导图辅助组件
+export { default as MindMapEmptyState } from './MindMapEmptyState.vue'
+
+// 多画布与图层系统组件（MarginNote 4 风格升级）
+export { default as CanvasManager } from './MindMapFreeCanvas/CanvasManager.vue'
+export { default as CanvasToolbar } from './MindMapFreeCanvas/CanvasToolbar.vue'
+export { default as FloatingToolbar } from './MindMapFreeCanvas/FloatingToolbar.vue'
+// 自由画布思维导图组件（MarginNote 风格）
+export { default as FreeCanvasViewer } from './MindMapFreeCanvas/FreeCanvasViewer.vue'
+
+export { default as GroupNode } from './MindMapFreeCanvas/GroupNode.vue'
+export { default as ImageCardNode } from './MindMapFreeCanvas/ImageCardNode.vue'
+export { default as LayerPanel } from './MindMapFreeCanvas/LayerPanel.vue'
+
+export { default as LinksGraphPanel } from './MindMapFreeCanvas/LinksGraphPanel.vue'
+
+export { default as MindMapSearch } from './MindMapFreeCanvas/MindMapSearch.vue'
+
+export { default as NodeContextMenu } from './MindMapFreeCanvas/NodeContextMenu.vue'
+export { default as NodeEditDialog } from './MindMapFreeCanvas/NodeEditDialog.vue'
+
+export { default as NodeFilterPanel } from './MindMapFreeCanvas/NodeFilterPanel.vue'
+
+export { default as PdfLinkageSettings } from './MindMapFreeCanvas/PdfLinkageSettings.vue'
+
+export { default as TextCardNode } from './MindMapFreeCanvas/TextCardNode.vue'
+export { default as MindMapLinksEditor } from './MindMapLinksEditor.vue'
+
+// 脑图高级功能组件（第十九阶段 - 脑图高级功能）
+export { default as MindMapTemplateSelector } from './MindMapTemplateSelector.vue'
+
+// 脑图组件
+export { default as MindMapViewer } from './MindMapViewer.vue'
+
+// 知识构建工具组件（第三阶段）
+export { default as OutlineView } from './OutlineView.vue'
+export { default as PDFAssetSelector } from './PDFAssetSelector.vue'
+
+// PDF+ 思维导图联动组件（MarginNote 风格）
+export { default as PdfMindMapLinkViewer } from './PdfMindMapLinkViewer.vue'
+
+export { default as PdfMindMapSidebar } from './PdfMindMapSidebar.vue'
+
+export { default as PdfMountManager } from './PdfMountManager.vue'
+export { default as PDFOutline } from './PDFOutline.vue'
+export { default as PdfTabBar } from './PdfTabBar.vue'
+export { default as PDFThumbnails } from './PDFThumbnails.vue'
+// PDF 相关组件
+export { default as PDFViewer } from './PDFViewer.vue'
+export { default as PDFViewerToolbar } from './PDFViewerToolbar.vue'
+
+// 快速捕获组件（第十七阶段）
+export { default as QuickCaptureMenu } from './QuickCaptureMenu.vue'
+
+// 导航组件（第十三阶段）
+export { default as QuickNavigation } from './QuickNavigation.vue'
+
+export { default as ReviewAchievements } from './ReviewAchievements.vue'
+
+export { default as ReviewExportDialog } from './ReviewExportDialog.vue'
+
+export { default as ReviewGoalPanel } from './ReviewGoalPanel.vue'
+
+export { default as ReviewGroupManager } from './ReviewGroupManager.vue'
+// 复习组件
+export { default as ReviewManager } from './ReviewManager.vue'
+// 复习增强组件（第十六阶段 - 复习功能增强）
+export { default as ReviewModeSelector } from './ReviewModeSelector.vue'
+
+export { default as ReviewReminderSettings } from './ReviewReminderSettings.vue'
+export { default as ReviewSession } from './ReviewSession.vue'
+
+export { default as ReviewStats } from './ReviewStats.vue'
+export { default as SearchHistory } from './SearchHistory.vue'
+export { default as SearchPanel } from './SearchPanel.vue'
+export { default as SettingsPanel } from './SettingsPanel.vue'
+export { default as SmartStudySet } from './SmartStudySet.vue'
+export { default as StudySetDetail } from './StudySetDetail.vue'
+export { default as StudySetExportDialog } from './StudySetExportDialog.vue'
+// 学习集组件
+export { default as StudySetManager } from './StudySetManager.vue'
+// 学习集增强组件（第八阶段）
+export { default as StudySetOverview } from './StudySetOverview.vue'
+export { default as StudySetTemplateEditor } from './StudySetTemplateEditor.vue'
+// 学习集模板组件（第十四阶段）
+export { default as StudySetTemplateSelector } from './StudySetTemplateSelector.vue'
+// 搜索增强组件（第二十阶段 - 搜索与导航完善）
+export { default as TagCloud } from './TagCloud.vue'
+
+export { default as TimelineView } from './TimelineView.vue'
+// 性能优化组件（第十四阶段 - 性能优化）
+export { default as VirtualCardList } from './VirtualCardList.vue'

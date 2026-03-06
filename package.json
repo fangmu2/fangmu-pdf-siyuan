@@ -6,7 +6,10 @@
   "author": "方木",
   "license": "MIT",
   "homepage": "https://github.com/fangmu2/fangmu-pdf-siyuan",
-  "repository": "https://github.com/fangmu2/fangmu-pdf-siyuan.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fangmu2/fangmu-pdf-siyuan.git"
+  },
   "scripts": {
     "dev": "vite build --watch",
     "release": "node ./release.js",
@@ -14,13 +17,24 @@
     "release:patch": "node ./release.js --mode=patch",
     "release:minor": "node ./release.js --mode=minor",
     "release:major": "node ./release.js --mode=major",
-    "build": "vite build"
+    "build": "vite build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:run": "vitest run"
   },
   "dependencies": {
+    "@vue-flow/background": "^1.3.2",
+    "@vue-flow/controls": "^1.1.3",
+    "@vue-flow/core": "^1.48.2",
+    "@vueuse/core": "^14.2.1",
     "markmap-lib": "^0.18.12",
     "markmap-view": "^0.18.12",
     "pdfjs-dist": "^5.4.624",
-    "vue": "^3.3.8"
+    "pinia": "^2.1.7",
+    "vue": "^3.3.8",
+    "vue-i18n": "^9.14.5",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.8.1",
@@ -41,5 +55,13 @@
     "vite": "^6.2.1",
     "vite-plugin-static-copy": "^0.15.0",
     "vite-plugin-zip-pack": "^1.0.5"
+  },
+  "main": "release.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/fangmu2/fangmu-pdf-siyuan/issues"
   }
 }

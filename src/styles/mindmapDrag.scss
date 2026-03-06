@@ -1,0 +1,109 @@
+/**
+ * 思维导图拖拽视觉反馈样式
+ * MarginNote4 风格的拖拽高亮和指示器
+ */
+
+// 拖拽中的节点样式
+.mindmap-node.dragging {
+  opacity: 0.5;
+  transform: rotate(3deg) scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  cursor: grabbing;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// 成为子节点 - 整个卡片背景高亮
+.drop-target-child {
+  background: rgba(64, 158, 255, 0.15) !important;
+  border: 2px solid var(--b3-theme-primary, #409eff);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+// 成为兄弟节点（之前）- 上边框高亮条
+.drop-target-before::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--b3-theme-primary, #409eff);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.2s ease;
+}
+
+// 成为兄弟节点（之后）- 下边框高亮条
+.drop-target-after::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--b3-theme-primary, #409eff);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.2s ease;
+}
+
+// 插入指示器（可选，显示插入位置的线条）
+.drop-indicator {
+  position: absolute;
+  height: 3px;
+  background: var(--b3-theme-primary, #409eff);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 999;
+  transition: all 0.1s ease;
+  box-shadow: 0 0 8px rgba(64, 158, 255, 0.6);
+}
+
+.drop-indicator.horizontal {
+  width: 100%;
+}
+
+.drop-indicator.vertical {
+  width: 3px;
+  height: 100%;
+}
+
+// 拖拽提示文本
+.drag-hint {
+  position: fixed;
+  padding: 8px 12px;
+  background: var(--b3-theme-background, #fff);
+  border: 1px solid var(--b3-theme-primary, #409eff);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--b3-theme-primary, #409eff);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  pointer-events: none;
+  z-index: 10000;
+  white-space: nowrap;
+}
+
+// 深色主题适配
+[data-theme='dark'] .drag-hint {
+  background: var(--b3-theme-background, #1e1e1e);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.5);
+}
+
+// 动画效果
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.drop-target-child,
+.drop-target-before::before,
+.drop-target-after::after {
+  animation: pulse 1.5s ease-in-out infinite;
+}

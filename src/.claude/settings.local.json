@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd F:\\\\work\\\\jsWork\\\\fangmu_siyuan_pdf\\\\plugin-sample-vite-vue-main:*)",
+      "Bash(cd:*)",
+      "Bash(powershell:*)",
+      "Bash(node:*)",
+      "Bash(head:*)",
+      "Bash(cd \"F:\\\\work\\\\jsWork\\\\fangmu_siyuan_pdf\\\\plugin-sample-vite-vue-main\" && pnpm build 2>&1)",
+      "WebSearch",
+      "WebFetch(domain:www.marginnote.com)"
+    ]
+  }
+}

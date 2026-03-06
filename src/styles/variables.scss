@@ -1,0 +1,327 @@
+/**
+ * MarginNote 风格主题变量
+ * 参考 MarginNote 4 的颜色系统和设计规范
+ */
+
+// **************************************** 主色调 ****************************************
+// 紫色主题（类似 MarginNote）
+$mn-primary: #6366f1;
+$mn-primary-light: #818cf8;
+$mn-primary-dark: #4f46e5;
+$mn-primary-lightest: rgba(99, 102, 241, 0.1);
+$mn-primary-lighter: rgba(99, 102, 241, 0.2);
+
+// 辅助色
+$mn-secondary: #06b6d4;
+$mn-secondary-light: #22d3ee;
+$mn-secondary-dark: #0891b2;
+
+$mn-accent: #f472b6;
+$mn-accent-light: #fb7185;
+$mn-accent-dark: #e11d48;
+
+// **************************************** 语义色 ****************************************
+$mn-success: #10b981;
+$mn-success-light: #34d399;
+$mn-success-dark: #059669;
+$mn-success-lightest: rgba(16, 185, 129, 0.1);
+
+$mn-warning: #f59e0b;
+$mn-warning-light: #fbbf24;
+$mn-warning-dark: #d97706;
+$mn-warning-lightest: rgba(245, 158, 11, 0.1);
+
+$mn-error: #ef4444;
+$mn-error-light: #f87171;
+$mn-error-dark: #dc2626;
+$mn-error-lightest: rgba(239, 68, 68, 0.1);
+
+$mn-info: #3b82f6;
+$mn-info-light: #60a5fa;
+$mn-info-dark: #2563eb;
+$mn-info-lightest: rgba(59, 130, 246, 0.1);
+
+// **************************************** 中性色 ****************************************
+$mn-white: #ffffff;
+$mn-gray-50: #f9fafb;
+$mn-gray-100: #f3f4f6;
+$mn-gray-200: #e5e7eb;
+$mn-gray-300: #d1d5db;
+$mn-gray-400: #9ca3af;
+$mn-gray-500: #6b7280;
+$mn-gray-600: #4b5563;
+$mn-gray-700: #374151;
+$mn-gray-800: #1f2937;
+$mn-gray-900: #111827;
+
+// **************************************** 标注颜色（高亮） ****************************************
+$highlight-colors: (
+  yellow: #fef08a,
+  green: #bbf7d0,
+  blue: #bfdbfe,
+  red: #fecaca,
+  purple: #e9d5ff,
+  orange: #fed7aa,
+  pink: #fbcfe8,
+  cyan: #a5f3fc,
+);
+
+$highlight-text-colors: (
+  yellow: #854d0e,
+  green: #166534,
+  blue: #1e40af,
+  red: #991b1b,
+  purple: #5b21b6,
+  orange: #9a3412,
+  pink: #9d174d,
+  cyan: #164e63,
+);
+
+// **************************************** 阴影 ****************************************
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+$shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+// 彩色阴影
+$shadow-primary: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+$shadow-secondary: 0 4px 14px 0 rgba(6, 182, 212, 0.39);
+$shadow-success: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+$shadow-warning: 0 4px 14px 0 rgba(245, 158, 11, 0.39);
+$shadow-error: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+
+// **************************************** 圆角 ****************************************
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 8px;
+$radius-xl: 12px;
+$radius-2xl: 16px;
+$radius-full: 9999px;
+
+// **************************************** 动画 ****************************************
+$transition-fast: 100ms;
+$transition-base: 150ms;
+$transition-slow: 200ms;
+$transition-slower: 300ms;
+
+$ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+$ease-in: cubic-bezier(0.4, 0, 1, 1);
+$ease-out: cubic-bezier(0, 0, 0.2, 1);
+$ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+// 弹性动画
+$ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+$ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// **************************************** 间距 ****************************************
+$spacing-0: 0;
+$spacing-1: 4px;
+$spacing-2: 8px;
+$spacing-3: 12px;
+$spacing-4: 16px;
+$spacing-5: 20px;
+$spacing-6: 24px;
+$spacing-8: 32px;
+$spacing-10: 40px;
+$spacing-12: 48px;
+$spacing-16: 64px;
+
+// **************************************** 字体 ****************************************
+$font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$font-family-mono: 'Fira Code', 'Monaco', 'Consolas', monospace;
+
+$font-size-xs: 10px;
+$font-size-sm: 12px;
+$font-size-base: 14px;
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-2xl: 20px;
+$font-size-3xl: 24px;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.625;
+
+// **************************************** 布局 ****************************************
+$header-height: 48px;
+$toolbar-height: 44px;
+$sidebar-width: 320px;
+$sidebar-width-min: 240px;
+$sidebar-width-max: 480px;
+
+// **************************************** Z-Index ****************************************
+$z-index-dropdown: 1000;
+$z-index-overlay: 1000;
+$z-index-dialog: 1001;
+$z-index-toast: 1002;
+$z-index-tooltip: 1003;
+$z-index-modal: 1040;
+$z-index-popover: 1060;
+
+// **************************************** 混合宏 ****************************************
+
+// 弹性卡片效果
+@mixin card-elevation($level: 1) {
+  @if $level == 1 {
+    box-shadow: $shadow-sm;
+    transition: box-shadow $transition-base $ease-default;
+    &:hover {
+      box-shadow: $shadow-md;
+    }
+  } @else if $level == 2 {
+    box-shadow: $shadow-md;
+    transition: box-shadow $transition-base $ease-default;
+    &:hover {
+      box-shadow: $shadow-lg;
+    }
+  } @else if $level == 3 {
+    box-shadow: $shadow-lg;
+    transition: box-shadow $transition-base $ease-default;
+    &:hover {
+      box-shadow: $shadow-xl;
+    }
+  }
+}
+
+// 涟漪效果
+@mixin ripple-effect($color: $mn-primary) {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba($color, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width $transition-slower $ease-out, height $transition-slower $ease-out;
+  }
+
+  &:active::after {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+// 渐变背景
+@mixin gradient-primary {
+  background: linear-gradient(135deg, $mn-primary 0%, $mn-primary-dark 100%);
+}
+
+@mixin gradient-secondary {
+  background: linear-gradient(135deg, $mn-secondary 0%, $mn-secondary-dark 100%);
+}
+
+// 毛玻璃效果
+@mixin glass-effect {
+  background: rgba($mn-white, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+// 滚动条美化
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $mn-gray-100;
+    border-radius: $radius-full;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $mn-gray-300;
+    border-radius: $radius-full;
+
+    &:hover {
+      background: $mn-gray-400;
+    }
+  }
+}
+
+// 文字截断
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-truncate-multi($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// 无障碍焦点
+@mixin focus-ring($color: $mn-primary) {
+  &:focus-visible {
+    outline: 2px solid $color;
+    outline-offset: 2px;
+  }
+}
+
+// **************************************** CSS 变量导出（用于全局样式） ****************************************
+:root {
+  // 主色
+  --mn-primary: #{$mn-primary};
+  --mn-primary-light: #{$mn-primary-light};
+  --mn-primary-dark: #{$mn-primary-dark};
+  --mn-primary-lightest: #{$mn-primary-lightest};
+
+  // 辅助色
+  --mn-secondary: #{$mn-secondary};
+  --mn-secondary-light: #{$mn-secondary-light};
+  --mn-secondary-dark: #{$mn-secondary-dark};
+
+  --mn-accent: #{$mn-accent};
+
+  // 语义色
+  --mn-success: #{$mn-success};
+  --mn-warning: #{$mn-warning};
+  --mn-error: #{$mn-error};
+  --mn-info: #{$mn-info};
+
+  // 中性色
+  --mn-gray-50: #{$mn-gray-50};
+  --mn-gray-100: #{$mn-gray-100};
+  --mn-gray-200: #{$mn-gray-200};
+  --mn-gray-300: #{$mn-gray-300};
+  --mn-gray-400: #{$mn-gray-400};
+  --mn-gray-500: #{$mn-gray-500};
+  --mn-gray-600: #{$mn-gray-600};
+  --mn-gray-700: #{$mn-gray-700};
+  --mn-gray-800: #{$mn-gray-800};
+  --mn-gray-900: #{$mn-gray-900};
+
+  // 阴影
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --shadow-xl: #{$shadow-xl};
+  --shadow-2xl: #{$shadow-2xl};
+
+  // 圆角
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-2xl: #{$radius-2xl};
+
+  // 动画
+  --transition-fast: #{$transition-fast};
+  --transition-base: #{$transition-base};
+  --transition-slow: #{$transition-slow};
+}
