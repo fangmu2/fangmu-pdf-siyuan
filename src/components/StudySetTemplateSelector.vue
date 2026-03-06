@@ -1,17 +1,34 @@
 <template>
-  <div class="study-set-template-selector" v-if="visible">
+  <div
+    v-if="visible"
+    class="study-set-template-selector"
+  >
     <!-- 遮罩层 -->
-    <div class="overlay" @click="close"></div>
+    <div
+      class="overlay"
+      @click="close"
+    ></div>
 
     <!-- 模板选择面板 -->
     <div class="template-panel">
       <!-- 头部 -->
       <div class="panel-header">
         <h2>选择学习集模板</h2>
-        <p class="subtitle">选择一个模板快速创建结构化的学习集</p>
-        <button @click="close" class="close-btn" title="关闭">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        <p class="subtitle">
+          选择一个模板快速创建结构化的学习集
+        </p>
+        <button
+          class="close-btn"
+          title="关闭"
+          @click="close"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="currentColor"
+          >
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>
         </button>
       </div>
@@ -19,13 +36,15 @@
       <!-- 标签切换 -->
       <div class="tab-bar">
         <button
-          :class="['tab', { active: activeTab === 'builtIn' }]"
+          class="tab"
+          :class="[{ active: activeTab === 'builtIn' }]"
           @click="activeTab = 'builtIn'"
         >
           内置模板
         </button>
         <button
-          :class="['tab', { active: activeTab === 'custom' }]"
+          class="tab"
+          :class="[{ active: activeTab === 'custom' }]"
           @click="activeTab = 'custom'"
         >
           自定义模板
@@ -35,19 +54,28 @@
       <!-- 模板列表 -->
       <div class="template-list">
         <!-- 内置模板 -->
-        <div v-if="activeTab === 'builtIn'" class="template-grid">
+        <div
+          v-if="activeTab === 'builtIn'"
+          class="template-grid"
+        >
           <div
             v-for="template in builtInTemplates"
             :key="template.id"
-            :class="['template-card', { selected: selectedTemplate?.id === template.id }]"
+            class="template-card"
+            :class="[{ selected: selectedTemplate?.id === template.id }]"
             @click="selectTemplate(template)"
           >
-            <div class="card-icon" :style="{ backgroundColor: template.color }">
+            <div
+              class="card-icon"
+              :style="{ backgroundColor: template.color }"
+            >
               {{ template.icon }}
             </div>
             <div class="card-content">
               <h3>{{ template.name }}</h3>
-              <p class="description">{{ template.description }}</p>
+              <p class="description">
+                {{ template.description }}
+              </p>
               <div class="card-meta">
                 <span class="tag-count">{{ template.defaultTags.length }} 个标签</span>
                 <span class="card-count">{{ template.cards.length }} 张预设卡片</span>
@@ -57,28 +85,55 @@
         </div>
 
         <!-- 自定义模板 -->
-        <div v-else class="template-grid">
+        <div
+          v-else
+          class="template-grid"
+        >
           <div
             v-for="template in customTemplates"
             :key="template.id"
-            :class="['template-card', { selected: selectedTemplate?.id === template.id }]"
+            class="template-card"
+            :class="[{ selected: selectedTemplate?.id === template.id }]"
             @click="selectTemplate(template)"
           >
-            <div class="card-icon" :style="{ backgroundColor: template.color }">
+            <div
+              class="card-icon"
+              :style="{ backgroundColor: template.color }"
+            >
               {{ template.icon }}
             </div>
             <div class="card-content">
               <h3>{{ template.name }}</h3>
-              <p class="description">{{ template.description }}</p>
+              <p class="description">
+                {{ template.description }}
+              </p>
               <div class="card-actions">
-                <button @click.stop="editTemplate(template)" class="edit-btn" title="编辑">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                <button
+                  class="edit-btn"
+                  title="编辑"
+                  @click.stop="editTemplate(template)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                   </svg>
                 </button>
-                <button @click.stop="deleteTemplate(template.id)" class="delete-btn" title="删除">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                <button
+                  class="delete-btn"
+                  title="删除"
+                  @click.stop="deleteTemplate(template.id)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                   </svg>
                 </button>
               </div>
@@ -86,25 +141,46 @@
           </div>
 
           <!-- 创建新模板按钮 -->
-          <div class="template-card create-new" @click="openEditor">
+          <div
+            class="template-card create-new"
+            @click="openEditor"
+          >
             <div class="card-icon">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              <svg
+                viewBox="0 0 24 24"
+                width="32"
+                height="32"
+                fill="currentColor"
+              >
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
               </svg>
             </div>
             <div class="card-content">
               <h3>创建自定义模板</h3>
-              <p class="description">创建属于你自己的学习集模板</p>
+              <p class="description">
+                创建属于你自己的学习集模板
+              </p>
             </div>
           </div>
         </div>
 
         <!-- 空状态 -->
-        <div v-if="activeTab === 'custom' && customTemplates.length === 0" class="empty-state">
+        <div
+          v-if="activeTab === 'custom' && customTemplates.length === 0"
+          class="empty-state"
+        >
           <p>暂无自定义模板</p>
-          <button @click="openEditor" class="create-btn">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          <button
+            class="create-btn"
+            @click="openEditor"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="currentColor"
+            >
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
             </svg>
             创建模板
           </button>
@@ -112,22 +188,37 @@
       </div>
 
       <!-- 预览区域 -->
-      <div v-if="selectedTemplate" class="template-preview">
+      <div
+        v-if="selectedTemplate"
+        class="template-preview"
+      >
         <div class="preview-header">
           <h3>模板预览</h3>
           <div class="preview-actions">
-            <button @click="showPreviewDetail = !showPreviewDetail" class="toggle-btn">
+            <button
+              class="toggle-btn"
+              @click="showPreviewDetail = !showPreviewDetail"
+            >
               {{ showPreviewDetail ? '收起' : '展开' }}详情
             </button>
           </div>
         </div>
 
-        <div v-if="showPreviewDetail" class="preview-content">
+        <div
+          v-if="showPreviewDetail"
+          class="preview-content"
+        >
           <div class="preview-section">
             <h4>预设卡片</h4>
             <ul class="preview-list">
-              <li v-for="(card, index) in selectedTemplate.cards" :key="index">
-                <span class="card-type" :class="card.cardType">
+              <li
+                v-for="(card, index) in selectedTemplate.cards"
+                :key="index"
+              >
+                <span
+                  class="card-type"
+                  :class="card.cardType"
+                >
                   {{ card.cardType === 'flashcard' ? '📇' : '📝' }}
                 </span>
                 <span class="card-title">{{ card.title }}</span>
@@ -174,7 +265,10 @@
                 <span class="label">算法</span>
                 <span class="value">{{ selectedTemplate.reviewSettings.useFSRS ? 'FSRS' : 'SM-2' }}</span>
               </div>
-              <div v-if="selectedTemplate.reviewSettings.useFSRS" class="setting-item">
+              <div
+                v-if="selectedTemplate.reviewSettings.useFSRS"
+                class="setting-item"
+              >
                 <span class="label">记忆保留率</span>
                 <span class="value">{{ (selectedTemplate.reviewSettings.fsrsParams?.requestRetention || 0.9) * 100 }}%</span>
               </div>
@@ -209,11 +303,17 @@
         </div>
         <button
           :disabled="!selectedTemplate || !studySetName.trim()"
-          :class="['use-template-btn', { disabled: !selectedTemplate || !studySetName.trim() }]"
+          class="use-template-btn"
+          :class="[{ disabled: !selectedTemplate || !studySetName.trim() }]"
           @click="useTemplate"
         >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="currentColor"
+          >
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
           </svg>
           使用模板创建
         </button>
@@ -231,127 +331,138 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { studySetTemplateService, type StudySetTemplate } from '../services/studySetTemplateService';
-import StudySetTemplateEditor from './StudySetTemplateEditor.vue';
+import type { StudySetTemplate } from '../services/studySetTemplateService'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
+import {
+
+  studySetTemplateService,
+} from '../services/studySetTemplateService'
+import StudySetTemplateEditor from './StudySetTemplateEditor.vue'
 
 const props = defineProps<{
-  notebookId?: string;
-}>();
+  notebookId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'created', studySetId: string): void;
-  (e: 'close'): void;
-}>();
+  (e: 'created', studySetId: string): void
+  (e: 'close'): void
+}>()
 
 // 可见性
-const visible = ref(false);
+const visible = ref(false)
 
 // 激活的标签
-const activeTab = ref<'builtIn' | 'custom'>('builtIn');
+const activeTab = ref<'builtIn' | 'custom'>('builtIn')
 
 // 选中的模板
-const selectedTemplate = ref<StudySetTemplate | null>(null);
+const selectedTemplate = ref<StudySetTemplate | null>(null)
 
 // 学习集名称
-const studySetName = ref('');
+const studySetName = ref('')
 
 // 显示预览详情
-const showPreviewDetail = ref(true);
+const showPreviewDetail = ref(true)
 
 // 编辑器相关
-const editorVisible = ref(false);
-const editingTemplateId = ref<string | undefined>(undefined);
+const editorVisible = ref(false)
+const editingTemplateId = ref<string | undefined>(undefined)
 
 // 模板列表
-const builtInTemplates = computed(() => studySetTemplateService.getBuiltInTemplates());
-const customTemplates = computed(() => studySetTemplateService.getCustomTemplates());
+const builtInTemplates = computed(() => studySetTemplateService.getBuiltInTemplates())
+const customTemplates = computed(() => studySetTemplateService.getCustomTemplates())
 
 // 监听选中模板变化
 watch(selectedTemplate, (newTemplate) => {
   if (newTemplate && !studySetName.value) {
-    studySetName.value = `${newTemplate.name}学习集`;
+    studySetName.value = `${newTemplate.name}学习集`
   }
-});
+})
 
 // 打开
 function open() {
-  visible.value = true;
-  activeTab.value = 'builtIn';
-  selectedTemplate.value = null;
-  studySetName.value = '';
-  showPreviewDetail.value = true;
+  visible.value = true
+  activeTab.value = 'builtIn'
+  selectedTemplate.value = null
+  studySetName.value = ''
+  showPreviewDetail.value = true
 }
 
 // 关闭
 function close() {
-  visible.value = false;
-  emit('close');
+  visible.value = false
+  emit('close')
 }
 
 // 选择模板
 function selectTemplate(template: StudySetTemplate) {
-  selectedTemplate.value = template;
+  selectedTemplate.value = template
 }
 
 // 编辑模板
 function editTemplate(template: StudySetTemplate) {
-  editingTemplateId.value = template.id;
-  editorVisible.value = true;
+  editingTemplateId.value = template.id
+  editorVisible.value = true
 }
 
 // 删除模板
 function deleteTemplate(id: string) {
   if (confirm('确定要删除这个自定义模板吗？')) {
-    studySetTemplateService.deleteTemplate(id);
+    studySetTemplateService.deleteTemplate(id)
   }
 }
 
 // 打开编辑器（新建）
 function openEditor() {
-  editingTemplateId.value = undefined;
-  editorVisible.value = true;
+  editingTemplateId.value = undefined
+  editorVisible.value = true
 }
 
 // 处理模板保存
 function handleTemplateSaved() {
-  editorVisible.value = false;
-  editingTemplateId.value = undefined;
+  editorVisible.value = false
+  editingTemplateId.value = undefined
 }
 
 // 处理编辑器关闭
 function handleEditorClose() {
-  editorVisible.value = false;
-  editingTemplateId.value = undefined;
+  editorVisible.value = false
+  editingTemplateId.value = undefined
 }
 
 // 使用模板创建学习集
 async function useTemplate() {
-  if (!selectedTemplate.value || !studySetName.value.trim()) return;
+  if (!selectedTemplate.value || !studySetName.value.trim()) return
 
   try {
-    const notebookId = props.notebookId;
+    const notebookId = props.notebookId
     if (!notebookId) {
-      alert('请先选择笔记本');
-      return;
+      alert('请先选择笔记本')
+      return
     }
 
     const result = await studySetTemplateService.createStudySetFromTemplate(
       selectedTemplate.value.id,
       studySetName.value.trim(),
-      notebookId
-    );
+      notebookId,
+    )
 
-    emit('created', result.studySetId);
-    close();
+    emit('created', result.studySetId)
+    close()
   } catch (error) {
-    console.error('使用模板创建学习集失败:', error);
-    alert('创建失败，请重试');
+    console.error('使用模板创建学习集失败:', error)
+    alert('创建失败，请重试')
   }
 }
 
 // 暴露方法
-defineExpose({ open, close });
+defineExpose({
+  open,
+  close,
+})
 </script>
 
 <style scoped lang="scss">

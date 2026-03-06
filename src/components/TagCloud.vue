@@ -4,12 +4,24 @@
  */
 
 <template>
-  <div class="tag-cloud-container" :class="{ 'compact': compact }">
+  <div
+    class="tag-cloud-container"
+    :class="{ compact }"
+  >
     <!-- 标题栏 -->
-    <div class="tag-cloud-header" v-if="showHeader">
+    <div
+      v-if="showHeader"
+      class="tag-cloud-header"
+    >
       <h3 class="tag-cloud-title">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="margin-right: 6px;">
-          <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="currentColor"
+          style="margin-right: 6px;"
+        >
+          <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z" />
         </svg>
         {{ title || '标签云' }}
       </h3>
@@ -17,34 +29,42 @@
         <button
           v-if="tags.length > config.maxTags"
           class="action-btn"
-          @click="toggleExpand"
           :title="isExpanded ? '收起' : '展开'"
+          @click="toggleExpand"
         >
           <svg
             viewBox="0 0 24 24"
             width="14"
             height="14"
             fill="currentColor"
-            :class="{ 'rotated': isExpanded }"
+            :class="{ rotated: isExpanded }"
           >
-            <path d="M7.41 8.59L12 13.17l4.59-4.59L18 10l-6 6-6-6z"/>
+            <path d="M7.41 8.59L12 13.17l4.59-4.59L18 10l-6 6-6-6z" />
           </svg>
         </button>
         <button
           v-if="searchable"
           class="action-btn"
-          @click="toggleSearch"
           :title="isSearching ? '关闭搜索' : '搜索标签'"
+          @click="toggleSearch"
         >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="currentColor"
+          >
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
         </button>
       </div>
     </div>
 
     <!-- 搜索框 -->
-    <div v-if="isSearching" class="tag-search-box">
+    <div
+      v-if="isSearching"
+      class="tag-search-box"
+    >
       <input
         ref="searchInputRef"
         v-model="searchQuery"
@@ -54,17 +74,32 @@
         @input="handleSearch"
         @keydown.escape="closeSearch"
       />
-      <button v-if="searchQuery" @click="clearSearch" class="search-clear-btn">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      <button
+        v-if="searchQuery"
+        class="search-clear-btn"
+        @click="clearSearch"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="12"
+          height="12"
+          fill="currentColor"
+        >
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
         </svg>
       </button>
     </div>
 
     <!-- 标签云内容 -->
-    <div class="tag-cloud-content" :style="contentStyle">
+    <div
+      class="tag-cloud-content"
+      :style="contentStyle"
+    >
       <!-- 统计信息 -->
-      <div v-if="showStats && statistics" class="tag-stats">
+      <div
+        v-if="showStats && statistics"
+        class="tag-stats"
+      >
         <span class="stat-item">
           <span class="stat-value">{{ statistics.totalTags }}</span>
           <span class="stat-label">标签</span>
@@ -76,17 +111,26 @@
       </div>
 
       <!-- 标签列表 -->
-      <div class="tag-list" :class="layout">
-        <template v-for="tag in displayedTags" :key="tag.tag">
+      <div
+        class="tag-list"
+        :class="layout"
+      >
+        <template
+          v-for="tag in displayedTags"
+          :key="tag.tag"
+        >
           <button
             v-if="clickable"
             class="tag-item tag-btn"
             :style="getTagStyle(tag)"
-            @click="handleTagClick(tag)"
             :title="`${tag.tag} (${tag.count}次使用)`"
+            @click="handleTagClick(tag)"
           >
             <span class="tag-text">{{ tag.tag }}</span>
-            <span v-if="showCount" class="tag-count">{{ tag.count }}</span>
+            <span
+              v-if="showCount"
+              class="tag-count"
+            >{{ tag.count }}</span>
           </button>
           <div
             v-else
@@ -95,24 +139,46 @@
             :title="`${tag.tag} (${tag.count}次使用)`"
           >
             <span class="tag-text">{{ tag.tag }}</span>
-            <span v-if="showCount" class="tag-count">{{ tag.count }}</span>
+            <span
+              v-if="showCount"
+              class="tag-count"
+            >{{ tag.count }}</span>
           </div>
         </template>
       </div>
 
       <!-- 空状态 -->
-      <div v-if="displayedTags.length === 0" class="tag-empty">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" opacity="0.2">
-          <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+      <div
+        v-if="displayedTags.length === 0"
+        class="tag-empty"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="48"
+          height="48"
+          fill="currentColor"
+          opacity="0.2"
+        >
+          <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z" />
         </svg>
         <p>{{ searchQuery ? '未找到匹配的标签' : '暂无标签' }}</p>
-        <p v-if="searchQuery" class="empty-hint">试试其他关键词</p>
+        <p
+          v-if="searchQuery"
+          class="empty-hint"
+        >
+          试试其他关键词
+        </p>
       </div>
     </div>
 
     <!-- 最近使用标签 -->
-    <div v-if="showRecent && statistics?.recentTags.length" class="recent-tags">
-      <h4 class="recent-title">最近使用</h4>
+    <div
+      v-if="showRecent && statistics?.recentTags.length"
+      class="recent-tags"
+    >
+      <h4 class="recent-title">
+        最近使用
+      </h4>
       <div class="recent-list">
         <button
           v-for="tag in statistics.recentTags.slice(0, 5)"
@@ -129,41 +195,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue';
-import type { TagCloudItem, TagStatistics, TagCloudConfig } from '../types/search';
-import { tagCloudService } from '../services/tagCloudService';
-import { Card } from '../types/card';
+import type {
+  TagCloudConfig,
+  TagCloudItem,
+  TagStatistics,
+} from '../types/search'
+import {
+  computed,
+  nextTick,
+  ref,
+  watch,
+} from 'vue'
+import { tagCloudService } from '../services/tagCloudService'
+import { Card } from '../types/card'
 
 // Props
 const props = withDefaults(defineProps<{
   /** 卡片数据 */
-  cards?: Card[];
+  cards?: Card[]
   /** 标签数据（可选，直接传入） */
-  tags?: TagCloudItem[];
+  tags?: TagCloudItem[]
   /** 学习集 ID 过滤 */
-  studySetId?: string;
+  studySetId?: string
   /** 标题 */
-  title?: string;
+  title?: string
   /** 是否显示标题栏 */
-  showHeader?: boolean;
+  showHeader?: boolean
   /** 是否紧凑模式 */
-  compact?: boolean;
+  compact?: boolean
   /** 是否可点击 */
-  clickable?: boolean;
+  clickable?: boolean
   /** 是否显示计数 */
-  showCount?: boolean;
+  showCount?: boolean
   /** 是否显示统计 */
-  showStats?: boolean;
+  showStats?: boolean
   /** 是否显示最近使用 */
-  showRecent?: boolean;
+  showRecent?: boolean
   /** 是否可搜索 */
-  searchable?: boolean;
+  searchable?: boolean
   /** 布局方式 */
-  layout?: 'cloud' | 'list' | 'inline';
+  layout?: 'cloud' | 'list' | 'inline'
   /** 最大显示标签数 */
-  maxTags?: number;
+  maxTags?: number
   /** 配置 */
-  config?: Partial<TagCloudConfig>;
+  config?: Partial<TagCloudConfig>
 }>(), {
   showHeader: true,
   compact: false,
@@ -174,136 +249,136 @@ const props = withDefaults(defineProps<{
   searchable: false,
   layout: 'cloud',
   maxTags: 50,
-});
+})
 
 // Emits
 const emit = defineEmits<{
-  (e: 'tag-click', tag: TagCloudItem): void;
-  (e: 'tag-filter', tag: string): void;
-}>();
+  (e: 'tag-click', tag: TagCloudItem): void
+  (e: 'tag-filter', tag: string): void
+}>()
 
 // 状态
-const isExpanded = ref(false);
-const isSearching = ref(false);
-const searchQuery = ref('');
-const searchInputRef = ref<HTMLInputElement>();
+const isExpanded = ref(false)
+const isSearching = ref(false)
+const searchQuery = ref('')
+const searchInputRef = ref<HTMLInputElement>()
 
 // 更新标签云服务配置
 if (props.config) {
   tagCloudService.updateConfig({
     ...props.config,
     maxTags: props.maxTags,
-  });
+  })
 }
 
 // 计算标签数据
 const statistics = computed<TagStatistics | null>(() => {
   if (props.tags && props.tags.length > 0) {
     // 如果直接传入了标签数据
-    const totalUsage = props.tags.reduce((sum, tag) => sum + tag.count, 0);
+    const totalUsage = props.tags.reduce((sum, tag) => sum + tag.count, 0)
     return {
       totalTags: props.tags.length,
       totalUsage,
       topTags: props.tags,
       recentTags: [],
       byStudySet: {},
-    };
+    }
   }
 
   if (props.cards && props.cards.length > 0) {
-    return tagCloudService.extractTagStatistics(props.cards, props.studySetId);
+    return tagCloudService.extractTagStatistics(props.cards, props.studySetId)
   }
 
-  return null;
-});
+  return null
+})
 
 // 显示的标签
 const displayedTags = computed<TagCloudItem[]>(() => {
-  if (!statistics.value) return [];
+  if (!statistics.value) return []
 
-  let tags = statistics.value.topTags;
+  let tags = statistics.value.topTags
 
   // 搜索过滤
   if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase().trim();
-    tags = tags.filter(tag => tag.tag.toLowerCase().includes(query));
+    const query = searchQuery.value.toLowerCase().trim()
+    tags = tags.filter((tag) => tag.tag.toLowerCase().includes(query))
   }
 
   // 限制数量
   if (!isExpanded.value && tags.length > props.maxTags) {
-    tags = tags.slice(0, props.maxTags);
+    tags = tags.slice(0, props.maxTags)
   }
 
-  return tags;
-});
+  return tags
+})
 
 // 内容区样式
 const contentStyle = computed(() => {
   return {
     maxHeight: isExpanded.value || props.layout !== 'cloud' ? 'none' : '300px',
     overflow: isExpanded.value ? 'visible' : 'auto',
-  };
-});
+  }
+})
 
 // 获取标签样式
 const getTagStyle = (tag: TagCloudItem) => {
-  const fontSize = tagCloudService.getFontSize(tag.weight);
+  const fontSize = tagCloudService.getFontSize(tag.weight)
   return {
     fontSize: `${fontSize}px`,
     color: tag.color,
-  };
-};
+  }
+}
 
 // 切换展开/收起
 const toggleExpand = () => {
-  isExpanded.value = !isExpanded.value;
-};
+  isExpanded.value = !isExpanded.value
+}
 
 // 切换搜索
 const toggleSearch = () => {
-  isSearching.value = !isSearching.value;
+  isSearching.value = !isSearching.value
   if (isSearching.value) {
     nextTick(() => {
-      searchInputRef.value?.focus();
-    });
+      searchInputRef.value?.focus()
+    })
   } else {
-    searchQuery.value = '';
+    searchQuery.value = ''
   }
-};
+}
 
 // 关闭搜索
 const closeSearch = () => {
-  isSearching.value = false;
-  searchQuery.value = '';
-};
+  isSearching.value = false
+  searchQuery.value = ''
+}
 
 // 清除搜索
 const clearSearch = () => {
-  searchQuery.value = '';
-  searchInputRef.value?.focus();
-};
+  searchQuery.value = ''
+  searchInputRef.value?.focus()
+}
 
 // 处理搜索
 const handleSearch = () => {
   // 搜索逻辑已在 computed 中处理
-};
+}
 
 // 处理标签点击
 const handleTagClick = (tag: TagCloudItem) => {
-  emit('tag-click', tag);
-  emit('tag-filter', tag.tag);
-};
+  emit('tag-click', tag)
+  emit('tag-filter', tag.tag)
+}
 
 // 监听配置变化
 watch(() => props.config, (newConfig) => {
   if (newConfig) {
-    tagCloudService.updateConfig(newConfig);
+    tagCloudService.updateConfig(newConfig)
   }
-}, { deep: true });
+}, { deep: true })
 
 watch(() => props.maxTags, (newMaxTags) => {
-  tagCloudService.updateConfig({ maxTags: newMaxTags });
-});
+  tagCloudService.updateConfig({ maxTags: newMaxTags })
+})
 </script>
 
 <style scoped>

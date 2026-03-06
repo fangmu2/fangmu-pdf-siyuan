@@ -3,41 +3,44 @@
  * MarginNote 4 风格学习插件 - 卡片 CRUD 操作
  */
 
+import type { PDFAnnotation } from '../types/annotation'
 import type {
   Card,
-  FlashCard,
-  CardType,
-  CardStatus,
   CardFilter,
   CardSortOptions,
-} from '../types/card';
-import type { PDFAnnotation } from '../types/annotation';
-import { sm2Algorithm, createNewSRSParams } from '../review/sm2';
+  CardStatus,
+  CardType,
+  FlashCard,
+} from '../types/card'
+import {
+  createNewSRSParams,
+  sm2Algorithm,
+} from '../review/sm2'
 import {
   createCardBlock,
-  updateCardBlock,
   deleteCardBlock,
-  getCardBlock,
   getAllCardBlocks,
+  getCardBlock,
   searchCards as searchCardsFromDB,
-} from './dataPersistenceService';
+  updateCardBlock,
+} from './dataPersistenceService'
 
 // 内存缓存
-let cardsCache: Card[] = [];
-let cacheLoaded = false;
+let cardsCache: Card[] = []
+let cacheLoaded = false
 
 /**
  * 加载卡片缓存
  */
 async function loadCardsCache(): Promise<void> {
-  if (cacheLoaded) return;
+  if (cacheLoaded) return
 
   try {
-    cardsCache = await getAllCardBlocks();
-    cacheLoaded = true;
+    cardsCache = await getAllCardBlocks()
+    cacheLoaded = true
   } catch (error) {
-    console.error('加载卡片缓存失败:', error);
-    cardsCache = [];
+    console.error('加载卡片缓存失败:', error)
+    cardsCache = []
   }
 }
 
@@ -53,41 +56,41 @@ class CardService {
    * @returns 卡片对象
    */
   parseFromBlockAttributes(blockId: string, attributes: Record<string, string>): Card | FlashCard {
-    const type = attributes.type as CardType || 'card';
+    const type = attributes.type as CardType || 'card'
 
     const card: Card = {
       id: blockId,
-      type: type,
+      type,
       content: '', // 需要从块内容获取
       sourceLocation: {
         docId: '',
-        blockId: blockId,
+        blockId,
       },
-      studySetId: attributes['card_study_set_id'] || '',
-      tags: attributes['card_tags']
-        ? attributes['card_tags'].split(',').map(t => t.trim())
+      studySetId: attributes.card_study_set_id || '',
+      tags: attributes.card_tags
+        ? attributes.card_tags.split(',').map((t) => t.trim())
         : [],
-      status: (attributes['card_status'] as CardStatus) || 'new',
-      difficulty: parseInt(attributes['card_difficulty'] || '3'),
-      createdAt: parseInt(attributes['card_created'] || Date.now().toString()),
-      updatedAt: parseInt(attributes['card_updated'] || Date.now().toString()),
-    };
+      status: (attributes.card_status as CardStatus) || 'new',
+      difficulty: Number.parseInt(attributes.card_difficulty || '3'),
+      createdAt: Number.parseInt(attributes.card_created || Date.now().toString()),
+      updatedAt: Number.parseInt(attributes.card_updated || Date.now().toString()),
+    }
 
     // 如果是闪卡，解析闪卡特有属性
     if (type === 'flashcard') {
-      const flashCard = card as FlashCard;
-      flashCard.front = attributes['card_front'] || '';
-      flashCard.back = attributes['card_back'] || '';
+      const flashCard = card as FlashCard
+      flashCard.front = attributes.card_front || ''
+      flashCard.back = attributes.card_back || ''
       flashCard.srs = {
-        easeFactor: parseFloat(attributes['card_srs_ease'] || '2.5'),
-        interval: parseInt(attributes['card_srs_interval'] || '0'),
-        repetitions: parseInt(attributes['card_srs_repetitions'] || '0'),
-        nextReview: parseInt(attributes['card_srs_next_review'] || '0'),
-      };
-      return flashCard;
+        easeFactor: Number.parseFloat(attributes.card_srs_ease || '2.5'),
+        interval: Number.parseInt(attributes.card_srs_interval || '0'),
+        repetitions: Number.parseInt(attributes.card_srs_repetitions || '0'),
+        nextReview: Number.parseInt(attributes.card_srs_next_review || '0'),
+      }
+      return flashCard
     }
 
-    return card;
+    return card
   }
 
   /**
@@ -99,28 +102,28 @@ class CardService {
   toBlockAttributes(card: Card | FlashCard): Record<string, string> {
     const attrs: Record<string, string> = {
       type: card.type as string,
-      'card_source_id': card.sourceLocation.blockId,
-      'card_study_set_id': card.studySetId,
-      'card_tags': card.tags.join(','),
-      'card_status': card.status,
-      'card_difficulty': card.difficulty.toString(),
-      'card_created': card.createdAt.toString(),
-      'card_updated': card.updatedAt.toString(),
-    };
+      card_source_id: card.sourceLocation.blockId,
+      card_study_set_id: card.studySetId,
+      card_tags: card.tags.join(','),
+      card_status: card.status,
+      card_difficulty: card.difficulty.toString(),
+      card_created: card.createdAt.toString(),
+      card_updated: card.updatedAt.toString(),
+    }
 
     // 如果是闪卡，添加闪卡特有属性
     if (card.type === 'flashcard') {
-      const flashCard = card as FlashCard;
-      attrs['card_type'] = 'flashcard';
-      attrs['card_front'] = flashCard.front;
-      attrs['card_back'] = flashCard.back;
-      attrs['card_srs_ease'] = flashCard.srs.easeFactor.toString();
-      attrs['card_srs_interval'] = flashCard.srs.interval.toString();
-      attrs['card_srs_repetitions'] = flashCard.srs.repetitions.toString();
-      attrs['card_srs_next_review'] = flashCard.srs.nextReview.toString();
+      const flashCard = card as FlashCard
+      attrs.card_type = 'flashcard'
+      attrs.card_front = flashCard.front
+      attrs.card_back = flashCard.back
+      attrs.card_srs_ease = flashCard.srs.easeFactor.toString()
+      attrs.card_srs_interval = flashCard.srs.interval.toString()
+      attrs.card_srs_repetitions = flashCard.srs.repetitions.toString()
+      attrs.card_srs_next_review = flashCard.srs.nextReview.toString()
     }
 
-    return attrs;
+    return attrs
   }
 
   /**
@@ -148,12 +151,12 @@ class CardService {
       difficulty: 3,
       createdAt: annotation.created,
       updatedAt: annotation.updated,
-    };
+    }
 
     // 保存到思源
-    await this.saveCard(card);
+    await this.saveCard(card)
 
-    return card;
+    return card
   }
 
   /**
@@ -168,10 +171,10 @@ class CardService {
   async createCard(
     content: string,
     studySetId: string,
-    sourceLocation: { docId: string; blockId: string; pdfPath?: string; page?: number },
-    type: CardType = 'card'
+    sourceLocation: { docId: string, blockId: string, pdfPath?: string, page?: number },
+    type: CardType = 'card',
   ): Promise<Card> {
-    const now = Date.now();
+    const now = Date.now()
 
     const card: Card = {
       id: `card_${now}_${Math.random().toString(36).substr(2, 9)}`,
@@ -184,12 +187,12 @@ class CardService {
       difficulty: 3,
       createdAt: now,
       updatedAt: now,
-    };
+    }
 
     // 保存到思源
-    await this.saveCard(card);
+    await this.saveCard(card)
 
-    return card;
+    return card
   }
 
   /**
@@ -207,9 +210,9 @@ class CardService {
     back: string,
     studySetId: string,
     content: string = '',
-    sourceLocation: { docId: string; blockId: string; pdfPath?: string; page?: number }
+    sourceLocation: { docId: string, blockId: string, pdfPath?: string, page?: number },
   ): Promise<FlashCard> {
-    const now = Date.now();
+    const now = Date.now()
 
     const card: FlashCard = {
       id: `card_${now}_${Math.random().toString(36).substr(2, 9)}`,
@@ -225,12 +228,12 @@ class CardService {
       front,
       back,
       srs: createNewSRSParams(),
-    };
+    }
 
     // 保存到思源
-    await this.saveCard(card);
+    await this.saveCard(card)
 
-    return card;
+    return card
   }
 
   /**
@@ -238,24 +241,24 @@ class CardService {
    */
   async saveCard(card: Card): Promise<void> {
     try {
-      const block = await getCardBlock(card.id);
+      const block = await getCardBlock(card.id)
 
       if (block) {
-        await updateCardBlock(card);
+        await updateCardBlock(card)
       } else {
-        await createCardBlock(card);
+        await createCardBlock(card)
       }
 
       // 更新缓存
-      const index = cardsCache.findIndex(c => c.id === card.id);
+      const index = cardsCache.findIndex((c) => c.id === card.id)
       if (index >= 0) {
-        cardsCache[index] = card;
+        cardsCache[index] = card
       } else {
-        cardsCache.push(card);
+        cardsCache.push(card)
       }
     } catch (error) {
-      console.error('保存卡片失败:', error);
-      throw error;
+      console.error('保存卡片失败:', error)
+      throw error
     }
   }
 
@@ -271,10 +274,10 @@ class CardService {
       ...card,
       content,
       updatedAt: Date.now(),
-    };
+    }
 
-    await this.saveCard(updatedCard);
-    return updatedCard;
+    await this.saveCard(updatedCard)
+    return updatedCard
   }
 
   /**
@@ -289,10 +292,10 @@ class CardService {
       ...card,
       tags,
       updatedAt: Date.now(),
-    };
+    }
 
-    await this.saveCard(updatedCard);
-    return updatedCard;
+    await this.saveCard(updatedCard)
+    return updatedCard
   }
 
   /**
@@ -307,10 +310,10 @@ class CardService {
       ...card,
       status,
       updatedAt: Date.now(),
-    };
+    }
 
-    await this.saveCard(updatedCard);
-    return updatedCard;
+    await this.saveCard(updatedCard)
+    return updatedCard
   }
 
   /**
@@ -325,10 +328,10 @@ class CardService {
       ...card,
       difficulty: Math.max(1, Math.min(5, difficulty)),
       updatedAt: Date.now(),
-    };
+    }
 
-    await this.saveCard(updatedCard);
-    return updatedCard;
+    await this.saveCard(updatedCard)
+    return updatedCard
   }
 
   /**
@@ -346,10 +349,10 @@ class CardService {
       front,
       back,
       srs: createNewSRSParams(),
-    } as FlashCard;
+    } as FlashCard
 
-    await this.saveCard(flashCard);
-    return flashCard;
+    await this.saveCard(flashCard)
+    return flashCard
   }
 
   /**
@@ -359,29 +362,32 @@ class CardService {
    * @param quality - 复习质量评分 (0-5)
    * @returns 更新后的闪卡和复习结果
    */
-  async processReview(card: FlashCard, quality: number): Promise<{ card: FlashCard; result: ReturnType<typeof sm2Algorithm> }> {
+  async processReview(card: FlashCard, quality: number): Promise<{ card: FlashCard, result: ReturnType<typeof sm2Algorithm> }> {
     const result = sm2Algorithm({
       quality,
       easeFactor: card.srs.easeFactor,
       interval: card.srs.interval,
       repetitions: card.srs.repetitions,
-    });
+    })
 
     const updatedCard: FlashCard = {
       ...card,
       srs: result,
       updatedAt: Date.now(),
-    };
+    }
 
     // 根据复习结果更新状态
     if (quality < 3) {
-      updatedCard.status = 'learning';
+      updatedCard.status = 'learning'
     } else if (result.interval >= 21) {
-      updatedCard.status = 'review';
+      updatedCard.status = 'review'
     }
 
-    await this.saveCard(updatedCard);
-    return { card: updatedCard, result };
+    await this.saveCard(updatedCard)
+    return {
+      card: updatedCard,
+      result,
+    }
   }
 
   /**
@@ -391,11 +397,11 @@ class CardService {
    */
   async deleteCard(cardId: string): Promise<void> {
     try {
-      await deleteCardBlock(cardId);
-      cardsCache = cardsCache.filter(c => c.id !== cardId);
+      await deleteCardBlock(cardId)
+      cardsCache = cardsCache.filter((c) => c.id !== cardId)
     } catch (error) {
-      console.error('删除卡片失败:', error);
-      throw error;
+      console.error('删除卡片失败:', error)
+      throw error
     }
   }
 
@@ -403,31 +409,31 @@ class CardService {
    * 获取所有卡片
    */
   async getAllCards(): Promise<Card[]> {
-    await loadCardsCache();
-    return cardsCache;
+    await loadCardsCache()
+    return cardsCache
   }
 
   /**
    * 获取指定学习集的卡片
    */
   async getCardsByStudySetId(studySetId: string): Promise<Card[]> {
-    await loadCardsCache();
-    return cardsCache.filter(c => c.studySetId === studySetId);
+    await loadCardsCache()
+    return cardsCache.filter((c) => c.studySetId === studySetId)
   }
 
   /**
    * 获取卡片
    */
   async getCard(cardId: string): Promise<Card | null> {
-    await loadCardsCache();
-    return cardsCache.find(c => c.id === cardId) || null;
+    await loadCardsCache()
+    return cardsCache.find((c) => c.id === cardId) || null
   }
 
   /**
    * 搜索卡片
    */
   async searchCards(query: string): Promise<Card[]> {
-    return searchCardsFromDB(query);
+    return searchCardsFromDB(query)
   }
 
   /**
@@ -438,44 +444,44 @@ class CardService {
    * @returns 筛选后的卡片列表
    */
   filterCards(cards: Card[], filter: CardFilter): Card[] {
-    return cards.filter(card => {
+    return cards.filter((card) => {
       if (filter.tags && filter.tags.length > 0) {
-        if (!filter.tags.some(tag => card.tags.includes(tag))) {
-          return false;
+        if (!filter.tags.some((tag) => card.tags.includes(tag))) {
+          return false
         }
       }
 
       if (filter.status && filter.status.length > 0) {
         if (!filter.status.includes(card.status)) {
-          return false;
+          return false
         }
       }
 
       if (filter.difficulty) {
-        const [min, max] = filter.difficulty;
+        const [min, max] = filter.difficulty
         if (card.difficulty < min || card.difficulty > max) {
-          return false;
+          return false
         }
       }
 
       if (filter.sourcePdfPath && card.sourceLocation.pdfPath !== filter.sourcePdfPath) {
-        return false;
+        return false
       }
 
       if (filter.nextReviewFrom || filter.nextReviewTo) {
-        const flashCard = card as FlashCard;
-        if (!flashCard.srs) return false;
+        const flashCard = card as FlashCard
+        if (!flashCard.srs) return false
 
         if (filter.nextReviewFrom && flashCard.srs.nextReview < filter.nextReviewFrom) {
-          return false;
+          return false
         }
         if (filter.nextReviewTo && flashCard.srs.nextReview > filter.nextReviewTo) {
-          return false;
+          return false
         }
       }
 
-      return true;
-    });
+      return true
+    })
   }
 
   /**
@@ -486,35 +492,43 @@ class CardService {
    * @returns 排序后的卡片列表
    */
   sortCards(cards: Card[], options: CardSortOptions): Card[] {
-    const { sortBy, sortOrder } = options;
-    const direction = sortOrder === 'asc' ? 1 : -1;
+    const {
+      sortBy,
+      sortOrder,
+    } = options
+    const direction = sortOrder === 'asc' ? 1 : -1
 
     return [...cards].sort((a, b) => {
-      let comparison = 0;
+      let comparison = 0
 
       switch (sortBy) {
         case 'created':
-          comparison = a.createdAt - b.createdAt;
-          break;
+          comparison = a.createdAt - b.createdAt
+          break
         case 'updated':
-          comparison = a.updatedAt - b.updatedAt;
-          break;
+          comparison = a.updatedAt - b.updatedAt
+          break
         case 'difficulty':
-          comparison = a.difficulty - b.difficulty;
-          break;
+          comparison = a.difficulty - b.difficulty
+          break
         case 'status':
-          const statusOrder = { new: 0, learning: 1, review: 2, suspended: 3 };
-          comparison = statusOrder[a.status] - statusOrder[b.status];
-          break;
+          const statusOrder = {
+            new: 0,
+            learning: 1,
+            review: 2,
+            suspended: 3,
+          }
+          comparison = statusOrder[a.status] - statusOrder[b.status]
+          break
         case 'nextReview':
-          const aFlash = a as FlashCard;
-          const bFlash = b as FlashCard;
-          comparison = (aFlash.srs?.nextReview || 0) - (bFlash.srs?.nextReview || 0);
-          break;
+          const aFlash = a as FlashCard
+          const bFlash = b as FlashCard
+          comparison = (aFlash.srs?.nextReview || 0) - (bFlash.srs?.nextReview || 0)
+          break
       }
 
-      return comparison * direction;
-    });
+      return comparison * direction
+    })
   }
 
   /**
@@ -525,17 +539,17 @@ class CardService {
    * @returns 到期复习的闪卡列表
    */
   getDueCards(cards: Card[], studySetId?: string): FlashCard[] {
-    const now = Date.now();
+    const now = Date.now()
 
     return cards
-      .filter(card => {
-        if (card.type !== 'flashcard') return false;
-        if (studySetId && card.studySetId !== studySetId) return false;
+      .filter((card) => {
+        if (card.type !== 'flashcard') return false
+        if (studySetId && card.studySetId !== studySetId) return false
 
-        const flashCard = card as FlashCard;
-        return flashCard.srs.nextReview <= now;
+        const flashCard = card as FlashCard
+        return flashCard.srs.nextReview <= now
       })
-      .map(card => card as FlashCard);
+      .map((card) => card as FlashCard)
   }
 
   /**
@@ -547,13 +561,13 @@ class CardService {
    * @returns 新卡片列表
    */
   getNewCards(cards: Card[], studySetId?: string, limit: number = 20): Card[] {
-    let newCards = cards.filter(card => card.status === 'new');
+    let newCards = cards.filter((card) => card.status === 'new')
 
     if (studySetId) {
-      newCards = newCards.filter(card => card.studySetId === studySetId);
+      newCards = newCards.filter((card) => card.studySetId === studySetId)
     }
 
-    return newCards.slice(0, limit);
+    return newCards.slice(0, limit)
   }
 
   /**
@@ -563,32 +577,32 @@ class CardService {
    * @returns 统计结果
    */
   countCards(cards: Card[]): {
-    total: number;
-    new: number;
-    learning: number;
-    review: number;
-    suspended: number;
-    flashcards: number;
-    dueToday: number;
+    total: number
+    new: number
+    learning: number
+    review: number
+    suspended: number
+    flashcards: number
+    dueToday: number
   } {
-    const now = Date.now();
+    const now = Date.now()
 
     return {
       total: cards.length,
-      new: cards.filter(c => c.status === 'new').length,
-      learning: cards.filter(c => c.status === 'learning').length,
-      review: cards.filter(c => c.status === 'review').length,
-      suspended: cards.filter(c => c.status === 'suspended').length,
-      flashcards: cards.filter(c => c.type === 'flashcard').length,
-      dueToday: cards.filter(c => {
-        if (c.type !== 'flashcard') return false;
-        const flashCard = c as FlashCard;
-        return flashCard.srs.nextReview <= now;
+      new: cards.filter((c) => c.status === 'new').length,
+      learning: cards.filter((c) => c.status === 'learning').length,
+      review: cards.filter((c) => c.status === 'review').length,
+      suspended: cards.filter((c) => c.status === 'suspended').length,
+      flashcards: cards.filter((c) => c.type === 'flashcard').length,
+      dueToday: cards.filter((c) => {
+        if (c.type !== 'flashcard') return false
+        const flashCard = c as FlashCard
+        return flashCard.srs.nextReview <= now
       }).length,
-    };
+    }
   }
 }
 
 // 导出单例
-export const cardService = new CardService();
-export default cardService;
+export const cardService = new CardService()
+export default cardService

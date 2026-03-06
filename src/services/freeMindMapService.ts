@@ -5,24 +5,29 @@
  */
 
 import type {
-  FreeMindMapOptions,
-  FreeMindMapNode,
-  FreeMindMapEdge,
-  CreateNodeParams,
-  UpdateNodeParams,
-  CreateEdgeParams,
   AutoLayoutOptions,
+  CreateEdgeParams,
+  CreateNodeParams,
+  CrossBranchLink,
   ExportOptions,
-  ExportResult
+  ExportResult,
+  FreeMindMapEdge,
+  FreeMindMapNode,
+  FreeMindMapOptions,
+  SubMindMap, // 新增：子脑图类型
+  UpdateNodeParams,
 } from '@/types/mindmapFree'
-import { updateBlock, getBlock } from '@/api'
 import {
+  getBlock,
+  updateBlock,
+} from '@/api'
+import {
+  getMindMapPdfPath,
+  getMindMapStudySetId,
   loadMindMapFromBlock,
   saveMindMapToBlock,
-  getMindMapPdfPath,
   setMindMapPdfPath,
-  getMindMapStudySetId,
-  setMindMapStudySetId
+  setMindMapStudySetId,
 } from './freeMindMapDataIntegrationService'
 
 /**
@@ -69,11 +74,11 @@ function isValidBlockId(id: string): boolean {
  */
 export async function getFreeMindMap(blockId: string): Promise<FreeMindMapOptions | null> {
   console.log('[FreeMindMapService] getFreeMindMap 开始, blockId:', blockId)
-  
+
   // 验证 blockId
   if (!isValidBlockId(blockId)) {
     console.warn('[FreeMindMapService] 无效的块 ID:', blockId)
-    const defaultConfig = createDefaultMindMapConfig(blockId || 'temp-' + Date.now())
+    const defaultConfig = createDefaultMindMapConfig(blockId || `temp-${Date.now()}`)
     console.log('[FreeMindMapService] 返回默认配置:', defaultConfig)
     return defaultConfig
   }
@@ -98,7 +103,7 @@ export async function getFreeMindMap(blockId: string): Promise<FreeMindMapOption
         showGrid: true,
         showMiniMap: false,
         showControls: true,
-        readOnly: false
+        readOnly: false,
       }
     }
 
@@ -120,15 +125,19 @@ export async function getFreeMindMap(blockId: string): Promise<FreeMindMapOption
     return {
       id: blockId,
       studySetId: attrs.mindmap_study_set_id || attrs.custom_freemind_studyset || '',
-      layout: (attrs.mindmap_layout as FreeMindMapOptions['layout']) ||
-            (attrs.custom_freemind_layout as FreeMindMapOptions['layout']) || 'free',
+      layout: (attrs.mindmap_layout as FreeMindMapOptions['layout'])
+        || (attrs.custom_freemind_layout as FreeMindMapOptions['layout']) || 'free',
       nodes: parsed.nodes || [],
       edges: parsed.edges || [],
-      viewport: parsed.viewport || { zoom: 1, x: 0, y: 0 },
+      viewport: parsed.viewport || {
+        zoom: 1,
+        x: 0,
+        y: 0,
+      },
       showGrid: parsed.showGrid !== false,
       showMiniMap: parsed.showMiniMap || false,
       showControls: parsed.showControls !== false,
-      readOnly: parsed.readOnly || false
+      readOnly: parsed.readOnly || false,
     }
   } catch (error) {
     console.error('[FreeMindMapService] 获取思维导图数据失败:', error)
@@ -147,7 +156,7 @@ export async function saveFreeMindMap(options: FreeMindMapOptions): Promise<void
       nodes: options.nodes,
       edges: options.edges,
       viewport: options.viewport,
-      layout: options.layout
+      layout: options.layout,
     })
 
     // 保存学习集 ID
@@ -168,7 +177,7 @@ export async function saveFreeMindMap(options: FreeMindMapOptions): Promise<void
       showGrid: options.showGrid,
       showMiniMap: options.showMiniMap,
       showControls: options.showControls,
-      readOnly: options.readOnly
+      readOnly: options.readOnly,
     }
 
     await updateBlock({
@@ -178,8 +187,8 @@ export async function saveFreeMindMap(options: FreeMindMapOptions): Promise<void
       attrs: {
         [MINDMAP_DATA_KEY]: JSON.stringify(data),
         mindmap_study_set_id: options.studySetId,
-        mindmap_layout: options.layout
-      }
+        mindmap_layout: options.layout,
+      },
     })
   } catch (error) {
     console.error('[FreeMindMapService] 保存思维导图数据失败:', error)
@@ -199,11 +208,15 @@ function createDefaultMindMapConfig(blockId: string): FreeMindMapOptions {
     layout: 'free',
     nodes: [],
     edges: [],
-    viewport: { zoom: 1, x: 0, y: 0 },
+    viewport: {
+      zoom: 1,
+      x: 0,
+      y: 0,
+    },
     showGrid: true,
     showMiniMap: false,
     showControls: true,
-    readOnly: false
+    readOnly: false,
   }
 }
 
@@ -215,7 +228,7 @@ function createDefaultMindMapConfig(blockId: string): FreeMindMapOptions {
  */
 export async function generateMindMapFromPdf(
   pdfPath: string,
-  blockId: string
+  blockId: string,
 ): Promise<FreeMindMapNode[]> {
   const { generateMindMapFromPdfAnnotations } = await import('./freeMindMapDataIntegrationService')
   return generateMindMapFromPdfAnnotations(pdfPath, blockId)
@@ -228,7 +241,7 @@ export async function generateMindMapFromPdf(
  */
 export async function syncMindMapToAnnotations(
   blockId: string,
-  nodes: FreeMindMapNode[]
+  nodes: FreeMindMapNode[],
 ): Promise<void> {
   const { syncMindMapNodesToAnnotations } = await import('./freeMindMapDataIntegrationService')
   return syncMindMapNodesToAnnotations(blockId, nodes)
@@ -252,22 +265,91 @@ export function createNode(params: CreateNodeParams): FreeMindMapNode {
       annotationId: params.annotationId,
       cardId: params.cardId,
       collapsed: false,
-      isExpanded: true,  // 新增：默认展开
+      isExpanded: true, // 新增：默认展开
       sortOrder: 0,
-      zIndex: 0,          // 新增：默认 Z 轴层级
-      childrenIds: [],    // 新增：子节点 ID 列表
-      relations: []       // 新增：跨分支关联
+      zIndex: 0, // 新增：Z 轴层级
+      childrenIds: [], // 新增：子节点 ID 列表
+      relations: [], // 新增：跨分支关联
+      // === MarginNote 4 兼容性字段 ===
+      nodeType: 'normal',
+      syncChanges: false,
     },
     style: {
       width: params.type === 'textCard' ? '200px' : params.type === 'imageCard' ? '250px' : '400px',
-      height: params.type === 'group' ? '300px' : undefined
+      height: params.type === 'group' ? '300px' : undefined,
     } as any,
     class: `node-${params.type}`,
-    parentId: params.parentId,  // 新增：父节点 ID
-    zIndex: 0                   // 新增：Z 轴层级
+    parentId: params.parentId, // 新增：父节点 ID
+    zIndex: 0, // 新增：Z 轴层级
   }
 
   return node
+}
+
+/**
+ * 创建克隆节点（复制内容，不同步修改）
+ * @param sourceNode 源节点
+ * @param position 新位置
+ * @returns 克隆节点
+ */
+export function createCloneNode(
+  sourceNode: FreeMindMapNode,
+  position: { x: number, y: number },
+): FreeMindMapNode {
+  const newNode: FreeMindMapNode = {
+    ...sourceNode,
+    id: generateId(),
+    position,
+    data: {
+      ...sourceNode.data,
+      // === 克隆节点特有字段 ===
+      nodeType: 'clone',
+      sourceNodeId: sourceNode.id,
+      syncChanges: false,
+      // 复制内容但不复制关联 ID（避免冲突）
+      annotationId: undefined,
+      cardId: undefined,
+    },
+    style: { ...sourceNode.style },
+    class: sourceNode.class,
+    parentId: undefined, // 克隆节点独立
+    zIndex: 0,
+  }
+
+  return newNode
+}
+
+/**
+ * 创建引用节点（镜像节点，同步修改）
+ * @param sourceNode 源节点
+ * @param position 新位置
+ * @returns 引用节点
+ */
+export function createReferenceNode(
+  sourceNode: FreeMindMapNode,
+  position: { x: number, y: number },
+): FreeMindMapNode {
+  const newNode: FreeMindMapNode = {
+    ...sourceNode,
+    id: generateId(),
+    position,
+    data: {
+      ...sourceNode.data,
+      // === 引用节点特有字段 ===
+      nodeType: 'reference',
+      sourceNodeId: sourceNode.id,
+      syncChanges: true,
+      // 保持关联 ID（同步需要）
+      annotationId: sourceNode.data.annotationId,
+      cardId: sourceNode.data.cardId,
+    },
+    style: { ...sourceNode.style },
+    class: `${sourceNode.class} node-reference`,
+    parentId: undefined, // 引用节点独立
+    zIndex: 0,
+  }
+
+  return newNode
 }
 
 /**
@@ -284,13 +366,13 @@ export function updateNode(node: FreeMindMapNode, params: UpdateNodeParams): Fre
       title: params.title ?? node.data.title,
       content: params.content ?? node.data.content,
       collapsed: params.collapsed ?? node.data.collapsed,
-      isExpanded: params.collapsed !== undefined ? !params.collapsed : node.data.isExpanded  // 兼容旧版 collapsed
+      isExpanded: params.collapsed !== undefined ? !params.collapsed : node.data.isExpanded, // 兼容旧版 collapsed
     },
     position: params.position ?? node.position,
     style: {
       ...node.style,
-      ...params.style
-    }
+      ...params.style,
+    },
   }
 }
 
@@ -301,7 +383,108 @@ export function updateNode(node: FreeMindMapNode, params: UpdateNodeParams): Fre
  * @returns 删除后的节点列表
  */
 export function deleteNode(nodes: FreeMindMapNode[], nodeId: string): FreeMindMapNode[] {
-  return nodes.filter(n => n.id !== nodeId)
+  return nodes.filter((n) => n.id !== nodeId)
+}
+
+/**
+ * 查找所有引用指定节点的节点
+ * @param sourceNodeId 源节点 ID
+ * @param nodes 所有节点
+ * @returns 引用节点列表
+ */
+export function findReferenceNodes(
+  sourceNodeId: string,
+  nodes: FreeMindMapNode[],
+): FreeMindMapNode[] {
+  return nodes.filter(
+    (node) =>
+      node.data.nodeType === 'reference'
+      && node.data.sourceNodeId === sourceNodeId
+      && node.data.syncChanges === true,
+  )
+}
+
+/**
+ * 同步更新引用节点
+ * @param sourceNode 源节点
+ * @param nodes 所有节点
+ * @returns 更新后的节点列表
+ */
+export function syncReferenceNodeUpdates(
+  sourceNode: FreeMindMapNode,
+  nodes: FreeMindMapNode[],
+): FreeMindMapNode[] {
+  // 查找所有引用该节点的节点
+  const references = findReferenceNodes(sourceNode.id, nodes)
+
+  if (references.length === 0) {
+    return nodes
+  }
+
+  console.log('[FreeMindMapService] 同步引用节点更新，引用数量:', references.length)
+
+  // 同步更新所有引用节点
+  return nodes.map((node) => {
+    const reference = references.find((ref) => ref.id === node.id)
+    if (reference) {
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          // 同步关键字段
+          title: sourceNode.data.title,
+          content: sourceNode.data.content,
+          isExpanded: sourceNode.data.isExpanded,
+          collapsed: sourceNode.data.collapsed,
+          // 保持引用节点的独立字段
+          nodeType: 'reference',
+          sourceNodeId: sourceNode.id,
+          syncChanges: true,
+        },
+        style: { ...sourceNode.style },
+        class: `${sourceNode.class?.replace(' node-reference', '')} node-reference`,
+      }
+    }
+    return node
+  })
+}
+
+/**
+ * 更新节点（带同步逻辑）
+ * @param node 原节点
+ * @param params 更新参数
+ * @param allNodes 所有节点列表（用于同步引用节点）
+ * @returns 更新后的节点列表
+ */
+export function updateNodeWithSync(
+  node: FreeMindMapNode,
+  params: UpdateNodeParams,
+  allNodes: FreeMindMapNode[],
+): FreeMindMapNode[] {
+  // 1. 更新当前节点
+  const updatedNode = updateNode(node, params)
+
+  // 2. 如果是引用节点，找到源节点并反向同步
+  if (node.data.nodeType === 'reference' && node.data.sourceNodeId) {
+    const sourceNode = allNodes.find((n) => n.id === node.data.sourceNodeId)
+    if (sourceNode) {
+      // 更新源节点
+      const updatedSource = updateNode(sourceNode, params)
+      // 递归同步所有引用节点
+      return syncReferenceNodeUpdates(updatedSource, allNodes)
+    }
+  }
+
+  // 3. 如果是普通节点或克隆节点，同步所有引用节点
+  const finalNodes = syncReferenceNodeUpdates(updatedNode, allNodes)
+
+  // 4. 替换当前节点
+  const index = finalNodes.findIndex((n) => n.id === node.id)
+  if (index !== -1) {
+    finalNodes[index] = updatedNode
+  }
+
+  return finalNodes
 }
 
 /**
@@ -321,8 +504,8 @@ export function createEdge(params: CreateEdgeParams): FreeMindMapEdge {
     style: {
       stroke: '#999',
       strokeWidth: 2,
-      strokeDasharray: params.type === 'default' ? '5,5' : undefined
-    }
+      strokeDasharray: params.type === 'default' ? '5,5' : undefined,
+    },
   }
 
   return edge
@@ -335,7 +518,7 @@ export function createEdge(params: CreateEdgeParams): FreeMindMapEdge {
  * @returns 删除后的连线列表
  */
 export function deleteEdge(edges: FreeMindMapEdge[], edgeId: string): FreeMindMapEdge[] {
-  return edges.filter(e => e.id !== edgeId)
+  return edges.filter((e) => e.id !== edgeId)
 }
 
 /**
@@ -348,9 +531,9 @@ export function deleteEdge(edges: FreeMindMapEdge[], edgeId: string): FreeMindMa
 export function deleteEdgeBySourceTarget(
   edges: FreeMindMapEdge[],
   source: string,
-  target: string
+  target: string,
 ): FreeMindMapEdge[] {
-  return edges.filter(e => !(e.source === source && e.target === target))
+  return edges.filter((e) => !(e.source === source && e.target === target))
 }
 
 /**
@@ -363,22 +546,27 @@ export function deleteEdgeBySourceTarget(
 export function autoLayout(
   nodes: FreeMindMapNode[],
   edges: FreeMindMapEdge[],
-  options: AutoLayoutOptions
+  options: AutoLayoutOptions,
 ): FreeMindMapNode[] {
-  const { direction, nodeSpacing, levelSpacing, center = true } = options
+  const {
+    direction,
+    nodeSpacing,
+    levelSpacing,
+    center = true,
+  } = options
 
   // 构建层级关系
   const levelMap = new Map<string, number>()
   const childrenMap = new Map<string, string[]>()
 
   // 初始化
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     childrenMap.set(node.id, [])
     levelMap.set(node.id, 0)
   })
 
   // 根据连线计算层级
-  edges.forEach(edge => {
+  edges.forEach((edge) => {
     const children = childrenMap.get(edge.source) || []
     children.push(edge.target)
     childrenMap.set(edge.source, children)
@@ -392,20 +580,23 @@ export function autoLayout(
   })
 
   // 找到根节点（层级为 0 的节点）
-  const rootNodes = nodes.filter(n => levelMap.get(n.id) === 0)
+  const rootNodes = nodes.filter((n) => levelMap.get(n.id) === 0)
 
   // 计算每个节点的宽度位置
-  const positionedNodes = new Map<string, { x: number; y: number }>()
+  const positionedNodes = new Map<string, { x: number, y: number }>()
 
   // 递归布局
   function layoutNode(nodeId: string, x: number, y: number, level: number): void {
-    const node = nodes.find(n => n.id === nodeId)
+    const node = nodes.find((n) => n.id === nodeId)
     if (!node) return
 
     const nodeWidth = direction === 'horizontal' ? 200 : 250
     const nodeHeight = direction === 'horizontal' ? 100 : 80
 
-    positionedNodes.set(nodeId, { x, y })
+    positionedNodes.set(nodeId, {
+      x,
+      y,
+    })
 
     const children = childrenMap.get(nodeId) || []
     if (children.length === 0) return
@@ -436,7 +627,7 @@ export function autoLayout(
 
   // 从根节点开始布局
   let currentX = center ? 0 : 100
-  let currentY = center ? 0 : 100
+  const currentY = center ? 0 : 100
 
   rootNodes.forEach((root, index) => {
     layoutNode(root.id, currentX, currentY, 0)
@@ -444,12 +635,12 @@ export function autoLayout(
   })
 
   // 更新节点位置
-  return nodes.map(node => {
+  return nodes.map((node) => {
     const pos = positionedNodes.get(node.id)
     if (pos) {
       return {
         ...node,
-        position: pos
+        position: pos,
       }
     }
     return node
@@ -472,8 +663,11 @@ export function createNodesFromAnnotations(
     level?: string
     parentId?: string
   }>,
-  startPosition: { x: number; y: number } = { x: 100, y: 100 }
-): { nodes: FreeMindMapNode[]; edges: FreeMindMapEdge[] } {
+  startPosition: { x: number, y: number } = {
+    x: 100,
+    y: 100,
+  },
+): { nodes: FreeMindMapNode[], edges: FreeMindMapEdge[] } {
   const nodes: FreeMindMapNode[] = []
   const edges: FreeMindMapEdge[] = []
 
@@ -483,7 +677,7 @@ export function createNodesFromAnnotations(
     title: '思维导图',
     content: '从标注自动生成',
     position: startPosition,
-    annotationId: 'root'
+    annotationId: 'root',
   })
   nodes.push(rootNode)
 
@@ -495,9 +689,9 @@ export function createNodesFromAnnotations(
       content: annotation.note || '',
       position: {
         x: startPosition.x + (index % 5) * 250,
-        y: startPosition.y + Math.floor(index / 5) * 150
+        y: startPosition.y + Math.floor(index / 5) * 150,
       },
-      annotationId: annotation.id
+      annotationId: annotation.id,
     })
 
     // 设置颜色
@@ -505,7 +699,7 @@ export function createNodesFromAnnotations(
       node.data.color = annotation.color
       node.style = {
         ...node.style,
-        borderColor: String(annotation.color)
+        borderColor: String(annotation.color),
       }
     }
 
@@ -523,14 +717,14 @@ export function createNodesFromAnnotations(
 
     // 如果有父节点，创建连线
     if (annotation.parentId) {
-      const parentNode = nodes.find(n => n.annotationId === annotation.parentId)
+      const parentNode = nodes.find((n) => n.annotationId === annotation.parentId)
       if (parentNode) {
         edges.push(
           createEdge({
             source: parentNode.id,
             target: node.id,
-            type: 'default'
-          })
+            type: 'default',
+          }),
         )
       }
     } else {
@@ -539,13 +733,16 @@ export function createNodesFromAnnotations(
         createEdge({
           source: rootNode.id,
           target: node.id,
-          type: 'default'
-        })
+          type: 'default',
+        }),
       )
     }
   })
 
-  return { nodes, edges }
+  return {
+    nodes,
+    edges,
+  }
 }
 
 /**
@@ -556,13 +753,13 @@ export function createNodesFromAnnotations(
  */
 export async function exportMindMap(
   container: HTMLElement | null,
-  options: ExportOptions
+  options: ExportOptions,
 ): Promise<ExportResult> {
   if (!container) {
     return {
       success: false,
       data: '',
-      error: '容器元素不存在'
+      error: '容器元素不存在',
     }
   }
 
@@ -574,11 +771,11 @@ export async function exportMindMap(
         version: '1.0',
         exportedAt: new Date().toISOString(),
         nodes: [],
-        edges: []
+        edges: [],
       })
       return {
         success: true,
-        data
+        data,
       }
     }
 
@@ -587,13 +784,13 @@ export async function exportMindMap(
     return {
       success: false,
       data: '',
-      error: '图片导出功能需要安装 html2canvas 库'
+      error: '图片导出功能需要安装 html2canvas 库',
     }
   } catch (error) {
     return {
       success: false,
       data: '',
-      error: error instanceof Error ? error.message : '导出失败'
+      error: error instanceof Error ? error.message : '导出失败',
     }
   }
 }
@@ -612,7 +809,14 @@ export function calculateNodeBounds(nodes: FreeMindMapNode[]): {
   height: number
 } {
   if (nodes.length === 0) {
-    return { minX: 0, minY: 0, maxX: 0, maxY: 0, width: 0, height: 0 }
+    return {
+      minX: 0,
+      minY: 0,
+      maxX: 0,
+      maxY: 0,
+      width: 0,
+      height: 0,
+    }
   }
 
   let minX = Infinity
@@ -620,11 +824,11 @@ export function calculateNodeBounds(nodes: FreeMindMapNode[]): {
   let maxX = -Infinity
   let maxY = -Infinity
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     const x = node.position.x
     const y = node.position.y
-    const width = parseInt(node.style?.width as string) || 200
-    const height = parseInt(node.style?.height as string) || 100
+    const width = Number.parseInt(node.style?.width as string) || 200
+    const height = Number.parseInt(node.style?.height as string) || 100
 
     minX = Math.min(minX, x)
     minY = Math.min(minY, y)
@@ -638,6 +842,299 @@ export function calculateNodeBounds(nodes: FreeMindMapNode[]): {
     maxX,
     maxY,
     width: maxX - minX,
-    height: maxY - minY
+    height: maxY - minY,
+  }
+}
+
+/**
+ * 更新跨分支关联样式
+ * @param link 关联线
+ * @param updateData 更新数据
+ * @returns 更新后的关联线
+ */
+export function updateCrossBranchLinkUtil(
+  link: CrossBranchLink,
+  updateData: Partial<CrossBranchLink>,
+): CrossBranchLink {
+  return {
+    ...link,
+    ...updateData,
+    style: {
+      ...link.style,
+      ...(updateData.style || {}),
+    },
+  }
+}
+
+// ==================== 子脑图功能 ====================
+
+/**
+ * 创建子脑图
+ * @param parentMapId 父脑图 ID
+ * @param title 子脑图标题
+ * @param rootNode 根节点
+ * @returns 子脑图对象
+ */
+export function createSubMindMap(
+  parentMapId: string,
+  title: string,
+  rootNode: FreeMindMapNode,
+): SubMindMap {
+  const now = Date.now()
+  const subMapId = `submap_${now}_${generateId()}`
+
+  // 创建根节点（更新为 submap 类型）
+  const subMapRootNode = {
+    ...rootNode,
+    id: `${subMapId}_root`,
+    data: {
+      ...rootNode.data,
+      nodeType: 'submap' as const,
+      subMapId,
+      subMapNodeCount: 0,
+      subMapSummary: `子脑图：${title}`,
+    },
+  }
+
+  return {
+    id: subMapId,
+    parentMapId,
+    rootNodeId: subMapRootNode.id,
+    title,
+    summary: `子脑图包含 "${title}" 的详细内容`,
+    nodes: [subMapRootNode],
+    edges: [],
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+/**
+ * 删除子脑图
+ * @param subMapId 子脑图 ID
+ * @param allSubMaps 所有子脑图列表
+ * @returns 删除后的子脑图列表
+ */
+export function deleteSubMindMap(
+  subMapId: string,
+  allSubMaps: SubMindMap[],
+): SubMindMap[] {
+  return allSubMaps.filter((sm) => sm.id !== subMapId)
+}
+
+/**
+ * 将节点转换为子脑图节点
+ * @param node 要转换的节点
+ * @param subMap 子脑图对象
+ * @returns 更新后的节点
+ */
+export function convertNodeToSubMapNode(
+  node: FreeMindMapNode,
+  subMap: SubMindMap,
+): FreeMindMapNode {
+  return {
+    ...node,
+    data: {
+      ...node.data,
+      nodeType: 'submap',
+      subMapId: subMap.id,
+      subMapNodeCount: subMap.nodes.length,
+      subMapSummary: subMap.summary,
+    },
+  }
+}
+
+/**
+ * 更新子脑图统计信息
+ * @param subMap 子脑图
+ * @returns 更新后的子脑图
+ */
+export function updateSubMapStats(subMap: SubMindMap): SubMindMap {
+  return {
+    ...subMap,
+    summary: `包含 ${subMap.nodes.length} 个节点，${subMap.edges.length} 条连线`,
+    updatedAt: Date.now(),
+  }
+}
+
+// ==================== 脑图切换逻辑 ====================
+
+/**
+ * 脑图导航历史项
+ */
+export interface MindMapHistoryItem {
+  /** 脑图 ID */
+  mapId: string
+  /** 脑图标题 */
+  title: string
+  /** 深度（0=主脑图，1=子脑图，以此类推） */
+  depth: number
+  /** 进入时间 */
+  timestamp: number
+}
+
+/**
+ * 脑图导航历史
+ */
+export interface MindMapNavigationHistory {
+  /** 历史记录 */
+  history: MindMapHistoryItem[]
+  /** 当前位置索引 */
+  currentIndex: number
+}
+
+/**
+ * 创建导航历史
+ * @param rootMapId 根脑图 ID
+ * @param rootTitle 根脑图标题
+ * @returns 导航历史对象
+ */
+export function createNavigationHistory(
+  rootMapId: string,
+  rootTitle: string,
+): MindMapNavigationHistory {
+  return {
+    history: [
+      {
+        mapId: rootMapId,
+        title: rootTitle,
+        depth: 0,
+        timestamp: Date.now(),
+      },
+    ],
+    currentIndex: 0,
+  }
+}
+
+/**
+ * 进入子脑图
+ * @param history 当前导航历史
+ * @param subMapId 子脑图 ID
+ * @param subMapTitle 子脑图标题
+ * @returns 更新后的导航历史
+ */
+export function navigateToSubMap(
+  history: MindMapNavigationHistory,
+  subMapId: string,
+  subMapTitle: string,
+): MindMapNavigationHistory {
+  const currentItem = history.history[history.currentIndex]
+  const newDepth = currentItem.depth + 1
+
+  // 裁剪当前位置之后的历史记录
+  const newHistory = history.history.slice(0, history.currentIndex + 1)
+
+  // 添加新的历史记录
+  newHistory.push({
+    mapId: subMapId,
+    title: subMapTitle,
+    depth: newDepth,
+    timestamp: Date.now(),
+  })
+
+  return {
+    history: newHistory,
+    currentIndex: newHistory.length - 1,
+  }
+}
+
+/**
+ * 返回上级脑图
+ * @param history 当前导航历史
+ * @returns 更新后的导航历史，如果已经在根节点则返回 null
+ */
+export function navigateToParent(
+  history: MindMapNavigationHistory,
+): MindMapNavigationHistory | null {
+  if (history.currentIndex <= 0) {
+    return null // 已经在根节点
+  }
+
+  return {
+    ...history,
+    currentIndex: history.currentIndex - 1,
+  }
+}
+
+/**
+ * 跳转到指定历史位置
+ * @param history 当前导航历史
+ * @param index 目标位置索引
+ * @returns 更新后的导航历史
+ */
+export function navigateToHistory(
+  history: MindMapNavigationHistory,
+  index: number,
+): MindMapNavigationHistory {
+  if (index < 0 || index >= history.history.length) {
+    return history
+  }
+
+  return {
+    ...history,
+    currentIndex: index,
+  }
+}
+
+/**
+ * 获取当前脑图信息
+ * @param history 导航历史
+ * @returns 当前脑图信息
+ */
+export function getCurrentMindMap(
+  history: MindMapNavigationHistory,
+): MindMapHistoryItem {
+  return history.history[history.currentIndex]
+}
+
+/**
+ * 获取面包屑导航路径
+ * @param history 导航历史
+ * @returns 面包屑路径数组
+ */
+export function getBreadcrumbPath(
+  history: MindMapNavigationHistory,
+): MindMapHistoryItem[] {
+  return history.history.slice(0, history.currentIndex + 1)
+}
+
+/**
+ * 将关联线数据序列化保存
+ * @param links 关联线列表
+ * @returns 序列化后的字符串
+ */
+export function serializeCrossBranchLinks(links: CrossBranchLink[]): string {
+  return JSON.stringify(links.map((link) => ({
+    id: link.id,
+    sourceNodeId: link.sourceNodeId,
+    targetNodeId: link.targetNodeId,
+    linkType: link.linkType,
+    label: link.label,
+    style: link.style,
+    createdAt: link.createdAt,
+  })))
+}
+
+/**
+ * 从序列化数据解析关联线
+ * @param dataStr 序列化字符串
+ * @returns 关联线列表
+ */
+export function deserializeCrossBranchLinks(dataStr: string): CrossBranchLink[] {
+  try {
+    const parsed = JSON.parse(dataStr)
+    return parsed.map((item: any) => ({
+      ...item,
+      style: {
+        strokeDasharray: item.style?.strokeDasharray || '5,5',
+        stroke: item.style?.stroke || '#FF6B6B',
+        strokeWidth: item.style?.strokeWidth || 2,
+        hasArrow: item.style?.hasArrow ?? true,
+        arrowColor: item.style?.arrowColor || item.style?.stroke || '#FF6B6B',
+      },
+    }))
+  } catch (error) {
+    console.error('[FreeMindMapService] 解析关联线数据失败:', error)
+    return []
   }
 }

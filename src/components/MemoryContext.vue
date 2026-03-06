@@ -5,21 +5,33 @@
     <div class="memory-toolbar">
       <div class="toolbar-group">
         <button
-          :class="['toolbar-btn', { active: viewMode === 'timeline' }]"
-          @click="viewMode = 'timeline'"
+          class="toolbar-btn"
+          :class="[{ active: viewMode === 'timeline' }]"
           title="时间线视图"
+          @click="viewMode = 'timeline'"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
           </svg>
         </button>
         <button
-          :class="['toolbar-btn', { active: viewMode === 'grid' }]"
-          @click="viewMode = 'grid'"
+          class="toolbar-btn"
+          :class="[{ active: viewMode === 'grid' }]"
           title="网格视图"
+          @click="viewMode = 'grid'"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4zm0 6h4v-4h-4v4zm6 0h4v-4h-4v4zm0 6h4v-4h-4v4zm0-6h4v-4h-4v4z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4zm0 6h4v-4h-4v4zm6 0h4v-4h-4v4zm0 6h4v-4h-4v4zm0-6h4v-4h-4v4z" />
           </svg>
         </button>
       </div>
@@ -27,9 +39,18 @@
       <div class="toolbar-spacer"></div>
 
       <div class="toolbar-group">
-        <button @click="captureCurrentContext" class="toolbar-btn toolbar-btn-primary" title="记录当前场景">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+        <button
+          class="toolbar-btn toolbar-btn-primary"
+          title="记录当前场景"
+          @click="captureCurrentContext"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
           </svg>
           <span>记录场景</span>
         </button>
@@ -39,51 +60,95 @@
     <!-- 内容区 -->
     <div class="memory-content">
       <!-- 时间线视图 -->
-      <div v-if="viewMode === 'timeline'" class="memory-timeline">
+      <div
+        v-if="viewMode === 'timeline'"
+        class="memory-timeline"
+      >
         <div
           v-for="memory in memories"
           :key="memory.id"
-          :class="['memory-item', { 'memory-item--selected': selectedMemory?.id === memory.id }]"
+          class="memory-item"
+          :class="[{ 'memory-item--selected': selectedMemory?.id === memory.id }]"
           @click="selectMemory(memory)"
         >
           <div class="memory-time">
-            <div class="memory-time__date">{{ formatDate(memory.timestamp) }}</div>
-            <div class="memory-time__clock">{{ formatTime(memory.timestamp) }}</div>
+            <div class="memory-time__date">
+              {{ formatDate(memory.timestamp) }}
+            </div>
+            <div class="memory-time__clock">
+              {{ formatTime(memory.timestamp) }}
+            </div>
           </div>
           <div class="memory-connector"></div>
           <div class="memory-content-card">
             <div class="memory-header">
-              <span class="memory-type" :class="`memory-type--${memory.type}`">
+              <span
+                class="memory-type"
+                :class="`memory-type--${memory.type}`"
+              >
                 {{ getTypeLabel(memory.type) }}
               </span>
-              <button @click.stop="deleteMemory(memory)" class="memory-delete">×</button>
+              <button
+                class="memory-delete"
+                @click.stop="deleteMemory(memory)"
+              >
+                ×
+              </button>
             </div>
             <div class="memory-body">
-              <div v-if="memory.title" class="memory-title">{{ memory.title }}</div>
-              <div v-if="memory.description" class="memory-description">{{ memory.description }}</div>
+              <div
+                v-if="memory.title"
+                class="memory-title"
+              >
+                {{ memory.title }}
+              </div>
+              <div
+                v-if="memory.description"
+                class="memory-description"
+              >
+                {{ memory.description }}
+              </div>
 
               <!-- 上下文信息 -->
-              <div v-if="memory.context" class="memory-context-info">
-                <div v-if="memory.context.pdf" class="context-row">
+              <div
+                v-if="memory.context"
+                class="memory-context-info"
+              >
+                <div
+                  v-if="memory.context.pdf"
+                  class="context-row"
+                >
                   <span class="context-icon">📄</span>
                   <span class="context-text">{{ memory.context.pdf }}</span>
                 </div>
-                <div v-if="memory.context.page" class="context-row">
+                <div
+                  v-if="memory.context.page"
+                  class="context-row"
+                >
                   <span class="context-icon">📑</span>
                   <span class="context-text">第 {{ memory.context.page }} 页</span>
                 </div>
-                <div v-if="memory.context.doc" class="context-row">
+                <div
+                  v-if="memory.context.doc"
+                  class="context-row"
+                >
                   <span class="context-icon">📝</span>
                   <span class="context-text">{{ memory.context.doc }}</span>
                 </div>
-                <div v-if="memory.context.selectedText" class="context-row">
+                <div
+                  v-if="memory.context.selectedText"
+                  class="context-row"
+                >
                   <span class="context-icon">💬</span>
                   <span class="context-text">{{ memory.context.selectedText }}</span>
                 </div>
               </div>
 
               <!-- 标签 -->
-              <div v-if="memory.tags?.length" class="memory-tags">
+              <div
+                v-if="memory.tags?.length"
+                class="memory-tags"
+              >
                 <span
                   v-for="tag in memory.tags"
                   :key="tag"
@@ -98,28 +163,51 @@
       </div>
 
       <!-- 网格视图 -->
-      <div v-else-if="viewMode === 'grid'" class="memory-grid">
+      <div
+        v-else-if="viewMode === 'grid'"
+        class="memory-grid"
+      >
         <div
           v-for="memory in memories"
           :key="memory.id"
-          :class="['memory-grid-item', { 'memory-grid-item--selected': selectedMemory?.id === memory.id }]"
+          class="memory-grid-item"
+          :class="[{ 'memory-grid-item--selected': selectedMemory?.id === memory.id }]"
           @click="selectMemory(memory)"
         >
           <div class="grid-item-header">
-            <span class="grid-item-type" :class="`memory-type--${memory.type}`">
+            <span
+              class="grid-item-type"
+              :class="`memory-type--${memory.type}`"
+            >
               {{ getTypeLabel(memory.type) }}
             </span>
             <span class="grid-item-time">{{ formatDateTime(memory.timestamp) }}</span>
           </div>
           <div class="grid-item-body">
-            <div v-if="memory.title" class="grid-item-title">{{ memory.title }}</div>
-            <div v-if="memory.description" class="grid-item-description">{{ memory.description }}</div>
+            <div
+              v-if="memory.title"
+              class="grid-item-title"
+            >
+              {{ memory.title }}
+            </div>
+            <div
+              v-if="memory.description"
+              class="grid-item-description"
+            >
+              {{ memory.description }}
+            </div>
           </div>
           <div class="grid-item-footer">
-            <span v-if="memory.context?.pdf" class="grid-item-pdf">
+            <span
+              v-if="memory.context?.pdf"
+              class="grid-item-pdf"
+            >
               📄 {{ getPdfName(memory.context.pdf) }}
             </span>
-            <span v-if="memory.tags?.length" class="grid-item-tags">
+            <span
+              v-if="memory.tags?.length"
+              class="grid-item-tags"
+            >
               {{ memory.tags.length }} 个标签
             </span>
           </div>
@@ -127,26 +215,53 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="memories.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" opacity="0.3">
-          <path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+      <div
+        v-if="memories.length === 0"
+        class="empty-state"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="64"
+          height="64"
+          fill="currentColor"
+          opacity="0.3"
+        >
+          <path d="M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
         </svg>
         <p>暂无场景记忆</p>
-        <p class="empty-hint">点击右上角按钮记录当前场景</p>
+        <p class="empty-hint">
+          点击右上角按钮记录当前场景
+        </p>
       </div>
     </div>
 
     <!-- 侧边栏 - 场景详情 -->
-    <div v-if="selectedMemory" class="memory-sidebar">
+    <div
+      v-if="selectedMemory"
+      class="memory-sidebar"
+    >
       <div class="sidebar-header">
         <h3>场景详情</h3>
-        <button @click="closeSidebar" class="sidebar-close">×</button>
+        <button
+          class="sidebar-close"
+          @click="closeSidebar"
+        >
+          ×
+        </button>
       </div>
       <div class="sidebar-content">
         <!-- 回放按钮 -->
-        <button @click="replayMemory" class="replay-btn">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
+        <button
+          class="replay-btn"
+          @click="replayMemory"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M8 5v14l11-7z" />
           </svg>
           <span>回放场景</span>
         </button>
@@ -162,39 +277,63 @@
             <span class="detail-label">类型</span>
             <span class="detail-value">{{ getTypeLabel(selectedMemory.type) }}</span>
           </div>
-          <div v-if="selectedMemory.title" class="detail-row">
+          <div
+            v-if="selectedMemory.title"
+            class="detail-row"
+          >
             <span class="detail-label">标题</span>
             <span class="detail-value">{{ selectedMemory.title }}</span>
           </div>
-          <div v-if="selectedMemory.description" class="detail-row">
+          <div
+            v-if="selectedMemory.description"
+            class="detail-row"
+          >
             <span class="detail-label">描述</span>
             <span class="detail-value">{{ selectedMemory.description }}</span>
           </div>
         </div>
 
         <!-- 上下文信息 -->
-        <div v-if="selectedMemory.context" class="detail-section">
+        <div
+          v-if="selectedMemory.context"
+          class="detail-section"
+        >
           <h4>上下文信息</h4>
-          <div v-if="selectedMemory.context.pdf" class="detail-row">
+          <div
+            v-if="selectedMemory.context.pdf"
+            class="detail-row"
+          >
             <span class="detail-label">PDF 文件</span>
             <span class="detail-value">{{ selectedMemory.context.pdf }}</span>
           </div>
-          <div v-if="selectedMemory.context.page" class="detail-row">
+          <div
+            v-if="selectedMemory.context.page"
+            class="detail-row"
+          >
             <span class="detail-label">页码</span>
             <span class="detail-value">第 {{ selectedMemory.context.page }} 页</span>
           </div>
-          <div v-if="selectedMemory.context.doc" class="detail-row">
+          <div
+            v-if="selectedMemory.context.doc"
+            class="detail-row"
+          >
             <span class="detail-label">文档</span>
             <span class="detail-value">{{ selectedMemory.context.doc }}</span>
           </div>
-          <div v-if="selectedMemory.context.selectedText" class="detail-row">
+          <div
+            v-if="selectedMemory.context.selectedText"
+            class="detail-row"
+          >
             <span class="detail-label">选中文字</span>
             <span class="detail-value">{{ selectedMemory.context.selectedText }}</span>
           </div>
         </div>
 
         <!-- 标签 -->
-        <div v-if="selectedMemory.tags?.length" class="detail-section">
+        <div
+          v-if="selectedMemory.tags?.length"
+          class="detail-section"
+        >
           <h4>标签</h4>
           <div class="detail-tags">
             <span
@@ -208,7 +347,10 @@
         </div>
 
         <!-- 关联笔记 -->
-        <div v-if="selectedMemory.relatedNotes?.length" class="detail-section">
+        <div
+          v-if="selectedMemory.relatedNotes?.length"
+          class="detail-section"
+        >
           <h4>关联笔记</h4>
           <div class="related-notes">
             <div
@@ -217,8 +359,12 @@
               class="related-note"
               @click="handleNoteClick(note)"
             >
-              <div class="related-note__title">{{ note.title }}</div>
-              <div class="related-note__date">{{ formatDate(note.created) }}</div>
+              <div class="related-note__title">
+                {{ note.title }}
+              </div>
+              <div class="related-note__date">
+                {{ formatDate(note.created) }}
+              </div>
             </div>
           </div>
         </div>
@@ -226,11 +372,20 @@
     </div>
 
     <!-- 记录场景对话框 -->
-    <div v-if="showCaptureDialog" class="dialog-overlay" @click.self="showCaptureDialog = false">
+    <div
+      v-if="showCaptureDialog"
+      class="dialog-overlay"
+      @click.self="showCaptureDialog = false"
+    >
       <div class="dialog">
         <div class="dialog-header">
           <h3>记录当前场景</h3>
-          <button @click="showCaptureDialog = false" class="dialog-close">×</button>
+          <button
+            class="dialog-close"
+            @click="showCaptureDialog = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <div class="form-group">
@@ -262,18 +417,41 @@
           </div>
           <div class="form-group">
             <label class="form-label">类型</label>
-            <select v-model="newMemory.type" class="form-select">
-              <option value="note">笔记</option>
-              <option value="highlight">摘录</option>
-              <option value="thought">想法</option>
-              <option value="question">问题</option>
-              <option value="review">复习</option>
+            <select
+              v-model="newMemory.type"
+              class="form-select"
+            >
+              <option value="note">
+                笔记
+              </option>
+              <option value="highlight">
+                摘录
+              </option>
+              <option value="thought">
+                想法
+              </option>
+              <option value="question">
+                问题
+              </option>
+              <option value="review">
+                复习
+              </option>
             </select>
           </div>
         </div>
         <div class="dialog-footer">
-          <button @click="showCaptureDialog = false" class="btn-cancel">取消</button>
-          <button @click="confirmCapture" class="btn-confirm">确定</button>
+          <button
+            class="btn-cancel"
+            @click="showCaptureDialog = false"
+          >
+            取消
+          </button>
+          <button
+            class="btn-confirm"
+            @click="confirmCapture"
+          >
+            确定
+          </button>
         </div>
       </div>
     </div>
@@ -281,63 +459,66 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import type { Card } from '../types/card';
+import type { Card } from '../types/card'
+import {
+  onMounted,
+  ref,
+} from 'vue'
 
 interface MemoryContext {
-  pdf?: string;
-  page?: number;
-  doc?: string;
-  selectedText?: string;
+  pdf?: string
+  page?: number
+  doc?: string
+  selectedText?: string
 }
 
 interface Memory {
-  id: string;
-  timestamp: number;
-  type: 'note' | 'highlight' | 'thought' | 'question' | 'review';
-  title?: string;
-  description?: string;
-  context?: MemoryContext;
-  tags?: string[];
-  relatedNotes?: { id: string; title: string; created: number }[];
+  id: string
+  timestamp: number
+  type: 'note' | 'highlight' | 'thought' | 'question' | 'review'
+  title?: string
+  description?: string
+  context?: MemoryContext
+  tags?: string[]
+  relatedNotes?: { id: string, title: string, created: number }[]
 }
 
 interface Props {
-  cards: Card[];
-  currentPdf?: string;
-  currentPage?: number;
-  currentDoc?: string;
+  cards: Card[]
+  currentPdf?: string
+  currentPage?: number
+  currentDoc?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   cards: () => [],
   currentPdf: '',
   currentPage: 0,
-  currentDoc: ''
-});
+  currentDoc: '',
+})
 
 const emit = defineEmits<{
-  (e: 'memory-select', memory: Memory): void;
-  (e: 'memory-replay', memory: Memory): void;
-  (e: 'note-click', note: { id: string; title: string }): void;
-}>();
+  (e: 'memory-select', memory: Memory): void
+  (e: 'memory-replay', memory: Memory): void
+  (e: 'note-click', note: { id: string, title: string }): void
+}>()
 
 // 状态
-const viewMode = ref<'timeline' | 'grid'>('timeline');
-const memories = ref<Memory[]>([]);
-const selectedMemory = ref<Memory | null>(null);
-const showCaptureDialog = ref(false);
+const viewMode = ref<'timeline' | 'grid'>('timeline')
+const memories = ref<Memory[]>([])
+const selectedMemory = ref<Memory | null>(null)
+const showCaptureDialog = ref(false)
 const newMemory = ref<{
-  title: string;
-  description: string;
-  tagsInput: string;
-  type: 'note' | 'highlight' | 'thought' | 'question' | 'review';
+  title: string
+  description: string
+  tagsInput: string
+  type: 'note' | 'highlight' | 'thought' | 'question' | 'review'
 }>({
   title: '',
   description: '',
   tagsInput: '',
   type: 'note',
-});
+})
 
 // 类型标签
 const typeLabels: Record<string, string> = {
@@ -346,28 +527,28 @@ const typeLabels: Record<string, string> = {
   thought: '想法',
   question: '问题',
   review: '复习',
-};
+}
 
 // 获取类型标签
 const getTypeLabel = (type: string): string => {
-  return typeLabels[type] || type;
-};
+  return typeLabels[type] || type
+}
 
 // 格式化日期
 const formatDate = (timestamp: number): string => {
   return new Date(timestamp).toLocaleDateString('zh-CN', {
     month: 'short',
     day: 'numeric',
-  });
-};
+  })
+}
 
 // 格式化时间
 const formatTime = (timestamp: number): string => {
   return new Date(timestamp).toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
-  });
-};
+  })
+}
 
 // 格式化日期时间
 const formatDateTime = (timestamp: number): string => {
@@ -377,56 +558,56 @@ const formatDateTime = (timestamp: number): string => {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
-};
+  })
+}
 
 // 获取 PDF 名称
 const getPdfName = (pdfPath: string): string => {
-  return pdfPath.split('/').pop() || pdfPath;
-};
+  return pdfPath.split('/').pop() || pdfPath
+}
 
 // 选择场景
 const selectMemory = (memory: Memory) => {
-  selectedMemory.value = memory;
-  emit('memory-select', memory);
-};
+  selectedMemory.value = memory
+  emit('memory-select', memory)
+}
 
 // 关闭侧边栏
 const closeSidebar = () => {
-  selectedMemory.value = null;
-};
+  selectedMemory.value = null
+}
 
 // 删除场景
 const deleteMemory = (memory: Memory) => {
-  const index = memories.value.findIndex(m => m.id === memory.id);
+  const index = memories.value.findIndex((m) => m.id === memory.id)
   if (index > -1) {
-    memories.value.splice(index, 1);
+    memories.value.splice(index, 1)
   }
   if (selectedMemory.value?.id === memory.id) {
-    selectedMemory.value = null;
+    selectedMemory.value = null
   }
-  saveMemories();
-};
+  saveMemories()
+}
 
 // 回放场景
 const replayMemory = () => {
-  if (!selectedMemory.value) return;
-  emit('memory-replay', selectedMemory.value);
+  if (!selectedMemory.value) return
+  emit('memory-replay', selectedMemory.value)
 
   // 如果有上下文信息，尝试恢复
-  const memory = selectedMemory.value;
+  const memory = selectedMemory.value
   if (memory.context?.pdf) {
-    console.log('回放 PDF:', memory.context.pdf);
+    console.log('回放 PDF:', memory.context.pdf)
   }
   if (memory.context?.selectedText) {
-    console.log('回放选中文字:', memory.context.selectedText);
+    console.log('回放选中文字:', memory.context.selectedText)
   }
-};
+}
 
 // 处理笔记点击
-const handleNoteClick = (note: { id: string; title: string }) => {
-  emit('note-click', note);
-};
+const handleNoteClick = (note: { id: string, title: string }) => {
+  emit('note-click', note)
+}
 
 // 捕获当前场景
 const captureCurrentContext = () => {
@@ -435,16 +616,16 @@ const captureCurrentContext = () => {
     description: '',
     tagsInput: '',
     type: 'note',
-  };
-  showCaptureDialog.value = true;
-};
+  }
+  showCaptureDialog.value = true
+}
 
 // 确认捕获
 const confirmCapture = () => {
   const tags = newMemory.value.tagsInput
-    .split(/[,,\n]/)
-    .map(t => t.trim())
-    .filter(t => t);
+    .split(/[,\n]/)
+    .map((t) => t.trim())
+    .filter((t) => t)
 
   const memory: Memory = {
     id: `memory-${Date.now()}`,
@@ -459,49 +640,49 @@ const confirmCapture = () => {
       doc: props.currentDoc || undefined,
     },
     relatedNotes: [],
-  };
+  }
 
-  memories.value.unshift(memory);
-  saveMemories();
-  showCaptureDialog.value = false;
-};
+  memories.value.unshift(memory)
+  saveMemories()
+  showCaptureDialog.value = false
+}
 
 // 保存场景记忆
 const saveMemories = () => {
-  localStorage.setItem('memory-contexts', JSON.stringify(memories.value));
-};
+  localStorage.setItem('memory-contexts', JSON.stringify(memories.value))
+}
 
 // 加载场景记忆
 const loadMemories = () => {
-  const saved = localStorage.getItem('memory-contexts');
+  const saved = localStorage.getItem('memory-contexts')
   if (saved) {
-    memories.value = JSON.parse(saved);
+    memories.value = JSON.parse(saved)
   }
-};
+}
 
 // 从卡片加载相关记忆
 watch(() => props.cards, () => {
   // 当卡片变化时，可以为最近的卡片创建关联记忆
   if (props.cards.length > 0) {
-    const latestCard = props.cards[0];
+    const latestCard = props.cards[0]
     if (latestCard && memories.value.length > 0) {
-      const latestMemory = memories.value[0];
+      const latestMemory = memories.value[0]
       // 如果是最近创建的，关联起来
       if (Date.now() - latestMemory.timestamp < 60000) {
         latestMemory.relatedNotes = [{
           id: latestCard.id,
-          title: (latestCard.content || latestCard.front || '').slice(0, 30) + '...',
+          title: `${(latestCard.content || latestCard.front || '').slice(0, 30)}...`,
           created: latestCard.created,
-        }];
-        saveMemories();
+        }]
+        saveMemories()
       }
     }
   }
-}, { deep: true });
+}, { deep: true })
 
 onMounted(() => {
-  loadMemories();
-});
+  loadMemories()
+})
 </script>
 
 <style scoped lang="scss">

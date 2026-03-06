@@ -1,8 +1,13 @@
 <template>
   <div class="review-group-manager">
     <div class="group-header">
-      <h3 class="group-title">复习分组</h3>
-      <button class="btn-add" @click="showCreateDialog = true">
+      <h3 class="group-title">
+        复习分组
+      </h3>
+      <button
+        class="btn-add"
+        @click="showCreateDialog = true"
+      >
         <span>+</span> 新建分组
       </button>
     </div>
@@ -11,41 +16,73 @@
       <div
         v-for="group in groups"
         :key="group.id"
-        :class="['group-item', { active: selectedGroupId === group.id, disabled: !group.enabled }]"
+        class="group-item"
+        :class="[{
+          active: selectedGroupId === group.id, disabled: !group.enabled,
+        }]"
         @click="selectGroup(group.id)"
       >
         <div class="group-info">
-          <div class="group-name">{{ group.name }}</div>
+          <div class="group-name">
+            {{ group.name }}
+          </div>
           <div class="group-meta">
             <span class="group-card-count">{{ group.cardIds.length }} 张卡片</span>
-            <span class="group-status" :class="{ enabled: group.enabled }">
+            <span
+              class="group-status"
+              :class="{ enabled: group.enabled }"
+            >
               {{ group.enabled ? '启用' : '禁用' }}
             </span>
           </div>
         </div>
         <div class="group-actions">
-          <button class="btn-action" @click.stop="toggleGroup(group)" title="启用/禁用">
+          <button
+            class="btn-action"
+            title="启用/禁用"
+            @click.stop="toggleGroup(group)"
+          >
             {{ group.enabled ? '👁️' : '👁️‍🗨️' }}
           </button>
-          <button class="btn-action" @click.stop="editGroup(group)" title="编辑">
+          <button
+            class="btn-action"
+            title="编辑"
+            @click.stop="editGroup(group)"
+          >
             ✏️
           </button>
-          <button class="btn-action btn-delete" @click.stop="deleteGroup(group)" title="删除">
+          <button
+            class="btn-action btn-delete"
+            title="删除"
+            @click.stop="deleteGroup(group)"
+          >
             🗑️
           </button>
         </div>
       </div>
 
-      <div v-if="groups.length === 0" class="empty-state">
+      <div
+        v-if="groups.length === 0"
+        class="empty-state"
+      >
         <span class="empty-icon">📁</span>
         <p>暂无分组，点击"新建分组"创建</p>
       </div>
     </div>
 
     <!-- 创建/编辑分组对话框 -->
-    <div v-if="showCreateDialog || showEditDialog" class="dialog-overlay" @click="closeDialogs">
-      <div class="dialog" @click.stop>
-        <h3 class="dialog-title">{{ showCreateDialog ? '新建分组' : '编辑分组' }}</h3>
+    <div
+      v-if="showCreateDialog || showEditDialog"
+      class="dialog-overlay"
+      @click="closeDialogs"
+    >
+      <div
+        class="dialog"
+        @click.stop
+      >
+        <h3 class="dialog-title">
+          {{ showCreateDialog ? '新建分组' : '编辑分组' }}
+        </h3>
 
         <div class="form-group">
           <label>分组名称</label>
@@ -69,15 +106,27 @@
 
         <div class="form-group">
           <label>选择学习集</label>
-          <select v-model="formData.studySetId" class="sy-select">
-            <option value="">请选择学习集</option>
-            <option v-for="set in studySets" :key="set.id" :value="set.id">
+          <select
+            v-model="formData.studySetId"
+            class="sy-select"
+          >
+            <option value="">
+              请选择学习集
+            </option>
+            <option
+              v-for="set in studySets"
+              :key="set.id"
+              :value="set.id"
+            >
               {{ set.name }}
             </option>
           </select>
         </div>
 
-        <div class="form-group" v-if="formData.studySetId">
+        <div
+          v-if="formData.studySetId"
+          class="form-group"
+        >
           <label>选择卡片</label>
           <div class="card-selector">
             <div class="card-filter">
@@ -106,8 +155,18 @@
         </div>
 
         <div class="dialog-actions">
-          <button class="btn-cancel" @click="closeDialogs">取消</button>
-          <button class="btn-confirm" @click="saveGroup">保存</button>
+          <button
+            class="btn-cancel"
+            @click="closeDialogs"
+          >
+            取消
+          </button>
+          <button
+            class="btn-confirm"
+            @click="saveGroup"
+          >
+            保存
+          </button>
         </div>
       </div>
     </div>
@@ -115,30 +174,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { ReviewGroupService } from '../services/reviewEnhancedService';
-import { studySetService } from '../services/studySetService';
-import { cardService } from '../services/cardService';
-import type { ReviewGroup } from '../services/reviewEnhancedService';
-import type { StudySet } from '../types/studySet';
-import type { Card } from '../types/card';
+import type { ReviewGroup } from '../services/reviewEnhancedService'
+import type { Card } from '../types/card'
+import type { StudySet } from '../types/studySet'
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import { cardService } from '../services/cardService'
+import { ReviewGroupService } from '../services/reviewEnhancedService'
+import { studySetService } from '../services/studySetService'
 
 const props = defineProps<{
-  studySetId?: string;
-}>();
+  studySetId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'group-select', groupId: string | null): void;
-}>();
+  (e: 'group-select', groupId: string | null): void
+}>()
 
-const groups = ref<ReviewGroup[]>([]);
-const studySets = ref<StudySet[]>([]);
-const availableCards = ref<Card[]>([]);
-const selectedGroupId = ref<string | null>(null);
+const groups = ref<ReviewGroup[]>([])
+const studySets = ref<StudySet[]>([])
+const availableCards = ref<Card[]>([])
+const selectedGroupId = ref<string | null>(null)
 
-const showCreateDialog = ref(false);
-const showEditDialog = ref(false);
-const cardFilter = ref('');
+const showCreateDialog = ref(false)
+const showEditDialog = ref(false)
+const cardFilter = ref('')
 
 const formData = ref({
   id: '',
@@ -146,47 +210,47 @@ const formData = ref({
   description: '',
   studySetId: '',
   cardIds: [] as string[],
-  enabled: true
-});
+  enabled: true,
+})
 
 // 加载数据
 onMounted(async () => {
-  await loadData();
-});
+  await loadData()
+})
 
 const loadData = async () => {
   // 加载分组
-  groups.value = ReviewGroupService.getAllGroups();
+  groups.value = ReviewGroupService.getAllGroups()
 
   // 加载学习集
-  studySets.value = await studySetService.getAllStudySets();
+  studySets.value = await studySetService.getAllStudySets()
 
   // 如果有指定的学习集 ID，加载该学习集的卡片
   if (props.studySetId) {
-    availableCards.value = await cardService.getCardsByStudySet(props.studySetId);
+    availableCards.value = await cardService.getCardsByStudySet(props.studySetId)
   }
-};
+}
 
 // 过滤后的卡片列表
 const filteredCards = computed(() => {
-  if (!cardFilter.value) return availableCards.value;
-  const filter = cardFilter.value.toLowerCase();
-  return availableCards.value.filter(card =>
-    card.content?.toLowerCase().includes(filter)
-  );
-});
+  if (!cardFilter.value) return availableCards.value
+  const filter = cardFilter.value.toLowerCase()
+  return availableCards.value.filter((card) =>
+    card.content?.toLowerCase().includes(filter),
+  )
+})
 
 // 选择分组
 const selectGroup = (groupId: string) => {
-  selectedGroupId.value = groupId === selectedGroupId.value ? null : groupId;
-  emit('group-select', selectedGroupId.value);
-};
+  selectedGroupId.value = groupId === selectedGroupId.value ? null : groupId
+  emit('group-select', selectedGroupId.value)
+}
 
 // 切换分组状态
 const toggleGroup = (group: ReviewGroup) => {
-  ReviewGroupService.updateGroup(group.id, { enabled: !group.enabled });
-  groups.value = ReviewGroupService.getAllGroups();
-};
+  ReviewGroupService.updateGroup(group.id, { enabled: !group.enabled })
+  groups.value = ReviewGroupService.getAllGroups()
+}
 
 // 编辑分组
 const editGroup = (group: ReviewGroup) => {
@@ -196,43 +260,43 @@ const editGroup = (group: ReviewGroup) => {
     description: group.description || '',
     studySetId: group.studySetId,
     cardIds: [...group.cardIds],
-    enabled: group.enabled
-  };
-  showEditDialog.value = true;
+    enabled: group.enabled,
+  }
+  showEditDialog.value = true
 
   // 加载该学习集的卡片
-  loadCardsForStudySet(group.studySetId);
-};
+  loadCardsForStudySet(group.studySetId)
+}
 
 // 删除分组
 const deleteGroup = (group: ReviewGroup) => {
   if (confirm(`确定要删除分组"${group.name}"吗？`)) {
-    ReviewGroupService.deleteGroup(group.id);
-    groups.value = ReviewGroupService.getAllGroups();
+    ReviewGroupService.deleteGroup(group.id)
+    groups.value = ReviewGroupService.getAllGroups()
     if (selectedGroupId.value === group.id) {
-      selectedGroupId.value = null;
-      emit('group-select', null);
+      selectedGroupId.value = null
+      emit('group-select', null)
     }
   }
-};
+}
 
 // 关闭对话框
 const closeDialogs = () => {
-  showCreateDialog.value = false;
-  showEditDialog.value = false;
-  resetFormData();
-};
+  showCreateDialog.value = false
+  showEditDialog.value = false
+  resetFormData()
+}
 
 // 保存分组
 const saveGroup = () => {
   if (!formData.value.name.trim()) {
-    alert('请输入分组名称');
-    return;
+    alert('请输入分组名称')
+    return
   }
 
   if (!formData.value.studySetId) {
-    alert('请选择学习集');
-    return;
+    alert('请选择学习集')
+    return
   }
 
   if (showCreateDialog.value) {
@@ -241,31 +305,31 @@ const saveGroup = () => {
       formData.value.name,
       formData.value.studySetId,
       formData.value.cardIds,
-      formData.value.description
-    );
+      formData.value.description,
+    )
   } else {
     // 更新分组
     ReviewGroupService.updateGroup(formData.value.id, {
       name: formData.value.name,
       description: formData.value.description,
       studySetId: formData.value.studySetId,
-      cardIds: formData.value.cardIds
-    });
+      cardIds: formData.value.cardIds,
+    })
   }
 
-  groups.value = ReviewGroupService.getAllGroups();
-  closeDialogs();
-};
+  groups.value = ReviewGroupService.getAllGroups()
+  closeDialogs()
+}
 
 // 切换卡片选择
 const toggleCard = (cardId: string) => {
-  const index = formData.value.cardIds.indexOf(cardId);
+  const index = formData.value.cardIds.indexOf(cardId)
   if (index === -1) {
-    formData.value.cardIds.push(cardId);
+    formData.value.cardIds.push(cardId)
   } else {
-    formData.value.cardIds.splice(index, 1);
+    formData.value.cardIds.splice(index, 1)
   }
-};
+}
 
 // 重置表单
 const resetFormData = () => {
@@ -275,32 +339,32 @@ const resetFormData = () => {
     description: '',
     studySetId: '',
     cardIds: [],
-    enabled: true
-  };
-};
+    enabled: true,
+  }
+}
 
 // 加载学习集的卡片
 const loadCardsForStudySet = async (studySetId: string) => {
   if (studySetId) {
-    availableCards.value = await cardService.getCardsByStudySet(studySetId);
+    availableCards.value = await cardService.getCardsByStudySet(studySetId)
   } else {
-    availableCards.value = [];
+    availableCards.value = []
   }
-};
+}
 
 // 截断文本
 const truncateText = (text: string, length: number): string => {
-  if (!text) return '';
-  if (text.length <= length) return text;
-  return text.substring(0, length) + '...';
-};
+  if (!text) return ''
+  if (text.length <= length) return text
+  return `${text.substring(0, length)}...`
+}
 
 // 监听学习集变化
 watch(() => props.studySetId, async (newVal) => {
   if (newVal) {
-    availableCards.value = await cardService.getCardsByStudySet(newVal);
+    availableCards.value = await cardService.getCardsByStudySet(newVal)
   }
-});
+})
 </script>
 
 <style scoped lang="scss">

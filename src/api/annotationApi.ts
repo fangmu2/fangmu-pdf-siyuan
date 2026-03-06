@@ -1,8 +1,17 @@
+import type {
+  AnnotationColor,
+  AnnotationComment,
+  AnnotationLevel,
+  AnnotationStats,
+  AnnotationType,
+  CommentPriority,
+  CommentStatus,
+  PDFAnnotation,
+} from '../types/annotation'
+import type { SiYuanBlock } from '../types/siyuan'
+import { parseAnnotationFromBlock } from '../utils/annotationParser'
 // src/api/annotationApi.ts
-import { postApi } from './siyuanApi';
-import type { SiYuanBlock } from '../types/siyuan';
-import type { PDFAnnotation, AnnotationStats, AnnotationColor, AnnotationLevel, AnnotationComment, CommentPriority, CommentStatus, AnnotationType } from '../types/annotation';
-import { parseAnnotationFromBlock } from '../utils/annotationParser';
+import { postApi } from './siyuanApi'
 
 /**
  * 从完整PDF路径中提取基础文件名（去掉时间戳-hash后缀）
@@ -10,18 +19,18 @@ import { parseAnnotationFromBlock } from '../utils/annotationParser';
  */
 function extractBasePdfName(fullName: string): string {
   // 移除 .pdf 后缀
-  let name = fullName.replace(/\.pdf$/i, '');
+  let name = fullName.replace(/\.pdf$/i, '')
   // 移除思源添加的时间戳-hash后缀 (格式: -20260218130611-zwm9cfj)
-  name = name.replace(/-\d{14}-[a-z0-9]+$/i, '');
-  return name;
+  name = name.replace(/-\d{14}-[a-z0-9]+$/i, '')
+  return name
 }
 
 /**
  * 查询指定PDF文件的所有标注块
  */
 export async function getAnnotationsForPdf(pdfPath: string): Promise<PDFAnnotation[]> {
-  const pdfName = pdfPath.split('/').pop() || '';
-  const baseName = extractBasePdfName(pdfName);
+  const pdfName = pdfPath.split('/').pop() || ''
+  const baseName = extractBasePdfName(pdfName)
 
   // 使用基础名称进行模糊匹配
   const sql = `
@@ -30,24 +39,24 @@ export async function getAnnotationsForPdf(pdfPath: string): Promise<PDFAnnotati
     AND ial LIKE '%${baseName}%'
     ORDER BY created DESC
     LIMIT 100
-  `;
+  `
 
-  const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql });
+  const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql })
 
-  const annotations: PDFAnnotation[] = [];
+  const annotations: PDFAnnotation[] = []
 
   for (const block of blocks || []) {
     try {
-      const annotation = parseAnnotationFromBlock(block, pdfPath);
+      const annotation = parseAnnotationFromBlock(block, pdfPath)
       if (annotation) {
-        annotations.push(annotation);
+        annotations.push(annotation)
       }
     } catch (e) {
-      console.warn('解析标注块失败:', block.id, e);
+      console.warn('解析标注块失败:', block.id, e)
     }
   }
 
-  return annotations;
+  return annotations
 }
 
 /**
@@ -59,23 +68,23 @@ export async function getAnnotationsInDocument(docId: string): Promise<PDFAnnota
     WHERE ial LIKE '%file-annotation-ref%'
     AND root_id = '${docId}'
     ORDER BY created DESC
-  `;
+  `
 
-  const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql });
+  const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql })
 
-  const annotations: PDFAnnotation[] = [];
+  const annotations: PDFAnnotation[] = []
   for (const block of blocks || []) {
     try {
-      const annotation = parseAnnotationFromBlock(block);
+      const annotation = parseAnnotationFromBlock(block)
       if (annotation) {
-        annotations.push(annotation);
+        annotations.push(annotation)
       }
     } catch (e) {
-      console.warn('解析标注块失败:', block.id, e);
+      console.warn('解析标注块失败:', block.id, e)
     }
   }
 
-  return annotations;
+  return annotations
 }
 
 /**
@@ -87,23 +96,23 @@ export async function getAllPdfAnnotations(): Promise<PDFAnnotation[]> {
     WHERE ial LIKE '%file-annotation-ref%'
     ORDER BY created DESC
     LIMIT 1000
-  `;
+  `
 
-  const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql });
+  const blocks = await postApi<SiYuanBlock[]>('/api/query/sql', { stmt: sql })
 
-  const annotations: PDFAnnotation[] = [];
+  const annotations: PDFAnnotation[] = []
   for (const block of blocks || []) {
     try {
-      const annotation = parseAnnotationFromBlock(block);
+      const annotation = parseAnnotationFromBlock(block)
       if (annotation) {
-        annotations.push(annotation);
+        annotations.push(annotation)
       }
     } catch (e) {
-      console.warn('解析标注块失败:', block.id, e);
+      console.warn('解析标注块失败:', block.id, e)
     }
   }
 
-  return annotations;
+  return annotations
 }
 
 /**
@@ -111,27 +120,27 @@ export async function getAllPdfAnnotations(): Promise<PDFAnnotation[]> {
  * 根据标注级别生成不同格式的 Markdown
  */
 export async function createAnnotation(options: {
-  text: string;
-  pdfPath: string;
-  pdfName: string;
-  page: number;
-  rect: [number, number, number, number];
-  color?: AnnotationColor;
-  level?: AnnotationLevel;
-  note?: string;
-  docId?: string;
-  isImage?: boolean;
-  imagePath?: string;
-  annotationType?: AnnotationType;  // 新增标注类型参数
+  text: string
+  pdfPath: string
+  pdfName: string
+  page: number
+  rect: [number, number, number, number]
+  color?: AnnotationColor
+  level?: AnnotationLevel
+  note?: string
+  docId?: string
+  isImage?: boolean
+  imagePath?: string
+  annotationType?: AnnotationType // 新增标注类型参数
 }): Promise<string> {
-  const level = options.level || 'text';
+  const level = options.level || 'text'
 
   // 构建 file-annotation-ref 字符串
-  const rectString = options.rect.join(',');
-  const fileAnnotationRef = `assets/${options.pdfName}?path=${options.pdfPath}&page=${options.page}&rect=${encodeURIComponent(rectString)}`;
+  const rectString = options.rect.join(',')
+  const fileAnnotationRef = `assets/${options.pdfName}?path=${options.pdfPath}&page=${options.page}&rect=${encodeURIComponent(rectString)}`
 
   // 根据标注级别构建不同格式的 Markdown
-  let markdown = '';
+  let markdown = ''
 
   // 如果是图片摘录，优先使用图片格式
   if (options.isImage && options.imagePath) {
@@ -139,130 +148,130 @@ export async function createAnnotation(options: {
     // 图片路径应该是 assets/xxx.png 格式，用于Markdown引用
     const imagePath = options.imagePath.startsWith('/data/')
       ? options.imagePath.slice(6)
-      : options.imagePath;
-    const imageMarkdown = `![PDF截图](${imagePath})`;
+      : options.imagePath
+    const imageMarkdown = `![PDF截图](${imagePath})`
 
     switch (level) {
       case 'title':
-        markdown = `${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
       case 'h1':
-        markdown = `# PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `# PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
       case 'h2':
-        markdown = `## PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `## PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
       case 'h3':
-        markdown = `### PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `### PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
       case 'h4':
-        markdown = `#### PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `#### PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
       case 'h5':
-        markdown = `##### PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `##### PDF截图\n${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
       case 'text':
       default:
-        markdown = `${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`;
-        break;
+        markdown = `${imageMarkdown}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}" custom-image="true"`
+        break
     }
   } else {
     // 文字摘录
     switch (level) {
       case 'title':
         // 文档标题 - 使用 action 标记，思源会将其转为文档标题
-        markdown = `${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
       case 'h1':
-        markdown = `# ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `# ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
       case 'h2':
-        markdown = `## ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `## ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
       case 'h3':
-        markdown = `### ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `### ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
       case 'h4':
-        markdown = `#### ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `#### ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
       case 'h5':
-        markdown = `##### ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `##### ${options.text}\n{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
       case 'text':
       default:
         // 正文标注 - 加粗高亮
-        markdown = `**${options.text}**{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`;
-        break;
+        markdown = `**${options.text}**{: file-annotation-ref="${fileAnnotationRef}" custom-level="${level}"`
+        break
     }
   }
 
   if (options.color) {
-    markdown += ` custom-color="${options.color}"`;
+    markdown += ` custom-color="${options.color}"`
   }
 
   if (options.annotationType && options.annotationType !== 'highlight') {
-    markdown += ` custom-annotation-type="${options.annotationType}"`;
+    markdown += ` custom-annotation-type="${options.annotationType}"`
   }
 
   if (options.note) {
-    markdown += ` custom-note="${options.note}"`;
+    markdown += ` custom-note="${options.note}"`
   }
 
-  markdown += ` }`;
+  markdown += ` }`
 
   // 获取当前文档ID
-  let docId = options.docId;
+  let docId = options.docId
   if (!docId) {
     // 方法1: 通过 SQL 查询最近编辑的文档
     try {
       const recentDocs = await postApi<{ root_id: string }[]>('/api/query/sql', {
-        stmt: `SELECT root_id FROM blocks WHERE type = 'd' ORDER BY updated DESC LIMIT 1`
-      });
+        stmt: `SELECT root_id FROM blocks WHERE type = 'd' ORDER BY updated DESC LIMIT 1`,
+      })
       if (recentDocs && recentDocs.length > 0 && recentDocs[0].root_id) {
-        docId = recentDocs[0].root_id;
+        docId = recentDocs[0].root_id
       }
     } catch (e) {
-      console.warn('通过 SQL 获取最近文档失败:', e);
+      console.warn('通过 SQL 获取最近文档失败:', e)
     }
 
     // 方法2: 尝试 getCurrentDoc API（可能失败）
     if (!docId) {
       try {
-        const currentDoc = await postApi<{ id: string; rootID?: string } | null>('/api/editor/getCurrentDoc', {});
+        const currentDoc = await postApi<{ id: string, rootID?: string } | null>('/api/editor/getCurrentDoc', {})
         if (currentDoc && (currentDoc.id || currentDoc.rootID)) {
-          docId = currentDoc.rootID || currentDoc.id;
+          docId = currentDoc.rootID || currentDoc.id
         }
       } catch (e) {
         // 这个 API 可能返回空响应，忽略错误
-        console.warn('通过 getCurrentDoc 获取当前文档失败（可忽略）:', e);
+        console.warn('通过 getCurrentDoc 获取当前文档失败（可忽略）:', e)
       }
     }
   }
 
   if (!docId) {
-    throw new Error('无法确定目标文档，请先在思源中打开一个文档');
+    throw new Error('无法确定目标文档，请先在思源中打开一个文档')
   }
 
   // 使用 appendBlock 在文档末尾追加块
-  const result = await postApi<{ doOperations?: Array<{ action: string; id: string }>; id?: string }[]>('/api/block/appendBlock', {
+  const result = await postApi<{ doOperations?: Array<{ action: string, id: string }>, id?: string }[]>('/api/block/appendBlock', {
     dataType: 'markdown',
     data: markdown,
-    parentID: docId
-  });
+    parentID: docId,
+  })
 
-  let blockId: string | undefined;
+  let blockId: string | undefined
   if (Array.isArray(result) && result.length > 0) {
-    const ops = result[0]?.doOperations;
+    const ops = result[0]?.doOperations
     if (ops && ops.length > 0) {
-      blockId = ops[0]?.id;
+      blockId = ops[0]?.id
     }
   }
 
   if (!blockId) {
-    throw new Error('创建标注块失败，请检查 API 返回值');
+    throw new Error('创建标注块失败，请检查 API 返回值')
   }
 
-  return blockId;
+  return blockId
 }
 
 /**
@@ -270,15 +279,15 @@ export async function createAnnotation(options: {
  */
 export async function updateAnnotationNote(
   blockId: string,
-  note: string
+  note: string,
 ): Promise<void> {
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
     attrs: {
       'custom-note': note,
-      'custom-updated': Date.now().toString()
-    }
-  });
+      'custom-updated': Date.now().toString(),
+    },
+  })
 }
 
 /**
@@ -286,15 +295,15 @@ export async function updateAnnotationNote(
  */
 export async function updateAnnotationColor(
   blockId: string,
-  color: AnnotationColor
+  color: AnnotationColor,
 ): Promise<void> {
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
     attrs: {
       'custom-color': color,
-      'custom-updated': Date.now().toString()
-    }
-  });
+      'custom-updated': Date.now().toString(),
+    },
+  })
 }
 
 /**
@@ -302,15 +311,15 @@ export async function updateAnnotationColor(
  */
 export async function updateAnnotationType(
   blockId: string,
-  annotationType: AnnotationType
+  annotationType: AnnotationType,
 ): Promise<void> {
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
     attrs: {
       'custom-annotation-type': annotationType,
-      'custom-updated': Date.now().toString()
-    }
-  });
+      'custom-updated': Date.now().toString(),
+    },
+  })
 }
 
 /**
@@ -318,8 +327,8 @@ export async function updateAnnotationType(
  */
 export async function deleteAnnotation(blockId: string): Promise<void> {
   await postApi('/api/block/deleteBlock', {
-    id: blockId
-  });
+    id: blockId,
+  })
 }
 
 /**
@@ -333,26 +342,26 @@ export function getAnnotationStats(annotations: PDFAnnotation[]): AnnotationStat
       yellow: 0,
       green: 0,
       blue: 0,
-      purple: 0
+      purple: 0,
     },
-    byPage: {}
-  };
-
-  for (const ann of annotations) {
-    stats.byColor[ann.color]++;
-    stats.byPage[ann.page] = (stats.byPage[ann.page] || 0) + 1;
+    byPage: {},
   }
 
-  return stats;
+  for (const ann of annotations) {
+    stats.byColor[ann.color]++
+    stats.byPage[ann.page] = (stats.byPage[ann.page] || 0) + 1
+  }
+
+  return stats
 }
 
 /** 批注存储属性名 */
-const COMMENTS_ATTR_NAME = 'custom-comments';
+const COMMENTS_ATTR_NAME = 'custom-comments'
 
 /** 生成唯一 ID */
 const generateCommentId = (): string => {
-  return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-};
+  return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
 
 /**
  * 获取标注的所有批注
@@ -361,18 +370,18 @@ export async function getAnnotationComments(blockId: string): Promise<Annotation
   try {
     const result = await postApi<{ [key: string]: string }>(
       '/api/attr/getBlockAttrs',
-      { id: blockId }
-    );
+      { id: blockId },
+    )
 
-    const commentsJson = result?.[COMMENTS_ATTR_NAME];
+    const commentsJson = result?.[COMMENTS_ATTR_NAME]
     if (!commentsJson) {
-      return [];
+      return []
     }
 
-    return JSON.parse(commentsJson) as AnnotationComment[];
+    return JSON.parse(commentsJson) as AnnotationComment[]
   } catch (error) {
-    console.error('获取批注失败:', error);
-    return [];
+    console.error('获取批注失败:', error)
+    return []
   }
 }
 
@@ -382,17 +391,17 @@ export async function getAnnotationComments(blockId: string): Promise<Annotation
 export async function addAnnotationComment(
   blockId: string,
   params: {
-    text: string;
-    type?: 'text' | 'voice' | 'image';
-    priority?: CommentPriority;
-    tags?: string[];
-    voiceData?: AnnotationComment['voiceData'];
-    imageData?: AnnotationComment['imageData'];
-  }
+    text: string
+    type?: 'text' | 'voice' | 'image'
+    priority?: CommentPriority
+    tags?: string[]
+    voiceData?: AnnotationComment['voiceData']
+    imageData?: AnnotationComment['imageData']
+  },
 ): Promise<AnnotationComment> {
-  const comments = await getAnnotationComments(blockId);
+  const comments = await getAnnotationComments(blockId)
 
-  const now = Date.now();
+  const now = Date.now()
   const newComment: AnnotationComment = {
     id: generateCommentId(),
     type: params.type || 'text',
@@ -404,9 +413,9 @@ export async function addAnnotationComment(
     tags: params.tags || [],
     voiceData: params.voiceData,
     imageData: params.imageData,
-  };
+  }
 
-  comments.push(newComment);
+  comments.push(newComment)
 
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
@@ -414,9 +423,9 @@ export async function addAnnotationComment(
       [COMMENTS_ATTR_NAME]: JSON.stringify(comments),
       'custom-updated': now.toString(),
     },
-  });
+  })
 
-  return newComment;
+  return newComment
 }
 
 /**
@@ -426,25 +435,25 @@ export async function updateAnnotationComment(
   blockId: string,
   commentId: string,
   params: {
-    text?: string;
-    priority?: CommentPriority;
-    status?: CommentStatus;
-    tags?: string[];
-  }
+    text?: string
+    priority?: CommentPriority
+    status?: CommentStatus
+    tags?: string[]
+  },
 ): Promise<AnnotationComment | null> {
-  const comments = await getAnnotationComments(blockId);
-  const index = comments.findIndex(c => c.id === commentId);
+  const comments = await getAnnotationComments(blockId)
+  const index = comments.findIndex((c) => c.id === commentId)
 
   if (index === -1) {
-    return null;
+    return null
   }
 
-  const now = Date.now();
+  const now = Date.now()
   comments[index] = {
     ...comments[index],
     ...params,
     updatedAt: now,
-  };
+  }
 
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
@@ -452,9 +461,9 @@ export async function updateAnnotationComment(
       [COMMENTS_ATTR_NAME]: JSON.stringify(comments),
       'custom-updated': now.toString(),
     },
-  });
+  })
 
-  return comments[index];
+  return comments[index]
 }
 
 /**
@@ -462,16 +471,16 @@ export async function updateAnnotationComment(
  */
 export async function deleteAnnotationComment(
   blockId: string,
-  commentId: string
+  commentId: string,
 ): Promise<boolean> {
-  const comments = await getAnnotationComments(blockId);
-  const index = comments.findIndex(c => c.id === commentId);
+  const comments = await getAnnotationComments(blockId)
+  const index = comments.findIndex((c) => c.id === commentId)
 
   if (index === -1) {
-    return false;
+    return false
   }
 
-  comments.splice(index, 1);
+  comments.splice(index, 1)
 
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
@@ -479,9 +488,9 @@ export async function deleteAnnotationComment(
       [COMMENTS_ATTR_NAME]: comments.length > 0 ? JSON.stringify(comments) : '',
       'custom-updated': Date.now().toString(),
     },
-  });
+  })
 
-  return true;
+  return true
 }
 
 /**
@@ -490,7 +499,49 @@ export async function deleteAnnotationComment(
 export async function updateCommentStatus(
   blockId: string,
   commentId: string,
-  status: CommentStatus
+  status: CommentStatus,
 ): Promise<AnnotationComment | null> {
-  return updateAnnotationComment(blockId, commentId, { status });
+  return updateAnnotationComment(blockId, commentId, { status })
+}
+
+// ============ 思维导图节点标签 API ============
+
+/**
+ * 更新思维导图节点标签
+ * @param blockId 块 ID
+ * @param tags 标签列表
+ */
+export async function updateMindMapNodeTags(
+  blockId: string,
+  tags: string[],
+): Promise<boolean> {
+  try {
+    await postApi('/api/attr/setBlockAttrs', {
+      id: blockId,
+      attrs: {
+        'custom-node-tags': JSON.stringify(tags),
+        'custom-updated': Date.now().toString(),
+      },
+    })
+    return true
+  } catch (error) {
+    console.error('[updateMindMapNodeTags] 更新标签失败:', error)
+    return false
+  }
+}
+
+/**
+ * 从思源块属性中解析标签
+ * @param block 思源块
+ * @returns 标签列表
+ */
+export function parseNodeTagsFromBlock(block: any): string[] {
+  try {
+    if (block.custom_node_tags) {
+      return JSON.parse(block.custom_node_tags)
+    }
+  } catch (e) {
+    console.warn('[parseNodeTagsFromBlock] 解析标签失败:', e)
+  }
+  return []
 }

@@ -111,7 +111,7 @@ export interface MindMapNodeStats {
   /** 不同状态分布 */
   statusDistribution: Record<string, number>
   /** 标签使用统计 */
-  tagStats: Array<{ tag: string; count: number }>
+  tagStats: Array<{ tag: string, count: number }>
 }
 
 /**

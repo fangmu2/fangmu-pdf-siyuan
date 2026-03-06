@@ -1,13 +1,196 @@
+<template>
+  <teleport to="body">
+    <transition name="slide-right">
+      <div
+        v-if="visible"
+        class="layer-panel-overlay"
+        @click="closePanel"
+      >
+        <div
+          class="layer-panel"
+          @click.stop
+        >
+          <!-- 面板头部 -->
+          <div class="layer-panel-header">
+            <h3 class="layer-panel-title">
+              <span class="title-icon">📑</span>
+              图层
+            </h3>
+            <div class="header-actions">
+              <button
+                class="btn-icon btn-add"
+                title="添加图层"
+                @click="addNewLayer"
+              >
+                <span>+</span>
+              </button>
+              <button
+                class="btn-icon btn-close"
+                title="关闭"
+                @click="closePanel"
+              >
+                <span>×</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 加载状态 -->
+          <div
+            v-if="isLoading"
+            class="layer-panel-loading"
+          >
+            <span class="loading-spinner">⏳</span>
+            <span>加载中...</span>
+          </div>
+
+          <!-- 错误提示 -->
+          <div
+            v-else-if="errorMessage"
+            class="layer-panel-error"
+          >
+            <span class="error-icon">⚠️</span>
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <!-- 图层列表 -->
+          <div
+            v-else-if="layers.length > 0"
+            class="layer-list"
+          >
+            <div
+              v-for="layer in [...layers].sort((a, b) => b.order - a.order)"
+              :key="layer.id"
+              class="layer-item"
+              :class="{
+                dragging: draggingLayerId === layer.id,
+                locked: layer.locked,
+              }"
+              draggable
+              @dragstart="handleDragStart($event, layer)"
+              @dragend="handleDragEnd"
+              @dragover="handleDragOver"
+              @drop="handleDrop($event, layer)"
+            >
+              <!-- 拖拽手柄 -->
+              <div
+                class="layer-drag-handle"
+                title="拖拽调整顺序"
+              >
+                <span>⋮⋮</span>
+              </div>
+
+              <!-- 图层信息 -->
+              <div class="layer-info">
+                <div
+                  class="layer-icon"
+                  :style="{ color: layer.color || '#999' }"
+                >
+                  {{ layerTypeIcons[layer.type] || '📁' }}
+                </div>
+                <div class="layer-text">
+                  <span class="layer-name">{{ layer.name }}</span>
+                  <span class="layer-type">{{ layerTypeNames[layer.type] || '自定义层' }}</span>
+                </div>
+              </div>
+
+              <!-- 图层控制 -->
+              <div class="layer-controls">
+                <!-- 可见性切换 -->
+                <button
+                  class="btn-icon btn-visibility"
+                  :class="{ hidden: !layer.visible }"
+                  :title="layer.visible ? '隐藏图层' : '显示图层'"
+                  @click="toggleLayerVisible(layer)"
+                >
+                  <span v-if="layer.visible">👁️</span>
+                  <span v-else>🚫</span>
+                </button>
+
+                <!-- 锁定切换 -->
+                <button
+                  class="btn-icon btn-lock"
+                  :class="{ locked: layer.locked }"
+                  :title="layer.locked ? '解锁图层' : '锁定图层'"
+                  @click="toggleLayerLocked(layer)"
+                >
+                  <span v-if="layer.locked">🔒</span>
+                  <span v-else>🔓</span>
+                </button>
+
+                <!-- 更多操作 -->
+                <div class="layer-more">
+                  <button
+                    class="btn-icon btn-more"
+                    title="更多选项"
+                  >
+                    <span>⋯</span>
+                  </button>
+                  <div class="layer-more-menu">
+                    <button
+                      class="menu-item"
+                      @click="renameLayer(layer)"
+                    >
+                      <span>✏️</span> 重命名
+                    </button>
+                    <button
+                      v-if="layer.type === 'custom'"
+                      class="menu-item menu-item-danger"
+                      @click="deleteLayer(layer)"
+                    >
+                      <span>🗑️</span> 删除
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 不透明度滑块 -->
+              <div class="layer-opacity">
+                <input
+                  type="range"
+                  :min="0"
+                  :max="100"
+                  :value="Math.round(layer.opacity * 100)"
+                  :disabled="layer.locked"
+                  @input="updateLayerOpacity(layer, Number(($event.target as HTMLInputElement).value))"
+                />
+                <span class="opacity-value">{{ Math.round(layer.opacity * 100) }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 空状态 -->
+          <div
+            v-else
+            class="layer-panel-empty"
+          >
+            <span class="empty-icon">📭</span>
+            <span>暂无图层</span>
+          </div>
+
+          <!-- 面板底部提示 -->
+          <div class="layer-panel-footer">
+            <span class="tip-icon">💡</span>
+            <span class="tip-text">拖拽图层可调整顺序</span>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </teleport>
+</template>
+
 <script setup lang="ts">
 /**
  * 图层面板组件
  * 提供图层可见性控制、锁定、顺序调整等功能
  */
 
-import { ref, computed, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useCanvasStore } from '@/stores/canvasStore'
 import type { LayerConfig } from '@/types/canvas'
+import { storeToRefs } from 'pinia'
+import {
+  ref,
+  watch,
+} from 'vue'
+import { useCanvasStore } from '@/stores/canvasStore'
 
 interface Props {
   /** 是否可见 */
@@ -24,13 +207,17 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  visible: false
+  visible: false,
 })
 
 const emit = defineEmits<Emits>()
 
 const canvasStore = useCanvasStore()
-const { layers, isLoading, errorMessage } = storeToRefs(canvasStore)
+const {
+  layers,
+  isLoading,
+  errorMessage,
+} = storeToRefs(canvasStore)
 
 /** 是否正在拖拽图层 */
 const draggingLayerId = ref<string | null>(null)
@@ -41,7 +228,7 @@ const layerTypeIcons: Record<string, string> = {
   nodes: '📌',
   handwriting: '✏️',
   annotations: '🏷️',
-  custom: '📁'
+  custom: '📁',
 }
 
 // 图层类型名称
@@ -50,7 +237,7 @@ const layerTypeNames: Record<string, string> = {
   nodes: '节点层',
   handwriting: '手绘层',
   annotations: '标注层',
-  custom: '自定义层'
+  custom: '自定义层',
 }
 
 // 监听画布 ID 变化，加载图层
@@ -61,7 +248,7 @@ watch(
       await canvasStore.loadLayers(newCanvasId)
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 切换图层可见性
@@ -69,9 +256,12 @@ async function toggleLayerVisible(layer: LayerConfig) {
   const newVisible = !layer.visible
   await canvasStore.updateLayerConfig({
     id: layer.id,
-    visible: newVisible
+    visible: newVisible,
   })
-  emit('layer-change', { ...layer, visible: newVisible })
+  emit('layer-change', {
+    ...layer,
+    visible: newVisible,
+  })
 }
 
 // 切换图层锁定
@@ -79,18 +269,24 @@ async function toggleLayerLocked(layer: LayerConfig) {
   const newLocked = !layer.locked
   await canvasStore.updateLayerConfig({
     id: layer.id,
-    locked: newLocked
+    locked: newLocked,
   })
-  emit('layer-change', { ...layer, locked: newLocked })
+  emit('layer-change', {
+    ...layer,
+    locked: newLocked,
+  })
 }
 
 // 调整图层不透明度
 async function updateLayerOpacity(layer: LayerConfig, opacity: number) {
   await canvasStore.updateLayerConfig({
     id: layer.id,
-    opacity: opacity / 100
+    opacity: opacity / 100,
   })
-  emit('layer-change', { ...layer, opacity: opacity / 100 })
+  emit('layer-change', {
+    ...layer,
+    opacity: opacity / 100,
+  })
 }
 
 // 重命名图层
@@ -99,9 +295,12 @@ async function renameLayer(layer: LayerConfig) {
   if (newName && newName.trim() && newName !== layer.name) {
     await canvasStore.updateLayerConfig({
       id: layer.id,
-      name: newName.trim()
+      name: newName.trim(),
     })
-    emit('layer-change', { ...layer, name: newName.trim() })
+    emit('layer-change', {
+      ...layer,
+      name: newName.trim(),
+    })
   }
 }
 
@@ -133,7 +332,7 @@ async function addNewLayer() {
     locked: false,
     order: layers.value.length,
     opacity: 1,
-    color: '#999999'
+    color: '#999999',
   })
 
   if (success) {
@@ -166,8 +365,8 @@ async function handleDrop(event: DragEvent, targetLayer: LayerConfig) {
   const sourceId = draggingLayerId.value
   if (!sourceId || sourceId === targetLayer.id) return
 
-  const sourceIndex = layers.value.findIndex(l => l.id === sourceId)
-  const targetIndex = layers.value.findIndex(l => l.id === targetLayer.id)
+  const sourceIndex = layers.value.findIndex((l) => l.id === sourceId)
+  const targetIndex = layers.value.findIndex((l) => l.id === targetLayer.id)
 
   if (sourceIndex === -1 || targetIndex === -1) return
 
@@ -178,13 +377,13 @@ async function handleDrop(event: DragEvent, targetLayer: LayerConfig) {
   // 更新源图层顺序
   await canvasStore.updateLayerConfig({
     id: sourceId,
-    order: targetLayer.order
+    order: targetLayer.order,
   })
 
   // 更新目标图层顺序
   await canvasStore.updateLayerConfig({
     id: targetLayer.id,
-    order: tempOrder
+    order: tempOrder,
   })
 
   draggingLayerId.value = null
@@ -195,147 +394,6 @@ function closePanel() {
   emit('update:visible', false)
 }
 </script>
-
-<template>
-  <teleport to="body">
-    <transition name="slide-right">
-      <div v-if="visible" class="layer-panel-overlay" @click="closePanel">
-        <div class="layer-panel" @click.stop>
-          <!-- 面板头部 -->
-          <div class="layer-panel-header">
-            <h3 class="layer-panel-title">
-              <span class="title-icon">📑</span>
-              图层
-            </h3>
-            <div class="header-actions">
-              <button class="btn-icon btn-add" @click="addNewLayer" title="添加图层">
-                <span>+</span>
-              </button>
-              <button class="btn-icon btn-close" @click="closePanel" title="关闭">
-                <span>×</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 加载状态 -->
-          <div v-if="isLoading" class="layer-panel-loading">
-            <span class="loading-spinner">⏳</span>
-            <span>加载中...</span>
-          </div>
-
-          <!-- 错误提示 -->
-          <div v-else-if="errorMessage" class="layer-panel-error">
-            <span class="error-icon">⚠️</span>
-            <span>{{ errorMessage }}</span>
-          </div>
-
-          <!-- 图层列表 -->
-          <div v-else-if="layers.length > 0" class="layer-list">
-            <div
-              v-for="layer in [...layers].sort((a, b) => b.order - a.order)"
-              :key="layer.id"
-              class="layer-item"
-              :class="{
-                dragging: draggingLayerId === layer.id,
-                locked: layer.locked
-              }"
-              draggable
-              @dragstart="handleDragStart($event, layer)"
-              @dragend="handleDragEnd"
-              @dragover="handleDragOver"
-              @drop="handleDrop($event, layer)"
-            >
-              <!-- 拖拽手柄 -->
-              <div class="layer-drag-handle" title="拖拽调整顺序">
-                <span>⋮⋮</span>
-              </div>
-
-              <!-- 图层信息 -->
-              <div class="layer-info">
-                <div class="layer-icon" :style="{ color: layer.color || '#999' }">
-                  {{ layerTypeIcons[layer.type] || '📁' }}
-                </div>
-                <div class="layer-text">
-                  <span class="layer-name">{{ layer.name }}</span>
-                  <span class="layer-type">{{ layerTypeNames[layer.type] || '自定义层' }}</span>
-                </div>
-              </div>
-
-              <!-- 图层控制 -->
-              <div class="layer-controls">
-                <!-- 可见性切换 -->
-                <button
-                  class="btn-icon btn-visibility"
-                  :class="{ hidden: !layer.visible }"
-                  @click="toggleLayerVisible(layer)"
-                  :title="layer.visible ? '隐藏图层' : '显示图层'"
-                >
-                  <span v-if="layer.visible">👁️</span>
-                  <span v-else>🚫</span>
-                </button>
-
-                <!-- 锁定切换 -->
-                <button
-                  class="btn-icon btn-lock"
-                  :class="{ locked: layer.locked }"
-                  @click="toggleLayerLocked(layer)"
-                  :title="layer.locked ? '解锁图层' : '锁定图层'"
-                >
-                  <span v-if="layer.locked">🔒</span>
-                  <span v-else>🔓</span>
-                </button>
-
-                <!-- 更多操作 -->
-                <div class="layer-more">
-                  <button class="btn-icon btn-more" title="更多选项">
-                    <span>⋯</span>
-                  </button>
-                  <div class="layer-more-menu">
-                    <button class="menu-item" @click="renameLayer(layer)">
-                      <span>✏️</span> 重命名
-                    </button>
-                    <button
-                      v-if="layer.type === 'custom'"
-                      class="menu-item menu-item-danger"
-                      @click="deleteLayer(layer)"
-                    >
-                      <span>🗑️</span> 删除
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 不透明度滑块 -->
-              <div class="layer-opacity">
-                <input
-                  type="range"
-                  :min="0"
-                  :max="100"
-                  :value="Math.round(layer.opacity * 100)"
-                  @input="updateLayerOpacity(layer, Number(($event.target as HTMLInputElement).value))"
-                  :disabled="layer.locked"
-                />
-                <span class="opacity-value">{{ Math.round(layer.opacity * 100) }}%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 空状态 -->
-          <div v-else class="layer-panel-empty">
-            <span class="empty-icon">📭</span>
-            <span>暂无图层</span>
-          </div>
-
-          <!-- 面板底部提示 -->
-          <div class="layer-panel-footer">
-            <span class="tip-icon">💡</span>
-            <span class="tip-text">拖拽图层可调整顺序</span>
-          </div>
-        </div>
-      </div>
-    </transition>
-  </teleport>
-</template>
 
 <style scoped>
 .layer-panel-overlay {

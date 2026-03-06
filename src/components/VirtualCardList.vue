@@ -1,7 +1,14 @@
 <!-- src/components/VirtualCardList.vue -->
 <template>
-  <div class="virtual-card-list" ref="containerRef" @scroll="handleScroll">
-    <div class="virtual-list-content" :style="{ height: totalHeight + 'px' }">
+  <div
+    ref="containerRef"
+    class="virtual-card-list"
+    @scroll="handleScroll"
+  >
+    <div
+      class="virtual-list-content"
+      :style="{ height: `${totalHeight}px` }"
+    >
       <div
         class="virtual-list-items"
         :style="{ transform: `translateY(${offsetY}px)` }"
@@ -10,12 +17,15 @@
           v-for="card in visibleCards"
           :key="card.id"
           class="virtual-card-item"
-          :class="{ 'selected': selectedCardId === card.id }"
+          :class="{ selected: selectedCardId === card.id }"
           @click="selectCard(card)"
         >
           <div class="card-header">
             <span class="card-title">{{ card.title || '无标题卡片' }}</span>
-            <span class="card-type" :class="card.type">
+            <span
+              class="card-type"
+              :class="card.type"
+            >
               {{ cardTypeLabels[card.type] || '卡片' }}
             </span>
           </div>
@@ -23,10 +33,17 @@
             {{ truncateText(card.content, 100) }}
           </div>
           <div class="card-footer">
-            <span class="card-tag" v-for="tag in card.tags?.slice(0, 3)" :key="tag">
+            <span
+              v-for="tag in card.tags?.slice(0, 3)"
+              :key="tag"
+              class="card-tag"
+            >
               #{{ tag }}
             </span>
-            <span class="card-status" :class="card.status">
+            <span
+              class="card-status"
+              :class="card.status"
+            >
               {{ statusLabels[card.status] || card.status }}
             </span>
             <span class="card-difficulty">
@@ -38,14 +55,24 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-if="cards.length === 0" class="empty-state">
-      <div class="empty-state-icon">📭</div>
+    <div
+      v-if="cards.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-state-icon">
+        📭
+      </div>
       <p>暂无卡片</p>
-      <p class="empty-state-hint">添加标注或创建卡片后将显示在这里</p>
+      <p class="empty-state-hint">
+        添加标注或创建卡片后将显示在这里
+      </p>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="loading-state">
+    <div
+      v-if="loading"
+      class="loading-state"
+    >
       <div class="loading-spinner"></div>
       <p>加载中...</p>
     </div>
@@ -53,134 +80,144 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import type { Card } from '../types/card';
+import type { Card } from '../types/card'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from 'vue'
 
 interface Props {
-  cards: Card[];
-  selectedCardId?: string;
-  itemHeight?: number;
-  bufferSize?: number;
-  loading?: boolean;
+  cards: Card[]
+  selectedCardId?: string
+  itemHeight?: number
+  bufferSize?: number
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   selectedCardId: '',
   itemHeight: 120,
   bufferSize: 5,
-  loading: false
-});
+  loading: false,
+})
+
+const emit = defineEmits<Emits>()
 
 interface Emits {
-  (e: 'card-select', card: Card): void;
-  (e: 'scroll-bottom'): void;
+  (e: 'card-select', card: Card): void
+  (e: 'scroll-bottom'): void
 }
 
-const emit = defineEmits<Emits>();
-
-const containerRef = ref<HTMLDivElement | null>(null);
-const containerHeight = ref(0);
-const scrollTop = ref(0);
+const containerRef = ref<HTMLDivElement | null>(null)
+const containerHeight = ref(0)
+const scrollTop = ref(0)
 
 // 卡片类型标签
 const cardTypeLabels: Record<string, string> = {
   card: '卡片',
   flashcard: '闪卡',
-  excerpt: '摘录'
-};
+  excerpt: '摘录',
+}
 
 // 状态标签
 const statusLabels: Record<string, string> = {
   new: '新学',
   learning: '学习中',
   review: '复习中',
-  suspended: '已暂停'
-};
+  suspended: '已暂停',
+}
 
 // 截断文本
 const truncateText = (text: string, maxLength: number): string => {
-  if (!text) return '';
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + '...';
-};
+  if (!text) return ''
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength)}...`
+}
 
 // 计算总高度
 const totalHeight = computed(() => {
-  return props.cards.length * props.itemHeight;
-});
+  return props.cards.length * props.itemHeight
+})
 
 // 计算可见区域
 const startIndex = computed(() => {
-  const index = Math.floor(scrollTop.value / props.itemHeight) - props.bufferSize;
-  return Math.max(0, index);
-});
+  const index = Math.floor(scrollTop.value / props.itemHeight) - props.bufferSize
+  return Math.max(0, index)
+})
 
 const endIndex = computed(() => {
-  const index = Math.ceil((scrollTop.value + containerHeight.value) / props.itemHeight) + props.bufferSize;
-  return Math.min(props.cards.length, index);
-});
+  const index = Math.ceil((scrollTop.value + containerHeight.value) / props.itemHeight) + props.bufferSize
+  return Math.min(props.cards.length, index)
+})
 
 // 可见的卡片
 const visibleCards = computed(() => {
-  return props.cards.slice(startIndex.value, endIndex.value);
-});
+  return props.cards.slice(startIndex.value, endIndex.value)
+})
 
 // Y 轴偏移量
 const offsetY = computed(() => {
-  return startIndex.value * props.itemHeight;
-});
+  return startIndex.value * props.itemHeight
+})
 
 // 选择卡片
 const selectCard = (card: Card) => {
-  emit('card-select', card);
-};
+  emit('card-select', card)
+}
 
 // 处理滚动
 const handleScroll = () => {
-  if (!containerRef.value) return;
-  scrollTop.value = containerRef.value.scrollTop;
+  if (!containerRef.value) return
+  scrollTop.value = containerRef.value.scrollTop
 
   // 触发滚动到底部事件
-  const { scrollHeight, clientHeight, scrollTop } = containerRef.value;
+  const {
+    scrollHeight,
+    clientHeight,
+    scrollTop,
+  } = containerRef.value
   if (scrollHeight - clientHeight - scrollTop < 100) {
-    emit('scroll-bottom');
+    emit('scroll-bottom')
   }
-};
+}
 
 // 更新容器高度
 const updateContainerHeight = () => {
   if (containerRef.value) {
-    containerHeight.value = containerRef.value.clientHeight;
+    containerHeight.value = containerRef.value.clientHeight
   }
-};
+}
 
 // 监听卡片数量变化
 watch(() => props.cards.length, () => {
-  updateContainerHeight();
-});
+  updateContainerHeight()
+})
 
 onMounted(() => {
-  updateContainerHeight();
-  window.addEventListener('resize', updateContainerHeight);
-});
+  updateContainerHeight()
+  window.addEventListener('resize', updateContainerHeight)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateContainerHeight);
-});
+  window.removeEventListener('resize', updateContainerHeight)
+})
 
 // 暴露方法
 defineExpose({
   scrollTo: (index: number) => {
     if (containerRef.value) {
-      containerRef.value.scrollTop = index * props.itemHeight;
+      containerRef.value.scrollTop = index * props.itemHeight
     }
   },
   scrollToTop: () => {
     if (containerRef.value) {
-      containerRef.value.scrollTop = 0;
+      containerRef.value.scrollTop = 0
     }
-  }
-});
+  },
+})
 </script>
 
 <style scoped>
@@ -205,7 +242,7 @@ defineExpose({
 }
 
 .virtual-card-item {
-  height: v-bind('itemHeight + "px"');
+  height: v-bind('`${itemHeight}px`');
   padding: 12px 16px;
   border-bottom: 1px solid var(--b3-border-color);
   background: var(--b3-theme-surface);

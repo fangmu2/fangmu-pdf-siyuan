@@ -3,33 +3,43 @@
  * 测试智能布局推荐功能的分析算法和评分系统
  */
 
-import { describe, it, expect } from 'vitest'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+} from '@/types/mindmapFree'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import {
   analyzeGraph,
-  recommendLayout,
+  getLayoutIcon,
   getLayoutName,
-  getLayoutIcon
+  recommendLayout,
 } from '@/utils/layoutAnalyzer'
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
 
-describe('LayoutAnalyzer', () => {
+describe('layoutAnalyzer', () => {
   // 辅助函数：创建测试节点
   function createNode(
     id: string,
     title: string,
     parentId?: string,
-    data: Partial<FreeMindMapNode['data']> = {}
+    data: Partial<FreeMindMapNode['data']> = {},
   ): FreeMindMapNode {
     return {
       id,
       type: 'textCard',
-      position: { x: 0, y: 0 },
+      position: {
+        x: 0,
+        y: 0,
+      },
       data: {
         title,
         childrenIds: [],
-        ...data
+        ...data,
       },
-      parentId
+      parentId,
     } as FreeMindMapNode
   }
 
@@ -37,20 +47,20 @@ describe('LayoutAnalyzer', () => {
   function createEdge(
     id: string,
     source: string,
-    target: string
+    target: string,
   ): FreeMindMapEdge {
     return {
       id,
       source,
       target,
-      type: 'default'
+      type: 'default',
     } as FreeMindMapEdge
   }
 
   describe('analyzeGraph', () => {
     it('should analyze empty graph', () => {
       const analysis = analyzeGraph([], [])
-      
+
       expect(analysis.nodeCount).toBe(0)
       expect(analysis.maxDepth).toBe(0)
       expect(analysis.avgConnections).toBe(0)
@@ -62,7 +72,7 @@ describe('LayoutAnalyzer', () => {
     it('should analyze single node', () => {
       const nodes = [createNode('1', 'Root')]
       const analysis = analyzeGraph(nodes, [])
-      
+
       expect(analysis.nodeCount).toBe(1)
       expect(analysis.maxDepth).toBe(0)
       expect(analysis.avgConnections).toBe(0)
@@ -74,16 +84,16 @@ describe('LayoutAnalyzer', () => {
         createNode('1', 'Root'),
         createNode('2', 'Child 1', '1'),
         createNode('3', 'Child 2', '1'),
-        createNode('4', 'Grandchild', '2')
+        createNode('4', 'Grandchild', '2'),
       ]
       const edges = [
         createEdge('e1', '1', '2'),
         createEdge('e2', '1', '3'),
-        createEdge('e3', '2', '4')
+        createEdge('e3', '2', '4'),
       ]
-      
+
       const analysis = analyzeGraph(nodes, edges)
-      
+
       expect(analysis.nodeCount).toBe(4)
       expect(analysis.maxDepth).toBeGreaterThanOrEqual(2)
       expect(analysis.avgConnections).toBe(1.5)
@@ -93,10 +103,10 @@ describe('LayoutAnalyzer', () => {
     it('should detect timestamps', () => {
       const nodes = [
         createNode('1', 'Node 1', undefined, { timestamp: Date.now() }),
-        createNode('2', 'Node 2')
+        createNode('2', 'Node 2'),
       ]
       const analysis = analyzeGraph(nodes, [])
-      
+
       expect(analysis.hasTimestamps).toBe(true)
     })
 
@@ -105,15 +115,15 @@ describe('LayoutAnalyzer', () => {
         createNode('1', 'Root 1'),
         createNode('2', 'Child 1', '1'),
         createNode('3', 'Root 2'),
-        createNode('4', 'Child 2', '3')
+        createNode('4', 'Child 2', '3'),
       ]
       const edges = [
         createEdge('e1', '1', '2'),
-        createEdge('e2', '3', '4')
+        createEdge('e2', '3', '4'),
       ]
-      
+
       const analysis = analyzeGraph(nodes, edges)
-      
+
       expect(analysis.clusterCount).toBe(2)
     })
   })
@@ -126,11 +136,11 @@ describe('LayoutAnalyzer', () => {
         avgConnections: 1.5,
         hasTimestamps: false,
         isHierarchical: true,
-        clusterCount: 1
+        clusterCount: 1,
       }
-      
+
       const recommendations = recommendLayout(analysis)
-      
+
       expect(recommendations.length).toBeGreaterThan(0)
       expect(recommendations[0].layoutType).toBe('tree')
       expect(recommendations[0].confidence).toBeGreaterThan(0.5)
@@ -143,12 +153,12 @@ describe('LayoutAnalyzer', () => {
         avgConnections: 1.2,
         hasTimestamps: true,
         isHierarchical: false,
-        clusterCount: 1
+        clusterCount: 1,
       }
-      
+
       const recommendations = recommendLayout(analysis)
-      
-      const timelineRec = recommendations.find(r => r.layoutType === 'timeline')
+
+      const timelineRec = recommendations.find((r) => r.layoutType === 'timeline')
       expect(timelineRec).toBeDefined()
       expect(timelineRec!.confidence).toBeGreaterThan(0.5)
     })
@@ -160,12 +170,12 @@ describe('LayoutAnalyzer', () => {
         avgConnections: 3.5,
         hasTimestamps: false,
         isHierarchical: false,
-        clusterCount: 3
+        clusterCount: 3,
       }
-      
+
       const recommendations = recommendLayout(analysis)
-      
-      const conceptRec = recommendations.find(r => r.layoutType === 'concept')
+
+      const conceptRec = recommendations.find((r) => r.layoutType === 'concept')
       expect(conceptRec).toBeDefined()
       expect(conceptRec!.score).toBeGreaterThan(30)
     })
@@ -177,11 +187,11 @@ describe('LayoutAnalyzer', () => {
         avgConnections: 1.8,
         hasTimestamps: true,
         isHierarchical: true,
-        clusterCount: 2
+        clusterCount: 2,
       }
-      
+
       const recommendations = recommendLayout(analysis)
-      
+
       for (let i = 1; i < recommendations.length; i++) {
         expect(recommendations[i - 1].score).toBeGreaterThanOrEqual(recommendations[i].score)
       }
@@ -194,11 +204,11 @@ describe('LayoutAnalyzer', () => {
         avgConnections: 0,
         hasTimestamps: false,
         isHierarchical: false,
-        clusterCount: 0
+        clusterCount: 0,
       }
-      
+
       const recommendations = recommendLayout(analysis)
-      
+
       expect(recommendations.length).toBe(0)
     })
   })

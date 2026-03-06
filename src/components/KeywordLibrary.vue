@@ -14,30 +14,48 @@
 
       <div class="toolbar-group">
         <button
-          :class="['toolbar-btn', { active: viewMode === 'list' }]"
-          @click="viewMode = 'list'"
+          class="toolbar-btn"
+          :class="[{ active: viewMode === 'list' }]"
           title="列表视图"
+          @click="viewMode = 'list'"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
           </svg>
         </button>
         <button
-          :class="['toolbar-btn', { active: viewMode === 'cloud' }]"
-          @click="viewMode = 'cloud'"
+          class="toolbar-btn"
+          :class="[{ active: viewMode === 'cloud' }]"
           title="词云视图"
+          @click="viewMode = 'cloud'"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
           </svg>
         </button>
         <button
-          :class="['toolbar-btn', { active: viewMode === 'grid' }]"
-          @click="viewMode = 'grid'"
+          class="toolbar-btn"
+          :class="[{ active: viewMode === 'grid' }]"
           title="网格视图"
+          @click="viewMode = 'grid'"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4zm0 6h4v-4h-4v4zm6 0h4v-4h-4v4zm0 6h4v-4h-4v4zm0-6h4v-4h-4v4z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4zm0 6h4v-4h-4v4zm6 0h4v-4h-4v4zm0 6h4v-4h-4v4zm0-6h4v-4h-4v4z" />
           </svg>
         </button>
       </div>
@@ -45,14 +63,31 @@
       <div class="toolbar-spacer"></div>
 
       <div class="toolbar-group">
-        <select v-model="colorFilter" class="toolbar-select">
-          <option value="">所有颜色</option>
-          <option value="red">红色</option>
-          <option value="orange">橙色</option>
-          <option value="yellow">黄色</option>
-          <option value="green">绿色</option>
-          <option value="blue">蓝色</option>
-          <option value="purple">紫色</option>
+        <select
+          v-model="colorFilter"
+          class="toolbar-select"
+        >
+          <option value="">
+            所有颜色
+          </option>
+          <option value="red">
+            红色
+          </option>
+          <option value="orange">
+            橙色
+          </option>
+          <option value="yellow">
+            黄色
+          </option>
+          <option value="green">
+            绿色
+          </option>
+          <option value="blue">
+            蓝色
+          </option>
+          <option value="purple">
+            紫色
+          </option>
         </select>
       </div>
     </div>
@@ -60,7 +95,10 @@
     <!-- 关键词内容 -->
     <div class="keyword-content">
       <!-- 列表视图 -->
-      <div v-if="viewMode === 'list'" class="keyword-list">
+      <div
+        v-if="viewMode === 'list'"
+        class="keyword-list"
+      >
         <div
           v-for="group in groupedKeywords"
           :key="group.letter"
@@ -74,7 +112,8 @@
             <div
               v-for="keyword in group.keywords"
               :key="keyword.id"
-              :class="['keyword-item', `keyword-item--${keyword.color}`]"
+              class="keyword-item"
+              :class="[`keyword-item--${keyword.color}`]"
               @click="handleKeywordClick(keyword)"
             >
               <div class="keyword-item__header">
@@ -94,13 +133,17 @@
       </div>
 
       <!-- 词云视图 -->
-      <div v-else-if="viewMode === 'cloud'" class="keyword-cloud">
+      <div
+        v-else-if="viewMode === 'cloud'"
+        class="keyword-cloud"
+      >
         <div class="cloud-container">
           <span
             v-for="keyword in keywords"
             :key="keyword.id"
-            :class="['cloud-word', `cloud-word--${keyword.color}`]"
-            :style="{ fontSize: getFontSize(keyword.count) + 'px' }"
+            class="cloud-word"
+            :class="[`cloud-word--${keyword.color}`]"
+            :style="{ fontSize: `${getFontSize(keyword.count)}px` }"
             @click="handleKeywordClick(keyword)"
           >
             {{ keyword.name }}
@@ -109,11 +152,15 @@
       </div>
 
       <!-- 网格视图 -->
-      <div v-else-if="viewMode === 'grid'" class="keyword-grid">
+      <div
+        v-else-if="viewMode === 'grid'"
+        class="keyword-grid"
+      >
         <div
           v-for="keyword in filteredKeywords"
           :key="keyword.id"
-          :class="['keyword-card', `keyword-card--${keyword.color}`]"
+          class="keyword-card"
+          :class="[`keyword-card--${keyword.color}`]"
           @click="handleKeywordClick(keyword)"
         >
           <div class="keyword-card__header">
@@ -123,23 +170,41 @@
             ></span>
             <span class="keyword-card__name">{{ keyword.name }}</span>
           </div>
-          <div class="keyword-card__count">{{ keyword.count }} 篇笔记</div>
-          <div class="keyword-card__date">最后使用：{{ formatDate(keyword.lastUsed) }}</div>
+          <div class="keyword-card__count">
+            {{ keyword.count }} 篇笔记
+          </div>
+          <div class="keyword-card__date">
+            最后使用：{{ formatDate(keyword.lastUsed) }}
+          </div>
         </div>
       </div>
 
       <!-- 空状态 -->
-      <div v-if="filteredKeywords.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" opacity="0.3">
-          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+      <div
+        v-if="filteredKeywords.length === 0"
+        class="empty-state"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="64"
+          height="64"
+          fill="currentColor"
+          opacity="0.3"
+        >
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
         </svg>
         <p>暂无关键词</p>
-        <p class="empty-hint">关键词将从您的笔记中自动提取</p>
+        <p class="empty-hint">
+          关键词将从您的笔记中自动提取
+        </p>
       </div>
     </div>
 
     <!-- 侧边栏 - 关键词详情 -->
-    <div v-if="selectedKeyword" class="keyword-sidebar">
+    <div
+      v-if="selectedKeyword"
+      class="keyword-sidebar"
+    >
       <div class="sidebar-header">
         <div class="sidebar-title">
           <span
@@ -148,7 +213,12 @@
           ></span>
           <h3>{{ selectedKeyword.name }}</h3>
         </div>
-        <button @click="closeSidebar" class="sidebar-close">×</button>
+        <button
+          class="sidebar-close"
+          @click="closeSidebar"
+        >
+          ×
+        </button>
       </div>
       <div class="sidebar-content">
         <div class="stat-row">
@@ -171,8 +241,12 @@
               class="note-item"
               @click="handleNoteClick(note)"
             >
-              <div class="note-item__title">{{ note.title }}</div>
-              <div class="note-item__date">{{ formatDate(note.created) }}</div>
+              <div class="note-item__title">
+                {{ note.title }}
+              </div>
+              <div class="note-item__date">
+                {{ formatDate(note.created) }}
+              </div>
             </div>
           </div>
         </div>
@@ -182,43 +256,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import type { Card } from '../types/card';
+import type { Card } from '../types/card'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 
 interface Keyword {
-  id: string;
-  name: string;
-  color: string;
-  count: number;
-  firstUsed: number;
-  lastUsed: number;
-  notes: { id: string; title: string; created: number }[];
+  id: string
+  name: string
+  color: string
+  count: number
+  firstUsed: number
+  lastUsed: number
+  notes: { id: string, title: string, created: number }[]
 }
 
 interface KeywordGroup {
-  letter: string;
-  keywords: Keyword[];
+  letter: string
+  keywords: Keyword[]
 }
 
 interface Props {
-  cards: Card[];
+  cards: Card[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  cards: () => []
-});
+  cards: () => [],
+})
 
 const emit = defineEmits<{
-  (e: 'keyword-select', keyword: Keyword): void;
-  (e: 'note-click', note: { id: string; title: string }): void;
-}>();
+  (e: 'keyword-select', keyword: Keyword): void
+  (e: 'note-click', note: { id: string, title: string }): void
+}>()
 
 // 状态
-const viewMode = ref<'list' | 'cloud' | 'grid'>('list');
-const searchQuery = ref('');
-const colorFilter = ref('');
-const selectedKeyword = ref<Keyword | null>(null);
-const keywords = ref<Keyword[]>([]);
+const viewMode = ref<'list' | 'cloud' | 'grid'>('list')
+const searchQuery = ref('')
+const colorFilter = ref('')
+const selectedKeyword = ref<Keyword | null>(null)
+const keywords = ref<Keyword[]>([])
 
 // 颜色值映射
 const colorValues: Record<string, string> = {
@@ -228,26 +306,26 @@ const colorValues: Record<string, string> = {
   green: '#66bb6a',
   blue: '#42a5f5',
   purple: '#ab47bc',
-};
+}
 
 // 获取颜色值
 const getColorValue = (color: string): string => {
-  return colorValues[color] || colorValues.blue;
-};
+  return colorValues[color] || colorValues.blue
+}
 
 // 从卡片提取关键词
 const extractKeywords = (): Keyword[] => {
-  const keywordMap = new Map<string, Keyword>();
-  const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+  const keywordMap = new Map<string, Keyword>()
+  const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple']
 
-  props.cards.forEach(card => {
-    const content = card.content || card.front || '';
-    const tags = card.tags || [];
+  props.cards.forEach((card) => {
+    const content = card.content || card.front || ''
+    const tags = card.tags || []
 
     // 从标签提取
-    tags.forEach(tag => {
+    tags.forEach((tag) => {
       if (!keywordMap.has(tag)) {
-        const colorIndex = tag.length % colors.length;
+        const colorIndex = tag.length % colors.length
         keywordMap.set(tag, {
           id: `tag-${tag}`,
           name: tag,
@@ -256,27 +334,27 @@ const extractKeywords = (): Keyword[] => {
           firstUsed: card.created,
           lastUsed: card.updated,
           notes: [],
-        });
+        })
       }
 
-      const keyword = keywordMap.get(tag)!;
-      keyword.count++;
-      keyword.lastUsed = Math.max(keyword.lastUsed, card.updated);
-      keyword.firstUsed = Math.min(keyword.firstUsed, card.created);
+      const keyword = keywordMap.get(tag)!
+      keyword.count++
+      keyword.lastUsed = Math.max(keyword.lastUsed, card.updated)
+      keyword.firstUsed = Math.min(keyword.firstUsed, card.created)
       keyword.notes.push({
         id: card.id,
-        title: (card.content || card.front || '').slice(0, 30) + '...',
+        title: `${(card.content || card.front || '').slice(0, 30)}...`,
         created: card.created,
-      });
-    });
+      })
+    })
 
     // 从内容提取关键词（简单实现：2-4 字中文词组）
-    const matches = content.match(/[\u4e00-\u9fa5]{2,4}/g);
+    const matches = content.match(/[\u4E00-\u9FA5]{2,4}/g)
     if (matches) {
       // 限制提取数量
-      matches.slice(0, 10).forEach(match => {
+      matches.slice(0, 10).forEach((match) => {
         if (!keywordMap.has(match)) {
-          const colorIndex = match.length % colors.length;
+          const colorIndex = match.length % colors.length
           keywordMap.set(match, {
             id: `kw-${match}`,
             name: match,
@@ -285,73 +363,73 @@ const extractKeywords = (): Keyword[] => {
             firstUsed: card.created,
             lastUsed: card.updated,
             notes: [],
-          });
+          })
         }
 
-        const keyword = keywordMap.get(match)!;
-        keyword.count++;
-        keyword.lastUsed = Math.max(keyword.lastUsed, card.updated);
-        keyword.firstUsed = Math.min(keyword.firstUsed, card.created);
+        const keyword = keywordMap.get(match)!
+        keyword.count++
+        keyword.lastUsed = Math.max(keyword.lastUsed, card.updated)
+        keyword.firstUsed = Math.min(keyword.firstUsed, card.created)
         keyword.notes.push({
           id: card.id,
-          title: (card.content || card.front || '').slice(0, 30) + '...',
+          title: `${(card.content || card.front || '').slice(0, 30)}...`,
           created: card.created,
-        });
-      });
+        })
+      })
     }
-  });
+  })
 
-  return Array.from(keywordMap.values()).sort((a, b) => b.count - a.count);
-};
+  return Array.from(keywordMap.values()).sort((a, b) => b.count - a.count)
+}
 
 // 按字母分组
 const groupedKeywords = computed((): KeywordGroup[] => {
-  const groups: Map<string, Keyword[]> = new Map();
+  const groups: Map<string, Keyword[]> = new Map()
 
-  filteredKeywords.value.forEach(keyword => {
-    const letter = keyword.name[0].toUpperCase();
-    const key = letter.match(/[A-Z]/) ? letter : '#';
+  filteredKeywords.value.forEach((keyword) => {
+    const letter = keyword.name[0].toUpperCase()
+    const key = letter.match(/[A-Z]/) ? letter : '#'
 
     if (!groups.has(key)) {
-      groups.set(key, []);
+      groups.set(key, [])
     }
-    groups.get(key)!.push(keyword);
-  });
+    groups.get(key)!.push(keyword)
+  })
 
   return Array.from(groups.entries())
     .map(([letter, keywords]) => ({
       letter,
       keywords: keywords.sort((a, b) => a.name.localeCompare(b.name)),
     }))
-    .sort((a, b) => a.letter.localeCompare(b.letter));
-});
+    .sort((a, b) => a.letter.localeCompare(b.letter))
+})
 
 // 过滤后的关键词
 const filteredKeywords = computed(() => {
-  let result = keywords.value;
+  let result = keywords.value
 
   // 搜索过滤
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(k => k.name.toLowerCase().includes(query));
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter((k) => k.name.toLowerCase().includes(query))
   }
 
   // 颜色过滤
   if (colorFilter.value) {
-    result = result.filter(k => k.color === colorFilter.value);
+    result = result.filter((k) => k.color === colorFilter.value)
   }
 
-  return result;
-});
+  return result
+})
 
 // 获取字体大小（词云用）
 const getFontSize = (count: number): number => {
-  const maxCount = Math.max(...keywords.value.map(k => k.count), 1);
-  const minSize = 14;
-  const maxSize = 36;
-  const ratio = count / maxCount;
-  return minSize + (maxSize - minSize) * ratio;
-};
+  const maxCount = Math.max(...keywords.value.map((k) => k.count), 1)
+  const minSize = 14
+  const maxSize = 36
+  const ratio = count / maxCount
+  return minSize + (maxSize - minSize) * ratio
+}
 
 // 格式化日期
 const formatDate = (timestamp: number): string => {
@@ -359,29 +437,32 @@ const formatDate = (timestamp: number): string => {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  });
-};
+  })
+}
 
 // 处理关键词点击
 const handleKeywordClick = (keyword: Keyword) => {
-  selectedKeyword.value = keyword;
-  emit('keyword-select', keyword);
-};
+  selectedKeyword.value = keyword
+  emit('keyword-select', keyword)
+}
 
 // 处理笔记点击
-const handleNoteClick = (note: { id: string; title: string }) => {
-  emit('note-click', note);
-};
+const handleNoteClick = (note: { id: string, title: string }) => {
+  emit('note-click', note)
+}
 
 // 关闭侧边栏
 const closeSidebar = () => {
-  selectedKeyword.value = null;
-};
+  selectedKeyword.value = null
+}
 
 // 监听数据变化
 watch(() => props.cards, () => {
-  keywords.value = extractKeywords();
-}, { immediate: true, deep: true });
+  keywords.value = extractKeywords()
+}, {
+  immediate: true,
+  deep: true,
+})
 </script>
 
 <style scoped lang="scss">

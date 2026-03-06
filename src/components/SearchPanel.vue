@@ -1,10 +1,22 @@
 <!-- src/components/SearchPanel.vue -->
 <template>
-  <div class="search-panel" :class="{ 'panel-open': isOpen }">
+  <div
+    class="search-panel"
+    :class="{ 'panel-open': isOpen }"
+  >
     <!-- 搜索面板切换按钮 -->
-    <button class="search-toggle-btn" @click="togglePanel" :title="isOpen ? '关闭搜索' : '搜索 (Ctrl+F)'">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    <button
+      class="search-toggle-btn"
+      :title="isOpen ? '关闭搜索' : '搜索 (Ctrl+F)'"
+      @click="togglePanel"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="currentColor"
+      >
+        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
       </svg>
     </button>
 
@@ -13,8 +25,14 @@
       <!-- 搜索输入区 -->
       <div class="search-input-area">
         <div class="search-input-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <svg
+            class="search-icon"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
           <input
             ref="searchInputRef"
@@ -27,13 +45,25 @@
             @keydown.shift.enter="goToPrevResult"
             @keydown.escape="closePanel"
           />
-          <button v-if="searchQuery" @click="clearSearch" class="clear-btn">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          <button
+            v-if="searchQuery"
+            class="clear-btn"
+            @click="clearSearch"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="currentColor"
+            >
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
           </button>
         </div>
-        <div class="search-result-count" v-if="searchResults.length > 0">
+        <div
+          v-if="searchResults.length > 0"
+          class="search-result-count"
+        >
           {{ currentResultIndex + 1 }} / {{ searchResults.length }}
         </div>
       </div>
@@ -41,35 +71,60 @@
       <!-- 搜索选项 -->
       <div class="search-options">
         <label class="search-option">
-          <input type="checkbox" v-model="searchOptions.caseSensitive" />
+          <input
+            v-model="searchOptions.caseSensitive"
+            type="checkbox"
+          />
           <span>区分大小写</span>
         </label>
         <label class="search-option">
-          <input type="checkbox" v-model="searchOptions.wholeWord" />
+          <input
+            v-model="searchOptions.wholeWord"
+            type="checkbox"
+          />
           <span>全字匹配</span>
         </label>
         <label class="search-option">
-          <input type="checkbox" v-model="searchOptions.useRegex" />
+          <input
+            v-model="searchOptions.useRegex"
+            type="checkbox"
+          />
           <span>正则表达式</span>
         </label>
       </div>
 
       <!-- 搜索结果列表 -->
-      <div class="search-results-list" ref="resultsListRef">
-        <div v-if="isSearching" class="search-loading">
+      <div
+        ref="resultsListRef"
+        class="search-results-list"
+      >
+        <div
+          v-if="isSearching"
+          class="search-loading"
+        >
           <div class="b3-spin"></div>
           <span>搜索中...</span>
         </div>
-        <div v-else-if="searchResults.length === 0 && searchQuery" class="search-no-results">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" opacity="0.3">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        <div
+          v-else-if="searchResults.length === 0 && searchQuery"
+          class="search-no-results"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="32"
+            height="32"
+            fill="currentColor"
+            opacity="0.3"
+          >
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
           <p>未找到匹配内容</p>
         </div>
         <div
           v-for="(result, index) in searchResults"
           :key="result.id"
-          :class="['search-result-item', { active: index === currentResultIndex }]"
+          class="search-result-item"
+          :class="[{ active: index === currentResultIndex }]"
           @click="selectResult(result)"
         >
           <div class="result-header">
@@ -80,24 +135,48 @@
             <span v-html="highlightMatch(result.text)"></span>
           </div>
           <div class="result-meta">
-            <span class="result-type" :class="result.type">{{ getTypeLabel(result.type) }}</span>
+            <span
+              class="result-type"
+              :class="result.type"
+            >{{ getTypeLabel(result.type) }}</span>
             <span class="result-date">{{ formatDate(result.createdAt) }}</span>
           </div>
         </div>
       </div>
 
       <!-- 导航按钮 -->
-      <div class="search-navigation" v-if="searchResults.length > 0">
-        <button @click="goToPrevResult" class="nav-btn" title="上一个 (Shift+Enter)">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M7.41 15.41L12 10.83l4.59 4.59L18 14l-6-6-6 6z"/>
+      <div
+        v-if="searchResults.length > 0"
+        class="search-navigation"
+      >
+        <button
+          class="nav-btn"
+          title="上一个 (Shift+Enter)"
+          @click="goToPrevResult"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M7.41 15.41L12 10.83l4.59 4.59L18 14l-6-6-6 6z" />
           </svg>
           上一个
         </button>
-        <button @click="goToNextResult" class="nav-btn" title="下一个 (Enter)">
+        <button
+          class="nav-btn"
+          title="下一个 (Enter)"
+          @click="goToNextResult"
+        >
           下一个
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M7.41 8.59L12 13.17l4.59-4.59L18 10l-6 6-6-6z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M7.41 8.59L12 13.17l4.59-4.59L18 10l-6 6-6-6z" />
           </svg>
         </button>
       </div>
@@ -106,131 +185,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import type { Card } from '../types/card';
-import { cardService } from '../services/cardService';
-import { globalSearchService } from '../services/globalSearchService';
-import { searchHistoryService, addSearchHistory } from '../services/searchHistoryService';
-import type { SearchHistoryItem, GlobalSearchResult, SearchResultItem } from '../types/search';
+import type { Card } from '../types/card'
+
+
+import {
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import { cardService } from '../services/cardService'
+
+
 
 interface SearchResult {
-  id: string;
-  text: string;
-  title?: string;
-  page: number;
-  type: string;
-  createdAt: number;
-  matchIndex: number;
+  id: string
+  text: string
+  title?: string
+  page: number
+  type: string
+  createdAt: number
+  matchIndex: number
 }
 
 interface SearchOptions {
-  caseSensitive: boolean;
-  wholeWord: boolean;
-  useRegex: boolean;
+  caseSensitive: boolean
+  wholeWord: boolean
+  useRegex: boolean
 }
 
 const props = defineProps<{
-  studySetId?: string;
-  cards?: Card[];
-}>();
+  studySetId?: string
+  cards?: Card[]
+}>()
 
 const emit = defineEmits<{
-  (e: 'result-select', result: SearchResult): void;
-  (e: 'navigate-to', page: number, cardId: string): void;
-}>();
+  (e: 'result-select', result: SearchResult): void
+  (e: 'navigate-to', page: number, cardId: string): void
+}>()
 
 // 状态
-const isOpen = ref(false);
-const searchQuery = ref('');
-const searchResults = ref<SearchResult[]>([]);
-const currentResultIndex = ref(0);
-const isSearching = ref(false);
+const isOpen = ref(false)
+const searchQuery = ref('')
+const searchResults = ref<SearchResult[]>([])
+const currentResultIndex = ref(0)
+const isSearching = ref(false)
 const searchOptions = ref<SearchOptions>({
   caseSensitive: false,
   wholeWord: false,
   useRegex: false,
-});
+})
 
-const searchInputRef = ref<HTMLInputElement>();
-const resultsListRef = ref<HTMLDivElement>();
+const searchInputRef = ref<HTMLInputElement>()
+const resultsListRef = ref<HTMLDivElement>()
 
 // 切换面板
 const togglePanel = () => {
-  isOpen.value = !isOpen.value;
+  isOpen.value = !isOpen.value
   if (isOpen.value) {
     nextTick(() => {
-      searchInputRef.value?.focus();
-    });
+      searchInputRef.value?.focus()
+    })
   }
-};
+}
 
 // 关闭面板
 const closePanel = () => {
-  isOpen.value = false;
-};
+  isOpen.value = false
+}
 
 // 清除搜索
 const clearSearch = () => {
-  searchQuery.value = '';
-  searchResults.value = [];
-  currentResultIndex.value = 0;
-  searchInputRef.value?.focus();
-};
+  searchQuery.value = ''
+  searchResults.value = []
+  currentResultIndex.value = 0
+  searchInputRef.value?.focus()
+}
 
 // 处理搜索输入
 const handleSearchInput = () => {
   if (!searchQuery.value.trim()) {
-    searchResults.value = [];
-    currentResultIndex.value = 0;
-    return;
+    searchResults.value = []
+    currentResultIndex.value = 0
+    return
   }
-  performSearch();
-};
+  performSearch()
+}
 
 // 执行搜索
 const performSearch = async () => {
-  isSearching.value = true;
+  isSearching.value = true
 
   // 防抖
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise((resolve) => setTimeout(resolve, 300))
 
   try {
-    let cardsToSearch = props.cards || [];
+    let cardsToSearch = props.cards || []
 
     // 如果没有传入卡片，从服务获取
     if (cardsToSearch.length === 0 && props.studySetId) {
-      cardsToSearch = await cardService.getCardsByStudySetId(props.studySetId);
+      cardsToSearch = await cardService.getCardsByStudySetId(props.studySetId)
     }
 
-    const query = searchQuery.value.trim();
-    const options = searchOptions.value;
+    const query = searchQuery.value.trim()
+    const options = searchOptions.value
 
     // 构建正则表达式
-    let pattern: RegExp;
+    let pattern: RegExp
     try {
-      const flags = options.caseSensitive ? 'g' : 'gi';
+      const flags = options.caseSensitive ? 'g' : 'gi'
       if (options.useRegex) {
-        pattern = new RegExp(query, flags);
+        pattern = new RegExp(query, flags)
       } else {
         // 转义特殊字符
-        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         if (options.wholeWord) {
-          pattern = new RegExp(`\\b${escaped}\\b`, flags);
+          pattern = new RegExp(`\\b${escaped}\\b`, flags)
         } else {
-          pattern = new RegExp(escaped, flags);
+          pattern = new RegExp(escaped, flags)
         }
       }
     } catch (e) {
       // 正则表达式无效，使用普通搜索
-      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      pattern = new RegExp(escaped, options.caseSensitive ? 'g' : 'gi');
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      pattern = new RegExp(escaped, options.caseSensitive ? 'g' : 'gi')
     }
 
-    const results: SearchResult[] = [];
+    const results: SearchResult[] = []
 
     for (const card of cardsToSearch) {
-      const text = card.content || '';
-      const match = pattern.exec(text);
+      const text = card.content || ''
+      const match = pattern.exec(text)
 
       if (match) {
         results.push({
@@ -241,51 +326,51 @@ const performSearch = async () => {
           type: card.type,
           createdAt: card.createdAt,
           matchIndex: match.index,
-        });
+        })
       }
     }
 
-    searchResults.value = results;
-    currentResultIndex.value = 0;
+    searchResults.value = results
+    currentResultIndex.value = 0
   } catch (error) {
-    console.error('搜索失败:', error);
-    searchResults.value = [];
+    console.error('搜索失败:', error)
+    searchResults.value = []
   } finally {
-    isSearching.value = false;
+    isSearching.value = false
   }
-};
+}
 
 // 获取卡片标题
 const getCardTitle = (card: Card): string => {
   if (card.type === 'flashcard') {
-    return (card as any).front || '闪卡';
+    return (card as any).front || '闪卡'
   }
-  return '卡片';
-};
+  return '卡片'
+}
 
 // 截断文本
 const truncateText = (text: string, maxLength: number): string => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-};
+  if (text.length <= maxLength) return text
+  return `${text.substring(0, maxLength)}...`
+}
 
 // 高亮匹配内容
 const highlightMatch = (text: string): string => {
-  if (!searchQuery.value) return text;
+  if (!searchQuery.value) return text
 
   try {
-    const flags = searchOptions.value.caseSensitive ? 'g' : 'gi';
+    const flags = searchOptions.value.caseSensitive ? 'g' : 'gi'
     const pattern = new RegExp(
       searchOptions.value.useRegex
         ? searchQuery.value
         : searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-      flags
-    );
-    return text.replace(pattern, '<mark>$&</mark>');
+      flags,
+    )
+    return text.replace(pattern, '<mark>$&</mark>')
   } catch (e) {
-    return text;
+    return text
   }
-};
+}
 
 // 获取类型标签
 const getTypeLabel = (type: string): string => {
@@ -294,84 +379,90 @@ const getTypeLabel = (type: string): string => {
     flashcard: '闪卡',
     excerpt: '摘录',
     handwriting: '手写',
-  };
-  return labels[type] || type;
-};
+  }
+  return labels[type] || type
+}
 
 // 格式化日期
 const formatDate = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
   if (days === 0) {
-    return '今天';
+    return '今天'
   } else if (days === 1) {
-    return '昨天';
+    return '昨天'
   } else if (days < 7) {
-    return `${days}天前`;
+    return `${days}天前`
   } else {
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('zh-CN', {
+      month: 'short',
+      day: 'numeric',
+    })
   }
-};
+}
 
 // 选择结果
 const selectResult = (result: SearchResult) => {
-  emit('result-select', result);
-  emit('navigate-to', result.page, result.id);
-};
+  emit('result-select', result)
+  emit('navigate-to', result.page, result.id)
+}
 
 // 上一个结果
 const goToPrevResult = () => {
-  if (searchResults.value.length === 0) return;
-  currentResultIndex.value = Math.max(0, currentResultIndex.value - 1);
-  scrollToResult(currentResultIndex.value);
-};
+  if (searchResults.value.length === 0) return
+  currentResultIndex.value = Math.max(0, currentResultIndex.value - 1)
+  scrollToResult(currentResultIndex.value)
+}
 
 // 下一个结果
 const goToNextResult = () => {
-  if (searchResults.value.length === 0) return;
-  currentResultIndex.value = Math.min(searchResults.value.length - 1, currentResultIndex.value + 1);
-  scrollToResult(currentResultIndex.value);
-};
+  if (searchResults.value.length === 0) return
+  currentResultIndex.value = Math.min(searchResults.value.length - 1, currentResultIndex.value + 1)
+  scrollToResult(currentResultIndex.value)
+}
 
 // 滚动到结果
 const scrollToResult = (index: number) => {
   nextTick(() => {
-    const resultsList = resultsListRef.value;
-    if (!resultsList) return;
+    const resultsList = resultsListRef.value
+    if (!resultsList) return
 
-    const items = resultsList.querySelectorAll('.search-result-item');
-    const item = items[index] as HTMLElement;
-    if (!item) return;
+    const items = resultsList.querySelectorAll('.search-result-item')
+    const item = items[index] as HTMLElement
+    if (!item) return
 
-    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  });
-};
+    item.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    })
+  })
+}
 
 // 键盘快捷键
 const handleKeyDown = (e: KeyboardEvent) => {
   // Ctrl/Cmd + F 打开搜索
   if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-    e.preventDefault();
-    togglePanel();
+    e.preventDefault()
+    togglePanel()
   }
 
   // Escape 关闭搜索
   if (e.key === 'Escape' && isOpen.value) {
-    e.preventDefault();
-    closePanel();
+    e.preventDefault()
+    closePanel()
   }
-};
+}
 
 onMounted(() => {
-  document.addEventListener('keydown', handleKeyDown);
-});
+  document.addEventListener('keydown', handleKeyDown)
+})
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeyDown);
-});
+  document.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <style scoped>

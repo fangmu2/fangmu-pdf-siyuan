@@ -1,6 +1,6 @@
 # 模块 3：脑图/大纲视图
 
-> 完成度：**97%** | 状态：🔄 v1.2.39 Bug 修复中
+> 完成度：**99%** | 状态：✅ v1.2.40 MarginNote4 核心功能已完成
 
 ---
 
@@ -149,22 +149,23 @@
 
 ---
 
-### v1.2.40 - MarginNote4 思维导图核心功能仿照 🔄 进行中
+### v1.2.40 - MarginNote4 思维导图核心功能仿照 ✅ 已完成
 
-**完成时间**: 2026-03-XX (规划中)
-**第一阶段完成时间**: 2026-03-02 ✅
+**完成时间**: 2026-03-02
 
 **需求分析**：
 根据用户反馈和 MarginNote4 功能对比，当前思维导图缺少以下核心功能：
 
-**当前问题**：
+**已完成功能**：
 1. ✅ 节点无法展开/折叠（只有折叠状态）- 第一阶段已解决
-2. ❌ 节点无法缩放/放大
-3. ❌ 无法拖拽叠加（卡片不能重叠放置）
+2. ✅ 节点无法缩放/放大 - 第二阶段已完成
+3. ✅ 无法拖拽叠加（卡片不能重叠放置）- 第二阶段已完成
 4. ✅ 无法建立父子节点关系 - 第一阶段已解决
-5. ❌ 无法合并节点
+5. ✅ 无法合并节点 - 第二阶段已完成
 6. ✅ 缺少节点层级结构显示 - 第一阶段已解决
 7. ✅ 无法通过拖拽创建关联 - 第一阶段已解决
+8. ✅ 跨分支关联（虚线）- 第三阶段已完成
+9. ✅ 关联线编辑（颜色/样式/标签）- 第三阶段已完成
 
 **MarginNote4 核心功能列表**：
 
@@ -176,8 +177,8 @@
 | 节点操作 | 合并节点 | 多个节点可合并为一个 | ✅ 第二阶段 |
 | 节点操作 | 拆分节点 | 一个节点可拆分为多个 | ✅ 第二阶段 |
 | 关系建立 | 父子关系 | 拖拽创建父子关系 | ✅ 第一阶段 |
-| 关系建立 | 跨分支关联 | 创建跨分支的虚线关联 | 🔄 第三阶段 |
-| 关系建立 | 关联线编辑 | 编辑关联线颜色/样式 | 🔄 第三阶段 |
+| 关系建立 | 跨分支关联 | 创建跨分支的虚线关联 | ✅ 第三阶段 |
+| 关系建立 | 关联线编辑 | 编辑关联线颜色/样式/标签 | ✅ 第三阶段 |
 | 视图操作 | 缩放画布 | 鼠标滚轮/双指缩放 | ✅ 已有 |
 | 视图操作 | 平移画布 | 拖拽空白区域平移 | ✅ 已有 |
 | 视图操作 | 适应视图 | 一键显示所有节点 | ✅ 已有 |
@@ -194,17 +195,17 @@
   - [x] 存储展开/折叠状态
   - [ ] 动画过渡效果
 
-- [ ] **2. 节点缩放功能** ✅ 第二阶段
-  - [ ] 添加缩放控制点
-  - [ ] 实现拖拽缩放逻辑
-  - [ ] 限制最小/最大尺寸
-  - [ ] 内容自适应布局
+- [x] **2. 节点缩放功能** ✅ 第二阶段
+  - [x] 添加缩放控制点
+  - [x] 实现拖拽缩放逻辑
+  - [x] 限制最小/最大尺寸
+  - [x] 内容自适应布局
 
-- [ ] **3. 拖拽叠加功能** ✅ 第二阶段
-  - [ ] 修改节点碰撞检测
-  - [ ] 允许节点重叠放置
-  - [ ] 叠加视觉反馈
-  - [ ] 叠加层级管理
+- [x] **3. 拖拽叠加功能** ✅ 第二阶段
+  - [x] 修改节点碰撞检测
+  - [x] 允许节点重叠放置
+  - [x] 叠加视觉反馈
+  - [x] 叠加层级管理
 
 - [x] **4. 父子关系建立** ✅ 第一阶段
   - [x] 拖拽创建连线
@@ -212,35 +213,236 @@
   - [x] 关系线渲染（实线）
   - [x] 关系删除功能
 
-- [ ] **5. 节点合并/拆分** ✅ 第二阶段
-  - [ ] 多选节点合并
-  - [ ] 合并后内容处理
-  - [ ] 拆分节点功能
-  - [ ] 合并/拆分动画
+- [x] **5. 节点合并/拆分** ✅ 第二阶段
+  - [x] 多选节点合并
+  - [x] 合并后内容处理
+  - [x] 拆分节点功能
+  - [x] 合并/拆分动画
 
-- [ ] **6. 跨分支关联** 🔄 第三阶段
-  - [ ] 跨分支关联数据结构
-  - [ ] 虚线关联渲染
-  - [ ] 关联标签/注释
-  - [ ] 关联跳转功能
+- [x] **6. 跨分支关联** ✅ 第三阶段
+  - [x] 跨分支关联数据结构
+  - [x] 虚线关联渲染
+  - [x] 关联标签/注释
+  - [x] 关联跳转功能
+  - [x] 关联线编辑（颜色/样式/宽度）
 
-- [ ] **7. 布局优化** 🔄 第三阶段
+- [ ] **7. 布局优化** 🔄 第四阶段（规划中）
   - [ ] 树状布局算法
   - [ ] 垂直/水平布局
   - [ ] 自由布局模式
   - [ ] 布局切换动画
 
 **技术难点**：
-1. 节点层级关系管理（需要修改数据结构）- ✅ 第一阶段已解决
-2. 拖拽叠加与连线的冲突处理
-3. 展开/折叠状态持久化
-4. 合并/拆分操作的数据一致性
+1. ✅ 节点层级关系管理（需要修改数据结构）- 第一阶段已解决
+2. ✅ 拖拽叠加与连线的冲突处理 - 第二阶段已解决
+3. ✅ 展开/折叠状态持久化 - 第一阶段已解决
+4. ✅ 合并/拆分操作的数据一致性 - 第二阶段已解决
+5. ✅ 跨分支关联与父子连线的区分 - 第三阶段已解决
 
-**预计工作量**：约 40-60 小时
+**实现成果**：
+
+**新增文件（2 个）**:
+1. `src/components/MindMapFreeCanvas/EdgeEditDialog.vue` (285 行) - 关联线编辑对话框
+2. `src/components/MindMapFreeCanvas/EdgeContextMenu.vue` (198 行) - 关联线右键菜单
+
+**修改文件（3 个）**:
+1. `src/stores/freeMindMapStore.ts` - 添加 `updateCrossBranchLink` 方法
+2. `src/services/freeMindMapService.ts` - 添加关联保存逻辑
+3. `src/components/MindMapFreeCanvas/FreeCanvasViewer.vue` - 集成关联线编辑功能
+
+**核心功能实现**:
+
+| 功能 | 实现方式 | 状态 |
+|------|---------|------|
+| **虚线 Edge 渲染** | `crossLinkEdges` computed 属性转换 `CrossBranchLink` 为 Vue Flow Edge，设置 `strokeDasharray: '5,5'` | ✅ |
+| **区分连线类型** | 父子关系 = 实线，跨分支关联 = 红色虚线 (#FF6B6B) | ✅ |
+| **关联标签显示** | Edge 的 `label` 属性显示关联说明，带背景高亮 | ✅ |
+| **点击选中** | `onEdgeClick` 处理跨分支关联选中，高亮显示（strokeWidth: 3 + 阴影） | ✅ |
+| **右键菜单** | `onEdgeContextMenu` 打开关联右键菜单，支持快速编辑和删除 | ✅ |
+| **关联编辑对话框** | `EdgeEditDialog` 组件提供完整编辑功能（颜色/样式/宽度/标签/箭头） | ✅ |
+| **实时更新** | 修改后立即应用到画布，并保存到思源块属性 | ✅ |
+
+**视觉效果**:
+- **虚线样式**: `strokeDasharray: 5,5`
+- **默认颜色**: 红色 (#FF6B6B) 区分于普通父子连线
+- **悬停效果**: 变粗 + 颜色变亮
+- **选中效果**: 加粗 + 发光阴影
+- **标签**: 带背景色的关联说明文字
+
+**UI 设计特点**:
+- **颜色选择器**: 8 种预设颜色 + 自定义颜色选择
+- **线型选择器**: 4 种样式（实线/虚线/点线/点划线）
+- **线宽滑块**: 1-5px 可调
+- **标签输入框**: 支持输入关联说明
+- **箭头开关**: 控制是否显示箭头
+- **实时预览**: 修改时实时显示效果
+
+**构建验证**:
+```bash
+pnpm build
+✓ 135 modules transformed.
+✓ built in 2.98s
+```
+
+**预计工作量**: 约 36-40 小时（实际完成）
+
+**相关文档**: [TODO_PDF.md](./TODO_PDF.md) - v1.2.40
 
 ---
 
-### v1.2.40 第二阶段 - 节点缩放与合并/拆分 ✅ 已完成
+### v1.2.41 - 阶段一：核心体验完善 🔄 规划中
+
+**完成时间**: 2026-03-XX（规划中）
+
+**需求分析**：
+根据 MarginNote4 功能对比，当前思维导图还缺少以下核心交互功能：
+
+**待开发功能**：
+
+**MarginNote4 核心功能列表**：
+
+| 功能类别 | 功能点 | 描述 | 状态 |
+|----------|--------|------|------|
+| 节点操作 | 多选框选 | 框选多个节点进行批量操作 | 🔄 待开发 |
+| 节点操作 | 节点旋转 | 卡片节点可旋转角度（0-360°） | 🔄 待开发 |
+| 布局 | 布局切换动画 | 平滑的布局过渡动画 | 🔄 待开发 |
+
+**开发计划**：
+
+- [x] **1. 多选框选功能** ✅ 阶段一
+  - [x] 框选区域渲染（蓝色半透明矩形）
+  - [x] 框选节点检测算法
+  - [x] 批量选择/取消选择
+  - [x] 框选后批量操作（移动/删除/合并）
+  - [x] Esc 键取消选择
+  - **实现版本**: v1.2.41
+  - **修改文件**: `FreeCanvasViewer.vue`
+
+- [ ] **2. 节点旋转功能** 🔄 阶段一（实现中）
+  - [x] 旋转控制手柄（节点右上角）
+  - [x] 拖拽旋转逻辑（0-360°）
+  - [x] 旋转角度吸附（15°倍数）
+  - [ ] 旋转数据持久化
+  - [ ] 双击重置旋转角度
+  - **预计工时**: 4-6 小时（剩余 1-2 小时）
+
+- [x] **3. 布局切换动画** ✅ 阶段一
+  - [x] CSS 过渡动画（opacity + transform）
+  - [x] 节点进入动画（nodeEnter）
+  - [x] 节点离开动画（nodeLeave）
+  - [x] 连线动画（stroke-dashoffset）
+  - [x] 画布缩放动画
+  - [x] 动画性能优化（will-change）
+  - [x] 无障碍支持（prefers-reduced-motion）
+  - **实现版本**: v1.2.41
+  - **修改文件**: `FreeCanvasViewer.vue`（样式部分）
+
+**技术难点**：
+1. 框选区域与节点的碰撞检测
+2. 旋转角度计算和吸附
+3. 动画与性能的平衡
+
+**预计工作量**: 约 18-24 小时
+
+**技术实现方案**：
+
+#### 1. 多选框选实现
+```typescript
+// 框选状态
+const selectionBox = ref({
+  startX: 0,
+  startY: 0,
+  width: 0,
+  height: 0,
+  visible: false
+})
+
+// 碰撞检测
+function isNodeInSelection(node: FreeMindMapNode, box: SelectionBox): boolean {
+  const nodeBounds = getNodeBounds(node)
+  return box.x < nodeBounds.right &&
+         box.x + box.width > nodeBounds.left &&
+         box.y < nodeBounds.bottom &&
+         box.y + box.height > nodeBounds.top
+}
+
+// 批量选择
+function selectNodesInBox() {
+  const selectedNodes = nodes.value.filter(node => 
+    isNodeInSelection(node, selectionBox.value)
+  )
+  selectedNodes.forEach(node => {
+    store.selectNode(node.id, true)
+  })
+}
+```
+
+#### 2. 节点旋转实现
+```typescript
+// 旋转状态
+const rotation = {
+  isRotating: false,
+  startAngle: 0,
+  currentNode: null
+}
+
+// 角度计算
+function calculateRotationAngle(
+  centerX: number,
+  centerY: number,
+  mouseX: number,
+  mouseY: number
+): number {
+  const rad = Math.atan2(mouseY - centerY, mouseX - centerX)
+  let deg = rad * (180 / Math.PI) + 90
+  // 吸附到 15°倍数
+  return Math.round(deg / 15) * 15
+}
+
+// 更新节点旋转
+function updateNodeRotation(nodeId: string, angle: number) {
+  const node = nodes.value.find(n => n.id === nodeId)
+  if (node) {
+    node.data.rotation = angle
+    node.style = {
+      ...node.style,
+      transform: `rotate(${angle}deg)`
+    }
+  }
+}
+```
+
+#### 3. 布局切换动画实现
+```scss
+// CSS 过渡动画
+.node-transition {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease;
+}
+
+.node-enter-active {
+  animation: nodeEnter 0.3s ease-out;
+}
+
+.node-leave-active {
+  animation: nodeLeave 0.3s ease-in;
+}
+
+@keyframes nodeEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+```
+
+---
+
+### v1.2.39 - 思维导图显示 Bug 修复与 MarginNote4 界面仿照 ✅ 已完成
 
 **完成时间**: 2026-03-02
 

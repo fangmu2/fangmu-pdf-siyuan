@@ -243,7 +243,105 @@
     "rootNode": "Central Topic",
     "mainTopic": "Main Topic",
     "subTopic": "Sub Topic",
-    "floatingNode": "Floating Node"
+    "floatingNode": "Floating Node",
+    "untitled": "Untitled",
+    "search": {
+      "placeholder": "Search nodes...",
+      "caseSensitive": "Case Sensitive",
+      "wholeWord": "Whole Word",
+      "regex": "Regular Expression",
+      "searchIn": "Search In",
+      "fields": {
+        "title": "Title",
+        "content": "Content",
+        "note": "Note",
+        "tag": "Tag"
+      },
+      "searching": "Searching...",
+      "results": "Found {count} nodes, {total} matches",
+      "previous": "Previous",
+      "next": "Next",
+      "history": "Search History",
+      "clearHistory": "Clear History",
+      "empty": "Enter keywords to search",
+      "noResults": "No results found"
+    },
+    "filter": {
+      "title": "Filter",
+      "activeFilters": "Active Filters",
+      "addFilter": "Add Filter",
+      "addFilterBtn": "Add",
+      "clearAll": "Clear All",
+      "field": "Field",
+      "operator": "Operator",
+      "value": "Value",
+      "fields": {
+        "tag": "Tag",
+        "page": "Page",
+        "color": "Color",
+        "status": "Status",
+        "annotation": "Annotation"
+      },
+      "operators": {
+        "equals": "Equals",
+        "notEquals": "Not Equals",
+        "contains": "Contains",
+        "notContains": "Not Contains",
+        "greaterThan": "Greater Than",
+        "lessThan": "Less Than",
+        "in": "In",
+        "notIn": "Not In"
+      },
+      "placeholder": {
+        "tag": "Enter tag name",
+        "page": "Enter page number"
+      },
+      "status": {
+        "new": "New",
+        "learning": "Learning",
+        "reviewing": "Reviewing",
+        "mastered": "Mastered"
+      },
+      "annotation": {
+        "with": "With Annotation",
+        "without": "Without Annotation"
+      },
+      "stats": {
+        "total": "Total Nodes",
+        "filtered": "Filtered Nodes",
+        "hidden": "Hidden Nodes"
+      },
+      "tags": "Tags",
+      "pages": "Pages",
+      "searchTagPlaceholder": "Search tags...",
+      "noTagsFound": "No matching tags"
+    },
+    "node": {
+      "edit": "Edit Node",
+      "delete": "Delete Node",
+      "duplicate": "Duplicate Node",
+      "addGroup": "Add to Group",
+      "createLink": "Create Link",
+      "deleteLink": "Delete Link",
+      "color": "Node Color",
+      "style": "Node Style",
+      "tags": "Tags",
+      "addTag": "Add Tag",
+      "note": "Note",
+      "page": "Page"
+    },
+    "freeCanvas": {
+      "title": "Free Canvas",
+      "clearCanvas": "Clear Canvas",
+      "autoLayout": "Auto Layout",
+      "fitContent": "Fit Content",
+      "gridSize": "Grid Size",
+      "showGrid": "Show Grid",
+      "snapToGrid": "Snap to Grid",
+      "selectionTool": "Selection Tool",
+      "handTool": "Hand Tool",
+      "zoomTool": "Zoom Tool"
+    }
   },
   "pdf": {
     "title": "PDF",

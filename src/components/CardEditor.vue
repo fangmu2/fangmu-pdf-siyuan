@@ -4,13 +4,15 @@
     <div class="card-editor__header">
       <div class="card-editor__type-tabs">
         <button
-          :class="['card-editor__tab', { active: modelValue.type === 'card' }]"
+          class="card-editor__tab"
+          :class="[{ active: modelValue.type === 'card' }]"
           @click="switchType('card')"
         >
           普通卡片
         </button>
         <button
-          :class="['card-editor__tab', { active: modelValue.type === 'flashcard' }]"
+          class="card-editor__tab"
+          :class="[{ active: modelValue.type === 'flashcard' }]"
           @click="switchType('flashcard')"
         >
           闪卡
@@ -18,10 +20,16 @@
       </div>
 
       <div class="card-editor__actions">
-        <button class="card-editor__action-btn" @click="handleSave">
+        <button
+          class="card-editor__action-btn"
+          @click="handleSave"
+        >
           保存
         </button>
-        <button class="card-editor__action-btn card-editor__action-btn--danger" @click="handleDelete">
+        <button
+          class="card-editor__action-btn card-editor__action-btn--danger"
+          @click="handleDelete"
+        >
           删除
         </button>
       </div>
@@ -78,7 +86,10 @@
         </div>
 
         <!-- SRS 状态显示 -->
-        <div v-if="isFlashCard(modelValue)" class="card-editor__srs-status">
+        <div
+          v-if="isFlashCard(modelValue)"
+          class="card-editor__srs-status"
+        >
           <div class="srs-status__item">
             <span class="srs-status__label">间隔</span>
             <span class="srs-status__value">{{ modelValue.srs.interval }} 天</span>
@@ -109,7 +120,10 @@
               class="tag-input__tag"
             >
               {{ tag }}
-              <button class="tag-input__remove" @click="removeTag(index)">×</button>
+              <button
+                class="tag-input__remove"
+                @click="removeTag(index)"
+              >×</button>
             </span>
             <input
               v-model="tagInput"
@@ -125,11 +139,22 @@
       <div class="card-editor__row">
         <div class="card-editor__field card-editor__field--half">
           <label class="card-editor__label">状态</label>
-          <select v-model="statusDraft" class="card-editor__select">
-            <option value="new">新卡片</option>
-            <option value="learning">学习中</option>
-            <option value="review">复习中</option>
-            <option value="suspended">已暂停</option>
+          <select
+            v-model="statusDraft"
+            class="card-editor__select"
+          >
+            <option value="new">
+              新卡片
+            </option>
+            <option value="learning">
+              学习中
+            </option>
+            <option value="review">
+              复习中
+            </option>
+            <option value="suspended">
+              已暂停
+            </option>
           </select>
         </div>
 
@@ -139,7 +164,8 @@
             <button
               v-for="i in 5"
               :key="i"
-              :class="['card-editor__difficulty-btn', { active: difficultyDraft >= i }]"
+              class="card-editor__difficulty-btn"
+              :class="[{ active: difficultyDraft >= i }]"
               @click="difficultyDraft = i"
             >
               {{ i }}
@@ -150,51 +176,62 @@
     </div>
 
     <!-- 来源内容预览（如果有） -->
-    <div v-if="modelValue.content" class="card-editor__source-preview">
+    <div
+      v-if="modelValue.content"
+      class="card-editor__source-preview"
+    >
       <label class="card-editor__label">来源内容</label>
-      <div class="card-editor__source-text">{{ modelValue.content }}</div>
+      <div class="card-editor__source-text">
+        {{ modelValue.content }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import type { Card, FlashCard } from '../types/card';
-import { formatNextReview } from '../review/sm2';
+import type {
+  Card,
+  FlashCard,
+} from '../types/card'
+import {
+  ref,
+  watch,
+} from 'vue'
+import { formatNextReview } from '../review/sm2'
 
 interface Props {
-  modelValue: Card | FlashCard;
-  readonly?: boolean;
+  modelValue: Card | FlashCard
+  readonly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   readonly: false,
-});
+})
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: Card | FlashCard): void;
-  (e: 'save', value: Card | FlashCard): void;
-  (e: 'delete', value: Card | FlashCard): void;
-}>();
+  (e: 'update:modelValue', value: Card | FlashCard): void
+  (e: 'save', value: Card | FlashCard): void
+  (e: 'delete', value: Card | FlashCard): void
+}>()
 
 // 编辑草稿
-const contentDraft = ref(props.modelValue.content);
-const frontDraft = ref((props.modelValue as FlashCard).front || '');
-const backDraft = ref((props.modelValue as FlashCard).back || '');
-const tagsDraft = ref([...props.modelValue.tags]);
-const statusDraft = ref(props.modelValue.status);
-const difficultyDraft = ref(props.modelValue.difficulty);
-const tagInput = ref('');
+const contentDraft = ref(props.modelValue.content)
+const frontDraft = ref((props.modelValue as FlashCard).front || '')
+const backDraft = ref((props.modelValue as FlashCard).back || '')
+const tagsDraft = ref([...props.modelValue.tags])
+const statusDraft = ref(props.modelValue.status)
+const difficultyDraft = ref(props.modelValue.difficulty)
+const tagInput = ref('')
 
 // 监听属性变化
 watch(() => props.modelValue, (newVal) => {
-  contentDraft.value = newVal.content;
-  frontDraft.value = (newVal as FlashCard).front || '';
-  backDraft.value = (newVal as FlashCard).back || '';
-  tagsDraft.value = [...newVal.tags];
-  statusDraft.value = newVal.status;
-  difficultyDraft.value = newVal.difficulty;
-}, { deep: true });
+  contentDraft.value = newVal.content
+  frontDraft.value = (newVal as FlashCard).front || ''
+  backDraft.value = (newVal as FlashCard).back || ''
+  tagsDraft.value = [...newVal.tags]
+  statusDraft.value = newVal.status
+  difficultyDraft.value = newVal.difficulty
+}, { deep: true })
 
 // 切换卡片类型
 function switchType(type: 'card' | 'flashcard') {
@@ -211,31 +248,36 @@ function switchType(type: 'card' | 'flashcard') {
         repetitions: 0,
         nextReview: 0,
       },
-    } as FlashCard);
+    } as FlashCard)
   } else if (type === 'card' && props.modelValue.type === 'flashcard') {
     // 降级为普通卡片
-    const { srs, front, back, ...rest } = props.modelValue as FlashCard;
+    const {
+      srs,
+      front,
+      back,
+      ...rest
+    } = props.modelValue as FlashCard
     emit('update:modelValue', {
       ...rest,
       type: 'card',
-    } as Card);
+    } as Card)
   }
 }
 
 // 添加标签
 function addTag() {
-  const tag = tagInput.value.trim();
+  const tag = tagInput.value.trim()
   if (tag && !tagsDraft.value.includes(tag)) {
-    tagsDraft.value.push(tag);
-    tagInput.value = '';
-    updateTags();
+    tagsDraft.value.push(tag)
+    tagInput.value = ''
+    updateTags()
   }
 }
 
 // 移除标签
 function removeTag(index: number) {
-  tagsDraft.value.splice(index, 1);
-  updateTags();
+  tagsDraft.value.splice(index, 1)
+  updateTags()
 }
 
 // 更新标签
@@ -243,17 +285,17 @@ function updateTags() {
   emit('update:modelValue', {
     ...props.modelValue,
     tags: tagsDraft.value,
-  });
+  })
 }
 
 // 获取文件名
 function getFileName(path: string): string {
-  return path.split('/').pop() || path;
+  return path.split('/').pop() || path
 }
 
 // 判断是否是闪卡
 function isFlashCard(card: Card | FlashCard): card is FlashCard {
-  return card.type === 'flashcard';
+  return card.type === 'flashcard'
 }
 
 // 保存处理
@@ -267,13 +309,13 @@ function handleSave() {
     status: statusDraft.value,
     difficulty: difficultyDraft.value,
     updatedAt: Date.now(),
-  };
-  emit('save', updated as Card | FlashCard);
+  }
+  emit('save', updated as Card | FlashCard)
 }
 
 // 删除处理
 function handleDelete() {
-  emit('delete', props.modelValue);
+  emit('delete', props.modelValue)
 }
 </script>
 

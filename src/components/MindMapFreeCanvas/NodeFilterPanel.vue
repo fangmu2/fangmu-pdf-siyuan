@@ -1,11 +1,26 @@
 <template>
-  <div class="node-filter-panel" :class="{ 'is-open': showPanel }">
+  <div
+    class="node-filter-panel"
+    :class="{ 'is-open': showPanel }"
+  >
     <!-- 面板头部 -->
     <div class="filter-header">
-      <h4 class="filter-title">{{ t('mindmap.filter.title') }}</h4>
-      <button class="close-btn" @click="closePanel">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      <h4 class="filter-title">
+        {{ t('mindmap.filter.title') }}
+      </h4>
+      <button
+        class="close-btn"
+        @click="closePanel"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+        >
+          <path
+            fill="currentColor"
+            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+          />
         </svg>
       </button>
     </div>
@@ -25,8 +40,13 @@
     </div>
 
     <!-- 活动过滤条件 -->
-    <div v-if="activeFilters.length > 0" class="active-filters">
-      <div class="active-filters-title">{{ t('mindmap.filter.activeFilters') }}</div>
+    <div
+      v-if="activeFilters.length > 0"
+      class="active-filters"
+    >
+      <div class="active-filters-title">
+        {{ t('mindmap.filter.activeFilters') }}
+      </div>
       <div class="filter-tags">
         <span
           v-for="(filter, index) in activeFilters"
@@ -34,39 +54,74 @@
           class="filter-tag"
         >
           <span class="filter-tag-text">{{ formatFilter(filter) }}</span>
-          <button class="remove-filter-btn" @click="removeFilter(index)">
-            <svg viewBox="0 0 24 24" width="12" height="12">
-              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          <button
+            class="remove-filter-btn"
+            @click="removeFilter(index)"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+            >
+              <path
+                fill="currentColor"
+                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+              />
             </svg>
           </button>
         </span>
       </div>
-      <button class="clear-all-btn" @click="clearAllFilters">
+      <button
+        class="clear-all-btn"
+        @click="clearAllFilters"
+      >
         {{ t('mindmap.filter.clearAll') }}
       </button>
     </div>
 
     <!-- 过滤条件添加 -->
     <div class="add-filter-section">
-      <div class="add-filter-title">{{ t('mindmap.filter.addFilter') }}</div>
+      <div class="add-filter-title">
+        {{ t('mindmap.filter.addFilter') }}
+      </div>
 
       <!-- 字段选择 -->
       <div class="filter-row">
         <label class="filter-label">{{ t('mindmap.filter.field') }}</label>
-        <select v-model="newFilter.field" class="filter-select">
-          <option value="tag">{{ t('mindmap.filter.fields.tag') }}</option>
-          <option value="page">{{ t('mindmap.filter.fields.page') }}</option>
-          <option value="color">{{ t('mindmap.filter.fields.color') }}</option>
-          <option value="status">{{ t('mindmap.filter.fields.status') }}</option>
-          <option value="annotation">{{ t('mindmap.filter.fields.annotation') }}</option>
+        <select
+          v-model="newFilter.field"
+          class="filter-select"
+        >
+          <option value="tag">
+            {{ t('mindmap.filter.fields.tag') }}
+          </option>
+          <option value="page">
+            {{ t('mindmap.filter.fields.page') }}
+          </option>
+          <option value="color">
+            {{ t('mindmap.filter.fields.color') }}
+          </option>
+          <option value="status">
+            {{ t('mindmap.filter.fields.status') }}
+          </option>
+          <option value="annotation">
+            {{ t('mindmap.filter.fields.annotation') }}
+          </option>
         </select>
       </div>
 
       <!-- 操作符选择 -->
       <div class="filter-row">
         <label class="filter-label">{{ t('mindmap.filter.operator') }}</label>
-        <select v-model="newFilter.operator" class="filter-select">
-          <option v-for="op in availableOperators" :key="op.value" :value="op.value">
+        <select
+          v-model="newFilter.operator"
+          class="filter-select"
+        >
+          <option
+            v-for="op in availableOperators"
+            :key="op.value"
+            :value="op.value"
+          >
             {{ t(`mindmap.filter.operators.${op.value}`) }}
           </option>
         </select>
@@ -85,8 +140,15 @@
           :placeholder="t('mindmap.filter.placeholder.tag')"
           list="tag-options"
         />
-        <datalist v-if="newFilter.field === 'tag'" id="tag-options">
-          <option v-for="tag in allTags" :key="tag" :value="tag" />
+        <datalist
+          v-if="newFilter.field === 'tag'"
+          id="tag-options"
+        >
+          <option
+            v-for="tag in allTags"
+            :key="tag"
+            :value="tag"
+          />
         </datalist>
 
         <!-- 页码输入 -->
@@ -99,7 +161,10 @@
         />
 
         <!-- 颜色选择 -->
-        <div v-else-if="newFilter.field === 'color'" class="color-picker">
+        <div
+          v-else-if="newFilter.field === 'color'"
+          class="color-picker"
+        >
           <button
             v-for="color in availableColors"
             :key="color"
@@ -111,31 +176,64 @@
         </div>
 
         <!-- 状态选择 -->
-        <select v-else-if="newFilter.field === 'status'" v-model="newFilter.value" class="filter-select">
-          <option value="new">{{ t('mindmap.filter.status.new') }}</option>
-          <option value="learning">{{ t('mindmap.filter.status.learning') }}</option>
-          <option value="reviewing">{{ t('mindmap.filter.status.reviewing') }}</option>
-          <option value="mastered">{{ t('mindmap.filter.status.mastered') }}</option>
+        <select
+          v-else-if="newFilter.field === 'status'"
+          v-model="newFilter.value"
+          class="filter-select"
+        >
+          <option value="new">
+            {{ t('mindmap.filter.status.new') }}
+          </option>
+          <option value="learning">
+            {{ t('mindmap.filter.status.learning') }}
+          </option>
+          <option value="reviewing">
+            {{ t('mindmap.filter.status.reviewing') }}
+          </option>
+          <option value="mastered">
+            {{ t('mindmap.filter.status.mastered') }}
+          </option>
         </select>
 
         <!-- 标注布尔值 -->
-        <select v-else-if="newFilter.field === 'annotation'" v-model="newFilter.value" class="filter-select">
-          <option :value="true">{{ t('mindmap.filter.annotation.with') }}</option>
-          <option :value="false">{{ t('mindmap.filter.annotation.without') }}</option>
+        <select
+          v-else-if="newFilter.field === 'annotation'"
+          v-model="newFilter.value"
+          class="filter-select"
+        >
+          <option :value="true">
+            {{ t('mindmap.filter.annotation.with') }}
+          </option>
+          <option :value="false">
+            {{ t('mindmap.filter.annotation.without') }}
+          </option>
         </select>
       </div>
 
       <!-- 添加按钮 -->
-      <button class="add-filter-action-btn" @click="addFilterAction">
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      <button
+        class="add-filter-action-btn"
+        @click="addFilterAction"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+        >
+          <path
+            fill="currentColor"
+            d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+          />
         </svg>
         {{ t('mindmap.filter.addFilterBtn') }}
       </button>
     </div>
 
     <!-- 统计信息 -->
-    <div v-if="filterStats" class="filter-stats">
+    <div
+      v-if="filterStats"
+      class="filter-stats"
+    >
       <div class="stats-row">
         <span class="stats-label">{{ t('mindmap.filter.stats.total') }}</span>
         <span class="stats-value">{{ filterStats.totalNodes }}</span>
@@ -156,16 +254,32 @@
         <span>{{ t('mindmap.filter.tags') }}</span>
         <span class="section-count">{{ tagStats.length }}</span>
       </div>
+      <!-- 标签搜索框 -->
+      <div class="tag-search-box">
+        <input
+          v-model="tagSearchQuery"
+          type="text"
+          class="tag-search-input"
+          :placeholder="t('mindmap.filter.searchTagPlaceholder')"
+        />
+      </div>
       <div class="tag-cloud">
         <button
-          v-for="tagStat in tagStats.slice(0, 20)"
+          v-for="tagStat in filteredTagStats"
           :key="tagStat.tag"
           class="tag-cloud-item"
-          @click="addTagFilter(tagStat.tag)"
+          :class="{ 'is-active': isTagActive(tagStat.tag) }"
+          @click="toggleTagFilter(tagStat.tag)"
         >
           <span class="tag-name">{{ tagStat.tag }}</span>
           <span class="tag-count">{{ tagStat.count }}</span>
         </button>
+      </div>
+      <div
+        v-if="filteredTagStats.length === 0 && tagSearchQuery"
+        class="tag-cloud-empty"
+      >
+        <span>{{ t('mindmap.filter.noTagsFound') }}</span>
       </div>
     </div>
 
@@ -190,11 +304,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import type { FreeMindMapNode } from '@/types/mindmapFree'
+import type {
+  MindMapFilter,
+  QuickFilterPreset,
+} from '@/types/mindMapSearch'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMindMapSearch } from '@/composables/useMindMapSearch'
-import type { FreeMindMapNode } from '@/types/mindmapFree'
-import type { MindMapFilter, QuickFilterPreset } from '@/types/mindMapSearch'
 
 const props = defineProps<{
   nodes: FreeMindMapNode[]
@@ -218,31 +339,61 @@ const {
   removeFilter,
   clearFilter,
   applyQuickPreset,
-  getNodeStats
+  getNodeStats,
 } = useMindMapSearch(() => props.nodes)
 
 // 新过滤条件
 const newFilter = ref<MindMapFilter>({
   field: 'tag',
   value: '',
-  operator: 'contains'
+  operator: 'contains',
 })
+
+// 标签搜索
+const tagSearchQuery = ref('')
 
 // 可用颜色
 const availableColors = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-  '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-  '#BB8FCE', '#85C1E9', '#F8B500', '#00CED1'
+  '#FF6B6B',
+  '#4ECDC4',
+  '#45B7D1',
+  '#96CEB4',
+  '#FFEAA7',
+  '#DDA0DD',
+  '#98D8C8',
+  '#F7DC6F',
+  '#BB8FCE',
+  '#85C1E9',
+  '#F8B500',
+  '#00CED1',
 ]
 
 // 可用操作符
 const availableOperators = ref([
-  { value: 'equals', label: '=' },
-  { value: 'notEquals', label: '≠' },
-  { value: 'contains', label: '包含' },
-  { value: 'notContains', label: '不包含' },
-  { value: 'in', label: '在...中' },
-  { value: 'notIn', label: '不在...中' }
+  {
+    value: 'equals',
+    label: '=',
+  },
+  {
+    value: 'notEquals',
+    label: '≠',
+  },
+  {
+    value: 'contains',
+    label: '包含',
+  },
+  {
+    value: 'notContains',
+    label: '不包含',
+  },
+  {
+    value: 'in',
+    label: '在...中',
+  },
+  {
+    value: 'notIn',
+    label: '不在...中',
+  },
 ])
 
 // 计算属性
@@ -250,8 +401,8 @@ const activeFilters = computed(() => filters.value)
 
 const allTags = computed(() => {
   const tags = new Set<string>()
-  props.nodes.forEach(node => {
-    node.data.tags?.forEach(tag => tags.add(tag))
+  props.nodes.forEach((node) => {
+    node.data.tags?.forEach((tag) => tags.add(tag))
   })
   return Array.from(tags).sort()
 })
@@ -260,6 +411,41 @@ const tagStats = computed(() => {
   const stats = getNodeStats()
   return stats.tagStats
 })
+
+// 过滤后的标签统计（支持搜索）
+const filteredTagStats = computed(() => {
+  const query = tagSearchQuery.value.trim().toLowerCase()
+  const tags = tagStats.value
+
+  if (!query) return tags.slice(0, 20)
+
+  return tags
+    .filter((tagStat) => tagStat.tag.toLowerCase().includes(query))
+    .slice(0, 20)
+})
+
+// 检查标签是否是活动过滤
+function isTagActive(tag: string): boolean {
+  return filters.value.some((f) => f.field === 'tag' && f.value === tag)
+}
+
+// 切换标签过滤
+function toggleTagFilter(tag: string) {
+  const index = filters.value.findIndex((f) => f.field === 'tag' && f.value === tag)
+
+  if (index > -1) {
+    // 移除该标签过滤
+    removeFilter(index)
+  } else {
+    // 添加该标签过滤
+    addFilter({
+      field: 'tag',
+      value: tag,
+      operator: 'contains',
+    })
+  }
+  emit('filter-change', filters.value)
+}
 
 const pageDistribution = computed(() => {
   const stats = getNodeStats()
@@ -275,19 +461,19 @@ function isActivePreset(preset: QuickFilterPreset): boolean {
     return false
   }
   return preset.filters.every((f, i) =>
-    f.field === filters.value[i]?.field &&
-    f.value === filters.value[i]?.value &&
-    f.operator === filters.value[i]?.operator
+    f.field === filters.value[i]?.field
+    && f.value === filters.value[i]?.value
+    && f.operator === filters.value[i]?.operator,
   )
 }
 
 // 获取预设图标
 function getPresetIcon(icon: string): string {
   const icons: Record<string, string> = {
-    'all': '⊞',
-    'annotation': '📝',
-    'tag': '🏷️',
-    'page': '📄'
+    all: '⊞',
+    annotation: '📝',
+    tag: '🏷️',
+    page: '📄',
   }
   return icons[icon] || '📋'
 }
@@ -300,14 +486,14 @@ function applyPreset(preset: QuickFilterPreset) {
 
 // 添加过滤条件
 function addFilterAction() {
-  if (!newFilter.value && newFilter.field !== 'annotation') {
+  if (!newFilter.value && newFilter.value.field !== 'annotation') {
     return
   }
   addFilter({ ...newFilter.value })
   emit('filter-change', filters.value)
 
   // 重置值
-  newFilter.value = newFilter.field === 'annotation' ? true : ''
+  newFilter.value = newFilter.value.field === 'annotation' ? true : ''
 }
 
 // 移除过滤条件
@@ -324,35 +510,51 @@ function clearAllFilters() {
 
 // 添加标签过滤
 function addTagFilter(tag: string) {
-  newFilter.value = { field: 'tag', value: tag, operator: 'contains' }
-  addFilter({ field: 'tag', value: tag, operator: 'contains' })
+  newFilter.value = {
+    field: 'tag',
+    value: tag,
+    operator: 'contains',
+  }
+  addFilter({
+    field: 'tag',
+    value: tag,
+    operator: 'contains',
+  })
   emit('filter-change', filters.value)
 }
 
 // 添加页码过滤
 function addPageFilter(page: number) {
-  newFilter.value = { field: 'page', value: page, operator: 'equals' }
-  addFilter({ field: 'page', value: page, operator: 'equals' })
+  newFilter.value = {
+    field: 'page',
+    value: page,
+    operator: 'equals',
+  }
+  addFilter({
+    field: 'page',
+    value: page,
+    operator: 'equals',
+  })
   emit('filter-change', filters.value)
 }
 
 // 格式化过滤条件显示
 function formatFilter(filter: MindMapFilter): string {
   const fieldMap: Record<string, string> = {
-    'tag': t('mindmap.filter.fields.tag'),
-    'page': t('mindmap.filter.fields.page'),
-    'color': t('mindmap.filter.fields.color'),
-    'status': t('mindmap.filter.fields.status'),
-    'annotation': t('mindmap.filter.fields.annotation')
+    tag: t('mindmap.filter.fields.tag'),
+    page: t('mindmap.filter.fields.page'),
+    color: t('mindmap.filter.fields.color'),
+    status: t('mindmap.filter.fields.status'),
+    annotation: t('mindmap.filter.fields.annotation'),
   }
 
   const operatorMap: Record<string, string> = {
-    'equals': '=',
-    'notEquals': '≠',
-    'contains': t('mindmap.filter.operators.contains'),
-    'notContains': t('mindmap.filter.operators.notContains'),
-    'in': t('mindmap.filter.operators.in'),
-    'notIn': t('mindmap.filter.operators.notIn')
+    equals: '=',
+    notEquals: '≠',
+    contains: t('mindmap.filter.operators.contains'),
+    notContains: t('mindmap.filter.operators.notContains'),
+    in: t('mindmap.filter.operators.in'),
+    notIn: t('mindmap.filter.operators.notIn'),
   }
 
   let valueStr = String(filter.value)
@@ -674,6 +876,35 @@ watch(() => props.nodes, () => {
   }
 }
 
+.tag-search-box {
+  margin-bottom: 8px;
+}
+
+.tag-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--siyuan-border);
+  background: var(--siyuan-input-bg);
+  color: var(--siyuan-text);
+  font-size: 12px;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--siyuan-primary);
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
+  }
+}
+
+.tag-cloud-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--siyuan-text-secondary);
+}
+
 .tag-cloud {
   display: flex;
   flex-wrap: wrap;
@@ -691,10 +922,18 @@ watch(() => props.nodes, () => {
   border: none;
   border-radius: 12px;
   cursor: pointer;
+  transition: all 0.2s;
 
   &:hover {
     background: var(--siyuan-primary-light);
     color: var(--siyuan-primary);
+    transform: translateY(-1px);
+  }
+
+  &.is-active {
+    background: var(--siyuan-primary);
+    color: white;
+    box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
   }
 
   .tag-count {

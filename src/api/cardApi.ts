@@ -3,9 +3,17 @@
  * MarginNote 4 风格学习插件 - 卡片相关思源 API 调用
  */
 
-import { getBlockAttrs, updateBlockAttrs, insertBlock, deleteBlock } from '../api/siyuanApi';
-import type { Card, FlashCard, CardBlockAttributes } from '../types/card';
-import { cardService } from '../services/cardService';
+import type {
+  Card,
+  FlashCard,
+} from '../types/card'
+import {
+  deleteBlock,
+  getBlockAttrs,
+  insertBlock,
+  updateBlockAttrs,
+} from '../api/siyuanApi'
+import { cardService } from '../services/cardService'
 
 /**
  * 创建卡片块
@@ -17,33 +25,34 @@ import { cardService } from '../services/cardService';
  */
 export async function createCardBlock(
   card: Card,
-  parentBlockId: string,
-  previousBlockId?: string
+  parentID: string,
+  previousID?: string,
 ): Promise<string> {
-  const attributes = cardService.toBlockAttributes(card);
+  const attributes = cardService.toBlockAttributes(card)
 
   // 根据卡片类型创建不同的块
-  const dataType = card.type === 'flashcard' ? 'query-code' : 'paragraph';
+  const dataType = card.type === 'flashcard' ? 'query-code' : 'paragraph'
 
   try {
     const result = await insertBlock({
       dataType,
       data: card.content,
-      parentBlockId,
-      previousBlockId,
-    });
+      parentID,
+      previousID,
+    })
 
     // 设置块属性
     if (result && result[0]?.doOperations?.[0]?.id) {
-      const blockId = result[0].doOperations[0].id;
-      await setCardAttributes(blockId, attributes);
-      return blockId;
+      const blockId = result[0].doOperations[0].id
+      // 传递块属性，确保类型匹配
+      await setCardAttributes(blockId, attributes as unknown as Record<string, string>)
+      return blockId
     }
 
-    throw new Error('创建卡片块失败');
+    throw new Error('创建卡片块失败')
   } catch (error) {
-    console.error('创建卡片块失败:', error);
-    throw error;
+    console.error('创建卡片块失败:', error)
+    throw error
   }
 }
 
@@ -54,17 +63,17 @@ export async function createCardBlock(
  * @returns 是否成功
  */
 export async function updateCardBlock(card: Card): Promise<boolean> {
-  const attributes = cardService.toBlockAttributes(card);
+  const attributes = cardService.toBlockAttributes(card)
 
   try {
     await updateBlockAttrs({
       blockId: card.id,
       attrs: attributes,
-    });
-    return true;
+    })
+    return true
   } catch (error) {
-    console.error('更新卡片块失败:', error);
-    return false;
+    console.error('更新卡片块失败:', error)
+    return false
   }
 }
 
@@ -76,11 +85,11 @@ export async function updateCardBlock(card: Card): Promise<boolean> {
  */
 export async function deleteCardBlock(blockId: string): Promise<boolean> {
   try {
-    await deleteBlock({ blockId });
-    return true;
+    await deleteBlock(blockId)
+    return true
   } catch (error) {
-    console.error('删除卡片块失败:', error);
-    return false;
+    console.error('删除卡片块失败:', error)
+    return false
   }
 }
 
@@ -92,16 +101,16 @@ export async function deleteCardBlock(blockId: string): Promise<boolean> {
  */
 export async function setCardAttributes(
   blockId: string,
-  attributes: CardBlockAttributes
+  attributes: Record<string, string>,
 ): Promise<void> {
   try {
     await updateBlockAttrs({
       blockId,
       attrs: attributes,
-    });
+    })
   } catch (error) {
-    console.error('设置卡片属性失败:', error);
-    throw error;
+    console.error('设置卡片属性失败:', error)
+    throw error
   }
 }
 
@@ -113,17 +122,17 @@ export async function setCardAttributes(
  */
 export async function getCardByBlockId(blockId: string): Promise<Card | FlashCard | null> {
   try {
-    const attrs = await getBlockAttrs({ blockId }) as unknown as Record<string, string>;
+    const attrs = await getBlockAttrs(blockId)
 
     // 检查是否是卡片
     if (attrs.type !== 'card' && attrs.type !== 'flashcard') {
-      return null;
+      return null
     }
 
-    return cardService.parseFromBlockAttributes(blockId, attrs);
+    return cardService.parseFromBlockAttributes(blockId, attrs)
   } catch (error) {
-    console.error('获取卡片失败:', error);
-    return null;
+    console.error('获取卡片失败:', error)
+    return null
   }
 }
 
@@ -136,36 +145,36 @@ export async function getCardByBlockId(blockId: string): Promise<Card | FlashCar
  */
 export async function queryCards(
   studySetId?: string,
-  status?: string
+  status?: string,
 ): Promise<(Card | FlashCard)[]> {
-  let sql = `
+  let _sql = `
     SELECT * FROM blocks
     WHERE type IN ('d', 's', 'p')
     AND (
       custom-type = 'card' OR custom-type = 'flashcard'
     )
-  `;
+  `
 
-  const params: Record<string, string> = {};
+  const _params: Record<string, string> = {}
 
   if (studySetId) {
-    sql += ` AND custom-card_study_set_id = :studySetId`;
-    params.studySetId = studySetId;
+    _sql += ` AND custom-card_study_set_id = :studySetId`
+    _params.studySetId = studySetId
   }
 
   if (status) {
-    sql += ` AND custom-card_status = :status`;
-    params.status = status;
+    _sql += ` AND custom-card_status = :status`
+    _params.status = status
   }
 
   try {
     // TODO: 实现 SQL 查询
     // const result = await window.siyuan.api.sqlQuery(sql, params);
     // return result.map(row => cardService.parseFromBlockAttributes(row.id, row));
-    return [];
+    return []
   } catch (error) {
-    console.error('查询卡片失败:', error);
-    return [];
+    console.error('查询卡片失败:', error)
+    return []
   }
 }
 
@@ -176,31 +185,31 @@ export async function queryCards(
  * @returns 到期闪卡列表
  */
 export async function queryDueFlashCards(studySetId?: string): Promise<FlashCard[]> {
-  const now = Date.now();
+  const now = Date.now()
 
-  let sql = `
+  let _sql = `
     SELECT * FROM blocks
     WHERE custom-type = 'flashcard'
     AND custom-card_srs_next_review <= :now
-  `;
+  `
 
-  const params: Record<string, string> = {
+  const _params: Record<string, string> = {
     now: now.toString(),
-  };
+  }
 
   if (studySetId) {
-    sql += ` AND custom-card_study_set_id = :studySetId`;
-    params.studySetId = studySetId;
+    _sql += ` AND custom-card_study_set_id = :studySetId`
+    _params.studySetId = studySetId
   }
 
   try {
     // TODO: 实现 SQL 查询
     // const result = await window.siyuan.api.sqlQuery(sql, params);
     // return result.map(row => cardService.parseFromBlockAttributes(row.id, row) as FlashCard);
-    return [];
+    return []
   } catch (error) {
-    console.error('查询到期闪卡失败:', error);
-    return [];
+    console.error('查询到期闪卡失败:', error)
+    return []
   }
 }
 
@@ -213,22 +222,22 @@ export async function queryDueFlashCards(studySetId?: string): Promise<FlashCard
  */
 export async function batchCreateCards(
   cards: Card[],
-  parentBlockId: string
+  parentID: string,
 ): Promise<string[]> {
-  const blockIds: string[] = [];
-  let previousBlockId: string | undefined;
+  const blockIds: string[] = []
+  let previousBlockId: string | undefined
 
   for (const card of cards) {
     try {
-      const blockId = await createCardBlock(card, parentBlockId, previousBlockId);
-      blockIds.push(blockId);
-      previousBlockId = blockId;
+      const blockId = await createCardBlock(card, parentID, previousBlockId)
+      blockIds.push(blockId)
+      previousBlockId = blockId
     } catch (error) {
-      console.error(`创建卡片 ${card.content.slice(0, 20)}... 失败:`, error);
+      console.error(`创建卡片 ${card.content.slice(0, 20)}... 失败:`, error)
     }
   }
 
-  return blockIds;
+  return blockIds
 }
 
 /**
@@ -242,47 +251,54 @@ export async function batchCreateCards(
 export async function convertToFlashCard(
   card: Card,
   front: string,
-  back: string
+  back: string,
 ): Promise<FlashCard | null> {
   try {
-    const flashCard = cardService.upgradeToFlashCard(card, front, back);
-    const success = await updateCardBlock(flashCard);
+    const flashCard = await cardService.upgradeToFlashCard(card, front, back)
+    const success = await updateCardBlock(flashCard)
 
     if (success) {
-      return flashCard;
+      return flashCard
     }
 
-    return null;
+    return null
   } catch (error) {
-    console.error('转换为闪卡失败:', error);
-    return null;
+    console.error('转换为闪卡失败:', error)
+    return null
   }
 }
 
 /**
  * 记录复习历史
  *
- * @param cardId - 卡片 ID
- * @param quality - 复习质量
- * @param recordData - 复习记录数据
  * @returns 是否成功
  */
-export async function recordReviewHistory(
-  cardId: string,
-  quality: number,
-  recordData: {
-    interval: number;
-    easeFactor: number;
-    repetitions: number;
-    nextReview: number;
-  }
-): Promise<boolean> {
+export async function recordReviewHistory(): Promise<boolean> {
   try {
-    // TODO: 将复习记录存储到思源数据库
-    // 可以创建一个专门的复习记录文档
-    return true;
+    // 将复习记录存储到 localStorage 作为临时存储
+    // 格式：{ date: 'YYYY-MM-DD', count: number }
+    const today = new Date().toISOString().split('T')[0]
+    const history = JSON.parse(localStorage.getItem('review_history') || '[]')
+
+    const todayRecord = history.find((r: any) => r.date === today)
+    if (todayRecord) {
+      todayRecord.count = (todayRecord.count || 0) + 1
+    } else {
+      history.push({
+        date: today,
+        count: 1,
+      })
+    }
+
+    // 保留最近 365 天的记录
+    const recentHistory = history.slice(-365)
+    localStorage.setItem('review_history', JSON.stringify(recentHistory))
+
+    // TODO: 未来可以扩展到思源数据库存储
+    console.log('[cardApi] 记录复习历史成功:', today)
+    return true
   } catch (error) {
-    console.error('记录复习历史失败:', error);
-    return false;
+    console.error('记录复习历史失败:', error)
+    return false
   }
 }

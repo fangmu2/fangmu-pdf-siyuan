@@ -9,17 +9,17 @@
  * - 搜索历史管理
  */
 
+import type { FreeMindMapNode } from '@/types/mindmapFree'
 import type {
-  MindMapSearchMatch,
-  MindMapSearchResult,
-  MindMapSearchOptions,
   MindMapFilter,
   MindMapFilterResult,
   MindMapNodeStats,
+  MindMapSearchMatch,
+  MindMapSearchOptions,
+  MindMapSearchResult,
+  SearchHighlight,
   SearchHistoryItem,
-  SearchHighlight
 } from '@/types/mindMapSearch'
-import type { FreeMindMapNode } from '@/types/mindmapFree'
 
 const STORAGE_KEY = 'mindmap-search-history'
 const MAX_HISTORY_SIZE = 20
@@ -43,7 +43,7 @@ class MindMapSearchService {
   search(
     nodes: FreeMindMapNode[],
     query: string,
-    options: MindMapSearchOptions = {}
+    options: MindMapSearchOptions = {},
   ): MindMapSearchResult {
     const startTime = performance.now()
 
@@ -53,7 +53,7 @@ class MindMapSearchService {
       useRegex = false,
       searchFields = ['title', 'content', 'note', 'tag'],
       maxResults = 100,
-      minScore = 0.1
+      minScore = 0.1,
     } = options
 
     const matches: MindMapSearchMatch[] = []
@@ -86,21 +86,21 @@ class MindMapSearchService {
       if (searchFields.includes('title') && node.data.title) {
         const match = this.findMatches(node.id, 'title', node.data.title, searchPattern)
         matches.push(...match)
-        match.forEach(m => matchedNodeIds.add(m.nodeId))
+        match.forEach((m) => matchedNodeIds.add(m.nodeId))
       }
 
       // 搜索内容
       if (searchFields.includes('content') && node.data.content) {
         const match = this.findMatches(node.id, 'content', node.data.content, searchPattern)
         matches.push(...match)
-        match.forEach(m => matchedNodeIds.add(m.nodeId))
+        match.forEach((m) => matchedNodeIds.add(m.nodeId))
       }
 
       // 搜索备注
       if (searchFields.includes('note') && node.data.note) {
         const match = this.findMatches(node.id, 'note', node.data.note, searchPattern)
         matches.push(...match)
-        match.forEach(m => matchedNodeIds.add(m.nodeId))
+        match.forEach((m) => matchedNodeIds.add(m.nodeId))
       }
 
       // 搜索标签
@@ -108,13 +108,13 @@ class MindMapSearchService {
         for (const tag of node.data.tags) {
           const match = this.findMatches(node.id, 'tag', tag, searchPattern)
           matches.push(...match)
-          match.forEach(m => matchedNodeIds.add(m.nodeId))
+          match.forEach((m) => matchedNodeIds.add(m.nodeId))
         }
       }
     }
 
     // 过滤低分匹配
-    const filteredMatches = matches.filter(m => m.score >= minScore)
+    const filteredMatches = matches.filter((m) => m.score >= minScore)
 
     // 按得分排序
     filteredMatches.sort((a, b) => b.score - a.score)
@@ -129,7 +129,7 @@ class MindMapSearchService {
       matches: finalMatches,
       matchedNodeIds: Array.from(matchedNodeIds),
       totalMatches: finalMatches.length,
-      searchTime: Math.round(endTime - startTime)
+      searchTime: Math.round(endTime - startTime),
     }
 
     // 保存到搜索历史
@@ -147,7 +147,7 @@ class MindMapSearchService {
     nodeId: string,
     field: 'title' | 'content' | 'note' | 'tag',
     text: string,
-    pattern: RegExp | null
+    pattern: RegExp | null,
   ): MindMapSearchMatch[] {
     const matches: MindMapSearchMatch[] = []
 
@@ -165,7 +165,7 @@ class MindMapSearchService {
         matchedText: match[0],
         highlightStart: match.index,
         highlightLength: match[0].length,
-        score
+        score,
       })
 
       // 防止空匹配导致死循环
@@ -188,7 +188,7 @@ class MindMapSearchService {
       title: 1.5,
       content: 1.0,
       note: 0.8,
-      tag: 1.2
+      tag: 1.2,
     }
     score *= fieldWeights[field] || 1.0
 
@@ -217,7 +217,7 @@ class MindMapSearchService {
       matches: [],
       matchedNodeIds: [],
       totalMatches: 0,
-      searchTime: 0
+      searchTime: 0,
     }
   }
 
@@ -234,10 +234,10 @@ class MindMapSearchService {
     if (filters.length === 0) {
       return {
         filters,
-        filteredNodeIds: nodes.map(n => n.id),
+        filteredNodeIds: nodes.map((n) => n.id),
         hiddenNodeIds: [],
         totalNodes,
-        filteredNodes: totalNodes
+        filteredNodes: totalNodes,
       }
     }
 
@@ -249,14 +249,14 @@ class MindMapSearchService {
     }
 
     const filteredIds = Array.from(filteredNodeIds)
-    const hiddenIds = nodes.filter(n => !filteredNodeIds.has(n.id)).map(n => n.id)
+    const hiddenIds = nodes.filter((n) => !filteredNodeIds.has(n.id)).map((n) => n.id)
 
     return {
       filters,
       filteredNodeIds: filteredIds,
       hiddenNodeIds: hiddenIds,
       totalNodes,
-      filteredNodes: filteredIds.length
+      filteredNodes: filteredIds.length,
     }
   }
 
@@ -264,14 +264,18 @@ class MindMapSearchService {
    * 检查节点是否匹配所有过滤条件
    */
   private nodeMatchesFilters(node: FreeMindMapNode, filters: MindMapFilter[]): boolean {
-    return filters.every(filter => this.nodeMatchesFilter(node, filter))
+    return filters.every((filter) => this.nodeMatchesFilter(node, filter))
   }
 
   /**
    * 检查节点是否匹配单个过滤条件
    */
   private nodeMatchesFilter(node: FreeMindMapNode, filter: MindMapFilter): boolean {
-    const { field, value, operator } = filter
+    const {
+      field,
+      value,
+      operator,
+    } = filter
 
     let nodeValue: any
     switch (field) {
@@ -306,7 +310,7 @@ class MindMapSearchService {
   private compareValues(
     nodeValue: any,
     filterValue: any,
-    operator: string
+    operator: string,
   ): boolean {
     switch (operator) {
       case 'equals':
@@ -350,7 +354,7 @@ class MindMapSearchService {
       pageDistribution: {},
       colorDistribution: {},
       statusDistribution: {},
-      tagStats: []
+      tagStats: [],
     }
 
     const tagCount = new Map<string, number>()
@@ -393,7 +397,10 @@ class MindMapSearchService {
 
     // 转换标签统计为数组并排序
     stats.tagStats = Array.from(tagCount.entries())
-      .map(([tag, count]) => ({ tag, count }))
+      .map(([tag, count]) => ({
+        tag,
+        count,
+      }))
       .sort((a, b) => b.count - a.count)
 
     return stats
@@ -409,7 +416,7 @@ class MindMapSearchService {
       nodeId,
       color,
       type,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
   }
 
@@ -448,7 +455,7 @@ class MindMapSearchService {
    */
   private addToHistory(query: string, resultCount: number, options?: MindMapSearchOptions): void {
     // 移除相同的搜索
-    this.searchHistory = this.searchHistory.filter(item => item.query !== query)
+    this.searchHistory = this.searchHistory.filter((item) => item.query !== query)
 
     // 添加到开头
     this.searchHistory.unshift({
@@ -456,7 +463,7 @@ class MindMapSearchService {
       query,
       timestamp: Date.now(),
       resultCount,
-      options
+      options,
     })
 
     // 限制历史记录大小
@@ -487,7 +494,7 @@ class MindMapSearchService {
    * 删除历史项
    */
   deleteHistoryItem(id: string): void {
-    this.searchHistory = this.searchHistory.filter(item => item.id !== id)
+    this.searchHistory = this.searchHistory.filter((item) => item.id !== id)
     this.saveHistory()
   }
 
@@ -528,29 +535,41 @@ class MindMapSearchService {
         name: '全部',
         icon: 'all',
         filters: [],
-        builtIn: true
+        builtIn: true,
       },
       {
         id: 'with-annotation',
         name: '有标注',
         icon: 'annotation',
-        filters: [{ field: 'annotation', value: true, operator: 'equals' }],
-        builtIn: true
+        filters: [{
+          field: 'annotation',
+          value: true,
+          operator: 'equals',
+        }],
+        builtIn: true,
       },
       {
         id: 'with-tags',
         name: '有标签',
         icon: 'tag',
-        filters: [{ field: 'tag', value: '', operator: 'notEquals' }],
-        builtIn: true
+        filters: [{
+          field: 'tag',
+          value: '',
+          operator: 'notEquals',
+        }],
+        builtIn: true,
       },
       {
         id: 'page-1',
         name: '第 1 页',
         icon: 'page',
-        filters: [{ field: 'page', value: 1, operator: 'equals' }],
-        builtIn: true
-      }
+        filters: [{
+          field: 'page',
+          value: 1,
+          operator: 'equals',
+        }],
+        builtIn: true,
+      },
     ]
   }
 }

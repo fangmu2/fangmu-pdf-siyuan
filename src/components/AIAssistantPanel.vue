@@ -3,28 +3,34 @@
   <div class="ai-assistant-panel">
     <!-- 工具栏 -->
     <div class="ai-assistant-panel__toolbar">
-      <h3 class="ai-assistant-panel__title">🤖 AI 助手</h3>
+      <h3 class="ai-assistant-panel__title">
+        🤖 AI 助手
+      </h3>
       <div class="ai-assistant-panel__actions">
         <button
-          :class="['preset-btn', { active: activePreset === 'summary' }]"
+          class="preset-btn"
+          :class="[{ active: activePreset === 'summary' }]"
           @click="activePreset = 'summary'"
         >
           摘要
         </button>
         <button
-          :class="['preset-btn', { active: activePreset === 'tags' }]"
+          class="preset-btn"
+          :class="[{ active: activePreset === 'tags' }]"
           @click="activePreset = 'tags'"
         >
           标签
         </button>
         <button
-          :class="['preset-btn', { active: activePreset === 'flashcard' }]"
+          class="preset-btn"
+          :class="[{ active: activePreset === 'flashcard' }]"
           @click="activePreset = 'flashcard'"
         >
           闪卡
         </button>
         <button
-          :class="['preset-btn', { active: activePreset === 'chat' }]"
+          class="preset-btn"
+          :class="[{ active: activePreset === 'chat' }]"
           @click="activePreset = 'chat'"
         >
           对话
@@ -52,7 +58,10 @@
           placeholder="输入或粘贴要处理的内容..."
           :rows="6"
         ></textarea>
-        <div class="input-section__meta" v-if="selectedCard">
+        <div
+          v-if="selectedCard"
+          class="input-section__meta"
+        >
           <span class="meta-tag">已选择：{{ selectedCard.title }}</span>
         </div>
       </div>
@@ -60,34 +69,63 @@
       <!-- AI 功能区域 -->
       <div class="ai-function-section">
         <!-- 摘要生成 -->
-        <div v-if="activePreset === 'summary'" class="function-card">
+        <div
+          v-if="activePreset === 'summary'"
+          class="function-card"
+        >
           <div class="function-card__header">
             <h4>📝 智能摘要</h4>
-            <select v-model="summaryLength" class="length-select">
-              <option value="short">简短 (1-2 句)</option>
-              <option value="medium">中等 (3-5 句)</option>
-              <option value="long">详细 (5 句以上)</option>
+            <select
+              v-model="summaryLength"
+              class="length-select"
+            >
+              <option value="short">
+                简短 (1-2 句)
+              </option>
+              <option value="medium">
+                中等 (3-5 句)
+              </option>
+              <option value="long">
+                详细 (5 句以上)
+              </option>
             </select>
           </div>
           <button
             class="generate-btn"
-            @click="generateSummary"
             :disabled="isProcessing || !inputContent"
+            @click="generateSummary"
           >
             {{ isProcessing ? '生成中...' : '生成摘要' }}
           </button>
-          <div v-if="aiResult" class="result-box">
-            <div class="result-box__content">{{ aiResult }}</div>
-            <button class="copy-btn" @click="copyResult" title="复制">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+          <div
+            v-if="aiResult"
+            class="result-box"
+          >
+            <div class="result-box__content">
+              {{ aiResult }}
+            </div>
+            <button
+              class="copy-btn"
+              title="复制"
+              @click="copyResult"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="currentColor"
+              >
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
               </svg>
             </button>
           </div>
         </div>
 
         <!-- 标签生成 -->
-        <div v-else-if="activePreset === 'tags'" class="function-card">
+        <div
+          v-else-if="activePreset === 'tags'"
+          class="function-card"
+        >
           <div class="function-card__header">
             <h4>🏷️ 自动标签</h4>
             <div class="tag-count-selector">
@@ -103,12 +141,15 @@
           </div>
           <button
             class="generate-btn"
-            @click="generateTags"
             :disabled="isProcessing || !inputContent"
+            @click="generateTags"
           >
             {{ isProcessing ? '生成中...' : '生成标签' }}
           </button>
-          <div v-if="aiTags.length > 0" class="tags-result">
+          <div
+            v-if="aiTags.length > 0"
+            class="tags-result"
+          >
             <div class="tags-result__list">
               <span
                 v-for="tag in aiTags"
@@ -123,18 +164,24 @@
         </div>
 
         <!-- 闪卡生成 -->
-        <div v-else-if="activePreset === 'flashcard'" class="function-card">
+        <div
+          v-else-if="activePreset === 'flashcard'"
+          class="function-card"
+        >
           <div class="function-card__header">
             <h4>🃏 闪卡生成</h4>
           </div>
           <button
             class="generate-btn"
-            @click="generateFlashcard"
             :disabled="isProcessing || !inputContent"
+            @click="generateFlashcard"
           >
             {{ isProcessing ? '生成中...' : '生成闪卡' }}
           </button>
-          <div v-if="flashcard" class="flashcard-result">
+          <div
+            v-if="flashcard"
+            class="flashcard-result"
+          >
             <div class="flashcard-preview">
               <div class="flashcard-preview__front">
                 <span class="flashcard-label">正面：</span>
@@ -145,23 +192,35 @@
                 <p>{{ flashcard.back }}</p>
               </div>
             </div>
-            <button class="use-flashcard-btn" @click="useFlashcard">
+            <button
+              class="use-flashcard-btn"
+              @click="useFlashcard"
+            >
               使用此闪卡
             </button>
           </div>
         </div>
 
         <!-- AI 对话 -->
-        <div v-else-if="activePreset === 'chat'" class="function-card chat-card">
+        <div
+          v-else-if="activePreset === 'chat'"
+          class="function-card chat-card"
+        >
           <div class="chat-messages">
             <div
               v-for="(message, index) in chatMessages"
               :key="index"
-              :class="['chat-message', `chat-message--${message.role}`]"
+              class="chat-message"
+              :class="[`chat-message--${message.role}`]"
             >
-              <div class="chat-message__content">{{ message.content }}</div>
+              <div class="chat-message__content">
+                {{ message.content }}
+              </div>
             </div>
-            <div v-if="isProcessing" class="chat-message chat-message--ai">
+            <div
+              v-if="isProcessing"
+              class="chat-message chat-message--ai"
+            >
               <div class="chat-message__content chat-message__content--loading">
                 <span class="loading-dots">
                   <span></span><span></span><span></span>
@@ -179,11 +238,16 @@
             />
             <button
               class="send-btn"
-              @click="sendChat"
               :disabled="isProcessing || !chatInput"
+              @click="sendChat"
             >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="currentColor"
+              >
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
               </svg>
             </button>
           </div>
@@ -194,14 +258,25 @@
     <!-- 设置面板 -->
     <div class="ai-assistant-panel__settings">
       <details class="settings-details">
-        <summary class="settings-summary">⚙️ AI 设置</summary>
+        <summary class="settings-summary">
+          ⚙️ AI 设置
+        </summary>
         <div class="settings-content">
           <div class="setting-item">
             <label class="setting-item__label">API 提供商</label>
-            <select v-model="aiConfig.provider" class="setting-select">
-              <option value="openai">OpenAI</option>
-              <option value="claude">Claude</option>
-              <option value="custom">自定义</option>
+            <select
+              v-model="aiConfig.provider"
+              class="setting-select"
+            >
+              <option value="openai">
+                OpenAI
+              </option>
+              <option value="claude">
+                Claude
+              </option>
+              <option value="custom">
+                自定义
+              </option>
             </select>
           </div>
           <div class="setting-item">
@@ -231,7 +306,10 @@
               placeholder="https://api.openai.com/v1"
             />
           </div>
-          <button class="save-settings-btn" @click="saveSettings">
+          <button
+            class="save-settings-btn"
+            @click="saveSettings"
+          >
             保存设置
           </button>
         </div>
@@ -241,42 +319,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import type { Card } from '../types/card';
+import type { Card } from '../types/card'
+import {
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 
 interface Props {
-  selectedCard?: Card | null;
+  selectedCard?: Card | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   selectedCard: null,
-});
+})
 
 const emit = defineEmits<{
-  (e: 'tags-added', tags: string[]): void;
-  (e: 'flashcard-created', flashcard: { front: string; back: string }): void;
-}>();
+  (e: 'tags-added', tags: string[]): void
+  (e: 'flashcard-created', flashcard: { front: string, back: string }): void
+}>()
 
 // 状态
-const activePreset = ref<'summary' | 'tags' | 'flashcard' | 'chat'>('summary');
-const inputContent = ref('');
-const aiResult = ref('');
-const isProcessing = ref(false);
-const selectedCard = ref<Card | null>(null);
+const activePreset = ref<'summary' | 'tags' | 'flashcard' | 'chat'>('summary')
+const inputContent = ref('')
+const aiResult = ref('')
+const isProcessing = ref(false)
+const selectedCard = ref<Card | null>(null)
 
 // 摘要设置
-const summaryLength = ref<'short' | 'medium' | 'long'>('medium');
+const summaryLength = ref<'short' | 'medium' | 'long'>('medium')
 
 // 标签设置
-const tagCount = ref(5);
-const aiTags = ref<string[]>([]);
+const tagCount = ref(5)
+const aiTags = ref<string[]>([])
 
 // 闪卡
-const flashcard = ref<{ front: string; back: string } | null>(null);
+const flashcard = ref<{ front: string, back: string } | null>(null)
 
 // 聊天
-const chatInput = ref('');
-const chatMessages = ref<Array<{ role: 'user' | 'ai'; content: string }>>([]);
+const chatInput = ref('')
+const chatMessages = ref<Array<{ role: 'user' | 'ai', content: string }>>([])
 
 // AI 配置
 const aiConfig = ref({
@@ -284,138 +366,141 @@ const aiConfig = ref({
   apiKey: '',
   model: 'gpt-3.5-turbo',
   endpoint: 'https://api.openai.com/v1',
-});
+})
 
 // 方法
 function loadCardContent() {
   if (props.selectedCard) {
-    selectedCard.value = props.selectedCard;
-    inputContent.value = props.selectedCard.content || '';
+    selectedCard.value = props.selectedCard
+    inputContent.value = props.selectedCard.content || ''
   }
 }
 
 async function generateSummary() {
-  if (!inputContent.value) return;
+  if (!inputContent.value) return
 
-  isProcessing.value = true;
+  isProcessing.value = true
   try {
     // 模拟 API 调用（实际使用时替换为真实 API）
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    const content = inputContent.value;
+    const content = inputContent.value
     const lengthMap = {
       short: 50,
       medium: 100,
       long: 200,
-    };
-    const maxLength = lengthMap[summaryLength.value];
+    }
+    const maxLength = lengthMap[summaryLength.value]
 
     // 简单摘要（实际使用 AI API）
-    aiResult.value = content.slice(0, maxLength) + (content.length > maxLength ? '...' : '');
+    aiResult.value = content.slice(0, maxLength) + (content.length > maxLength ? '...' : '')
   } catch (error) {
-    console.error('生成摘要失败:', error);
-    aiResult.value = '生成失败，请检查 API 配置';
+    console.error('生成摘要失败:', error)
+    aiResult.value = '生成失败，请检查 API 配置'
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
 }
 
 async function generateTags() {
-  if (!inputContent.value) return;
+  if (!inputContent.value) return
 
-  isProcessing.value = true;
+  isProcessing.value = true
   try {
     // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // 简单关键词提取（实际使用 AI API）
     const words = inputContent.value
       .split(/[\s,，.。!?！？]+/)
-      .filter(w => w.length > 1 && w.length < 10)
-      .slice(0, tagCount.value);
+      .filter((w) => w.length > 1 && w.length < 10)
+      .slice(0, tagCount.value)
 
-    aiTags.value = [...new Set(words)];
+    aiTags.value = [...new Set(words)]
   } catch (error) {
-    console.error('生成标签失败:', error);
+    console.error('生成标签失败:', error)
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
 }
 
 async function generateFlashcard() {
-  if (!inputContent.value) return;
+  if (!inputContent.value) return
 
-  isProcessing.value = true;
+  isProcessing.value = true
   try {
     // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // 简单闪卡生成（实际使用 AI API）
-    const lines = inputContent.value.split('\n').filter(l => l.trim());
+    const lines = inputContent.value.split('\n').filter((l) => l.trim())
     flashcard.value = {
       front: lines[0]?.slice(0, 50) || '问题',
       back: lines.slice(1).join('\n').slice(0, 200) || '答案',
-    };
+    }
   } catch (error) {
-    console.error('生成闪卡失败:', error);
+    console.error('生成闪卡失败:', error)
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
 }
 
 async function sendChat() {
-  if (!chatInput.value) return;
+  if (!chatInput.value) return
 
-  const userMessage = chatInput.value;
-  chatMessages.value.push({ role: 'user', content: userMessage });
-  chatInput.value = '';
-  isProcessing.value = true;
+  const userMessage = chatInput.value
+  chatMessages.value.push({
+    role: 'user',
+    content: userMessage,
+  })
+  chatInput.value = ''
+  isProcessing.value = true
 
   try {
     // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // 简单回复（实际使用 AI API）
     chatMessages.value.push({
       role: 'ai',
       content: '这是一个模拟回复。请配置真实的 AI API 以获取实际回答。',
-    });
+    })
   } catch (error) {
-    console.error('发送消息失败:', error);
+    console.error('发送消息失败:', error)
   } finally {
-    isProcessing.value = false;
+    isProcessing.value = false
   }
 }
 
 function addTag(tag: string) {
-  aiTags.value = aiTags.value.filter(t => t !== tag);
-  emit('tags-added', [tag]);
+  aiTags.value = aiTags.value.filter((t) => t !== tag)
+  emit('tags-added', [tag])
 }
 
 function useFlashcard() {
   if (flashcard.value) {
-    emit('flashcard-created', flashcard.value);
+    emit('flashcard-created', flashcard.value)
   }
 }
 
 function copyResult() {
   if (aiResult.value) {
-    navigator.clipboard.writeText(aiResult.value);
+    navigator.clipboard.writeText(aiResult.value)
   }
 }
 
 function saveSettings() {
-  localStorage.setItem('ai-assistant-config', JSON.stringify(aiConfig.value));
-  alert('设置已保存');
+  localStorage.setItem('ai-assistant-config', JSON.stringify(aiConfig.value))
+  alert('设置已保存')
 }
 
 function loadSettings() {
-  const stored = localStorage.getItem('ai-assistant-config');
+  const stored = localStorage.getItem('ai-assistant-config')
   if (stored) {
     try {
-      aiConfig.value = JSON.parse(stored);
+      aiConfig.value = JSON.parse(stored)
     } catch (e) {
-      console.error('加载 AI 配置失败:', e);
+      console.error('加载 AI 配置失败:', e)
     }
   }
 }
@@ -423,14 +508,14 @@ function loadSettings() {
 // 监听选中的卡片变化
 watch(() => props.selectedCard, (newCard) => {
   if (newCard) {
-    selectedCard.value = newCard;
+    selectedCard.value = newCard
   }
-});
+})
 
 // 生命周期
 onMounted(() => {
-  loadSettings();
-});
+  loadSettings()
+})
 </script>
 
 <style scoped lang="scss">

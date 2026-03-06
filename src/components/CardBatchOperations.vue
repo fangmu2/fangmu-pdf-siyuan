@@ -3,67 +3,79 @@
     <!-- 工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
-        <sy-checkbox
+        <SyCheckbox
           v-model="selectAll"
           @change="handleSelectAllChange"
         >
           全选
-        </sy-checkbox>
-        <span class="selected-count" v-if="selectedCards.length > 0">
+        </SyCheckbox>
+        <span
+          v-if="selectedCards.length > 0"
+          class="selected-count"
+        >
           已选择 {{ selectedCards.length }} 张卡片
         </span>
       </div>
 
       <div class="toolbar-right">
-        <sy-button
+        <SyButton
           v-if="selectedCards.length > 0"
-          @click="showDifficultyDialog = true"
           icon="star"
+          @click="showDifficultyDialog = true"
         >
           设置难度
-        </sy-button>
+        </SyButton>
 
-        <sy-button
+        <SyButton
           v-if="selectedCards.length > 0"
-          @click="showStatusMenu = true"
           icon="sync"
+          @click="showStatusMenu = true"
         >
           转换状态
-        </sy-button>
+        </SyButton>
 
-        <sy-button
+        <SyButton
           v-if="selectedCards.length > 0"
-          @click="showTagManager = true"
           icon="tag"
+          @click="showTagManager = true"
         >
           管理标签
-        </sy-button>
+        </SyButton>
 
-        <sy-button
+        <SyButton
           v-if="selectedCards.length > 0"
-          @click="showMoveDialog = true"
           icon="folder"
+          @click="showMoveDialog = true"
         >
           移动
-        </sy-button>
+        </SyButton>
 
-        <sy-button
+        <SyButton
           v-if="selectedCards.length > 0"
-          @click="handleBatchDelete"
           icon="trash"
           danger
+          @click="handleBatchDelete"
         >
           删除
-        </sy-button>
+        </SyButton>
       </div>
     </div>
 
     <!-- 难度设置对话框 -->
-    <div v-if="showDifficultyDialog" class="dialog-overlay" @click.self="showDifficultyDialog = false">
+    <div
+      v-if="showDifficultyDialog"
+      class="dialog-overlay"
+      @click.self="showDifficultyDialog = false"
+    >
       <div class="dialog difficulty-dialog">
         <div class="dialog-header">
           <h3>设置卡片难度</h3>
-          <button @click="showDifficultyDialog = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showDifficultyDialog = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <div class="difficulty-options">
@@ -75,7 +87,10 @@
               @click="selectedDifficulty = config.level"
             >
               <div class="difficulty-indicator">
-                <span class="difficulty-dot" :style="{ backgroundColor: config.color }"></span>
+                <span
+                  class="difficulty-dot"
+                  :style="{ backgroundColor: config.color }"
+                ></span>
                 <span class="difficulty-label">{{ config.label }}</span>
               </div>
               <span class="difficulty-desc">{{ config.description }}</span>
@@ -83,20 +98,35 @@
           </div>
         </div>
         <div class="dialog-footer">
-          <sy-button @click="showDifficultyDialog = false">取消</sy-button>
-          <sy-button @click="handleBatchSetDifficulty" type="primary" :disabled="!selectedDifficulty">
+          <SyButton @click="showDifficultyDialog = false">
+            取消
+          </SyButton>
+          <SyButton
+            type="primary"
+            :disabled="!selectedDifficulty"
+            @click="handleBatchSetDifficulty"
+          >
             确认设置
-          </sy-button>
+          </SyButton>
         </div>
       </div>
     </div>
 
     <!-- 状态转换菜单 -->
-    <div v-if="showStatusMenu" class="dialog-overlay" @click.self="showStatusMenu = false">
+    <div
+      v-if="showStatusMenu"
+      class="dialog-overlay"
+      @click.self="showStatusMenu = false"
+    >
       <div class="dialog status-dialog">
         <div class="dialog-header">
           <h3>转换卡片状态</h3>
-          <button @click="showStatusMenu = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showStatusMenu = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <div class="status-info">
@@ -116,29 +146,49 @@
           </div>
         </div>
         <div class="dialog-footer">
-          <sy-button @click="showStatusMenu = false">取消</sy-button>
-          <sy-button @click="handleBatchSetStatus" type="primary" :disabled="!selectedStatus">
+          <SyButton @click="showStatusMenu = false">
+            取消
+          </SyButton>
+          <SyButton
+            type="primary"
+            :disabled="!selectedStatus"
+            @click="handleBatchSetStatus"
+          >
             确认转换
-          </sy-button>
+          </SyButton>
         </div>
       </div>
     </div>
 
     <!-- 标签管理器 -->
-    <div v-if="showTagManager" class="dialog-overlay" @click.self="showTagManager = false">
+    <div
+      v-if="showTagManager"
+      class="dialog-overlay"
+      @click.self="showTagManager = false"
+    >
       <div class="dialog tag-dialog">
         <div class="dialog-header">
           <h3>管理标签</h3>
-          <button @click="showTagManager = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showTagManager = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <div class="tag-input-section">
-            <sy-input
+            <SyInput
               v-model="newTagInput"
               placeholder="输入标签，多个标签用逗号分隔"
               @keyup.enter="addTag"
             />
-            <sy-button @click="addTag" type="primary">添加</sy-button>
+            <SyButton
+              type="primary"
+              @click="addTag"
+            >
+              添加
+            </SyButton>
           </div>
 
           <div class="current-tags">
@@ -150,9 +200,15 @@
                 class="tag-chip"
               >
                 {{ tag }}
-                <button @click="removeTag(tag)" class="remove-tag">×</button>
+                <button
+                  class="remove-tag"
+                  @click="removeTag(tag)"
+                >×</button>
               </span>
-              <span v-if="currentTags.length === 0" class="empty-tip">暂无标签</span>
+              <span
+                v-if="currentTags.length === 0"
+                class="empty-tip"
+              >暂无标签</span>
             </div>
           </div>
 
@@ -172,39 +228,62 @@
           </div>
         </div>
         <div class="dialog-footer">
-          <sy-button @click="showTagManager = false">取消</sy-button>
-          <sy-button @click="handleBatchAddTags" type="primary">
+          <SyButton @click="showTagManager = false">
+            取消
+          </SyButton>
+          <SyButton
+            type="primary"
+            @click="handleBatchAddTags"
+          >
             批量添加
-          </sy-button>
+          </SyButton>
         </div>
       </div>
     </div>
 
     <!-- 移动对话框 -->
-    <div v-if="showMoveDialog" class="dialog-overlay" @click.self="showMoveDialog = false">
+    <div
+      v-if="showMoveDialog"
+      class="dialog-overlay"
+      @click.self="showMoveDialog = false"
+    >
       <div class="dialog move-dialog">
         <div class="dialog-header">
           <h3>移动卡片到学习集</h3>
-          <button @click="showMoveDialog = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showMoveDialog = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
-          <sy-select
+          <SySelect
             v-model="selectedStudySetId"
             placeholder="选择目标学习集"
             :options="studySetOptions"
           />
         </div>
         <div class="dialog-footer">
-          <sy-button @click="showMoveDialog = false">取消</sy-button>
-          <sy-button @click="handleBatchMove" type="primary" :disabled="!selectedStudySetId">
+          <SyButton @click="showMoveDialog = false">
+            取消
+          </SyButton>
+          <SyButton
+            type="primary"
+            :disabled="!selectedStudySetId"
+            @click="handleBatchMove"
+          >
             确认移动
-          </sy-button>
+          </SyButton>
         </div>
       </div>
     </div>
 
     <!-- 操作结果提示 -->
-    <div v-if="operationResult" class="operation-result">
+    <div
+      v-if="operationResult"
+      class="operation-result"
+    >
       <div class="result-content">
         <span class="result-icon">{{ operationResult.success === operationResult.total ? '✓' : '⚠' }}</span>
         <div class="result-info">
@@ -215,257 +294,282 @@
             成功 {{ operationResult.success }} / 失败 {{ operationResult.failed }}
           </div>
         </div>
-        <button @click="operationResult = null" class="close-result">×</button>
+        <button
+          class="close-result"
+          @click="operationResult = null"
+        >
+          ×
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import SyButton from './SiyuanTheme/SyButton.vue';
-import SyCheckbox from './SiyuanTheme/SyCheckbox.vue';
-import SyInput from './SiyuanTheme/SyInput.vue';
-import SySelect from './SiyuanTheme/SySelect.vue';
+import type { BatchOperationResult } from '../services/cardEnhanceService'
 import {
+  computed,
+  ref,
+} from 'vue'
+import {
+
   cardEnhanceService,
   DIFFICULTY_CONFIG,
-  type BatchOperationResult
-} from '../services/cardEnhanceService';
-import { studySetService } from '../services/studySetService';
+} from '../services/cardEnhanceService'
+import { studySetService } from '../services/studySetService'
+import SyButton from './SiyuanTheme/SyButton.vue'
+import SyCheckbox from './SiyuanTheme/SyCheckbox.vue'
+import SyInput from './SiyuanTheme/SyInput.vue'
+import SySelect from './SiyuanTheme/SySelect.vue'
 
 interface Card {
-  id: string;
-  content: string;
-  studySetId: string;
-  tags: string[];
-  status: string;
-  difficulty: number;
+  id: string
+  content: string
+  studySetId: string
+  tags: string[]
+  status: string
+  difficulty: number
 }
 
 interface StudySet {
-  id: string;
-  name: string;
+  id: string
+  name: string
 }
 
 const props = defineProps<{
-  cards: Card[];
-  studySetId?: string;
-}>();
+  cards: Card[]
+  studySetId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'update', cards: Card[]): void;
-  (e: 'select', cardIds: string[]): void;
-}>();
+  (e: 'update', cards: Card[]): void
+  (e: 'select', cardIds: string[]): void
+}>()
 
 // 选择状态
-const selectAll = ref(false);
-const selectedCards = ref<string[]>([]);
+const selectAll = ref(false)
+const selectedCards = ref<string[]>([])
 
 // 难度对话框
-const showDifficultyDialog = ref(false);
-const selectedDifficulty = ref<number | null>(null);
+const showDifficultyDialog = ref(false)
+const selectedDifficulty = ref<number | null>(null)
 
 // 状态对话框
-const showStatusMenu = ref(false);
-const selectedStatus = ref<string | null>(null);
+const showStatusMenu = ref(false)
+const selectedStatus = ref<string | null>(null)
 
 // 标签对话框
-const showTagManager = ref(false);
-const newTagInput = ref('');
-const currentTags = ref<string[]>([]);
+const showTagManager = ref(false)
+const newTagInput = ref('')
+const currentTags = ref<string[]>([])
 
 // 移动对话框
-const showMoveDialog = ref(false);
-const selectedStudySetId = ref<string>('');
+const showMoveDialog = ref(false)
+const selectedStudySetId = ref<string>('')
 
 // 操作结果
-const operationResult = ref<BatchOperationResult | null>(null);
+const operationResult = ref<BatchOperationResult | null>(null)
 
 // 难度选项
 const difficultyOptions = computed(() => {
   return Object.entries(DIFFICULTY_CONFIG).map(([level, config]) => ({
-    level: parseInt(level),
-    ...config
-  }));
-});
+    level: Number.parseInt(level),
+    ...config,
+  }))
+})
 
 // 状态选项
 const statusOptions = [
-  { value: 'new', label: '新学', icon: '🆕' },
-  { value: 'learning', label: '学习中', icon: '📚' },
-  { value: 'review', label: '待复习', icon: '🔄' },
-  { value: 'suspended', label: '已暂停', icon: '⏸️' }
-];
+  {
+    value: 'new',
+    label: '新学',
+    icon: '🆕',
+  },
+  {
+    value: 'learning',
+    label: '学习中',
+    icon: '📚',
+  },
+  {
+    value: 'review',
+    label: '待复习',
+    icon: '🔄',
+  },
+  {
+    value: 'suspended',
+    label: '已暂停',
+    icon: '⏸️',
+  },
+]
 
 // 学习集选项
-const studySetOptions = ref<Array<{ value: string; label: string }>>([]);
+const studySetOptions = ref<Array<{ value: string, label: string }>>([])
 
 // 常用标签
-const commonTags = ref<Array<{ name: string; count: number }>>([]);
+const commonTags = ref<Array<{ name: string, count: number }>>([])
 
 // 加载学习集列表
 const loadStudySets = async () => {
   try {
-    const sets = await studySetService.getAllStudySets();
+    const sets = await studySetService.getAllStudySets()
     studySetOptions.value = sets
-      .filter(s => s.id !== props.studySetId)
-      .map(s => ({
+      .filter((s) => s.id !== props.studySetId)
+      .map((s) => ({
         value: s.id,
-        label: s.name
-      }));
+        label: s.name,
+      }))
   } catch (error) {
-    console.error('[loadStudySets] 加载失败:', error);
+    console.error('[loadStudySets] 加载失败:', error)
   }
-};
+}
 
 // 加载常用标签
 const loadCommonTags = async () => {
   try {
-    const tags = await cardEnhanceService.getAllTags();
-    commonTags.value = tags.slice(0, 20);
+    const tags = await cardEnhanceService.getAllTags()
+    commonTags.value = tags.slice(0, 20)
   } catch (error) {
-    console.error('[loadCommonTags] 加载失败:', error);
+    console.error('[loadCommonTags] 加载失败:', error)
   }
-};
+}
 
 // 全选处理
 const handleSelectAllChange = () => {
   if (selectAll.value) {
-    selectedCards.value = props.cards.map(c => c.id);
+    selectedCards.value = props.cards.map((c) => c.id)
   } else {
-    selectedCards.value = [];
+    selectedCards.value = []
   }
-  emit('select', selectedCards.value);
-};
+  emit('select', selectedCards.value)
+}
 
 // 批量设置难度
 const handleBatchSetDifficulty = async () => {
-  if (selectedDifficulty.value === null) return;
+  if (selectedDifficulty.value === null) return
 
   const result = await cardEnhanceService.batchSetCardDifficulty(
     selectedCards.value,
-    selectedDifficulty.value
-  );
+    selectedDifficulty.value,
+  )
 
-  operationResult.value = result;
-  showDifficultyDialog.value = false;
-  selectedDifficulty.value = null;
+  operationResult.value = result
+  showDifficultyDialog.value = false
+  selectedDifficulty.value = null
 
   setTimeout(() => {
-    operationResult.value = null;
-  }, 3000);
+    operationResult.value = null
+  }, 3000)
 
-  emit('update', props.cards);
-};
+  emit('update', props.cards)
+}
 
 // 批量设置状态
 const handleBatchSetStatus = async () => {
-  if (!selectedStatus.value) return;
+  if (!selectedStatus.value) return
 
   const result = await cardEnhanceService.batchTransitionCardStatus(
     selectedCards.value,
-    selectedStatus.value as any
-  );
+    selectedStatus.value as any,
+  )
 
-  operationResult.value = result;
-  showStatusMenu.value = false;
-  selectedStatus.value = null;
+  operationResult.value = result
+  showStatusMenu.value = false
+  selectedStatus.value = null
 
   setTimeout(() => {
-    operationResult.value = null;
-  }, 3000);
+    operationResult.value = null
+  }, 3000)
 
-  emit('update', props.cards);
-};
+  emit('update', props.cards)
+}
 
 // 添加标签
 const addTag = () => {
   const tags = newTagInput.value
-    .split(/[,,]/)
-    .map(t => t.trim())
-    .filter(Boolean);
+    .split(/,/)
+    .map((t) => t.trim())
+    .filter(Boolean)
 
   if (tags.length > 0) {
-    currentTags.value = [...new Set([...currentTags.value, ...tags])];
-    newTagInput.value = '';
+    currentTags.value = [...new Set([...currentTags.value, ...tags])]
+    newTagInput.value = ''
   }
-};
+}
 
 // 按名称添加标签
 const addTagByName = (tagName: string) => {
   if (!currentTags.value.includes(tagName)) {
-    currentTags.value.push(tagName);
+    currentTags.value.push(tagName)
   }
-};
+}
 
 // 移除标签
 const removeTag = (tag: string) => {
-  currentTags.value = currentTags.value.filter(t => t !== tag);
-};
+  currentTags.value = currentTags.value.filter((t) => t !== tag)
+}
 
 // 批量添加标签
 const handleBatchAddTags = async () => {
-  if (currentTags.value.length === 0) return;
+  if (currentTags.value.length === 0) return
 
   const result = await cardEnhanceService.batchAddCardTags(
     selectedCards.value,
-    currentTags.value
-  );
+    currentTags.value,
+  )
 
-  operationResult.value = result;
-  showTagManager.value = false;
-  currentTags.value = [];
+  operationResult.value = result
+  showTagManager.value = false
+  currentTags.value = []
 
   setTimeout(() => {
-    operationResult.value = null;
-  }, 3000);
+    operationResult.value = null
+  }, 3000)
 
-  emit('update', props.cards);
-};
+  emit('update', props.cards)
+}
 
 // 批量移动
 const handleBatchMove = async () => {
-  if (!selectedStudySetId.value) return;
+  if (!selectedStudySetId.value) return
 
   const result = await cardEnhanceService.batchMoveCards(
     selectedCards.value,
-    selectedStudySetId.value
-  );
+    selectedStudySetId.value,
+  )
 
-  operationResult.value = result;
-  showMoveDialog.value = false;
-  selectedStudySetId.value = '';
+  operationResult.value = result
+  showMoveDialog.value = false
+  selectedStudySetId.value = ''
 
   setTimeout(() => {
-    operationResult.value = null;
-  }, 3000);
+    operationResult.value = null
+  }, 3000)
 
-  emit('update', props.cards);
-};
+  emit('update', props.cards)
+}
 
 // 批量删除
 const handleBatchDelete = async () => {
   if (!confirm(`确定要删除选中的 ${selectedCards.value.length} 张卡片吗？此操作不可恢复。`)) {
-    return;
+    return
   }
 
-  const result = await cardEnhanceService.batchDeleteCards(selectedCards.value);
+  const result = await cardEnhanceService.batchDeleteCards(selectedCards.value)
 
-  operationResult.value = result;
-  selectedCards.value = [];
-  selectAll.value = false;
+  operationResult.value = result
+  selectedCards.value = []
+  selectAll.value = false
 
   setTimeout(() => {
-    operationResult.value = null;
-  }, 3000);
+    operationResult.value = null
+  }, 3000)
 
-  emit('update', props.cards);
-};
+  emit('update', props.cards)
+}
 
 // 初始化
-loadStudySets();
-loadCommonTags();
+loadStudySets()
+loadCommonTags()
 </script>
 
 <style scoped lang="scss">

@@ -13,10 +13,11 @@ export class ShortcutManager {
   private undoManager: UndoManager
   private store: ReturnType<typeof useFreeMindMapStore>
   private keyBindings: Map<string, (e: KeyboardEvent) => void>
+  private keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
   constructor(
     undoManager: UndoManager,
-    store: ReturnType<typeof useFreeMindMapStore>
+    store: ReturnType<typeof useFreeMindMapStore>,
   ) {
     this.undoManager = undoManager
     this.store = store
@@ -156,7 +157,7 @@ export class ShortcutManager {
         if (operation.undoData.oldPosition) {
           this.store.updateNode({
             id: operation.data.nodeId,
-            position: operation.undoData.oldPosition
+            position: operation.undoData.oldPosition,
           })
         }
         break
@@ -167,15 +168,15 @@ export class ShortcutManager {
         break
 
       case 'delete_node':
-        // 撤销节点删除：恢复节点
-        // TODO: 实现节点恢复逻辑
+        // 撤销节点删除：恢复节点（简化实现）
+        console.log('[撤销删除] 节点恢复功能待完善:', operation.data.nodeId)
         break
 
       case 'merge_node':
         // 撤销节点合并：恢复原内容
         this.store.updateNode({
           id: operation.data.targetNodeId,
-          content: operation.undoData.originalContent
+          content: operation.undoData.originalContent,
         })
         break
     }
@@ -196,7 +197,7 @@ export class ShortcutManager {
         if (operation.redoData.newPosition) {
           this.store.updateNode({
             id: operation.data.nodeId,
-            position: operation.redoData.newPosition
+            position: operation.redoData.newPosition,
           })
         }
         break
@@ -212,8 +213,8 @@ export class ShortcutManager {
         break
 
       case 'merge_node':
-        // 重做节点合并：重新合并
-        // TODO: 实现合并重做逻辑
+        // 重做节点合并：重新合并（简化实现）
+        console.log('[重做合并] 节点合并重做功能待完善')
         break
     }
   }
@@ -224,14 +225,15 @@ export class ShortcutManager {
   listen() {
     if (typeof window === 'undefined') return
 
-    window.addEventListener('keydown', (e) => {
+    this.keydownHandler = (e) => {
       const key = this.buildKey(e)
       const handler = this.keyBindings.get(key)
 
       if (handler) {
         handler(e)
       }
-    })
+    }
+    window.addEventListener('keydown', this.keydownHandler)
   }
 
   /**
@@ -262,5 +264,9 @@ export class ShortcutManager {
    */
   destroy() {
     this.keyBindings.clear()
+    if (this.keydownHandler) {
+      window.removeEventListener('keydown', this.keydownHandler)
+      this.keydownHandler = null
+    }
   }
 }

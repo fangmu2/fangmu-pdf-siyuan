@@ -66,7 +66,7 @@ const DEFAULT_GRID_CONFIG: GridConfig = {
   opacity: 0.3,
   majorGridInterval: 5,
   majorGridColor: '#a0a0a0',
-  majorGridLineWidth: 0.8
+  majorGridLineWidth: 0.8,
 }
 
 /**
@@ -77,7 +77,7 @@ const DEFAULT_GRID_CONFIG: GridConfig = {
  */
 export function calculateGridRange(
   viewport: Viewport,
-  gridSize: number
+  gridSize: number,
 ): {
   startCol: number
   endCol: number
@@ -93,7 +93,7 @@ export function calculateGridRange(
     startCol,
     endCol,
     startRow,
-    endRow
+    endRow,
   }
 }
 
@@ -105,15 +105,20 @@ export function calculateGridRange(
  */
 export function renderInfiniteGrid(
   viewport: Viewport,
-  config: Partial<GridConfig> = {}
+  config: Partial<GridConfig> = {},
 ): GridRenderResult {
   const mergedConfig: GridConfig = {
     ...DEFAULT_GRID_CONFIG,
-    ...config
+    ...config,
   }
 
   const { gridSize } = mergedConfig
-  const { startCol, endCol, startRow, endRow } = calculateGridRange(viewport, gridSize)
+  const {
+    startCol,
+    endCol,
+    startRow,
+    endRow,
+  } = calculateGridRange(viewport, gridSize)
 
   const verticalLines: GridLine[] = []
   const horizontalLines: GridLine[] = []
@@ -125,7 +130,7 @@ export function renderInfiniteGrid(
       x1: x,
       y1: viewport.y,
       x2: x,
-      y2: viewport.y + viewport.height
+      y2: viewport.y + viewport.height,
     })
   }
 
@@ -136,14 +141,14 @@ export function renderInfiniteGrid(
       x1: viewport.x,
       y1: y,
       x2: viewport.x + viewport.width,
-      y2: y
+      y2: y,
     })
   }
 
   return {
     verticalLines,
     horizontalLines,
-    totalLines: verticalLines.length + horizontalLines.length
+    totalLines: verticalLines.length + horizontalLines.length,
   }
 }
 
@@ -156,15 +161,20 @@ export function renderInfiniteGrid(
 export function drawGridOnCanvas(
   ctx: CanvasRenderingContext2D,
   viewport: Viewport,
-  config: Partial<GridConfig> = {}
+  config: Partial<GridConfig> = {},
 ): void {
   const mergedConfig: GridConfig = {
     ...DEFAULT_GRID_CONFIG,
-    ...config
+    ...config,
   }
 
   const { gridSize } = mergedConfig
-  const { startCol, endCol, startRow, endRow } = calculateGridRange(viewport, gridSize)
+  const {
+    startCol,
+    endCol,
+    startRow,
+    endRow,
+  } = calculateGridRange(viewport, gridSize)
 
   // 绘制垂直线
   for (let col = startCol; col <= endCol; col++) {
@@ -208,14 +218,19 @@ export function drawGridOnCanvas(
  * @returns SVG pattern 字符串
  */
 export function generateGridPatternSVG(
-  config: Partial<GridConfig> = {}
+  config: Partial<GridConfig> = {},
 ): string {
   const mergedConfig: GridConfig = {
     ...DEFAULT_GRID_CONFIG,
-    ...config
+    ...config,
   }
 
-  const { gridSize, color, lineWidth, opacity } = mergedConfig
+  const {
+    gridSize,
+    color,
+    lineWidth,
+    opacity,
+  } = mergedConfig
 
   return `
     <svg width="${gridSize}" height="${gridSize}" xmlns="http://www.w3.org/2000/svg">
@@ -246,14 +261,18 @@ export function generateGridPatternSVG(
  * @returns CSS background 字符串
  */
 export function generateGridCSS(
-  config: Partial<GridConfig> = {}
+  config: Partial<GridConfig> = {},
 ): string {
   const mergedConfig: GridConfig = {
     ...DEFAULT_GRID_CONFIG,
-    ...config
+    ...config,
   }
 
-  const { color, lineWidth, opacity } = mergedConfig
+  const {
+    color,
+    lineWidth,
+    opacity,
+  } = mergedConfig
 
   // 使用线性渐变创建网格
   const colorWithAlpha = hexToRgba(color, opacity)
@@ -272,13 +291,18 @@ export function generateGridCSS(
  */
 export function getGridStats(
   viewport: Viewport,
-  gridSize: number
+  gridSize: number,
 ): {
   visibleCols: number
   visibleRows: number
   totalLines: number
 } {
-  const { startCol, endCol, startRow, endRow } = calculateGridRange(viewport, gridSize)
+  const {
+    startCol,
+    endCol,
+    startRow,
+    endRow,
+  } = calculateGridRange(viewport, gridSize)
 
   const visibleCols = endCol - startCol + 1
   const visibleRows = endRow - startRow + 1
@@ -287,7 +311,7 @@ export function getGridStats(
   return {
     visibleCols,
     visibleRows,
-    totalLines
+    totalLines,
   }
 }
 
@@ -295,8 +319,8 @@ export function getGridStats(
  * 辅助函数：HEX 转 RGBA
  */
 function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
+  const r = Number.parseInt(hex.slice(1, 3), 16)
+  const g = Number.parseInt(hex.slice(3, 5), 16)
+  const b = Number.parseInt(hex.slice(5, 7), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }

@@ -3,22 +3,37 @@
     <!-- 工具栏 -->
     <div class="link-viewer-toolbar">
       <div class="toolbar-section">
-        <SyButton @click="toggleAutoSync" :active="autoSync">
+        <SyButton
+          :active="autoSync"
+          @click="toggleAutoSync"
+        >
           <SyIcon icon="sync" />
           自动同步
         </SyButton>
-        <SyButton @click="syncNow" :disabled="isSyncing">
-          <SyIcon icon="refresh" :spin="isSyncing" />
+        <SyButton
+          :disabled="isSyncing"
+          @click="syncNow"
+        >
+          <SyIcon
+            icon="refresh"
+            :spin="isSyncing"
+          />
           立即同步
         </SyButton>
-        <SyButton @click="toggleFullscreen" :active="isFullscreen">
+        <SyButton
+          :active="isFullscreen"
+          @click="toggleFullscreen"
+        >
           <SyIcon icon="fullscreen" />
           全屏
         </SyButton>
       </div>
 
       <div class="toolbar-section">
-        <SyButton @click="showAnnotationPanel = !showAnnotationPanel" :active="showAnnotationPanel">
+        <SyButton
+          :active="showAnnotationPanel"
+          @click="showAnnotationPanel = !showAnnotationPanel"
+        >
           <SyIcon icon="list" />
           标注列表
         </SyButton>
@@ -49,8 +64,8 @@
       <!-- 分隔条 -->
       <div
         class="splitter"
+        :class="{ resizing: isResizing }"
         @mousedown="startResize"
-        :class="{ 'resizing': isResizing }"
       >
         <div class="splitter-handle">
           <SyIcon icon="dragHandle" />
@@ -58,7 +73,12 @@
       </div>
 
       <!-- 右侧思维导图 -->
-      <div class="mindmap-panel" @dragenter="handleCanvasDragEnter" @dragover.prevent @drop="handleCanvasDrop">
+      <div
+        class="mindmap-panel"
+        @dragenter="handleCanvasDragEnter"
+        @dragover.prevent
+        @drop="handleCanvasDrop"
+      >
         <FreeCanvasViewer
           v-if="mindMapStore.isLoaded"
           ref="mindMapRef"
@@ -73,8 +93,14 @@
           @node-create="handleNodeCreate"
           @change="handleMindMapChange"
         />
-        <div v-else class="empty-state">
-          <SyIcon icon="mindmap" size="48" />
+        <div
+          v-else
+          class="empty-state"
+        >
+          <SyIcon
+            icon="mindmap"
+            size="48"
+          />
           <p>正在加载思维导图...</p>
         </div>
 
@@ -103,11 +129,17 @@
     <div
       v-if="showAnnotationPanel"
       class="annotation-panel"
-      :class="{ 'collapsed': annotationPanelCollapsed }"
+      :class="{ collapsed: annotationPanelCollapsed }"
     >
-      <div class="panel-header" @click="annotationPanelCollapsed = !annotationPanelCollapsed">
+      <div
+        class="panel-header"
+        @click="annotationPanelCollapsed = !annotationPanelCollapsed"
+      >
         <span>标注列表 ({{ annotations.length }})</span>
-        <SyButton size="small" @click.stop="annotationPanelCollapsed = !annotationPanelCollapsed">
+        <SyButton
+          size="small"
+          @click.stop="annotationPanelCollapsed = !annotationPanelCollapsed"
+        >
           <SyIcon :icon="annotationPanelCollapsed ? 'down' : 'up'" />
         </SyButton>
       </div>
@@ -117,32 +149,40 @@
         <SyButton
           size="small"
           :active="showLinksPanel"
-          @click="showLinksPanel = !showLinksPanel"
           title="链接图谱"
+          @click="showLinksPanel = !showLinksPanel"
         >
           <SyIcon icon="link" />
         </SyButton>
         <SyButton
           size="small"
           :active="showPdfSettingsPanel"
-          @click="showPdfSettingsPanel = !showPdfSettingsPanel"
           title="PDF 联动设置"
+          @click="showPdfSettingsPanel = !showPdfSettingsPanel"
         >
           <SyIcon icon="settings" />
         </SyButton>
       </div>
 
-      <div v-if="!annotationPanelCollapsed" class="annotation-list">
+      <div
+        v-if="!annotationPanelCollapsed"
+        class="annotation-list"
+      >
         <div
           v-for="annotation in annotations"
           :key="annotation.id"
           class="annotation-item"
-          :class="{ 'highlighted': highlightedAnnotationId === annotation.id }"
+          :class="{ highlighted: highlightedAnnotationId === annotation.id }"
           @click="highlightAnnotation(annotation.id)"
         >
-          <div class="annotation-color" :style="{ backgroundColor: annotation.color || '#fef3c7' }" />
+          <div
+            class="annotation-color"
+            :style="{ backgroundColor: annotation.color || '#fef3c7' }"
+          />
           <div class="annotation-content">
-            <div class="annotation-text">{{ annotation.text || '图片摘录' }}</div>
+            <div class="annotation-text">
+              {{ annotation.text || '图片摘录' }}
+            </div>
             <div class="annotation-meta">
               <span>第{{ annotation.page }}页</span>
               <span v-if="annotation.note">📝</span>
@@ -151,23 +191,26 @@
           <div class="annotation-actions">
             <SyButton
               size="small"
-              @click.stop="addToMindMap(annotation)"
               title="添加到导图"
+              @click.stop="addToMindMap(annotation)"
             >
               <SyIcon icon="add" />
             </SyButton>
             <SyButton
               size="small"
               variant="danger"
-              @click.stop="deleteAnnotation(annotation.id)"
               title="删除"
+              @click.stop="deleteAnnotation(annotation.id)"
             >
               <SyIcon icon="delete" />
             </SyButton>
           </div>
         </div>
 
-        <div v-if="annotations.length === 0" class="empty-message">
+        <div
+          v-if="annotations.length === 0"
+          class="empty-message"
+        >
           暂无标注，请在 PDF 中选择文本或图片创建标注
         </div>
       </div>
@@ -176,18 +219,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import PDFViewer from './PDFViewer.vue'
+import type {
+  ExtractMode,
+  PDFAnnotation,
+} from '@/types/annotation'
+import type { FreeMindMapNode } from '@/types/mindmapFree'
+import {
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import { usePdfMindMapLinkage } from '@/composables/usePdfMindMapLinkage'
+import { LearningSetService } from '@/services/learningSetService'
+import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
 import FreeCanvasViewer from './MindMapFreeCanvas/FreeCanvasViewer.vue'
 import LinksGraphPanel from './MindMapFreeCanvas/LinksGraphPanel.vue'
 import PdfLinkageSettings from './MindMapFreeCanvas/PdfLinkageSettings.vue'
+import PDFViewer from './PDFViewer.vue'
 import SyButton from './SiyuanTheme/SyButton.vue'
 import SyIcon from './SiyuanTheme/SyIcon.vue'
-import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
-import { usePdfMindMapLinkage } from '@/composables/usePdfMindMapLinkage'
-import { LearningSetService } from '@/services/learningSetService'
-import type { FreeMindMapNode } from '@/types/mindmapFree'
-import type { PDFAnnotation, ExtractMode } from '@/types/annotation'
 
 // Props
 interface Props {
@@ -201,7 +251,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   studySetId: '',
-  mindMapBlockId: ''
+  mindMapBlockId: '',
 })
 
 // Emits
@@ -246,7 +296,7 @@ const {
   clearAllHighlights,
   setDragData,
   handleCanvasDragEnter,
-  handleCanvasDrop
+  handleCanvasDrop,
 } = usePdfMindMapLinkage(mindMapStore)
 
 // 计算属性
@@ -277,7 +327,7 @@ async function loadAnnotations(): Promise<void> {
     const currentSet = LearningSetService.getCurrentLearningSet()
     if (currentSet) {
       annotations.value = currentSet.annotations || []
-      pdfAnnotations.value = annotations.value.filter(a => a.pdfPath)
+      pdfAnnotations.value = annotations.value.filter((a) => a.pdfPath)
 
       // 如果开启自动同步，将标注添加到思维导图
       if (autoSync.value) {
@@ -310,7 +360,7 @@ async function handleAnnotationCreated(annotation: PDFAnnotation): Promise<void>
 /**
  * 处理文本选择
  */
-function handleTextSelected(data: { text: string; page: number; rect: [number, number, number, number] | null }): void {
+function handleTextSelected(data: { text: string, page: number, rect: [number, number, number, number] | null }): void {
   console.log('[PdfMindMapLinkViewer] 文本选择:', data)
   // 使用联动服务处理文本选择
   if (linkageConfig.value.enableDragToCreate) {
@@ -322,7 +372,7 @@ function handleTextSelected(data: { text: string; page: number; rect: [number, n
  * 处理图片选择
  */
 function handleImageSelected(data: {
-  canvasRect: { x: number; y: number; width: number; height: number }
+  canvasRect: { x: number, y: number, width: number, height: number }
   pdfRect: [number, number, number, number]
   page: number
 }): void {
@@ -341,11 +391,11 @@ function highlightAnnotation(annotationId: string): void {
  */
 async function deleteAnnotation(annotationId: string): Promise<void> {
   try {
-    annotations.value = annotations.value.filter(a => a.id !== annotationId)
-    pdfAnnotations.value = pdfAnnotations.value.filter(a => a.id !== annotationId)
+    annotations.value = annotations.value.filter((a) => a.id !== annotationId)
+    pdfAnnotations.value = pdfAnnotations.value.filter((a) => a.id !== annotationId)
 
     // 从思维导图中删除对应节点
-    const node = mindMapStore.nodes.find(n => n.data.annotationId === annotationId)
+    const node = mindMapStore.nodes.find((n) => n.data.annotationId === annotationId)
     if (node) {
       mindMapStore.removeNode(node.id)
       unhighlightNode(node.id)
@@ -367,8 +417,8 @@ async function syncAnnotationsToMindMap(annotationsToSync: PDFAnnotation[]): Pro
     // 获取当前思维导图已有节点
     const existingAnnotationIds = new Set(
       mindMapStore.nodes
-        .filter(n => n.data.annotationId)
-        .map(n => n.data.annotationId as string)
+        .filter((n) => n.data.annotationId)
+        .map((n) => n.data.annotationId as string),
     )
 
     // 添加新标注
@@ -389,7 +439,7 @@ async function syncAnnotationsToMindMap(annotationsToSync: PDFAnnotation[]): Pro
  */
 async function addToMindMap(annotation: PDFAnnotation): Promise<void> {
   // 检查是否已存在
-  const existingNode = mindMapStore.nodes.find(n => n.data.annotationId === annotation.id)
+  const existingNode = mindMapStore.nodes.find((n) => n.data.annotationId === annotation.id)
   if (existingNode) {
     console.log('[PdfMindMapLinkViewer] 标注已在导图中:', annotation.id)
     return
@@ -408,7 +458,7 @@ async function addAnnotationToMindMap(annotation: PDFAnnotation): Promise<void> 
     const offsetY = existingNodes.length * 120
     const position = {
       x: 100 + (existingNodes.length % 5) * 20,
-      y: 100 + offsetY
+      y: 100 + offsetY,
     }
 
     // 创建节点
@@ -418,7 +468,7 @@ async function addAnnotationToMindMap(annotation: PDFAnnotation): Promise<void> 
       content: annotation.note || '',
       position,
       annotationId: annotation.id,
-      page: annotation.page
+      page: annotation.page,
     })
 
     console.log('[PdfMindMapLinkViewer] 已添加标注到导图:', annotation.id)
@@ -478,7 +528,7 @@ function handleNodeCreate(params: {
   title: string
   content: string
   type: 'textCard' | 'imageCard'
-  position: { x: number; y: number }
+  position: { x: number, y: number }
   annotationId?: string
 }): void {
   console.log('[PdfMindMapLinkViewer] 节点创建:', params)
@@ -489,7 +539,7 @@ function handleNodeCreate(params: {
  * 节点聚焦（一键跳转）
  */
 function handleNodeFocus(nodeId: string): void {
-  const node = mindMapStore.nodes.find(n => n.id === nodeId)
+  const node = mindMapStore.nodes.find((n) => n.id === nodeId)
   if (node && node.data.annotationId) {
     highlightAnnotation(node.data.annotationId as string)
   }
@@ -498,7 +548,7 @@ function handleNodeFocus(nodeId: string): void {
 /**
  * 链接创建
  */
-function handleLinkCreate(data: { sourceNodeId: string; targetNodeId: string; linkType: string }): void {
+function handleLinkCreate(data: { sourceNodeId: string, targetNodeId: string, linkType: string }): void {
   console.log('[PdfMindMapLinkViewer] 链接创建:', data)
 }
 
@@ -512,7 +562,7 @@ function handleConfigChange(newConfig: typeof linkageConfig.value): void {
 /**
  * 思维导图变更
  */
-function handleMindMapChange(data: { nodes: FreeMindMapNode[]; edges: FreeMindMapNode[] }): void {
+function handleMindMapChange(data: { nodes: FreeMindMapNode[], edges: FreeMindMapNode[] }): void {
   console.log('[PdfMindMapLinkViewer] 导图变更:', data)
 }
 
@@ -583,7 +633,7 @@ function handleFullscreenChange(): void {
 defineExpose({
   syncNow,
   highlightAnnotation,
-  addToMindMap
+  addToMindMap,
 })
 </script>
 

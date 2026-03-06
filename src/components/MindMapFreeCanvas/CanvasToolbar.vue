@@ -1,11 +1,310 @@
+<template>
+  <div class="freemind-toolbar">
+    <!-- 左侧：添加节点 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn"
+        :disabled="readOnly"
+        title="添加文本卡片 (T)"
+        @click="emit('add-node', 'textCard')"
+      >
+        <span class="freemind-toolbar-icon">📝</span>
+        <span class="freemind-toolbar-label">文本</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn"
+        :disabled="readOnly"
+        title="添加图片卡片 (I)"
+        @click="emit('add-node', 'imageCard')"
+      >
+        <span class="freemind-toolbar-icon">🖼️</span>
+        <span class="freemind-toolbar-label">图片</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn"
+        :disabled="readOnly"
+        title="添加分组 (G)"
+        @click="emit('add-group')"
+      >
+        <span class="freemind-toolbar-icon">📁</span>
+        <span class="freemind-toolbar-label">分组</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 从 PDF 生成 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        :disabled="readOnly"
+        title="从当前 PDF 标注生成思维导图"
+        @click="emit('generate-from-pdf')"
+      >
+        <span class="freemind-toolbar-icon">🧠</span>
+        <span class="freemind-toolbar-label">从 PDF 生成</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 智能推荐 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        :disabled="readOnly"
+        title="智能布局推荐"
+        @click="emit('smart-recommend')"
+      >
+        <span class="freemind-toolbar-icon">💡</span>
+        <span class="freemind-toolbar-label">智能推荐</span>
+      </button>
+    </div>
+
+    <!-- 知识关联推荐 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        :disabled="readOnly"
+        title="知识关联推荐"
+        @click="emit('knowledge-association')"
+      >
+        <span class="freemind-toolbar-icon">🔗</span>
+        <span class="freemind-toolbar-label">关联推荐</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 布局模式 -->
+    <div class="freemind-toolbar-group">
+      <div class="freemind-toolbar-label">
+        布局：
+      </div>
+      <div class="freemind-toolbar-btn-group">
+        <button
+          v-for="option in layoutOptions"
+          :key="option.value"
+          class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+          :class="{ active: layout === option.value }"
+          :disabled="readOnly && option.value !== 'free'"
+          :title="`${option.label}布局`"
+          @click="handleLayoutClick(option.value)"
+        >
+          {{ option.icon }}
+        </button>
+      </div>
+      <button
+        v-if="layout === 'concept'"
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: showNavigator }"
+        title="概念图配置"
+        @click="emit('toggle-concept-settings')"
+      >
+        ⚙️
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 视图控制 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        title="缩小 (Ctrl+-)"
+        @click="emit('zoom-out')"
+      >
+        <span class="freemind-toolbar-icon">🔍</span>
+      </button>
+      <span class="freemind-toolbar-zoom">{{ zoomPercent }}</span>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        title="放大 (Ctrl++))"
+        @click="emit('zoom-in')"
+      >
+        <span class="freemind-toolbar-icon">🔎</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        title="重置缩放 (Ctrl+0)"
+        @click="emit('zoom-reset')"
+      >
+        <span class="freemind-toolbar-icon">1:1</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        title="适应视图 (Ctrl+F)"
+        @click="emit('fit-view')"
+      >
+        <span class="freemind-toolbar-icon">📐</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 显示选项 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: showGrid }"
+        title="切换网格显示"
+        @click="emit('toggle-grid')"
+      >
+        <span class="freemind-toolbar-icon">⊞</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: snapEnabled }"
+        title="切换网格吸附"
+        @click="emit('toggle-snap')"
+      >
+        <span class="freemind-toolbar-icon">🧲</span>
+      </button>
+      <select
+        class="freemind-toolbar-select"
+        :value="gridSize"
+        title="选择网格大小"
+        @change="emit('set-grid-size', Number(($event.target as HTMLSelectElement).value))"
+      >
+        <option :value="10">
+          10px
+        </option>
+        <option :value="20">
+          20px
+        </option>
+        <option :value="50">
+          50px
+        </option>
+      </select>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: isFullscreen }"
+        title="全屏模式 (F11)"
+        @click="emit('toggle-fullscreen')"
+      >
+        <span class="freemind-toolbar-icon">{{ isFullscreen ? '📐' : '📐' }}</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: showNavigator }"
+        title="显示画布导航器"
+        @click="emit('toggle-navigator')"
+      >
+        <span class="freemind-toolbar-icon">🗺️</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 搜索和过滤 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: hasActiveSearch }"
+        title="搜索节点 (Ctrl+F)"
+        @click="emit('toggle-search')"
+      >
+        <span class="freemind-toolbar-icon">🔍</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
+        :class="{ active: hasActiveFilter }"
+        title="过滤节点 (Ctrl+Shift+F)"
+        @click="emit('toggle-filter')"
+      >
+        <span class="freemind-toolbar-icon">🎛️</span>
+      </button>
+      <!-- 标签过滤器 -->
+      <div
+        v-if="allTags && allTags.length > 0"
+        class="freemind-toolbar-group"
+      >
+        <div class="freemind-toolbar-divider" />
+        <select
+          class="freemind-toolbar-select"
+          :value="selectedTag"
+          title="按标签过滤"
+          @change="emit('filter-by-tag', ($event.target as HTMLSelectElement).value)"
+        >
+          <option value="">
+            全部标签
+          </option>
+          <option
+            v-for="tag in allTags"
+            :key="tag"
+            :value="tag"
+          >
+            🏷️ {{ tag }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="freemind-toolbar-spacer" />
+
+    <!-- 右侧：保存和导出 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn"
+        :disabled="readOnly"
+        title="保存 (Ctrl+S)"
+        @click="emit('save')"
+      >
+        <span class="freemind-toolbar-icon">💾</span>
+        <span class="freemind-toolbar-label">保存</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn"
+        title="导出图片"
+        @click="emit('export')"
+      >
+        <span class="freemind-toolbar-icon">📤</span>
+        <span class="freemind-toolbar-label">导出</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn"
+        :disabled="readOnly"
+        title="批量导出思维导图"
+        @click="emit('batch-export')"
+      >
+        <span class="freemind-toolbar-icon">📦</span>
+        <span class="freemind-toolbar-label">批量导出</span>
+      </button>
+      <button
+        class="freemind-toolbar-btn"
+        :disabled="readOnly"
+        title="批量修改节点样式"
+        @click="emit('batch-style')"
+      >
+        <span class="freemind-toolbar-icon">🎨</span>
+        <span class="freemind-toolbar-label">批量样式</span>
+      </button>
+    </div>
+
+    <div class="freemind-toolbar-divider" />
+
+    <!-- 布局模板 -->
+    <div class="freemind-toolbar-group">
+      <button
+        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
+        title="布局模板"
+        @click="emit('open-template-manager')"
+      >
+        <span class="freemind-toolbar-icon">📋</span>
+        <span class="freemind-toolbar-label">模板</span>
+      </button>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * 画布工具栏组件
  * 提供思维导图操作的快捷工具按钮
  */
 
-import { computed } from 'vue'
 import type { FreeMindMapLayout } from '@/types/mindmapFree'
+import { computed } from 'vue'
 
 interface Props {
   /** 当前布局模式 */
@@ -38,7 +337,7 @@ interface Emits {
   (e: 'add-node', type: 'textCard' | 'imageCard'): void
   (e: 'add-group'): void
   (e: 'auto-layout', direction: 'horizontal' | 'vertical'): void
-  (e: 'tree-layout'): void  // 树状布局
+  (e: 'tree-layout'): void // 树状布局
   (e: 'zoom-in'): void
   (e: 'zoom-out'): void
   (e: 'zoom-reset'): void
@@ -50,11 +349,16 @@ interface Emits {
   (e: 'toggle-search'): void
   (e: 'toggle-filter'): void
   (e: 'toggle-navigator'): void
+  (e: 'toggle-concept-settings'): void // 概念图配置
+  (e: 'smart-recommend'): void // 智能推荐
+  (e: 'knowledge-association'): void // 知识关联推荐
   (e: 'save'): void
   (e: 'export'): void
-  (e: 'generate-from-pdf'): void  // 从 PDF 标注生成
-  (e: 'filter-by-tag', tag: string): void  // 按标签过滤
-  (e: 'open-template-manager'): void  // 打开布局模板管理器
+  (e: 'batch-export'): void // 批量导出
+  (e: 'batch-style'): void // 批量样式
+  (e: 'generate-from-pdf'): void // 从 PDF 标注生成
+  (e: 'filter-by-tag', tag: string): void // 按标签过滤
+  (e: 'open-template-manager'): void // 打开布局模板管理器
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -69,22 +373,42 @@ const props = withDefaults(defineProps<Props>(), {
   snapEnabled: true,
   allTags: () => [],
   selectedTag: '',
-  showNavigator: false
+  showNavigator: false,
 })
 
 const emit = defineEmits<Emits>()
 
 // 布局选项
 const layoutOptions = [
-  { value: 'free', label: '自由', icon: '🎨' },
-  { value: 'tree', label: '树状', icon: '🌳' },
-  { value: 'vertical', label: '垂直', icon: '⬇️' },
-  { value: 'horizontal', label: '水平', icon: '➡️' },
-  { value: 'concept', label: '概念图', icon: '🕸️' }
+  {
+    value: 'free',
+    label: '自由',
+    icon: '🎨',
+  },
+  {
+    value: 'tree',
+    label: '树状',
+    icon: '🌳',
+  },
+  {
+    value: 'vertical',
+    label: '垂直',
+    icon: '⬇️',
+  },
+  {
+    value: 'horizontal',
+    label: '水平',
+    icon: '➡️',
+  },
+  {
+    value: 'concept',
+    label: '概念图',
+    icon: '🕸️',
+  },
 ]
 
 // 计算缩放百分比
-const zoomPercent = computed(() => Math.round(props.zoom * 100) + '%')
+const zoomPercent = computed(() => `${Math.round(props.zoom * 100)}%`)
 
 // 处理布局点击
 function handleLayoutClick(value: string): void {
@@ -97,257 +421,6 @@ function handleLayoutClick(value: string): void {
   }
 }
 </script>
-
-<template>
-  <div class="freemind-toolbar">
-    <!-- 左侧：添加节点 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn"
-        :disabled="readOnly"
-        @click="emit('add-node', 'textCard')"
-        title="添加文本卡片 (T)"
-      >
-        <span class="freemind-toolbar-icon">📝</span>
-        <span class="freemind-toolbar-label">文本</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn"
-        :disabled="readOnly"
-        @click="emit('add-node', 'imageCard')"
-        title="添加图片卡片 (I)"
-      >
-        <span class="freemind-toolbar-icon">🖼️</span>
-        <span class="freemind-toolbar-label">图片</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn"
-        :disabled="readOnly"
-        @click="emit('add-group')"
-        title="添加分组 (G)"
-      >
-        <span class="freemind-toolbar-icon">📁</span>
-        <span class="freemind-toolbar-label">分组</span>
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 从 PDF 生成 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
-        :disabled="readOnly"
-        @click="emit('generate-from-pdf')"
-        title="从当前 PDF 标注生成思维导图"
-      >
-        <span class="freemind-toolbar-icon">🧠</span>
-        <span class="freemind-toolbar-label">从 PDF 生成</span>
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 智能推荐 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
-        :disabled="readOnly"
-        @click="emit('smart-recommend')"
-        title="智能布局推荐"
-      >
-        <span class="freemind-toolbar-icon">💡</span>
-        <span class="freemind-toolbar-label">智能推荐</span>
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 布局模式 -->
-    <div class="freemind-toolbar-group">
-      <div class="freemind-toolbar-label">布局：</div>
-      <div class="freemind-toolbar-btn-group">
-        <button
-          v-for="option in layoutOptions"
-          :key="option.value"
-          class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-          :class="{ active: layout === option.value }"
-          :disabled="readOnly && option.value !== 'free'"
-          @click="handleLayoutClick(option.value)"
-          :title="option.label + '布局'"
-        >
-          {{ option.icon }}
-        </button>
-      </div>
-      <button
-        v-if="layout === 'concept'"
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: showNavigator }"
-        @click="emit('toggle-concept-settings')"
-        title="概念图配置"
-      >
-        ⚙️
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 视图控制 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        @click="emit('zoom-out')"
-        title="缩小 (Ctrl+-)"
-      >
-        <span class="freemind-toolbar-icon">🔍</span>
-      </button>
-      <span class="freemind-toolbar-zoom">{{ zoomPercent }}</span>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        @click="emit('zoom-in')"
-        title="放大 (Ctrl++))"
-      >
-        <span class="freemind-toolbar-icon">🔎</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        @click="emit('zoom-reset')"
-        title="重置缩放 (Ctrl+0)"
-      >
-        <span class="freemind-toolbar-icon">1:1</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        @click="emit('fit-view')"
-        title="适应视图 (Ctrl+F)"
-      >
-        <span class="freemind-toolbar-icon">📐</span>
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 显示选项 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: showGrid }"
-        @click="emit('toggle-grid')"
-        title="切换网格显示"
-      >
-        <span class="freemind-toolbar-icon">⊞</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: snapEnabled }"
-        @click="emit('toggle-snap')"
-        title="切换网格吸附"
-      >
-        <span class="freemind-toolbar-icon">🧲</span>
-      </button>
-      <select
-        class="freemind-toolbar-select"
-        :value="gridSize"
-        @change="emit('set-grid-size', Number(($event.target as HTMLSelectElement).value))"
-        title="选择网格大小"
-      >
-        <option :value="10">10px</option>
-        <option :value="20">20px</option>
-        <option :value="50">50px</option>
-      </select>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: isFullscreen }"
-        @click="emit('toggle-fullscreen')"
-        title="全屏模式 (F11)"
-      >
-        <span class="freemind-toolbar-icon">{{ isFullscreen ? '📐' : '📐' }}</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: showNavigator }"
-        @click="emit('toggle-navigator')"
-        title="显示画布导航器"
-      >
-        <span class="freemind-toolbar-icon">🗺️</span>
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 搜索和过滤 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: hasActiveSearch }"
-        @click="emit('toggle-search')"
-        title="搜索节点 (Ctrl+F)"
-      >
-        <span class="freemind-toolbar-icon">🔍</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-icon"
-        :class="{ active: hasActiveFilter }"
-        @click="emit('toggle-filter')"
-        title="过滤节点 (Ctrl+Shift+F)"
-      >
-        <span class="freemind-toolbar-icon">🎛️</span>
-      </button>
-      <!-- 标签过滤器 -->
-      <div v-if="allTags && allTags.length > 0" class="freemind-toolbar-group">
-        <div class="freemind-toolbar-divider" />
-        <select
-          class="freemind-toolbar-select"
-          :value="selectedTag"
-          @change="emit('filter-by-tag', ($event.target as HTMLSelectElement).value)"
-          title="按标签过滤"
-        >
-          <option value="">全部标签</option>
-          <option v-for="tag in allTags" :key="tag" :value="tag">
-            🏷️ {{ tag }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div class="freemind-toolbar-spacer" />
-
-    <!-- 右侧：保存和导出 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn"
-        :disabled="readOnly"
-        @click="emit('save')"
-        title="保存 (Ctrl+S)"
-      >
-        <span class="freemind-toolbar-icon">💾</span>
-        <span class="freemind-toolbar-label">保存</span>
-      </button>
-      <button
-        class="freemind-toolbar-btn"
-        @click="emit('export')"
-        title="导出图片"
-      >
-        <span class="freemind-toolbar-icon">📤</span>
-        <span class="freemind-toolbar-label">导出</span>
-      </button>
-    </div>
-
-    <div class="freemind-toolbar-divider" />
-
-    <!-- 布局模板 -->
-    <div class="freemind-toolbar-group">
-      <button
-        class="freemind-toolbar-btn freemind-toolbar-btn-primary"
-        @click="emit('open-template-manager')"
-        title="布局模板"
-      >
-        <span class="freemind-toolbar-icon">📋</span>
-        <span class="freemind-toolbar-label">模板</span>
-      </button>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .freemind-toolbar {

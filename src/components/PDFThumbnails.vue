@@ -1,18 +1,24 @@
 <template>
-  <div class="pdf-thumbnails" :class="{ 'vertical': scrollMode === 'vertical' }">
+  <div
+    class="pdf-thumbnails"
+    :class="{ vertical: scrollMode === 'vertical' }"
+  >
     <div
       v-for="page in visiblePages"
       :key="page.num"
-      :class="['thumbnail-item', { active: currentPage === page.num }]"
+      class="thumbnail-item"
+      :class="[{ active: currentPage === page.num }]"
       @click="$emit('page-click', page.num)"
     >
-      <div class="thumbnail-number">{{ page.num }}</div>
+      <div class="thumbnail-number">
+        {{ page.num }}
+      </div>
       <div
         ref="thumbnailRefs"
         class="thumbnail-canvas"
         :style="{
           width: `${thumbnailWidth}px`,
-          height: `${thumbnailHeight}px`
+          height: `${thumbnailHeight}px`,
         }"
       >
         <canvas
@@ -22,10 +28,13 @@
           :height="thumbnailHeight * window.devicePixelRatio"
           :style="{
             width: `${thumbnailWidth}px`,
-            height: `${thumbnailHeight}px`
+            height: `${thumbnailHeight}px`,
           }"
         ></canvas>
-        <div v-else class="thumbnail-loading">
+        <div
+          v-else
+          class="thumbnail-loading"
+        >
           <span>加载中...</span>
         </div>
       </div>
@@ -34,120 +43,126 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 
 interface Props {
-  pdfDocument: PDFDocumentProxy | null;
-  currentPage: number;
-  scrollMode: 'vertical' | 'horizontal';
-  thumbnailScale?: number;
+  pdfDocument: PDFDocumentProxy | null
+  currentPage: number
+  scrollMode: 'vertical' | 'horizontal'
+  thumbnailScale?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  thumbnailScale: 0.2
-});
+  thumbnailScale: 0.2,
+})
 
 const emit = defineEmits<{
-  (e: 'page-click', pageNum: number): void;
-}>();
+  (e: 'page-click', pageNum: number): void
+}>()
 
-const thumbnailRefs = ref<HTMLElement[]>([]);
-const canvasRefs = ref<Map<number, HTMLCanvasElement>>(new Map());
-const renderedPages = ref<Set<number>>(new Set());
+const thumbnailRefs = ref<HTMLElement[]>([])
+const canvasRefs = ref<Map<number, HTMLCanvasElement>>(new Map())
+const renderedPages = ref<Set<number>>(new Set())
 
-const thumbnailWidth = 120;
-const thumbnailHeight = 160;
+const thumbnailWidth = 120
+const thumbnailHeight = 160
 
 // 计算可见页面（虚拟滚动）
 const visiblePages = computed(() => {
-  if (!props.pdfDocument) return [];
+  if (!props.pdfDocument) return []
 
-  const totalPages = props.pdfDocument.numPages;
-  const pages = [];
+  const totalPages = props.pdfDocument.numPages
+  const pages = []
 
   // 加载当前页附近的页面
-  const range = 5;
-  const start = Math.max(1, props.currentPage - range);
-  const end = Math.min(totalPages, props.currentPage + range);
+  const range = 5
+  const start = Math.max(1, props.currentPage - range)
+  const end = Math.min(totalPages, props.currentPage + range)
 
   for (let i = start; i <= end; i++) {
     pages.push({
       num: i,
-      loaded: renderedPages.value.has(i)
-    });
+      loaded: renderedPages.value.has(i),
+    })
   }
 
-  return pages;
-});
+  return pages
+})
 
 const setCanvasRef = (el: HTMLCanvasElement | null, pageNum: number) => {
   if (el) {
-    canvasRefs.value.set(pageNum, el);
-    renderThumbnail(pageNum);
+    canvasRefs.value.set(pageNum, el)
+    renderThumbnail(pageNum)
   }
-};
+}
 
 const renderThumbnail = async (pageNum: number) => {
-  if (!props.pdfDocument || renderedPages.value.has(pageNum)) return;
+  if (!props.pdfDocument || renderedPages.value.has(pageNum)) return
 
   try {
-    const page = await props.pdfDocument.getPage(pageNum);
-    const canvas = canvasRefs.value.get(pageNum);
+    const page = await props.pdfDocument.getPage(pageNum)
+    const canvas = canvasRefs.value.get(pageNum)
 
-    if (!canvas) return;
+    if (!canvas) return
 
-    const viewport = page.getViewport({ scale: props.thumbnailScale });
-    const scale = window.devicePixelRatio || 1;
+    const viewport = page.getViewport({ scale: props.thumbnailScale })
+    const scale = window.devicePixelRatio || 1
 
-    canvas.width = viewport.width * scale;
-    canvas.height = viewport.height * scale;
-    canvas.style.width = `${viewport.width}px`;
-    canvas.style.height = `${viewport.height}px`;
+    canvas.width = viewport.width * scale
+    canvas.height = viewport.height * scale
+    canvas.style.width = `${viewport.width}px`
+    canvas.style.height = `${viewport.height}px`
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-    ctx.scale(scale, scale);
+    ctx.scale(scale, scale)
 
     await page.render({
       canvasContext: ctx,
-      viewport: viewport
-    }).promise;
+      viewport,
+    }).promise
 
-    renderedPages.value.add(pageNum);
+    renderedPages.value.add(pageNum)
   } catch (error) {
-    console.error(`Failed to render thumbnail for page ${pageNum}:`, error);
+    console.error(`Failed to render thumbnail for page ${pageNum}:`, error)
   }
-};
+}
 
 // 监听当前页变化
 watch(() => props.currentPage, () => {
   // 预加载附近页面
-  visiblePages.value.forEach(page => {
+  visiblePages.value.forEach((page) => {
     if (!page.loaded) {
-      renderThumbnail(page.num);
+      renderThumbnail(page.num)
     }
-  });
-}, { immediate: true });
+  })
+}, { immediate: true })
 
 // 监听 PDF 文档变化
 watch(() => props.pdfDocument, () => {
   if (props.pdfDocument) {
-    renderedPages.value.clear();
-    canvasRefs.value.clear();
+    renderedPages.value.clear()
+    canvasRefs.value.clear()
     // 加载初始页面
     nextTick(() => {
-      renderThumbnail(props.currentPage);
-    });
+      renderThumbnail(props.currentPage)
+    })
   }
-}, { immediate: true });
+}, { immediate: true })
 
 onMounted(() => {
   if (props.pdfDocument) {
-    renderThumbnail(props.currentPage);
+    renderThumbnail(props.currentPage)
   }
-});
+})
 </script>
 
 <style scoped lang="scss">

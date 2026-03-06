@@ -1,8 +1,8 @@
+import { createPinia } from 'pinia'
 import {
   Plugin,
-} from "siyuan";
+} from "siyuan"
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 import App from './App.vue'
 
 let plugin = null
@@ -13,14 +13,14 @@ export function usePlugin(pluginProps?: Plugin): Plugin {
   if (!plugin && !pluginProps) {
     console.error('need bind plugin')
   }
-  return plugin;
+  return plugin
 }
 
 
 let app = null
 export function init(plugin: Plugin) {
   // bind plugin hook
-  usePlugin(plugin);
+  usePlugin(plugin)
 
   const div = document.createElement('div')
   div.classList.toggle('fangmu-pdf-siyuan-app')

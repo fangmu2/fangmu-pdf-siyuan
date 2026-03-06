@@ -5,17 +5,24 @@
 
 import type {
   CanvasConfig,
-  LayerConfig,
+  CanvasListItem,
   CanvasReference,
-  CrossCanvasNodeLink,
+  CanvasStats,
   CreateCanvasParams,
+  CrossCanvasNodeLink,
+  LayerConfig,
   UpdateCanvasParams,
   UpdateLayerParams,
-  CanvasStats,
-  CanvasListItem
-} from '@/types/canvas'
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
-import { sql, createBlock, updateBlock, getBlock } from '@/api'
+} from '../types/canvas'
+
+
+import {
+  createBlock,
+  getBlock,
+  getPluginData,
+  sql,
+  updateBlock,
+} from '../api/siyuanApi'
 
 /**
  * 画布数据块属性键名
@@ -52,7 +59,7 @@ function createDefaultLayers(): LayerConfig[] {
       locked: false,
       order: 0,
       opacity: 1,
-      color: '#e0e0e0'
+      color: '#e0e0e0',
     },
     {
       id: 'layer-nodes',
@@ -62,7 +69,7 @@ function createDefaultLayers(): LayerConfig[] {
       locked: false,
       order: 1,
       opacity: 1,
-      color: '#409eff'
+      color: '#409eff',
     },
     {
       id: 'layer-annotations',
@@ -72,7 +79,7 @@ function createDefaultLayers(): LayerConfig[] {
       locked: false,
       order: 2,
       opacity: 0.8,
-      color: '#67c23a'
+      color: '#67c23a',
     },
     {
       id: 'layer-handwriting',
@@ -82,8 +89,8 @@ function createDefaultLayers(): LayerConfig[] {
       locked: false,
       order: 3,
       opacity: 1,
-      color: '#e6a23c'
-    }
+      color: '#e6a23c',
+    },
   ]
 }
 
@@ -108,12 +115,12 @@ export async function createCanvas(params: CreateCanvasParams): Promise<CanvasCo
     viewport: {
       zoom: 1,
       x: 0,
-      y: 0
+      y: 0,
     },
     showGrid: true,
     backgroundColor: params.backgroundColor || '#ffffff',
     createdAt: timestamp,
-    updatedAt: timestamp
+    updatedAt: timestamp,
   }
 
   // 保存到思源块属性
@@ -129,20 +136,13 @@ export async function createCanvas(params: CreateCanvasParams): Promise<CanvasCo
  */
 export async function getCanvas(canvasId: string): Promise<CanvasConfig | null> {
   try {
-    // 尝试从思源块属性加载
-    const block = await getBlock(canvasId)
-    if (!block) {
+    // 尝试从本地存储加载
+    const canvas = await getPluginData<CanvasConfig>(`canvas-${canvasId}`)
+    if (!canvas) {
       return null
     }
 
-    const attrs = block.attrs || {}
-    const dataStr = attrs[CANVAS_DATA_KEY]
-
-    if (!dataStr) {
-      return null
-    }
-
-    return JSON.parse(dataStr)
+    return canvas
   } catch (error) {
     console.error('[CanvasService] 获取画布失败:', error)
     return null
@@ -187,7 +187,7 @@ export async function getAllCanvases(studySetId?: string): Promise<CanvasListIte
               pdfPath: canvas.pdfDocId,
               nodeCount: canvas.nodes?.length || 0,
               lastUpdatedAt: canvas.updatedAt,
-              isActive: false
+              isActive: false,
             })
           } catch (e) {
             console.error('[CanvasService] 解析画布数据失败:', e)
@@ -227,7 +227,7 @@ export async function updateCanvas(params: UpdateCanvasParams): Promise<boolean>
       edges: params.edges ?? existingCanvas.edges,
       viewport: params.viewport ?? existingCanvas.viewport,
       layers: params.layers ?? existingCanvas.layers,
-      updatedAt: now()
+      updatedAt: now(),
     }
 
     await saveCanvasToBlock(updatedCanvas)
@@ -247,7 +247,7 @@ export async function deleteCanvas(canvasId: string): Promise<boolean> {
   try {
     // 删除思源块
     const result = await sql({
-      sql: `DELETE FROM blocks WHERE id = '${canvasId}'`
+      sql: `DELETE FROM blocks WHERE id = '${canvasId}'`,
     })
 
     return result?.code === 0
@@ -274,7 +274,7 @@ async function saveCanvasToBlock(canvas: CanvasConfig): Promise<void> {
     showGrid: canvas.showGrid,
     backgroundColor: canvas.backgroundColor,
     createdAt: canvas.createdAt,
-    updatedAt: canvas.updatedAt
+    updatedAt: canvas.updatedAt,
   }
 
   const layersData = canvas.layers
@@ -291,8 +291,8 @@ async function saveCanvasToBlock(canvas: CanvasConfig): Promise<void> {
           [CANVAS_DATA_KEY]: JSON.stringify(data),
           [CANVAS_LAYERS_KEY]: JSON.stringify(layersData),
           'custom-canvas-name': canvas.name,
-          'custom-canvas-studyset': canvas.studySetId
-        }
+          'custom-canvas-studyset': canvas.studySetId,
+        },
       })
     } else {
       // 创建新块
@@ -305,9 +305,9 @@ async function saveCanvasToBlock(canvas: CanvasConfig): Promise<void> {
             [CANVAS_DATA_KEY]: JSON.stringify(data),
             [CANVAS_LAYERS_KEY]: JSON.stringify(layersData),
             'custom-canvas-name': canvas.name,
-            'custom-canvas-studyset': canvas.studySetId
-          }
-        }
+            'custom-canvas-studyset': canvas.studySetId,
+          },
+        },
       })
     }
   } catch (error) {
@@ -350,11 +350,11 @@ export async function getCanvasLayers(canvasId: string): Promise<LayerConfig[]> 
  */
 export async function updateLayer(
   canvasId: string,
-  layerParams: UpdateLayerParams
+  layerParams: UpdateLayerParams,
 ): Promise<boolean> {
   try {
     const layers = await getCanvasLayers(canvasId)
-    const layerIndex = layers.findIndex(l => l.id === layerParams.id)
+    const layerIndex = layers.findIndex((l) => l.id === layerParams.id)
 
     if (layerIndex === -1) {
       console.error('[CanvasService] 图层不存在:', layerParams.id)
@@ -367,7 +367,7 @@ export async function updateLayer(
       visible: layerParams.visible ?? layers[layerIndex].visible,
       locked: layerParams.locked ?? layers[layerIndex].locked,
       order: layerParams.order ?? layers[layerIndex].order,
-      opacity: layerParams.opacity ?? layers[layerIndex].opacity
+      opacity: layerParams.opacity ?? layers[layerIndex].opacity,
     }
 
     // 按 order 排序
@@ -379,8 +379,8 @@ export async function updateLayer(
       await updateBlock({
         id: canvasId,
         attrs: {
-          [CANVAS_LAYERS_KEY]: JSON.stringify(layers)
-        }
+          [CANVAS_LAYERS_KEY]: JSON.stringify(layers),
+        },
       })
     }
 
@@ -403,7 +403,7 @@ export async function addLayer(canvasId: string, layer: Omit<LayerConfig, 'id'>)
 
     const newLayer: LayerConfig = {
       ...layer,
-      id: generateId()
+      id: generateId(),
     }
 
     layers.push(newLayer)
@@ -414,8 +414,8 @@ export async function addLayer(canvasId: string, layer: Omit<LayerConfig, 'id'>)
       await updateBlock({
         id: canvasId,
         attrs: {
-          [CANVAS_LAYERS_KEY]: JSON.stringify(layers)
-        }
+          [CANVAS_LAYERS_KEY]: JSON.stringify(layers),
+        },
       })
     }
 
@@ -435,7 +435,7 @@ export async function addLayer(canvasId: string, layer: Omit<LayerConfig, 'id'>)
 export async function deleteLayer(canvasId: string, layerId: string): Promise<boolean> {
   try {
     const layers = await getCanvasLayers(canvasId)
-    const filteredLayers = layers.filter(l => l.id !== layerId)
+    const filteredLayers = layers.filter((l) => l.id !== layerId)
 
     if (filteredLayers.length === layers.length) {
       return false // 图层不存在
@@ -447,8 +447,8 @@ export async function deleteLayer(canvasId: string, layerId: string): Promise<bo
       await updateBlock({
         id: canvasId,
         attrs: {
-          [CANVAS_LAYERS_KEY]: JSON.stringify(filteredLayers)
-        }
+          [CANVAS_LAYERS_KEY]: JSON.stringify(filteredLayers),
+        },
       })
     }
 
@@ -471,8 +471,8 @@ export async function getCanvasStats(canvasId: string): Promise<CanvasStats | nu
       return null
     }
 
-    const visibleLayers = canvas.layers.filter(l => l.visible)
-    const lockedLayers = canvas.layers.filter(l => l.locked)
+    const visibleLayers = canvas.layers.filter((l) => l.visible)
+    const lockedLayers = canvas.layers.filter((l) => l.locked)
 
     return {
       canvasId: canvas.id,
@@ -481,7 +481,7 @@ export async function getCanvasStats(canvasId: string): Promise<CanvasStats | nu
       layerCount: canvas.layers.length,
       visibleLayerCount: visibleLayers.length,
       lockedLayerCount: lockedLayers.length,
-      lastUpdatedAt: canvas.updatedAt
+      lastUpdatedAt: canvas.updatedAt,
     }
   } catch (error) {
     console.error('[CanvasService] 获取统计信息失败:', error)
@@ -501,7 +501,7 @@ export async function createCanvasReference(
   sourceCanvasId: string,
   targetCanvasId: string,
   nodeIds: string[],
-  referenceType: 'node' | 'layer' | 'all' = 'node'
+  referenceType: 'node' | 'layer' | 'all' = 'node',
 ): Promise<CanvasReference | null> {
   try {
     const reference: CanvasReference = {
@@ -510,7 +510,7 @@ export async function createCanvasReference(
       targetCanvasId,
       nodeIds,
       referenceType,
-      createdAt: now()
+      createdAt: now(),
     }
 
     // 保存引用到源画布
@@ -523,8 +523,8 @@ export async function createCanvasReference(
       await updateBlock({
         id: sourceCanvasId,
         attrs: {
-          [CANVAS_REFERENCES_KEY]: JSON.stringify(existingRefs)
-        }
+          [CANVAS_REFERENCES_KEY]: JSON.stringify(existingRefs),
+        },
       })
     }
 
@@ -571,22 +571,22 @@ export async function createCrossCanvasLink(
   targetCanvasId: string,
   targetNodeId: string,
   linkType: 'reference' | 'relation' | 'seeAlso' = 'relation',
-  description?: string
+  description?: string,
 ): Promise<CrossCanvasNodeLink | null> {
   try {
     const link: CrossCanvasNodeLink = {
       id: generateId(),
       source: {
         canvasId: sourceCanvasId,
-        nodeId: sourceNodeId
+        nodeId: sourceNodeId,
       },
       target: {
         canvasId: targetCanvasId,
-        nodeId: targetNodeId
+        nodeId: targetNodeId,
       },
       linkType,
       description,
-      createdAt: now()
+      createdAt: now(),
     }
 
     // 保存关联到两个画布
@@ -598,9 +598,9 @@ export async function createCrossCanvasLink(
 
         // 检查是否已存在
         const exists = existingLinks.some(
-          l =>
-            (l.source.canvasId === sourceCanvasId && l.source.nodeId === sourceNodeId) ||
-            (l.target.canvasId === targetCanvasId && l.target.nodeId === targetNodeId)
+          (l) =>
+            (l.source.canvasId === sourceCanvasId && l.source.nodeId === sourceNodeId)
+            || (l.target.canvasId === targetCanvasId && l.target.nodeId === targetNodeId),
         )
 
         if (!exists) {
@@ -608,8 +608,8 @@ export async function createCrossCanvasLink(
           await updateBlock({
             id: canvasId,
             attrs: {
-              [CANVAS_LINKS_KEY]: JSON.stringify(existingLinks)
-            }
+              [CANVAS_LINKS_KEY]: JSON.stringify(existingLinks),
+            },
           })
         }
       }
@@ -658,14 +658,14 @@ export async function deleteCrossCanvasLink(linkId: string): Promise<boolean> {
         const linksStr = block.attrs?.[CANVAS_LINKS_KEY]
         if (linksStr) {
           const links: CrossCanvasNodeLink[] = JSON.parse(linksStr)
-          const filteredLinks = links.filter(l => l.id !== linkId)
+          const filteredLinks = links.filter((l) => l.id !== linkId)
 
           if (filteredLinks.length !== links.length) {
             await updateBlock({
               id: canvasItem.id,
               attrs: {
-                [CANVAS_LINKS_KEY]: JSON.stringify(filteredLinks)
-              }
+                [CANVAS_LINKS_KEY]: JSON.stringify(filteredLinks),
+              },
             })
           }
         }

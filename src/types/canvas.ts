@@ -3,7 +3,11 @@
  * @fileoverview 定义画布、图层相关的数据结构和接口
  */
 
-import type { FreeMindMapNode, FreeMindMapEdge, FreeMindMapLayout } from './mindmapFree'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapLayout,
+  FreeMindMapNode,
+} from './mindmapFree'
 
 /**
  * 图层类型

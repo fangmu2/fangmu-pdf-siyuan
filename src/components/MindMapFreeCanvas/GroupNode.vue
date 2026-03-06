@@ -1,13 +1,66 @@
+<template>
+  <div
+    class="marginnote-group-node"
+    :style="containerStyle"
+  >
+    <!-- 目标连接点（输入） -->
+    <Handle
+      type="target"
+      :position="Position.Left"
+      class="marginnote-handle"
+    />
+
+    <!-- 标题栏 -->
+    <div
+      v-if="showTitle"
+      class="marginnote-group-header"
+      :style="{ background: headerGradient }"
+    >
+      <span class="marginnote-group-icon">📦</span>
+      <span class="marginnote-group-title">{{ data.title }}</span>
+      <span
+        v-if="childCount > 0"
+        class="marginnote-group-count"
+      >
+        {{ childCount }} 个子节点
+      </span>
+    </div>
+
+    <!-- 空状态提示 -->
+    <div
+      v-else
+      class="marginnote-group-empty"
+    >
+      <span class="marginnote-empty-icon">📦</span>
+      <span class="marginnote-empty-text">分组容器</span>
+      <span class="marginnote-empty-hint">双击编辑标题</span>
+    </div>
+
+    <!-- 源连接点（输出） -->
+    <Handle
+      type="source"
+      :position="Position.Right"
+      class="marginnote-handle"
+    />
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * 分组容器节点组件
  * MarginNote 风格的分组框 - 优化版
  */
 
-import { computed, toRefs } from 'vue'
 import type { NodeProps } from '@vue-flow/core'
-import { Handle, Position } from '@vue-flow/core'
 import type { FreeMindMapGroupData } from '@/types/mindmapFree'
+import {
+  Handle,
+  Position,
+} from '@vue-flow/core'
+import {
+  computed,
+  toRefs,
+} from 'vue'
 
 interface Props extends NodeProps {
   data: FreeMindMapGroupData
@@ -61,53 +114,6 @@ const childCount = computed(() => {
   return data.value.childCount || 0
 })
 </script>
-
-<template>
-  <div
-    class="marginnote-group-node"
-    :style="containerStyle"
-  >
-    <!-- 目标连接点（输入） -->
-    <Handle
-      type="target"
-      :position="Position.Left"
-      class="marginnote-handle"
-    />
-
-    <!-- 标题栏 -->
-    <div
-      v-if="showTitle"
-      class="marginnote-group-header"
-      :style="{ background: headerGradient }"
-    >
-      <span class="marginnote-group-icon">📦</span>
-      <span class="marginnote-group-title">{{ data.title }}</span>
-      <span
-        v-if="childCount > 0"
-        class="marginnote-group-count"
-      >
-        {{ childCount }} 个子节点
-      </span>
-    </div>
-
-    <!-- 空状态提示 -->
-    <div
-      v-else
-      class="marginnote-group-empty"
-    >
-      <span class="marginnote-empty-icon">📦</span>
-      <span class="marginnote-empty-text">分组容器</span>
-      <span class="marginnote-empty-hint">双击编辑标题</span>
-    </div>
-
-    <!-- 源连接点（输出） -->
-    <Handle
-      type="source"
-      :position="Position.Right"
-      class="marginnote-handle"
-    />
-  </div>
-</template>
 
 <style scoped>
 /* MarginNote 风格分组容器 - 优化版 */

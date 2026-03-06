@@ -4,59 +4,107 @@
     <!-- 顶部导航栏 -->
     <div class="detail-header">
       <div class="header-left">
-        <button @click="goBack" class="back-btn" title="返回">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        <button
+          class="back-btn"
+          title="返回"
+          @click="goBack"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="currentColor"
+          >
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
           </svg>
         </button>
         <div class="study-set-info">
-          <h2 class="study-set-title">{{ studySet?.name || '加载中...' }}</h2>
-          <p v-if="studySet?.description" class="study-set-description">{{ studySet.description }}</p>
+          <h2 class="study-set-title">
+            {{ studySet?.name || '加载中...' }}
+          </h2>
+          <p
+            v-if="studySet?.description"
+            class="study-set-description"
+          >
+            {{ studySet.description }}
+          </p>
         </div>
       </div>
       <div class="header-right">
         <div class="view-switcher">
           <button
-            :class="['view-btn', { active: currentView === 'cards' }]"
-            @click="currentView = 'cards'"
+            class="view-btn"
+            :class="[{ active: currentView === 'cards' }]"
             title="卡片视图"
+            @click="currentView = 'cards'"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="currentColor"
+            >
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
             </svg>
           </button>
           <button
-            :class="['view-btn', { active: currentView === 'mindmap' }]"
-            @click="currentView = 'mindmap'"
+            class="view-btn"
+            :class="[{ active: currentView === 'mindmap' }]"
             title="思维导图"
+            @click="currentView = 'mindmap'"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M22 11h-2V9h2v2zm-4 0h-2V9h2v2zm-4 0h-2V9h2v2zm-4 0H8V9h2v2zm-4 0H4V9h2v2zm14 4h-2v-2h2v2zm-4 0h-2v-2h2v2zm-4 0H8v-2h2v2zm-4 0H4v-2h2v2zm14 4h-2v-2h2v2zm-4 0h-2v-2h2v2zm-4 0H8v-2h2v2zm-4 0H4v-2h2v2z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="currentColor"
+            >
+              <path d="M22 11h-2V9h2v2zm-4 0h-2V9h2v2zm-4 0h-2V9h2v2zm-4 0H8V9h2v2zm-4 0H4V9h2v2zm14 4h-2v-2h2v2zm-4 0h-2v-2h2v2zm-4 0H8v-2h2v2zm-4 0H4v-2h2v2zm14 4h-2v-2h2v2zm-4 0h-2v-2h2v2zm-4 0H8v-2h2v2zm-4 0H4v-2h2v2z" />
             </svg>
           </button>
           <button
-            :class="['view-btn', { active: currentView === 'board' }]"
-            @click="currentView = 'board'"
+            class="view-btn"
+            :class="[{ active: currentView === 'board' }]"
             title="卡片盒看板"
+            @click="currentView = 'board'"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
-              <path d="M7 7h4v4H7zm6 0h4v4h-4zm-6 6h4v4H7zm6 0h4v4h-4z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="currentColor"
+            >
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" />
+              <path d="M7 7h4v4H7zm6 0h4v4h-4zm-6 6h4v4H7zm6 0h4v4h-4z" />
             </svg>
           </button>
           <button
-            :class="['view-btn', { active: currentView === 'review' }]"
-            @click="currentView = 'review'"
+            class="view-btn"
+            :class="[{ active: currentView === 'review' }]"
             title="复习模式"
+            @click="currentView = 'review'"
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm1-11h-2v3.17l2.7 1.58-1 1.71L11 13V8z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="currentColor"
+            >
+              <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm1-11h-2v3.17l2.7 1.58-1 1.71L11 13V8z" />
             </svg>
           </button>
         </div>
-        <button @click="showAddCardDialog = true" class="add-card-btn">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        <button
+          class="add-card-btn"
+          @click="showAddCardDialog = true"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
           </svg>
           添加卡片
         </button>
@@ -87,7 +135,10 @@
       </div>
       <div class="stat-item">
         <div class="progress-ring">
-          <svg width="36" height="36">
+          <svg
+            width="36"
+            height="36"
+          >
             <circle
               class="progress-ring-bg"
               cx="18"
@@ -111,7 +162,10 @@
     <!-- 主内容区 -->
     <div class="detail-content">
       <!-- 卡片列表视图 -->
-      <div v-show="currentView === 'cards'" class="view-container">
+      <div
+        v-show="currentView === 'cards'"
+        class="view-container"
+      >
         <CardList
           :cards="cards"
           :study-set-id="studySetId"
@@ -122,7 +176,10 @@
       </div>
 
       <!-- 思维导图视图 -->
-      <div v-show="currentView === 'mindmap'" class="view-container mindmap-view">
+      <div
+        v-show="currentView === 'mindmap'"
+        class="view-container mindmap-view"
+      >
         <MindMapEditor
           :annotations="annotations"
           :study-set-id="studySetId"
@@ -134,7 +191,10 @@
       </div>
 
       <!-- 卡片盒看板视图 -->
-      <div v-show="currentView === 'board'" class="view-container">
+      <div
+        v-show="currentView === 'board'"
+        class="view-container"
+      >
         <CardBoxBoard
           :cards="cards"
           :study-set-id="studySetId"
@@ -144,7 +204,10 @@
       </div>
 
       <!-- 复习视图 -->
-      <div v-show="currentView === 'review'" class="view-container review-view">
+      <div
+        v-show="currentView === 'review'"
+        class="view-container review-view"
+      >
         <ReviewSession
           :study-set-id="studySetId"
           :cards="dueCards"
@@ -155,19 +218,40 @@
     </div>
 
     <!-- 添加卡片对话框 -->
-    <div v-if="showAddCardDialog" class="dialog-overlay" @click="showAddCardDialog = false">
-      <div class="dialog" @click.stop>
+    <div
+      v-if="showAddCardDialog"
+      class="dialog-overlay"
+      @click="showAddCardDialog = false"
+    >
+      <div
+        class="dialog"
+        @click.stop
+      >
         <div class="dialog-header">
           <h3>添加卡片</h3>
-          <button @click="showAddCardDialog = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showAddCardDialog = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <div class="form-group">
             <label>卡片类型</label>
-            <select v-model="newCardType" class="form-select">
-              <option value="card">普通卡片</option>
-              <option value="flashcard">闪卡</option>
-              <option value="excerpt">摘录卡片</option>
+            <select
+              v-model="newCardType"
+              class="form-select"
+            >
+              <option value="card">
+                普通卡片
+              </option>
+              <option value="flashcard">
+                闪卡
+              </option>
+              <option value="excerpt">
+                摘录卡片
+              </option>
             </select>
           </div>
           <div class="form-group">
@@ -201,8 +285,18 @@
           </template>
         </div>
         <div class="dialog-footer">
-          <button @click="showAddCardDialog = false" class="btn-cancel">取消</button>
-          <button @click="createNewCard" class="btn-confirm">创建</button>
+          <button
+            class="btn-cancel"
+            @click="showAddCardDialog = false"
+          >
+            取消
+          </button>
+          <button
+            class="btn-confirm"
+            @click="createNewCard"
+          >
+            创建
+          </button>
         </div>
       </div>
     </div>
@@ -210,37 +304,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { studySetService } from '../services/studySetService';
-import { cardService } from '../services/cardService';
-import type { StudySet } from '../types/studySet';
-import type { Card, FlashCard } from '../types/card';
-import type { PDFAnnotation } from '../types/annotation';
-import CardList from './CardList.vue';
-import MindMapEditor from './MindMapEditor.vue';
-import CardBoxBoard from './CardBoxBoard.vue';
-import ReviewSession from './ReviewSession.vue';
+import type { PDFAnnotation } from '../types/annotation'
+import type {
+  Card,
+  FlashCard,
+} from '../types/card'
+import type { StudySet } from '../types/studySet'
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import { cardService } from '../services/cardService'
+import { studySetService } from '../services/studySetService'
+import CardBoxBoard from './CardBoxBoard.vue'
+import CardList from './CardList.vue'
+import MindMapEditor from './MindMapEditor.vue'
+import ReviewSession from './ReviewSession.vue'
 
 const props = defineProps<{
-  studySetId: string;
-}>();
+  studySetId: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'back'): void;
-}>();
+  (e: 'back'): void
+}>()
 
 // 状态
-const studySet = ref<StudySet | null>(null);
-const cards = ref<Card[]>([]);
-const annotations = ref<PDFAnnotation[]>([]);
-const currentView = ref<'cards' | 'mindmap' | 'board' | 'review'>('cards');
-const showAddCardDialog = ref(false);
+const studySet = ref<StudySet | null>(null)
+const cards = ref<Card[]>([])
+const annotations = ref<PDFAnnotation[]>([])
+const currentView = ref<'cards' | 'mindmap' | 'board' | 'review'>('cards')
+const showAddCardDialog = ref(false)
 
 // 新卡片数据
-const newCardType = ref('card');
-const newCardContent = ref('');
-const newCardFront = ref('');
-const newCardBack = ref('');
+const newCardType = ref('card')
+const newCardContent = ref('')
+const newCardFront = ref('')
+const newCardBack = ref('')
 
 // 统计数据
 const stats = ref({
@@ -249,19 +351,19 @@ const stats = ref({
   learningCards: 0,
   reviewCards: 0,
   dueCards: 0,
-});
+})
 
 // 加载学习集数据
 const loadStudySet = async () => {
   try {
-    const data = await studySetService.getStudySet(props.studySetId);
+    const data = await studySetService.getStudySet(props.studySetId)
     if (data) {
-      studySet.value = data;
-      cards.value = await studySetService.getStudySetCards(props.studySetId);
-      updateStats();
+      studySet.value = data
+      cards.value = await studySetService.getStudySetCards(props.studySetId)
+      updateStats()
 
       // 转换为标注数据供思维导图使用
-      annotations.value = cards.value.map(card => ({
+      annotations.value = cards.value.map((card) => ({
         id: card.id,
         blockId: card.sourceLocation.blockId,
         pdfPath: card.sourceLocation.pdfPath || '',
@@ -273,113 +375,118 @@ const loadStudySet = async () => {
         created: card.createdAt,
         updated: card.updatedAt,
         isImage: false,
-        rect: card.sourceLocation.rect || { x: 0, y: 0, width: 100, height: 20 },
-      }));
+        rect: card.sourceLocation.rect || {
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 20,
+        },
+      }))
     }
   } catch (error) {
-    console.error('加载学习集失败:', error);
+    console.error('加载学习集失败:', error)
   }
-};
+}
 
 // 更新统计
 const updateStats = () => {
-  const now = Date.now();
+  const now = Date.now()
   stats.value = {
     totalCards: cards.value.length,
-    newCards: cards.value.filter(c => c.status === 'new').length,
-    learningCards: cards.value.filter(c => c.status === 'learning').length,
-    reviewCards: cards.value.filter(c => c.status === 'review').length,
-    dueCards: cards.value.filter(c => {
-      if (c.type !== 'flashcard') return false;
-      return (c as FlashCard).srs?.nextReview <= now;
+    newCards: cards.value.filter((c) => c.status === 'new').length,
+    learningCards: cards.value.filter((c) => c.status === 'learning').length,
+    reviewCards: cards.value.filter((c) => c.status === 'review').length,
+    dueCards: cards.value.filter((c) => {
+      if (c.type !== 'flashcard') return false
+      return (c as FlashCard).srs?.nextReview <= now
     }).length,
-  };
-};
+  }
+}
 
 // 进度环样式
 const progressPercentage = computed(() => {
-  if (stats.value.totalCards === 0) return 0;
-  const learned = stats.value.learningCards + stats.value.reviewCards;
-  return Math.round((learned / stats.value.totalCards) * 100);
-});
+  if (stats.value.totalCards === 0) return 0
+  const learned = stats.value.learningCards + stats.value.reviewCards
+  return Math.round((learned / stats.value.totalCards) * 100)
+})
 
 const progressRingStyle = computed(() => {
-  const radius = 14;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (progressPercentage.value / 100) * circumference;
+  const radius = 14
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (progressPercentage.value / 100) * circumference
   return {
     strokeDasharray: `${circumference} ${circumference}`,
     strokeDashoffset: offset,
-  };
-});
+  }
+})
 
 // 到期卡片
 const dueCards = computed(() => {
-  const now = Date.now();
-  return cards.value.filter(card => {
-    if (card.type !== 'flashcard') return false;
-    return (card as FlashCard).srs?.nextReview <= now;
-  }) as FlashCard[];
-});
+  const now = Date.now()
+  return cards.value.filter((card) => {
+    if (card.type !== 'flashcard') return false
+    return (card as FlashCard).srs?.nextReview <= now
+  }) as FlashCard[]
+})
 
 // 事件处理
 const goBack = () => {
-  emit('back');
-};
+  emit('back')
+}
 
 const handleCardClick = (card: Card) => {
-  console.log('Card clicked:', card);
-};
+  console.log('Card clicked:', card)
+}
 
 const handleCardEdit = (card: Card) => {
-  console.log('Card edit:', card);
-};
+  console.log('Card edit:', card)
+}
 
 const handleCardDelete = async (card: Card) => {
   try {
-    await cardService.deleteCard(card.id);
-    await loadStudySet();
+    await cardService.deleteCard(card.id)
+    await loadStudySet()
   } catch (error) {
-    console.error('删除卡片失败:', error);
+    console.error('删除卡片失败:', error)
   }
-};
+}
 
 const handleNodeClick = (annotation: PDFAnnotation) => {
-  console.log('Node clicked:', annotation);
-};
+  console.log('Node clicked:', annotation)
+}
 
 const handleNodeAdd = (parentNode: PDFAnnotation | null) => {
-  console.log('Add node:', parentNode);
-};
+  console.log('Add node:', parentNode)
+}
 
 const handleNodeEdit = async (annotation: PDFAnnotation, newContent: string) => {
   try {
-    const card = cards.value.find(c => c.id === annotation.id);
+    const card = cards.value.find((c) => c.id === annotation.id)
     if (card) {
-      await cardService.updateContent(card, newContent);
-      await loadStudySet();
+      await cardService.updateContent(card, newContent)
+      await loadStudySet()
     }
   } catch (error) {
-    console.error('更新节点失败:', error);
+    console.error('更新节点失败:', error)
   }
-};
+}
 
 const handleNodeDelete = async (annotation: PDFAnnotation) => {
   try {
-    await cardService.deleteCard(annotation.id);
-    await loadStudySet();
+    await cardService.deleteCard(annotation.id)
+    await loadStudySet()
   } catch (error) {
-    console.error('删除节点失败:', error);
+    console.error('删除节点失败:', error)
   }
-};
+}
 
 const handleCardMove = (cardId: string, toBox: string) => {
-  console.log('Move card:', cardId, 'to:', toBox);
-};
+  console.log('Move card:', cardId, 'to:', toBox)
+}
 
 const handleReviewComplete = () => {
-  loadStudySet();
-};
+  loadStudySet()
+}
 
 // 创建新卡片
 const createNewCard = async () => {
@@ -390,33 +497,39 @@ const createNewCard = async () => {
         newCardBack.value,
         props.studySetId,
         newCardContent.value,
-        { docId: '', blockId: '' }
-      );
+        {
+          docId: '',
+          blockId: '',
+        },
+      )
     } else {
       await cardService.createCard(
         newCardContent.value,
         props.studySetId,
-        { docId: '', blockId: '' },
-        newCardType.value as any
-      );
+        {
+          docId: '',
+          blockId: '',
+        },
+        newCardType.value as any,
+      )
     }
 
-    showAddCardDialog.value = false;
-    newCardContent.value = '';
-    newCardFront.value = '';
-    newCardBack.value = '';
-    await loadStudySet();
+    showAddCardDialog.value = false
+    newCardContent.value = ''
+    newCardFront.value = ''
+    newCardBack.value = ''
+    await loadStudySet()
   } catch (error) {
-    console.error('创建卡片失败:', error);
+    console.error('创建卡片失败:', error)
   }
-};
+}
 
 // 监听学习集 ID 变化
-watch(() => props.studySetId, loadStudySet);
+watch(() => props.studySetId, loadStudySet)
 
 onMounted(() => {
-  loadStudySet();
-});
+  loadStudySet()
+})
 </script>
 
 <style scoped>

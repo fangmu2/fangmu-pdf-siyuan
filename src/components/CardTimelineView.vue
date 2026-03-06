@@ -4,21 +4,24 @@
     <div class="timeline-toolbar">
       <div class="toolbar-left">
         <span class="toolbar-label">时间类型：</span>
-        <sy-button
+        <SyButton
           v-for="type in timeTypes"
           :key="type.value"
-          @click="currentTimeType = type.value"
           :type="currentTimeType === type.value ? 'primary' : 'text'"
           size="small"
+          @click="currentTimeType = type.value"
         >
           {{ type.label }}
-        </sy-button>
+        </SyButton>
       </div>
 
       <div class="toolbar-right">
-        <sy-button @click="showFilterPanel = true" icon="filter">
+        <SyButton
+          icon="filter"
+          @click="showFilterPanel = true"
+        >
           筛选
-        </sy-button>
+        </SyButton>
       </div>
     </div>
 
@@ -31,7 +34,10 @@
           class="timeline-group"
         >
           <!-- 组头 -->
-          <div class="group-header" :class="group.groupType">
+          <div
+            class="group-header"
+            :class="group.groupType"
+          >
             <div class="group-title">
               <span class="group-icon">{{ getGroupIcon(group.groupType) }}</span>
               <span>{{ group.formattedDate }}</span>
@@ -50,28 +56,53 @@
                 @dblclick="editCard(item.card)"
               >
                 <!-- 时间线节点 -->
-                <div class="timeline-node" :class="getGroupTypeClass(group.groupType)">
+                <div
+                  class="timeline-node"
+                  :class="getGroupTypeClass(group.groupType)"
+                >
                   <div class="node-dot"></div>
                   <div class="node-line"></div>
                 </div>
 
                 <!-- 卡片内容 -->
                 <div class="timeline-card">
-                  <div class="card-time">{{ item.formattedDate }}</div>
+                  <div class="card-time">
+                    {{ item.formattedDate }}
+                  </div>
                   <div class="card-content">
-                    <div class="card-text">{{ item.card.content.slice(0, 120) }}{{ item.card.content.length > 120 ? '...' : '' }}</div>
+                    <div class="card-text">
+                      {{ item.card.content.slice(0, 120) }}{{ item.card.content.length > 120 ? '...' : '' }}
+                    </div>
                     <div class="card-meta">
-                      <span class="card-tag" v-if="item.card.tags?.length">{{ item.card.tags[0] }}</span>
-                      <span class="card-status" :class="item.card.status">{{ formatStatus(item.card.status) }}</span>
-                      <span class="card-difficulty" :class="`diff-${item.card.difficulty}`">
+                      <span
+                        v-if="item.card.tags?.length"
+                        class="card-tag"
+                      >{{ item.card.tags[0] }}</span>
+                      <span
+                        class="card-status"
+                        :class="item.card.status"
+                      >{{ formatStatus(item.card.status) }}</span>
+                      <span
+                        class="card-difficulty"
+                        :class="`diff-${item.card.difficulty}`"
+                      >
                         {{ '★'.repeat(item.card.difficulty) }}
                       </span>
                     </div>
                   </div>
                   <div class="card-actions">
-                    <button @click.stop="deleteCard(item.card)" class="delete-btn" title="删除">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    <button
+                      class="delete-btn"
+                      title="删除"
+                      @click.stop="deleteCard(item.card)"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="currentColor"
+                      >
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                       </svg>
                     </button>
                   </div>
@@ -83,34 +114,64 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="timelineGroups.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" class="empty-icon">
-          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+      <div
+        v-if="timelineGroups.length === 0"
+        class="empty-state"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="64"
+          height="64"
+          fill="currentColor"
+          class="empty-icon"
+        >
+          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
         </svg>
         <p>暂无卡片数据</p>
-        <sy-button @click="$emit('add')" type="primary">添加卡片</sy-button>
+        <SyButton
+          type="primary"
+          @click="$emit('add')"
+        >
+          添加卡片
+        </SyButton>
       </div>
     </div>
 
     <!-- 筛选面板 -->
-    <div v-if="showFilterPanel" class="dialog-overlay" @click.self="showFilterPanel = false">
+    <div
+      v-if="showFilterPanel"
+      class="dialog-overlay"
+      @click.self="showFilterPanel = false"
+    >
       <div class="dialog filter-panel">
         <div class="dialog-header">
           <h3>筛选卡片</h3>
-          <button @click="showFilterPanel = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showFilterPanel = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <!-- 状态筛选 -->
           <div class="filter-section">
             <label class="filter-label">状态</label>
             <div class="filter-checkboxes">
-              <label v-for="status in allStatuses" :key="status.value" class="checkbox-label">
+              <label
+                v-for="status in allStatuses"
+                :key="status.value"
+                class="checkbox-label"
+              >
                 <input
+                  v-model="filterOptions.statuses"
                   type="checkbox"
                   :value="status.value"
-                  v-model="filterOptions.statuses"
                 />
-                <span class="status-dot" :style="{ backgroundColor: status.color }"></span>
+                <span
+                  class="status-dot"
+                  :style="{ backgroundColor: status.color }"
+                ></span>
                 {{ status.label }}
               </label>
             </div>
@@ -120,11 +181,15 @@
           <div class="filter-section">
             <label class="filter-label">难度</label>
             <div class="filter-checkboxes">
-              <label v-for="diff in difficulties" :key="diff.value" class="checkbox-label">
+              <label
+                v-for="diff in difficulties"
+                :key="diff.value"
+                class="checkbox-label"
+              >
                 <input
+                  v-model="filterOptions.difficulties"
                   type="checkbox"
                   :value="diff.value"
-                  v-model="filterOptions.difficulties"
                 />
                 {{ diff.label }}
               </label>
@@ -135,7 +200,7 @@
           <div class="filter-section">
             <label class="filter-label">标签</label>
             <div class="tag-filter">
-              <sy-input
+              <SyInput
                 v-model="tagSearchQuery"
                 placeholder="输入标签搜索..."
                 size="small"
@@ -157,7 +222,7 @@
           <!-- 搜索 -->
           <div class="filter-section">
             <label class="filter-label">搜索</label>
-            <sy-input
+            <SyInput
               v-model="filterOptions.searchQuery"
               placeholder="搜索卡片内容..."
               prefix-icon="search"
@@ -165,8 +230,15 @@
           </div>
         </div>
         <div class="dialog-footer">
-          <sy-button @click="resetFilters">重置</sy-button>
-          <sy-button @click="applyFilters" type="primary">应用</sy-button>
+          <SyButton @click="resetFilters">
+            重置
+          </SyButton>
+          <SyButton
+            type="primary"
+            @click="applyFilters"
+          >
+            应用
+          </SyButton>
         </div>
       </div>
     </div>
@@ -174,147 +246,191 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import SyButton from './SiyuanTheme/SyButton.vue';
-import SyInput from './SiyuanTheme/SyInput.vue';
-import { cardBoxService, type FilterOptions } from '../services/cardBoxService';
-import type { Card } from '../types/card';
+import type { FilterOptions } from '../services/cardBoxService'
+import type { Card } from '../types/card'
+import {
+  computed,
+  ref,
+} from 'vue'
+import { cardBoxService } from '../services/cardBoxService'
+import SyButton from './SiyuanTheme/SyButton.vue'
+import SyInput from './SiyuanTheme/SyInput.vue'
 
 const props = defineProps<{
-  cards: Card[];
-  studySetId?: string;
-}>();
+  cards: Card[]
+  studySetId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'select', card: Card): void;
-  (e: 'edit', card: Card): void;
-  (e: 'delete', card: Card): void;
-  (e: 'add'): void;
-  (e: 'update'): void;
-}>();
+  (e: 'select', card: Card): void
+  (e: 'edit', card: Card): void
+  (e: 'delete', card: Card): void
+  (e: 'add'): void
+  (e: 'update'): void
+}>()
 
 // 时间类型选项
 const timeTypes = [
-  { value: 'created' as const, label: '创建时间' },
-  { value: 'updated' as const, label: '更新时间' },
-  { value: 'reviewed' as const, label: '复习时间' }
-];
+  {
+    value: 'created' as const,
+    label: '创建时间',
+  },
+  {
+    value: 'updated' as const,
+    label: '更新时间',
+  },
+  {
+    value: 'reviewed' as const,
+    label: '复习时间',
+  },
+]
 
 // 状态选项
 const allStatuses = [
-  { value: 'new', label: '新学', color: '#4CAF50' },
-  { value: 'learning', label: '学习中', color: '#2196F3' },
-  { value: 'review', label: '待复习', color: '#FF9800' },
-  { value: 'suspended', label: '已暂停', color: '#9E9E9E' }
-];
+  {
+    value: 'new',
+    label: '新学',
+    color: '#4CAF50',
+  },
+  {
+    value: 'learning',
+    label: '学习中',
+    color: '#2196F3',
+  },
+  {
+    value: 'review',
+    label: '待复习',
+    color: '#FF9800',
+  },
+  {
+    value: 'suspended',
+    label: '已暂停',
+    color: '#9E9E9E',
+  },
+]
 
 // 难度选项
 const difficulties = [
-  { value: 1, label: '非常简单' },
-  { value: 2, label: '简单' },
-  { value: 3, label: '中等' },
-  { value: 4, label: '困难' },
-  { value: 5, label: '非常困难' }
-];
+  {
+    value: 1,
+    label: '非常简单',
+  },
+  {
+    value: 2,
+    label: '简单',
+  },
+  {
+    value: 3,
+    label: '中等',
+  },
+  {
+    value: 4,
+    label: '困难',
+  },
+  {
+    value: 5,
+    label: '非常困难',
+  },
+]
 
 // 响应式数据
-const currentTimeType = ref<'created' | 'updated' | 'reviewed'>('created');
-const showFilterPanel = ref(false);
-const tagSearchQuery = ref('');
+const currentTimeType = ref<'created' | 'updated' | 'reviewed'>('created')
+const showFilterPanel = ref(false)
+const tagSearchQuery = ref('')
 
 // 筛选选项
 const filterOptions = ref<FilterOptions>({
   statuses: [],
   tags: [],
   difficulties: [],
-  searchQuery: ''
-});
+  searchQuery: '',
+})
 
 // 时间线数据
 const timelineGroups = computed(() => {
   // 应用筛选
-  let filteredCards = cardBoxService.applyFilters(props.cards, filterOptions.value);
+  const filteredCards = cardBoxService.applyFilters(props.cards, filterOptions.value)
 
   // 生成时间线
-  return cardBoxService.generateTimeline(filteredCards, currentTimeType.value);
-});
+  return cardBoxService.generateTimeline(filteredCards, currentTimeType.value)
+})
 
 // 获取所有标签
 const allTags = computed(() => {
-  return cardBoxService.getAllTags(props.cards);
-});
+  return cardBoxService.getAllTags(props.cards)
+})
 
 // 过滤标签
 const filteredTags = computed(() => {
-  if (!tagSearchQuery.value) return allTags.value;
-  return allTags.value.filter(tag =>
-    tag.tag.toLowerCase().includes(tagSearchQuery.value.toLowerCase())
-  );
-});
+  if (!tagSearchQuery.value) return allTags.value
+  return allTags.value.filter((tag) =>
+    tag.tag.toLowerCase().includes(tagSearchQuery.value.toLowerCase()),
+  )
+})
 
 // 格式化状态
 const formatStatus = (status: string) => {
   const map: Record<string, string> = {
-    'new': '新学',
-    'learning': '学习中',
-    'review': '待复习',
-    'suspended': '已暂停'
-  };
-  return map[status] || status;
-};
+    new: '新学',
+    learning: '学习中',
+    review: '待复习',
+    suspended: '已暂停',
+  }
+  return map[status] || status
+}
 
 // 获取组图标
 const getGroupIcon = (groupType: string) => {
   const icons: Record<string, string> = {
-    'today': '📅',
-    'yesterday': '📅',
-    'thisWeek': '📆',
-    'thisMonth': '🗓️',
-    'older': '📁'
-  };
-  return icons[groupType] || '📁';
-};
+    today: '📅',
+    yesterday: '📅',
+    thisWeek: '📆',
+    thisMonth: '🗓️',
+    older: '📁',
+  }
+  return icons[groupType] || '📁'
+}
 
 // 获取组类型样式类
 const getGroupTypeClass = (groupType: string) => {
-  return `group-${groupType}`;
-};
+  return `group-${groupType}`
+}
 
 // 选择卡片
 const selectCard = (card: Card) => {
-  emit('select', card);
-};
+  emit('select', card)
+}
 
 // 编辑卡片
 const editCard = (card: Card) => {
-  emit('edit', card);
-};
+  emit('edit', card)
+}
 
 // 删除卡片
 const deleteCard = (card: Card) => {
   if (confirm('确定要删除这张卡片吗？')) {
-    emit('delete', card);
+    emit('delete', card)
   }
-};
+}
 
 // 切换标签选择
 const toggleTag = (tag: string) => {
   if (!filterOptions.value.tags) {
-    filterOptions.value.tags = [];
+    filterOptions.value.tags = []
   }
-  const index = filterOptions.value.tags.indexOf(tag);
+  const index = filterOptions.value.tags.indexOf(tag)
   if (index > -1) {
-    filterOptions.value.tags.splice(index, 1);
+    filterOptions.value.tags.splice(index, 1)
   } else {
-    filterOptions.value.tags.push(tag);
+    filterOptions.value.tags.push(tag)
   }
-};
+}
 
 // 应用筛选
 const applyFilters = () => {
-  showFilterPanel.value = false;
-  emit('update');
-};
+  showFilterPanel.value = false
+  emit('update')
+}
 
 // 重置筛选
 const resetFilters = () => {
@@ -322,10 +438,10 @@ const resetFilters = () => {
     statuses: [],
     tags: [],
     difficulties: [],
-    searchQuery: ''
-  };
-  tagSearchQuery.value = '';
-};
+    searchQuery: '',
+  }
+  tagSearchQuery.value = ''
+}
 </script>
 
 <style scoped lang="scss">

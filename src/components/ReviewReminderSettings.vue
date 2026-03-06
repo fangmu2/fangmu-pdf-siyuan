@@ -2,7 +2,9 @@
 <template>
   <div class="review-reminder-settings">
     <div class="settings-header">
-      <h3 class="settings-title">🔔 复习提醒</h3>
+      <h3 class="settings-title">
+        🔔 复习提醒
+      </h3>
       <div class="settings-toggle">
         <label class="toggle-label">
           <input
@@ -15,7 +17,10 @@
       </div>
     </div>
 
-    <div v-if="enabled" class="settings-content">
+    <div
+      v-if="enabled"
+      class="settings-content"
+    >
       <!-- 提醒时间 -->
       <div class="setting-section">
         <label class="section-label">提醒时间</label>
@@ -37,9 +42,17 @@
               class="time-input"
             />
           </div>
-          <button class="add-time-btn" @click="addReminderTime">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          <button
+            class="add-time-btn"
+            @click="addReminderTime"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="currentColor"
+            >
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
             </svg>
           </button>
         </div>
@@ -52,9 +65,17 @@
             <span class="time-display">
               {{ String(time.hour).padStart(2, '0') }}:{{ String(time.minute).padStart(2, '0') }}
             </span>
-            <button class="remove-time-btn" @click="removeReminderTime(index)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            <button
+              class="remove-time-btn"
+              @click="removeReminderTime(index)"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="currentColor"
+              >
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
             </button>
           </div>
@@ -66,25 +87,29 @@
         <label class="section-label">提醒频率</label>
         <div class="frequency-options">
           <button
-            :class="['frequency-option', { active: frequency === 'daily' }]"
+            class="frequency-option"
+            :class="[{ active: frequency === 'daily' }]"
             @click="frequency = 'daily'"
           >
             每天
           </button>
           <button
-            :class="['frequency-option', { active: frequency === 'weekdays' }]"
+            class="frequency-option"
+            :class="[{ active: frequency === 'weekdays' }]"
             @click="frequency = 'weekdays'"
           >
             工作日
           </button>
           <button
-            :class="['frequency-option', { active: frequency === 'weekends' }]"
+            class="frequency-option"
+            :class="[{ active: frequency === 'weekends' }]"
             @click="frequency = 'weekends'"
           >
             周末
           </button>
           <button
-            :class="['frequency-option', { active: frequency === 'custom' }]"
+            class="frequency-option"
+            :class="[{ active: frequency === 'custom' }]"
             @click="frequency = 'custom'"
           >
             自定义
@@ -93,13 +118,17 @@
       </div>
 
       <!-- 自定义星期 -->
-      <div v-if="frequency === 'custom'" class="setting-section">
+      <div
+        v-if="frequency === 'custom'"
+        class="setting-section"
+      >
         <label class="section-label">选择日期</label>
         <div class="weekday-selector">
           <button
             v-for="(day, index) in weekDays"
             :key="day.id"
-            :class="['weekday-btn', { active: day.selected }]"
+            class="weekday-btn"
+            :class="[{ active: day.selected }]"
             @click="toggleWeekday(index)"
           >
             {{ day.short }}
@@ -173,25 +202,56 @@
       <div class="setting-section">
         <label class="section-label">激励语句</label>
         <div class="motivation-preview">
-          <p class="motivation-text">"{{ currentMotivation }}"</p>
+          <p class="motivation-text">
+            "{{ currentMotivation }}"
+          </p>
         </div>
         <div class="motivation-actions">
-          <button class="preview-btn" @click="nextMotivation">换一句</button>
-          <button class="add-btn" @click="showAddMotivation = true">添加自定义</button>
+          <button
+            class="preview-btn"
+            @click="nextMotivation"
+          >
+            换一句
+          </button>
+          <button
+            class="add-btn"
+            @click="showAddMotivation = true"
+          >
+            添加自定义
+          </button>
         </div>
       </div>
 
       <!-- 保存按钮 -->
       <div class="settings-actions">
-        <button class="reset-btn" @click="resetSettings">重置</button>
-        <button class="save-btn" @click="saveSettings">保存设置</button>
+        <button
+          class="reset-btn"
+          @click="resetSettings"
+        >
+          重置
+        </button>
+        <button
+          class="save-btn"
+          @click="saveSettings"
+        >
+          保存设置
+        </button>
       </div>
     </div>
 
     <!-- 添加自定义激励语句对话框 -->
-    <div v-if="showAddMotivation" class="modal-overlay" @click="showAddMotivation = false">
-      <div class="modal-dialog" @click.stop>
-        <h4 class="modal-title">添加激励语句</h4>
+    <div
+      v-if="showAddMotivation"
+      class="modal-overlay"
+      @click="showAddMotivation = false"
+    >
+      <div
+        class="modal-dialog"
+        @click.stop
+      >
+        <h4 class="modal-title">
+          添加激励语句
+        </h4>
         <textarea
           v-model="newMotivation"
           class="modal-textarea"
@@ -199,8 +259,18 @@
           rows="3"
         ></textarea>
         <div class="modal-actions">
-          <button class="modal-cancel" @click="showAddMotivation = false">取消</button>
-          <button class="modal-confirm" @click="addMotivation">添加</button>
+          <button
+            class="modal-cancel"
+            @click="showAddMotivation = false"
+          >
+            取消
+          </button>
+          <button
+            class="modal-confirm"
+            @click="addMotivation"
+          >
+            添加
+          </button>
         </div>
       </div>
     </div>
@@ -208,34 +278,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
 
 // 状态
-const enabled = ref(false);
-const reminderTimes = ref<Array<{ hour: number; minute: number }>>([
-  { hour: 9, minute: 0 },
-  { hour: 21, minute: 0 },
-]);
-const reminderHour = ref(9);
-const reminderMinute = ref(0);
-const frequency = ref<'daily' | 'weekdays' | 'weekends' | 'custom'>('daily');
+const enabled = ref(false)
+const reminderTimes = ref<Array<{ hour: number, minute: number }>>([
+  {
+    hour: 9,
+    minute: 0,
+  },
+  {
+    hour: 21,
+    minute: 0,
+  },
+])
+const reminderHour = ref(9)
+const reminderMinute = ref(0)
+const frequency = ref<'daily' | 'weekdays' | 'weekends' | 'custom'>('daily')
 const weekDays = ref([
-  { id: 0, short: '日', full: '星期日', selected: true },
-  { id: 1, short: '一', full: '星期一', selected: true },
-  { id: 2, short: '二', full: '星期二', selected: true },
-  { id: 3, short: '三', full: '星期三', selected: true },
-  { id: 4, short: '四', full: '星期四', selected: true },
-  { id: 5, short: '五', full: '星期五', selected: true },
-  { id: 6, short: '六', full: '星期六', selected: true },
-]);
-const showDueCount = ref(true);
-const showStreak = ref(true);
-const showMotivation = ref(true);
-const useSystemNotification = ref(true);
-const useSound = ref(false);
-const useBadge = ref(true);
-const showAddMotivation = ref(false);
-const newMotivation = ref('');
+  {
+    id: 0,
+    short: '日',
+    full: '星期日',
+    selected: true,
+  },
+  {
+    id: 1,
+    short: '一',
+    full: '星期一',
+    selected: true,
+  },
+  {
+    id: 2,
+    short: '二',
+    full: '星期二',
+    selected: true,
+  },
+  {
+    id: 3,
+    short: '三',
+    full: '星期三',
+    selected: true,
+  },
+  {
+    id: 4,
+    short: '四',
+    full: '星期四',
+    selected: true,
+  },
+  {
+    id: 5,
+    short: '五',
+    full: '星期五',
+    selected: true,
+  },
+  {
+    id: 6,
+    short: '六',
+    full: '星期六',
+    selected: true,
+  },
+])
+const showDueCount = ref(true)
+const showStreak = ref(true)
+const showMotivation = ref(true)
+const useSystemNotification = ref(true)
+const useSound = ref(false)
+const useBadge = ref(true)
+const showAddMotivation = ref(false)
+const newMotivation = ref('')
 
 // 激励语句库
 const motivations = ref([
@@ -247,42 +362,45 @@ const motivations = ref([
   '不积跬步，无以至千里！',
   '温故而知新，可以为师矣！',
   '学而不思则罔，思而不学则殆！',
-]);
+])
 
-const currentMotivationIndex = ref(0);
-const currentMotivation = computed(() => motivations.value[currentMotivationIndex.value]);
+const currentMotivationIndex = ref(0)
+const currentMotivation = computed(() => motivations.value[currentMotivationIndex.value])
 
 // 方法
 function addReminderTime() {
-  const newTime = { hour: reminderHour.value, minute: reminderMinute.value };
+  const newTime = {
+    hour: reminderHour.value,
+    minute: reminderMinute.value,
+  }
   // 检查是否已存在
   const exists = reminderTimes.value.some(
-    t => t.hour === newTime.hour && t.minute === newTime.minute
-  );
+    (t) => t.hour === newTime.hour && t.minute === newTime.minute,
+  )
   if (!exists) {
-    reminderTimes.value.push(newTime);
+    reminderTimes.value.push(newTime)
     // 排序
-    reminderTimes.value.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
+    reminderTimes.value.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute))
   }
 }
 
 function removeReminderTime(index: number) {
-  reminderTimes.value.splice(index, 1);
+  reminderTimes.value.splice(index, 1)
 }
 
 function toggleWeekday(index: number) {
-  weekDays.value[index].selected = !weekDays.value[index].selected;
+  weekDays.value[index].selected = !weekDays.value[index].selected
 }
 
 function nextMotivation() {
-  currentMotivationIndex.value = (currentMotivationIndex.value + 1) % motivations.value.length;
+  currentMotivationIndex.value = (currentMotivationIndex.value + 1) % motivations.value.length
 }
 
 function addMotivation() {
   if (newMotivation.value.trim()) {
-    motivations.value.push(newMotivation.value.trim());
-    newMotivation.value = '';
-    showAddMotivation.value = false;
+    motivations.value.push(newMotivation.value.trim())
+    newMotivation.value = ''
+    showAddMotivation.value = false
   }
 }
 
@@ -291,7 +409,7 @@ function saveSettings() {
     enabled: enabled.value,
     reminderTimes: reminderTimes.value,
     frequency: frequency.value,
-    weekDays: weekDays.value.map(d => d.selected),
+    weekDays: weekDays.value.map((d) => d.selected),
     showDueCount: showDueCount.value,
     showStreak: showStreak.value,
     showMotivation: showMotivation.value,
@@ -299,82 +417,94 @@ function saveSettings() {
     useSound: useSound.value,
     useBadge: useBadge.value,
     motivations: motivations.value,
-  };
-  localStorage.setItem('review-reminder-settings', JSON.stringify(settings));
+  }
+  localStorage.setItem('review-reminder-settings', JSON.stringify(settings))
 
   // 注册提醒
   if (enabled.value) {
-    registerReminders();
+    registerReminders()
   } else {
-    unregisterReminders();
+    unregisterReminders()
   }
 }
 
 function loadSettings() {
-  const stored = localStorage.getItem('review-reminder-settings');
+  const stored = localStorage.getItem('review-reminder-settings')
   if (stored) {
     try {
-      const settings = JSON.parse(stored);
-      enabled.value = settings.enabled ?? false;
-      reminderTimes.value = settings.reminderTimes ?? [{ hour: 9, minute: 0 }, { hour: 21, minute: 0 }];
-      frequency.value = settings.frequency ?? 'daily';
+      const settings = JSON.parse(stored)
+      enabled.value = settings.enabled ?? false
+      reminderTimes.value = settings.reminderTimes ?? [{
+        hour: 9,
+        minute: 0,
+      }, {
+        hour: 21,
+        minute: 0,
+      }]
+      frequency.value = settings.frequency ?? 'daily'
       weekDays.value.forEach((day, i) => {
-        day.selected = settings.weekDays?.[i] ?? true;
-      });
-      showDueCount.value = settings.showDueCount ?? true;
-      showStreak.value = settings.showStreak ?? true;
-      showMotivation.value = settings.showMotivation ?? true;
-      useSystemNotification.value = settings.useSystemNotification ?? true;
-      useSound.value = settings.useSound ?? false;
-      useBadge.value = settings.useBadge ?? true;
+        day.selected = settings.weekDays?.[i] ?? true
+      })
+      showDueCount.value = settings.showDueCount ?? true
+      showStreak.value = settings.showStreak ?? true
+      showMotivation.value = settings.showMotivation ?? true
+      useSystemNotification.value = settings.useSystemNotification ?? true
+      useSound.value = settings.useSound ?? false
+      useBadge.value = settings.useBadge ?? true
       if (settings.motivations) {
-        motivations.value = settings.motivations;
+        motivations.value = settings.motivations
       }
     } catch (e) {
-      console.error('加载提醒设置失败:', e);
+      console.error('加载提醒设置失败:', e)
     }
   }
 }
 
 function resetSettings() {
-  enabled.value = false;
-  reminderTimes.value = [{ hour: 9, minute: 0 }, { hour: 21, minute: 0 }];
-  frequency.value = 'daily';
-  weekDays.value.forEach(day => day.selected = true);
-  showDueCount.value = true;
-  showStreak.value = true;
-  showMotivation.value = true;
-  useSystemNotification.value = true;
-  useSound.value = false;
-  useBadge.value = true;
+  enabled.value = false
+  reminderTimes.value = [{
+    hour: 9,
+    minute: 0,
+  }, {
+    hour: 21,
+    minute: 0,
+  }]
+  frequency.value = 'daily'
+  weekDays.value.forEach((day) => day.selected = true)
+  showDueCount.value = true
+  showStreak.value = true
+  showMotivation.value = true
+  useSystemNotification.value = true
+  useSound.value = false
+  useBadge.value = true
 }
 
 function registerReminders() {
   // 请求通知权限
   if (useSystemNotification.value && 'Notification' in window) {
-    Notification.requestPermission();
+    Notification.requestPermission()
   }
 
   // 设置提醒定时器
-  reminderTimes.value.forEach(time => {
-    const now = new Date();
-    const reminderTime = new Date();
-    reminderTime.setHours(time.hour, time.minute, 0, 0);
+  reminderTimes.value.forEach((time) => {
+    const now = new Date()
+    const reminderTime = new Date()
+    reminderTime.setHours(time.hour, time.minute, 0, 0)
 
     // 如果提醒时间已过，设置为明天
     if (reminderTime <= now) {
-      reminderTime.setDate(reminderTime.getDate() + 1);
+      reminderTime.setDate(reminderTime.getDate() + 1)
     }
 
-    const delay = reminderTime.getTime() - now.getTime();
+    const delay = reminderTime.getTime() - now.getTime()
     setTimeout(() => {
-      showReminder();
+      showReminder()
       // 每天重复
       setInterval(() => {
-        showReminder();
-      }, 24 * 60 * 60 * 1000);
-    }, delay);
-  });
+        showReminder()
+      }, 24 * 60 * 60 * 1000)
+    }, delay)
+  })
 }
 
 function unregisterReminders() {
@@ -385,35 +515,35 @@ function unregisterReminders() {
 function showReminder() {
   // 系统通知
   if (useSystemNotification.value && 'Notification' in window && Notification.permission === 'granted') {
-    let body = '该复习啦！';
+    let body = '该复习啦！'
     if (showDueCount.value) {
-      body += ' 今天有到期卡片等待复习。';
+      body += ' 今天有到期卡片等待复习。'
     }
     if (showStreak.value) {
-      body += ' 保持你的连续学习记录！';
+      body += ' 保持你的连续学习记录！'
     }
     if (showMotivation.value) {
-      body += ` "${currentMotivation.value}"`;
+      body += ` "${currentMotivation.value}"`
     }
 
     new Notification('复习提醒', {
       body,
       icon: '/icon.png',
-    });
+    })
   }
 
   // 提示音
   if (useSound.value) {
     // 播放提示音
-    const audio = new Audio('/notification.mp3');
-    audio.play().catch(() => {});
+    const audio = new Audio('/notification.mp3')
+    audio.play().catch(() => {})
   }
 }
 
 // 生命周期
 onMounted(() => {
-  loadSettings();
-});
+  loadSettings()
+})
 </script>
 
 <style scoped lang="scss">

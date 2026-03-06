@@ -4,32 +4,45 @@
  * 支持为 PDF 标注添加文字批注、回复等功能
  */
 
+import type {
+  AnnotationComment,
+  CommentExportOptions,
+  CommentFilter,
+  CommentStats,
+  CommentThread,
+  CreateCommentParams,
+  ImageAnnotationComment,
+  ReplyToCommentParams,
+  TextAnnotationComment,
+  TextCommentContent,
+  UpdateCommentParams,
+  VoiceAnnotationComment,
+
+} from '../types/pdfAnnotation'
+
 import {
-  type AnnotationComment,
-  type TextAnnotationComment,
-  type VoiceAnnotationComment,
-  type ImageAnnotationComment,
-  type CreateCommentParams,
-  type UpdateCommentParams,
-  type CommentFilter,
-  type CommentStats,
-  type CommentThread,
-  type ReplyToCommentParams,
-  type CommentExportOptions,
-  type TextCommentContent,
+  getSiyuanApi,
+  postSiyuanApi,
+} from '../api/siyuanApi'
+import {
+
+
+
+
+
+
+
   DEFAULT_PRIORITY,
   DEFAULT_STATUS,
-} from '../types/pdfAnnotation';
-
-import { getSiyuanApi, postSiyuanApi } from '../api/siyuanApi';
+} from '../types/pdfAnnotation'
 
 /** 批注存储属性名 */
-const COMMENT_ATTR_NAME = 'custom-pdf-comments';
+const COMMENT_ATTR_NAME = 'custom-pdf-comments'
 
 /** 生成唯一 ID */
 const generateId = (): string => {
-  return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-};
+  return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
 
 /**
  * PDF 标注批注服务
@@ -43,19 +56,19 @@ export const pdfAnnotationService = {
     try {
       const result = await getSiyuanApi<{ [key: string]: unknown }>(
         `/api/attr/getBlockAttrs`,
-        { id: annotationId }
-      );
+        { id: annotationId },
+      )
 
-      const commentsJson = result.data?.[COMMENT_ATTR_NAME] as string | undefined;
+      const commentsJson = result.data?.[COMMENT_ATTR_NAME] as string | undefined
       if (!commentsJson) {
-        return [];
+        return []
       }
 
-      const comments = JSON.parse(commentsJson) as AnnotationComment[];
-      return comments.filter(c => c.annotationId === annotationId);
+      const comments = JSON.parse(commentsJson) as AnnotationComment[]
+      return comments.filter((c) => c.annotationId === annotationId)
     } catch (error) {
-      console.error('获取批注失败:', error);
-      return [];
+      console.error('获取批注失败:', error)
+      return []
     }
   },
 
@@ -68,23 +81,23 @@ export const pdfAnnotationService = {
       // 先搜索批注所在的标注
       const sqlResult = await postSiyuanApi<{ blocks: Array<{ id: string }> }>(
         `/api/query/sql`,
-        { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` }
-      );
+        { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` },
+      )
 
-      const blocks = sqlResult.blocks || [];
+      const blocks = sqlResult.blocks || []
 
       for (const block of blocks) {
-        const comments = await this.getComments(block.id);
-        const comment = comments.find(c => c.id === commentId);
+        const comments = await this.getComments(block.id)
+        const comment = comments.find((c) => c.id === commentId)
         if (comment) {
-          return comment;
+          return comment
         }
       }
 
-      return null;
+      return null
     } catch (error) {
-      console.error('获取批注失败:', error);
-      return null;
+      console.error('获取批注失败:', error)
+      return null
     }
   },
 
@@ -93,7 +106,7 @@ export const pdfAnnotationService = {
    * @param params 创建参数
    */
   async createComment(params: CreateCommentParams): Promise<AnnotationComment> {
-    const now = Date.now();
+    const now = Date.now()
 
     const baseComment = {
       id: generateId(),
@@ -105,9 +118,9 @@ export const pdfAnnotationService = {
       priority: params.priority ?? DEFAULT_PRIORITY,
       status: DEFAULT_STATUS,
       tags: params.tags ?? [],
-    };
+    }
 
-    let comment: AnnotationComment;
+    let comment: AnnotationComment
 
     switch (params.type) {
       case 'text':
@@ -115,34 +128,34 @@ export const pdfAnnotationService = {
           ...baseComment,
           type: 'text',
           content: params.content as TextCommentContent,
-        } as TextAnnotationComment;
-        break;
+        } as TextAnnotationComment
+        break
       case 'voice':
         comment = {
           ...baseComment,
           type: 'voice',
           content: params.content,
-        } as VoiceAnnotationComment;
-        break;
+        } as VoiceAnnotationComment
+        break
       case 'image':
         comment = {
           ...baseComment,
           type: 'image',
           content: params.content,
-        } as ImageAnnotationComment;
-        break;
+        } as ImageAnnotationComment
+        break
       default:
-        throw new Error(`不支持的批注类型: ${params.type}`);
+        throw new Error(`不支持的批注类型: ${params.type}`)
     }
 
     // 获取现有批注并添加新批注
-    const existingComments = await this.getComments(params.annotationId);
-    existingComments.push(comment);
+    const existingComments = await this.getComments(params.annotationId)
+    existingComments.push(comment)
 
     // 保存到块属性
-    await this.saveComments(params.annotationId, existingComments);
+    await this.saveComments(params.annotationId, existingComments)
 
-    return comment;
+    return comment
   },
 
   /**
@@ -152,23 +165,23 @@ export const pdfAnnotationService = {
    */
   async updateComment(
     commentId: string,
-    params: UpdateCommentParams
+    params: UpdateCommentParams,
   ): Promise<AnnotationComment | null> {
     try {
       // 查找批注所在的标注
       const sqlResult = await postSiyuanApi<{ blocks: Array<{ id: string }> }>(
         `/api/query/sql`,
-        { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` }
-      );
+        { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` },
+      )
 
-      const blocks = sqlResult.blocks || [];
+      const blocks = sqlResult.blocks || []
 
       for (const block of blocks) {
-        const comments = await this.getComments(block.id);
-        const index = comments.findIndex(c => c.id === commentId);
+        const comments = await this.getComments(block.id)
+        const index = comments.findIndex((c) => c.id === commentId)
 
         if (index !== -1) {
-          const existing = comments[index];
+          const existing = comments[index]
 
           // 更新批注
           const updated: AnnotationComment = {
@@ -178,19 +191,19 @@ export const pdfAnnotationService = {
             ...(params.priority && { priority: params.priority }),
             ...(params.status && { status: params.status }),
             ...(params.tags && { tags: params.tags }),
-          };
+          }
 
-          comments[index] = updated;
-          await this.saveComments(block.id, comments);
+          comments[index] = updated
+          await this.saveComments(block.id, comments)
 
-          return updated;
+          return updated
         }
       }
 
-      return null;
+      return null
     } catch (error) {
-      console.error('更新批注失败:', error);
-      return null;
+      console.error('更新批注失败:', error)
+      return null
     }
   },
 
@@ -203,26 +216,26 @@ export const pdfAnnotationService = {
       // 查找批注所在的标注
       const sqlResult = await postSiyuanApi<{ blocks: Array<{ id: string }> }>(
         `/api/query/sql`,
-        { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` }
-      );
+        { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` },
+      )
 
-      const blocks = sqlResult.blocks || [];
+      const blocks = sqlResult.blocks || []
 
       for (const block of blocks) {
-        const comments = await this.getComments(block.id);
-        const index = comments.findIndex(c => c.id === commentId);
+        const comments = await this.getComments(block.id)
+        const index = comments.findIndex((c) => c.id === commentId)
 
         if (index !== -1) {
-          comments.splice(index, 1);
-          await this.saveComments(block.id, comments);
-          return true;
+          comments.splice(index, 1)
+          await this.saveComments(block.id, comments)
+          return true
         }
       }
 
-      return false;
+      return false
     } catch (error) {
-      console.error('删除批注失败:', error);
-      return false;
+      console.error('删除批注失败:', error)
+      return false
     }
   },
 
@@ -231,16 +244,16 @@ export const pdfAnnotationService = {
    * @param commentIds 批注 ID 列表
    */
   async deleteComments(commentIds: string[]): Promise<number> {
-    let deletedCount = 0;
+    let deletedCount = 0
 
     for (const commentId of commentIds) {
-      const success = await this.deleteComment(commentId);
+      const success = await this.deleteComment(commentId)
       if (success) {
-        deletedCount++;
+        deletedCount++
       }
     }
 
-    return deletedCount;
+    return deletedCount
   },
 
   /**
@@ -250,14 +263,14 @@ export const pdfAnnotationService = {
    */
   async saveComments(
     annotationId: string,
-    comments: AnnotationComment[]
+    comments: AnnotationComment[],
   ): Promise<void> {
     await postSiyuanApi(`/api/attr/setBlockAttrs`, {
       id: annotationId,
       attrs: {
         [COMMENT_ATTR_NAME]: JSON.stringify(comments),
       },
-    });
+    })
   },
 
   /**
@@ -266,49 +279,49 @@ export const pdfAnnotationService = {
    */
   async filterComments(filter: CommentFilter): Promise<AnnotationComment[]> {
     try {
-      let allComments: AnnotationComment[] = [];
+      let allComments: AnnotationComment[] = []
 
       if (filter.annotationId) {
         // 如果指定了标注 ID，直接获取该标注的批注
-        allComments = await this.getComments(filter.annotationId);
+        allComments = await this.getComments(filter.annotationId)
       } else {
         // 否则获取所有标注的批注
         const sqlResult = await postSiyuanApi<{ blocks: Array<{ id: string }> }>(
           `/api/query/sql`,
-          { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` }
-        );
+          { stmt: `SELECT id FROM blocks WHERE type = 'annotation' LIMIT 1000` },
+        )
 
-        const blocks = sqlResult.blocks || [];
+        const blocks = sqlResult.blocks || []
 
         for (const block of blocks) {
-          const comments = await this.getComments(block.id);
-          allComments.push(...comments);
+          const comments = await this.getComments(block.id)
+          allComments.push(...comments)
         }
       }
 
       // 应用筛选条件
-      return allComments.filter(comment => {
-        if (filter.type && comment.type !== filter.type) return false;
-        if (filter.status && comment.status !== filter.status) return false;
-        if (filter.priority && comment.priority !== filter.priority) return false;
+      return allComments.filter((comment) => {
+        if (filter.type && comment.type !== filter.type) return false
+        if (filter.status && comment.status !== filter.status) return false
+        if (filter.priority && comment.priority !== filter.priority) return false
         if (filter.tags && filter.tags.length > 0) {
-          const commentTags = comment.tags || [];
-          if (!filter.tags.some(t => commentTags.includes(t))) return false;
+          const commentTags = comment.tags || []
+          if (!filter.tags.some((t) => commentTags.includes(t))) return false
         }
         if (filter.keyword) {
-          const keyword = filter.keyword.toLowerCase();
+          const keyword = filter.keyword.toLowerCase()
           if (comment.type === 'text') {
-            const textComment = comment as TextAnnotationComment;
+            const textComment = comment as TextAnnotationComment
             if (!textComment.content.text.toLowerCase().includes(keyword)) {
-              return false;
+              return false
             }
           }
         }
-        return true;
-      });
+        return true
+      })
     } catch (error) {
-      console.error('筛选批注失败:', error);
-      return [];
+      console.error('筛选批注失败:', error)
+      return []
     }
   },
 
@@ -319,22 +332,35 @@ export const pdfAnnotationService = {
   async getCommentStats(annotationId?: string): Promise<CommentStats> {
     const comments = annotationId
       ? await this.getComments(annotationId)
-      : await this.filterComments({});
+      : await this.filterComments({})
 
     const stats: CommentStats = {
       total: comments.length,
-      byType: { text: 0, voice: 0, image: 0 },
-      byStatus: { active: 0, resolved: 0, archived: 0 },
-      byPriority: { low: 0, normal: 0, high: 0, urgent: 0 },
-    };
-
-    for (const comment of comments) {
-      stats.byType[comment.type]++;
-      stats.byStatus[comment.status]++;
-      stats.byPriority[comment.priority]++;
+      byType: {
+        text: 0,
+        voice: 0,
+        image: 0,
+      },
+      byStatus: {
+        active: 0,
+        resolved: 0,
+        archived: 0,
+      },
+      byPriority: {
+        low: 0,
+        normal: 0,
+        high: 0,
+        urgent: 0,
+      },
     }
 
-    return stats;
+    for (const comment of comments) {
+      stats.byType[comment.type]++
+      stats.byStatus[comment.status]++
+      stats.byPriority[comment.priority]++
+    }
+
+    return stats
   },
 
   /**
@@ -343,10 +369,10 @@ export const pdfAnnotationService = {
    */
   async replyToComment(params: ReplyToCommentParams): Promise<AnnotationComment | null> {
     // 查找父批注
-    const parentComment = await this.getComment(params.parentCommentId);
+    const parentComment = await this.getComment(params.parentCommentId)
     if (!parentComment) {
-      console.error('找不到父批注');
-      return null;
+      console.error('找不到父批注')
+      return null
     }
 
     // 创建回复批注
@@ -355,9 +381,9 @@ export const pdfAnnotationService = {
       type: 'text',
       content: params.content,
       author: params.author,
-    });
+    })
 
-    return reply;
+    return reply
   },
 
   /**
@@ -365,25 +391,25 @@ export const pdfAnnotationService = {
    * @param commentId 主批注 ID
    */
   async getCommentThread(commentId: string): Promise<CommentThread | null> {
-    const mainComment = await this.getComment(commentId);
+    const mainComment = await this.getComment(commentId)
     if (!mainComment) {
-      return null;
+      return null
     }
 
     // 获取同一标注下的所有批注
-    const allComments = await this.getComments(mainComment.annotationId);
+    const allComments = await this.getComments(mainComment.annotationId)
 
     // 这里简化处理：将同一标注下时间晚于主批注的作为潜在回复
     // 实际应用中可能需要额外的父子关系字段
     const replies = allComments.filter(
-      c => c.createdAt > mainComment.createdAt && c.id !== commentId
-    );
+      (c) => c.createdAt > mainComment.createdAt && c.id !== commentId,
+    )
 
     return {
       mainComment,
       replies,
       replyCount: replies.length,
-    };
+    }
   },
 
   /**
@@ -393,9 +419,9 @@ export const pdfAnnotationService = {
    */
   async updateStatus(
     commentId: string,
-    status: CommentStatus
+    status: CommentStatus,
   ): Promise<AnnotationComment | null> {
-    return this.updateComment(commentId, { status });
+    return this.updateComment(commentId, { status })
   },
 
   /**
@@ -403,7 +429,7 @@ export const pdfAnnotationService = {
    * @param commentId 批注 ID
    */
   async resolveComment(commentId: string): Promise<AnnotationComment | null> {
-    return this.updateStatus(commentId, 'resolved');
+    return this.updateStatus(commentId, 'resolved')
   },
 
   /**
@@ -411,7 +437,7 @@ export const pdfAnnotationService = {
    * @param commentId 批注 ID
    */
   async reopenComment(commentId: string): Promise<AnnotationComment | null> {
-    return this.updateStatus(commentId, 'active');
+    return this.updateStatus(commentId, 'active')
   },
 
   /**
@@ -419,20 +445,20 @@ export const pdfAnnotationService = {
    * @param options 导出选项
    */
   async exportComments(options: CommentExportOptions): Promise<string> {
-    const comments = await this.filterComments(options.filter || {});
+    const comments = await this.filterComments(options.filter || {})
 
     switch (options.format) {
       case 'json':
-        return JSON.stringify(comments, null, 2);
+        return JSON.stringify(comments, null, 2)
 
       case 'markdown':
-        return this.exportAsMarkdown(comments, options);
+        return this.exportAsMarkdown(comments, options)
 
       case 'csv':
-        return this.exportAsCsv(comments, options);
+        return this.exportAsCsv(comments, options)
 
       default:
-        throw new Error(`不支持的导出格式: ${options.format}`);
+        throw new Error(`不支持的导出格式: ${options.format}`)
     }
   },
 
@@ -441,53 +467,53 @@ export const pdfAnnotationService = {
    */
   exportAsMarkdown(
     comments: AnnotationComment[],
-    options: CommentExportOptions
+    options: CommentExportOptions,
   ): string {
-    const lines: string[] = ['# PDF 标注批注导出\n'];
+    const lines: string[] = ['# PDF 标注批注导出\n']
 
     for (const comment of comments) {
-      const date = new Date(comment.createdAt).toLocaleString();
-      lines.push(`## 批注 - ${date}\n`);
+      const date = new Date(comment.createdAt).toLocaleString()
+      lines.push(`## 批注 - ${date}\n`)
 
       if (options.includeMetadata) {
-        lines.push(`- **类型**: ${comment.type}`);
-        lines.push(`- **状态**: ${comment.status}`);
-        lines.push(`- **优先级**: ${comment.priority}`);
+        lines.push(`- **类型**: ${comment.type}`)
+        lines.push(`- **状态**: ${comment.status}`)
+        lines.push(`- **优先级**: ${comment.priority}`)
         if (comment.author) {
-          lines.push(`- **作者**: ${comment.author}`);
+          lines.push(`- **作者**: ${comment.author}`)
         }
         if (comment.tags && comment.tags.length > 0) {
-          lines.push(`- **标签**: ${comment.tags.join(', ')}`);
+          lines.push(`- **标签**: ${comment.tags.join(', ')}`)
         }
-        lines.push('');
+        lines.push('')
       }
 
       if (comment.type === 'text') {
-        const textComment = comment as TextAnnotationComment;
-        const format = textComment.content.format || 'plain';
+        const textComment = comment as TextAnnotationComment
+        const format = textComment.content.format || 'plain'
         if (format === 'markdown') {
-          lines.push(textComment.content.text);
+          lines.push(textComment.content.text)
         } else {
-          lines.push(textComment.content.text);
+          lines.push(textComment.content.text)
         }
       } else if (comment.type === 'voice') {
-        const voiceComment = comment as VoiceAnnotationComment;
-        lines.push(`🎤 语音批注 (${voiceComment.content.duration}秒)`);
+        const voiceComment = comment as VoiceAnnotationComment
+        lines.push(`🎤 语音批注 (${voiceComment.content.duration}秒)`)
         if (voiceComment.content.transcript) {
-          lines.push(`\n转录文本: ${voiceComment.content.transcript}`);
+          lines.push(`\n转录文本: ${voiceComment.content.transcript}`)
         }
       } else if (comment.type === 'image') {
-        const imageComment = comment as ImageAnnotationComment;
-        lines.push(`![批注图片](${imageComment.content.imageUrl})`);
+        const imageComment = comment as ImageAnnotationComment
+        lines.push(`![批注图片](${imageComment.content.imageUrl})`)
         if (imageComment.content.caption) {
-          lines.push(`\n*${imageComment.content.caption}*`);
+          lines.push(`\n*${imageComment.content.caption}*`)
         }
       }
 
-      lines.push('\n---\n');
+      lines.push('\n---\n')
     }
 
-    return lines.join('\n');
+    return lines.join('\n')
   },
 
   /**
@@ -495,14 +521,14 @@ export const pdfAnnotationService = {
    */
   exportAsCsv(
     comments: AnnotationComment[],
-    options: CommentExportOptions
+    options: CommentExportOptions,
   ): string {
-    const headers = ['ID', '标注ID', '类型', '状态', '优先级', '创建时间', '内容'];
+    const headers = ['ID', '标注ID', '类型', '状态', '优先级', '创建时间', '内容']
     if (options.includeMetadata) {
-      headers.push('作者', '标签');
+      headers.push('作者', '标签')
     }
 
-    const rows = comments.map(comment => {
+    const rows = comments.map((comment) => {
       const row = [
         comment.id,
         comment.annotationId,
@@ -510,26 +536,26 @@ export const pdfAnnotationService = {
         comment.status,
         comment.priority,
         new Date(comment.createdAt).toISOString(),
-      ];
+      ]
 
       // 内容
       if (comment.type === 'text') {
-        const textComment = comment as TextAnnotationComment;
-        row.push(`"${textComment.content.text.replace(/"/g, '""')}"`);
+        const textComment = comment as TextAnnotationComment
+        row.push(`"${textComment.content.text.replace(/"/g, '""')}"`)
       } else {
-        row.push('');
+        row.push('')
       }
 
       if (options.includeMetadata) {
-        row.push(comment.author || '');
-        row.push((comment.tags || []).join(';'));
+        row.push(comment.author || '')
+        row.push((comment.tags || []).join(';'))
       }
 
-      return row.join(',');
-    });
+      return row.join(',')
+    })
 
-    return [headers.join(','), ...rows].join('\n');
+    return [headers.join(','), ...rows].join('\n')
   },
-};
+}
 
-export default pdfAnnotationService;
+export default pdfAnnotationService

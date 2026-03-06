@@ -3,8 +3,11 @@
  * @fileoverview 管理思维导图的版本历史，支持版本创建、恢复、删除
  */
 
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+} from '@/types/mindmapFree'
 import { postApi } from '@/api/siyuanApi'
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
 
 /**
  * 思维导图版本数据结构
@@ -29,7 +32,7 @@ export interface MindMapVersion {
   /** 连线数据快照 */
   edges: FreeMindMapEdge[]
   /** 视图状态 */
-  viewport: { zoom: number; x: number; y: number }
+  viewport: { zoom: number, x: number, y: number }
   /** 布局模式 */
   layout: 'free' | 'tree' | 'vertical' | 'horizontal'
 }
@@ -43,7 +46,7 @@ const VERSION_ATTRS = {
   /** 当前版本号 */
   CURRENT_VERSION: 'custom-freemind-current-version',
   /** 自动保存间隔（秒） */
-  AUTO_SAVE_INTERVAL: 'custom-freemind-auto-save-interval'
+  AUTO_SAVE_INTERVAL: 'custom-freemind-auto-save-interval',
 }
 
 /**
@@ -70,7 +73,7 @@ function generateVersionId(): string {
 export async function getVersionHistory(blockId: string): Promise<MindMapVersion[]> {
   try {
     const attrs = await postApi<{ [key: string]: string }>('/api/attr/getBlockAttrs', {
-      id: blockId
+      id: blockId,
     })
 
     const historyJson = attrs?.[VERSION_ATTRS.HISTORY]
@@ -96,19 +99,19 @@ export async function createVersion(
   data: {
     nodes: FreeMindMapNode[]
     edges: FreeMindMapEdge[]
-    viewport: { zoom: number; x: number; y: number }
+    viewport: { zoom: number, x: number, y: number }
     layout: 'free' | 'tree' | 'vertical' | 'horizontal'
   },
   options: {
     name?: string
     description?: string
     createdBy?: string
-  } = {}
+  } = {},
 ): Promise<MindMapVersion> {
   const history = await getVersionHistory(blockId)
 
   // 获取当前版本号
-  const currentVersion = history.length > 0 ? Math.max(...history.map(v => v.version)) : 0
+  const currentVersion = history.length > 0 ? Math.max(...history.map((v) => v.version)) : 0
   const newVersion = currentVersion + 1
 
   const version: MindMapVersion = {
@@ -122,7 +125,7 @@ export async function createVersion(
     nodes: JSON.parse(JSON.stringify(data.nodes)), // 深拷贝
     edges: JSON.parse(JSON.stringify(data.edges)),
     viewport: { ...data.viewport },
-    layout: data.layout
+    layout: data.layout,
   }
 
   history.push(version)
@@ -137,8 +140,8 @@ export async function createVersion(
     id: blockId,
     attrs: {
       [VERSION_ATTRS.HISTORY]: JSON.stringify(history),
-      [VERSION_ATTRS.CURRENT_VERSION]: newVersion.toString()
-    }
+      [VERSION_ATTRS.CURRENT_VERSION]: newVersion.toString(),
+    },
   })
 
   return version
@@ -151,15 +154,15 @@ export async function createVersion(
  */
 export async function restoreVersion(
   blockId: string,
-  versionId: string
+  versionId: string,
 ): Promise<{
   nodes: FreeMindMapNode[]
   edges: FreeMindMapEdge[]
-  viewport: { zoom: number; x: number; y: number }
+  viewport: { zoom: number, x: number, y: number }
   layout: 'free' | 'tree' | 'vertical' | 'horizontal'
 } | null> {
   const history = await getVersionHistory(blockId)
-  const version = history.find(v => v.id === versionId)
+  const version = history.find((v) => v.id === versionId)
 
   if (!version) {
     console.error('[FreeMindMapVersionService] 版本不存在:', versionId)
@@ -170,20 +173,24 @@ export async function restoreVersion(
   const currentData = {
     nodes: history[history.length - 1]?.nodes || [],
     edges: history[history.length - 1]?.edges || [],
-    viewport: history[history.length - 1]?.viewport || { zoom: 1, x: 0, y: 0 },
-    layout: history[history.length - 1]?.layout || 'free' as const
+    viewport: history[history.length - 1]?.viewport || {
+      zoom: 1,
+      x: 0,
+      y: 0,
+    },
+    layout: history[history.length - 1]?.layout || 'free' as const,
   }
 
   await createVersion(blockId, currentData, {
     name: `恢复前备份`,
-    description: `恢复到版本 ${version.version} 前的自动备份`
+    description: `恢复到版本 ${version.version} 前的自动备份`,
   })
 
   return {
     nodes: JSON.parse(JSON.stringify(version.nodes)),
     edges: JSON.parse(JSON.stringify(version.edges)),
     viewport: { ...version.viewport },
-    layout: version.layout
+    layout: version.layout,
   }
 }
 
@@ -194,7 +201,7 @@ export async function restoreVersion(
  */
 export async function deleteVersion(blockId: string, versionId: string): Promise<boolean> {
   const history = await getVersionHistory(blockId)
-  const index = history.findIndex(v => v.id === versionId)
+  const index = history.findIndex((v) => v.id === versionId)
 
   if (index === -1) {
     return false
@@ -205,8 +212,8 @@ export async function deleteVersion(blockId: string, versionId: string): Promise
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
     attrs: {
-      [VERSION_ATTRS.HISTORY]: JSON.stringify(history)
-    }
+      [VERSION_ATTRS.HISTORY]: JSON.stringify(history),
+    },
   })
 
   return true
@@ -219,10 +226,10 @@ export async function deleteVersion(blockId: string, versionId: string): Promise
  */
 export async function getVersionDetail(
   blockId: string,
-  versionId: string
+  versionId: string,
 ): Promise<MindMapVersion | null> {
   const history = await getVersionHistory(blockId)
-  return history.find(v => v.id === versionId) || null
+  return history.find((v) => v.id === versionId) || null
 }
 
 /**
@@ -258,8 +265,8 @@ export function compareVersions(version1: MindMapVersion, version2: MindMapVersi
   const modifiedEdges: FreeMindMapEdge[] = []
 
   // 比较节点
-  const nodes1Map = new Map(version1.nodes.map(n => [n.id, n]))
-  const nodes2Map = new Map(version2.nodes.map(n => [n.id, n]))
+  const nodes1Map = new Map(version1.nodes.map((n) => [n.id, n]))
+  const nodes2Map = new Map(version2.nodes.map((n) => [n.id, n]))
 
   // 查找新增和修改的节点
   for (const [id, node2] of nodes2Map.entries()) {
@@ -269,10 +276,10 @@ export function compareVersions(version1: MindMapVersion, version2: MindMapVersi
     } else {
       // 检查是否修改
       if (
-        node1.data.title !== node2.data.title ||
-        node1.data.content !== node2.data.content ||
-        node1.position.x !== node2.position.x ||
-        node1.position.y !== node2.position.y
+        node1.data.title !== node2.data.title
+        || node1.data.content !== node2.data.content
+        || node1.position.x !== node2.position.x
+        || node1.position.y !== node2.position.y
       ) {
         modifiedNodes.push(node2)
       }
@@ -287,17 +294,17 @@ export function compareVersions(version1: MindMapVersion, version2: MindMapVersi
   }
 
   // 比较连线
-  const edges1Map = new Map(version1.edges.map(e => [e.id, e]))
-  const edges2Map = new Map(version2.edges.map(e => [e.id, e]))
+  const edges1Map = new Map(version1.edges.map((e) => [e.id, e]))
+  const edges2Map = new Map(version2.edges.map((e) => [e.id, e]))
 
   for (const [id, edge2] of edges2Map.entries()) {
     const edge1 = edges1Map.get(id)
     if (!edge1) {
       addedEdges.push(edge2)
     } else if (
-      edge1.source !== edge2.source ||
-      edge1.target !== edge2.target ||
-      edge1.type !== edge2.type
+      edge1.source !== edge2.source
+      || edge1.target !== edge2.target
+      || edge1.type !== edge2.type
     ) {
       modifiedEdges.push(edge2)
     }
@@ -315,7 +322,7 @@ export function compareVersions(version1: MindMapVersion, version2: MindMapVersi
     modifiedNodes,
     addedEdges,
     removedEdges,
-    modifiedEdges
+    modifiedEdges,
   }
 }
 
@@ -326,13 +333,13 @@ export function compareVersions(version1: MindMapVersion, version2: MindMapVersi
  */
 export async function enableAutoSave(
   blockId: string,
-  intervalSeconds: number = DEFAULT_AUTO_SAVE_INTERVAL
+  intervalSeconds: number = DEFAULT_AUTO_SAVE_INTERVAL,
 ): Promise<void> {
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
     attrs: {
-      [VERSION_ATTRS.AUTO_SAVE_INTERVAL]: intervalSeconds.toString()
-    }
+      [VERSION_ATTRS.AUTO_SAVE_INTERVAL]: intervalSeconds.toString(),
+    },
   })
 }
 
@@ -344,8 +351,8 @@ export async function disableAutoSave(blockId: string): Promise<void> {
   await postApi('/api/attr/setBlockAttrs', {
     id: blockId,
     attrs: {
-      [VERSION_ATTRS.AUTO_SAVE_INTERVAL]: '0'
-    }
+      [VERSION_ATTRS.AUTO_SAVE_INTERVAL]: '0',
+    },
   })
 }
 
@@ -356,9 +363,9 @@ export async function disableAutoSave(blockId: string): Promise<void> {
 export async function getAutoSaveInterval(blockId: string): Promise<number> {
   try {
     const attrs = await postApi<{ [key: string]: string }>('/api/attr/getBlockAttrs', {
-      id: blockId
+      id: blockId,
     })
-    const interval = parseInt(attrs?.[VERSION_ATTRS.AUTO_SAVE_INTERVAL] || '0')
+    const interval = Number.parseInt(attrs?.[VERSION_ATTRS.AUTO_SAVE_INTERVAL] || '0')
     return interval > 0 ? interval : 0
   } catch (error) {
     console.error('[FreeMindMapVersionService] 获取自动保存间隔失败:', error)
@@ -376,9 +383,9 @@ export async function autoSaveVersion(
   data: {
     nodes: FreeMindMapNode[]
     edges: FreeMindMapEdge[]
-    viewport: { zoom: number; x: number; y: number }
+    viewport: { zoom: number, x: number, y: number }
     layout: 'free' | 'tree' | 'vertical' | 'horizontal'
-  }
+  },
 ): Promise<MindMapVersion | null> {
   const interval = await getAutoSaveInterval(blockId)
   if (interval <= 0) {
@@ -396,7 +403,7 @@ export async function autoSaveVersion(
 
   return createVersion(blockId, data, {
     name: `自动保存`,
-    description: `自动保存于 ${new Date(now).toLocaleString()}`
+    description: `自动保存于 ${new Date(now).toLocaleString()}`,
   })
 }
 
@@ -409,7 +416,7 @@ export async function clearHistory(blockId: string): Promise<void> {
     id: blockId,
     attrs: {
       [VERSION_ATTRS.HISTORY]: '',
-      [VERSION_ATTRS.CURRENT_VERSION]: '0'
-    }
+      [VERSION_ATTRS.CURRENT_VERSION]: '0',
+    },
   })
 }

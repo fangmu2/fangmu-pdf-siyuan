@@ -1,15 +1,277 @@
+<template>
+  <div
+    v-if="visible"
+    class="pdf-linkage-settings"
+  >
+    <!-- 标签页 -->
+    <div class="panel-tabs">
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'config' }]"
+        @click="activeTab = 'config'"
+      >
+        ⚙️ 配置
+      </button>
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'highlight' }]"
+        @click="activeTab = 'highlight'"
+      >
+        ✨ 高亮
+        <span
+          v-if="hasHighlightedNodes"
+          class="badge"
+        >{{ highlightedNodes.size }}</span>
+      </button>
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'color' }]"
+        @click="activeTab = 'color'"
+      >
+        🎨 颜色映射
+        <span
+          v-if="hasColorMappings"
+          class="badge"
+        >{{ colorMappings.size }}</span>
+      </button>
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'layout' }]"
+        @click="activeTab = 'layout'"
+      >
+        💡 布局建议
+        <span
+          v-if="hasLayoutSuggestions"
+          class="badge"
+        >{{ layoutSuggestions.length }}</span>
+      </button>
+    </div>
+
+    <!-- 配置面板 -->
+    <div
+      v-if="activeTab === 'config'"
+      class="panel-content"
+    >
+      <div class="config-list">
+        <div
+          v-for="(description, key) in configDescriptions"
+          :key="key"
+          class="config-item"
+        >
+          <div class="config-info">
+            <span class="config-name">{{ key.replace('enable', '') }}</span>
+            <p class="config-description">
+              {{ description }}
+            </p>
+          </div>
+          <label class="toggle-switch">
+            <input
+              type="checkbox"
+              :checked="config[key as keyof typeof config.value]"
+              @change="handleConfigChange(key as keyof typeof config.value)"
+            />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 重置按钮 -->
+      <div class="config-actions">
+        <button
+          class="btn-reset"
+          @click="resetConfig"
+        >
+          🔄 重置配置
+        </button>
+      </div>
+    </div>
+
+    <!-- 高亮面板 -->
+    <div
+      v-if="activeTab === 'highlight'"
+      class="panel-content"
+    >
+      <!-- 空状态 -->
+      <div
+        v-if="!hasHighlightedNodes"
+        class="empty-state"
+      >
+        <span class="empty-icon">✨</span>
+        <p>暂无高亮节点</p>
+        <p class="empty-hint">
+          在 PDF 中选中文本或创建标注时，对应节点会在此显示
+        </p>
+      </div>
+
+      <!-- 高亮列表 -->
+      <div
+        v-else
+        class="highlight-list"
+      >
+        <div class="list-header">
+          <span>当前高亮节点</span>
+          <button
+            class="btn-clear"
+            @click="handleClearHighlights"
+          >
+            清除全部
+          </button>
+        </div>
+        <div
+          v-for="[nodeId, state] in highlightedNodes"
+          :key="nodeId"
+          class="highlight-item"
+          :style="{ borderLeftColor: state.color }"
+        >
+          <div class="highlight-info">
+            <span
+              class="highlight-color"
+              :style="{ backgroundColor: state.color }"
+            ></span>
+            <span class="highlight-node-id">{{ nodeId }}</span>
+            <span class="highlight-reason">{{ state.reason }}</span>
+          </div>
+          <div class="highlight-actions">
+            <button
+              class="btn-icon"
+              title="取消高亮"
+              @click="unhighlightNode(nodeId)"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 颜色映射面板 -->
+    <div
+      v-if="activeTab === 'color'"
+      class="panel-content"
+    >
+      <!-- 空状态 -->
+      <div
+        v-if="!hasColorMappings"
+        class="empty-state"
+      >
+        <span class="empty-icon">🎨</span>
+        <p>暂无颜色映射</p>
+        <p class="empty-hint">
+          PDF 标注颜色会自动同步到导图节点
+        </p>
+      </div>
+
+      <!-- 颜色映射列表 -->
+      <div
+        v-else
+        class="color-mapping-list"
+      >
+        <div class="list-header">
+          <span>颜色映射</span>
+          <button
+            class="btn-clear"
+            @click="handleClearColorMappings"
+          >
+            清除全部
+          </button>
+        </div>
+        <div
+          v-for="[annotationId, mapping] in colorMappings"
+          :key="annotationId"
+          class="color-mapping-item"
+        >
+          <div class="color-preview">
+            <span
+              class="color-box"
+              :style="{ backgroundColor: mapping.annotationColor }"
+            ></span>
+            <span class="color-value">{{ mapping.annotationColor }}</span>
+          </div>
+          <span class="arrow">→</span>
+          <div class="color-preview">
+            <span
+              class="color-box"
+              :style="{ backgroundColor: mapping.nodeBackgroundColor || mapping.nodeBorderColor }"
+            ></span>
+            <span class="color-value">{{ mapping.nodeBackgroundColor || mapping.nodeBorderColor }}</span>
+          </div>
+          <span class="mapping-node-id">{{ mapping.nodeId }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 布局建议面板 -->
+    <div
+      v-if="activeTab === 'layout'"
+      class="panel-content"
+    >
+      <!-- 空状态 -->
+      <div
+        v-if="!hasLayoutSuggestions"
+        class="empty-state"
+      >
+        <span class="empty-icon">💡</span>
+        <p>暂无布局建议</p>
+        <button
+          class="btn-primary"
+          @click="handleRefreshSuggestions"
+        >
+          刷新建议
+        </button>
+      </div>
+
+      <!-- 建议列表 -->
+      <div
+        v-else
+        class="suggestion-list"
+      >
+        <div
+          v-for="(suggestion, index) in layoutSuggestions"
+          :key="suggestion.id"
+          class="suggestion-item"
+        >
+          <div class="suggestion-header">
+            <span class="suggestion-type">{{ suggestion.type }}</span>
+            <span class="suggestion-confidence">
+              置信度：{{ Math.round(suggestion.confidence * 100) }}%
+            </span>
+          </div>
+          <p class="suggestion-description">
+            {{ suggestion.description }}
+          </p>
+          <div class="suggestion-actions">
+            <button
+              class="btn-primary"
+              @click="handleApplySuggestion(index)"
+            >
+              应用
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * PDF 与思维导图联动配置组件
  * 提供实时高亮同步、拖拽创建节点、智能布局建议、标注颜色映射等功能的配置
  */
 
-import { ref, computed, watch } from 'vue'
-import { usePdfMindMapLinkage } from '@/composables/usePdfMindMapLinkage'
 import type { Ref } from 'vue'
-import type { FreeMindMapNode, FreeMindMapEdge, AnnotationColorMapping } from '@/types/mindmapFree'
-import type { Annotation } from '@/types/annotation'
-import type { PdfLinkageConfig } from '@/types/mindmapFree'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+  PdfLinkageConfig,
+} from '@/types/mindmapFree'
+
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
+import { usePdfMindMapLinkage } from '@/composables/usePdfMindMapLinkage'
 
 // Props
 interface Props {
@@ -22,8 +284,10 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  visible: true
+  visible: true,
 })
+
+const emit = defineEmits<Emits>()
 
 // Emit
 interface Emits {
@@ -34,12 +298,10 @@ interface Emits {
     title: string
     content: string
     type: 'textCard' | 'imageCard'
-    position: { x: number; y: number }
+    position: { x: number, y: number }
     annotationId?: string
   }): void
 }
-
-const emit = defineEmits<Emits>()
 
 // 使用组合式函数
 const {
@@ -60,11 +322,11 @@ const {
   colorMappings,
   clearColorMappings,
   setupEventListeners,
-  cleanupEventListeners
+  cleanupEventListeners,
 } = usePdfMindMapLinkage({
   enabled: true,
   nodes: props.nodes,
-  edges: props.edges
+  edges: props.edges,
 })
 
 // 本地状态
@@ -76,7 +338,7 @@ const configDescriptions = {
   enableDragToCreate: '从 PDF 拖拽选中文本到画布自动创建节点',
   enableSmartLayout: '根据内容和 PDF 页码自动推荐节点布局',
   enableColorMapping: 'PDF 标注颜色自动同步到节点边框/背景',
-  enableAutoSyncEnhanced: '批量同步、防抖处理，优化大量标注时的性能'
+  enableAutoSyncEnhanced: '批量同步、防抖处理，优化大量标注时的性能',
 }
 
 // 计算属性
@@ -87,7 +349,7 @@ const hasLayoutSuggestions = computed(() => layoutSuggestions.value.length > 0)
 // 处理配置变更
 function handleConfigChange(key: keyof typeof config.value): void {
   updateConfig({
-    [key]: !config.value[key]
+    [key]: !config.value[key],
   })
   emit('config-change', config.value)
 }
@@ -127,188 +389,9 @@ defineExpose({
   handleDragEnter,
   handleDrop,
   setupEventListeners,
-  cleanupEventListeners
+  cleanupEventListeners,
 })
 </script>
-
-<template>
-  <div class="pdf-linkage-settings" v-if="visible">
-    <!-- 标签页 -->
-    <div class="panel-tabs">
-      <button
-        :class="['tab-btn', { active: activeTab === 'config' }]"
-        @click="activeTab = 'config'"
-      >
-        ⚙️ 配置
-      </button>
-      <button
-        :class="['tab-btn', { active: activeTab === 'highlight' }]"
-        @click="activeTab = 'highlight'"
-      >
-        ✨ 高亮
-        <span v-if="hasHighlightedNodes" class="badge">{{ highlightedNodes.size }}</span>
-      </button>
-      <button
-        :class="['tab-btn', { active: activeTab === 'color' }]"
-        @click="activeTab = 'color'"
-      >
-        🎨 颜色映射
-        <span v-if="hasColorMappings" class="badge">{{ colorMappings.size }}</span>
-      </button>
-      <button
-        :class="['tab-btn', { active: activeTab === 'layout' }]"
-        @click="activeTab = 'layout'"
-      >
-        💡 布局建议
-        <span v-if="hasLayoutSuggestions" class="badge">{{ layoutSuggestions.length }}</span>
-      </button>
-    </div>
-
-    <!-- 配置面板 -->
-    <div v-if="activeTab === 'config'" class="panel-content">
-      <div class="config-list">
-        <div
-          v-for="(description, key) in configDescriptions"
-          :key="key"
-          class="config-item"
-        >
-          <div class="config-info">
-            <span class="config-name">{{ key.replace('enable', '') }}</span>
-            <p class="config-description">{{ description }}</p>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              :checked="config[key as keyof typeof config.value]"
-              @change="handleConfigChange(key as keyof typeof config.value)"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- 重置按钮 -->
-      <div class="config-actions">
-        <button class="btn-reset" @click="resetConfig">
-          🔄 重置配置
-        </button>
-      </div>
-    </div>
-
-    <!-- 高亮面板 -->
-    <div v-if="activeTab === 'highlight'" class="panel-content">
-      <!-- 空状态 -->
-      <div v-if="!hasHighlightedNodes" class="empty-state">
-        <span class="empty-icon">✨</span>
-        <p>暂无高亮节点</p>
-        <p class="empty-hint">在 PDF 中选中文本或创建标注时，对应节点会在此显示</p>
-      </div>
-
-      <!-- 高亮列表 -->
-      <div v-else class="highlight-list">
-        <div class="list-header">
-          <span>当前高亮节点</span>
-          <button class="btn-clear" @click="handleClearHighlights">
-            清除全部
-          </button>
-        </div>
-        <div
-          v-for="[nodeId, state] in highlightedNodes"
-          :key="nodeId"
-          class="highlight-item"
-          :style="{ borderLeftColor: state.color }"
-        >
-          <div class="highlight-info">
-            <span class="highlight-color" :style="{ backgroundColor: state.color }"></span>
-            <span class="highlight-node-id">{{ nodeId }}</span>
-            <span class="highlight-reason">{{ state.reason }}</span>
-          </div>
-          <div class="highlight-actions">
-            <button class="btn-icon" @click="unhighlightNode(nodeId)" title="取消高亮">
-              ✕
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 颜色映射面板 -->
-    <div v-if="activeTab === 'color'" class="panel-content">
-      <!-- 空状态 -->
-      <div v-if="!hasColorMappings" class="empty-state">
-        <span class="empty-icon">🎨</span>
-        <p>暂无颜色映射</p>
-        <p class="empty-hint">PDF 标注颜色会自动同步到导图节点</p>
-      </div>
-
-      <!-- 颜色映射列表 -->
-      <div v-else class="color-mapping-list">
-        <div class="list-header">
-          <span>颜色映射</span>
-          <button class="btn-clear" @click="handleClearColorMappings">
-            清除全部
-          </button>
-        </div>
-        <div
-          v-for="[annotationId, mapping] in colorMappings"
-          :key="annotationId"
-          class="color-mapping-item"
-        >
-          <div class="color-preview">
-            <span
-              class="color-box"
-              :style="{ backgroundColor: mapping.annotationColor }"
-            ></span>
-            <span class="color-value">{{ mapping.annotationColor }}</span>
-          </div>
-          <span class="arrow">→</span>
-          <div class="color-preview">
-            <span
-              class="color-box"
-              :style="{ backgroundColor: mapping.nodeBackgroundColor || mapping.nodeBorderColor }"
-            ></span>
-            <span class="color-value">{{ mapping.nodeBackgroundColor || mapping.nodeBorderColor }}</span>
-          </div>
-          <span class="mapping-node-id">{{ mapping.nodeId }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 布局建议面板 -->
-    <div v-if="activeTab === 'layout'" class="panel-content">
-      <!-- 空状态 -->
-      <div v-if="!hasLayoutSuggestions" class="empty-state">
-        <span class="empty-icon">💡</span>
-        <p>暂无布局建议</p>
-        <button class="btn-primary" @click="handleRefreshSuggestions">
-          刷新建议
-        </button>
-      </div>
-
-      <!-- 建议列表 -->
-      <div v-else class="suggestion-list">
-        <div
-          v-for="(suggestion, index) in layoutSuggestions"
-          :key="suggestion.id"
-          class="suggestion-item"
-        >
-          <div class="suggestion-header">
-            <span class="suggestion-type">{{ suggestion.type }}</span>
-            <span class="suggestion-confidence">
-              置信度：{{ Math.round(suggestion.confidence * 100) }}%
-            </span>
-          </div>
-          <p class="suggestion-description">{{ suggestion.description }}</p>
-          <div class="suggestion-actions">
-            <button class="btn-primary" @click="handleApplySuggestion(index)">
-              应用
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .pdf-linkage-settings {

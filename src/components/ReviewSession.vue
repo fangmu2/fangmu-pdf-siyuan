@@ -15,7 +15,10 @@
     </div>
 
     <!-- 复习内容 -->
-    <div v-if="currentCard" class="review-session__card">
+    <div
+      v-if="currentCard"
+      class="review-session__card"
+    >
       <!-- 卡片正面 -->
       <div
         v-if="!showAnswer"
@@ -23,20 +26,36 @@
         @click="showAnswer = true"
       >
         <div class="card-face__content">
-          <div class="card-face__label">问题</div>
-          <div class="card-face__text">{{ currentCard.front }}</div>
-          <div class="card-face__hint">点击显示答案</div>
+          <div class="card-face__label">
+            问题
+          </div>
+          <div class="card-face__text">
+            {{ currentCard.front }}
+          </div>
+          <div class="card-face__hint">
+            点击显示答案
+          </div>
         </div>
       </div>
 
       <!-- 卡片反面 -->
-      <div v-else class="review-session__answer card-face">
+      <div
+        v-else
+        class="review-session__answer card-face"
+      >
         <div class="card-face__content">
-          <div class="card-face__label">答案</div>
-          <div class="card-face__text">{{ currentCard.back }}</div>
+          <div class="card-face__label">
+            答案
+          </div>
+          <div class="card-face__text">
+            {{ currentCard.back }}
+          </div>
 
           <!-- 来源信息 -->
-          <div v-if="currentCard.sourceLocation" class="card-face__source">
+          <div
+            v-if="currentCard.sourceLocation"
+            class="card-face__source"
+          >
             <span class="card-face__source-label">来源：</span>
             <span class="card-face__source-text">
               {{ getSourceText(currentCard.sourceLocation) }}
@@ -79,9 +98,16 @@
     </div>
 
     <!-- 复习完成 -->
-    <div v-else class="review-session__complete">
-      <div class="complete-icon">✓</div>
-      <h2 class="complete-title">复习完成！</h2>
+    <div
+      v-else
+      class="review-session__complete"
+    >
+      <div class="complete-icon">
+        ✓
+      </div>
+      <h2 class="complete-title">
+        复习完成！
+      </h2>
       <div class="complete-stats">
         <div class="complete-stat">
           <span class="complete-stat__value">{{ sessionStats.totalCards }}</span>
@@ -104,16 +130,27 @@
           <span class="complete-stat__label">用时</span>
         </div>
       </div>
-      <button class="complete-btn" @click="handleComplete">完成</button>
+      <button
+        class="complete-btn"
+        @click="handleComplete"
+      >
+        完成
+      </button>
     </div>
 
     <!-- 剩余卡片提示 -->
-    <div v-if="!currentCard && remainingCount > 0" class="review-session__remaining">
+    <div
+      v-if="!currentCard && remainingCount > 0"
+      class="review-session__remaining"
+    >
       <p>本组复习已完成</p>
       <p class="review-session__remaining-hint">
         还有 {{ remainingCount }} 张卡片待复习
       </p>
-      <button class="review-session__continue-btn" @click="handleContinue">
+      <button
+        class="review-session__continue-btn"
+        @click="handleContinue"
+      >
         继续复习
       </button>
     </div>
@@ -121,17 +158,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import type { Card, FlashCard } from '../types/card';
-import type { ReviewQualityLabel } from '../types/review';
-import { reviewService } from '../services/reviewService';
-import { qualityLabelToScore } from '../review/sm2';
+import type {
+  Card,
+} from '../types/card'
+import type { ReviewQualityLabel } from '../types/review'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import { qualityLabelToScore } from '../review/sm2'
 
 interface Props {
-  queue?: Card[];
-  session?: any;
-  studySetId?: string;
-  onClose?: () => void;
+  queue?: Card[]
+  session?: any
+  studySetId?: string
+  onClose?: () => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -139,158 +182,158 @@ const props = withDefaults(defineProps<Props>(), {
   session: undefined,
   studySetId: '',
   onClose: undefined,
-});
+})
 
 const emit = defineEmits<{
-  (e: 'rate', cardId: string, quality: number): void;
-  (e: 'complete', session: any): void;
-  (e: 'continue'): void;
-  (e: 'close'): void;
-}>();
+  (e: 'rate', cardId: string, quality: number): void
+  (e: 'complete', session: any): void
+  (e: 'continue'): void
+  (e: 'close'): void
+}>()
 
 // 内部状态
 interface InternalQueueItem {
-  cardId: string;
-  front: string;
-  back: string;
+  cardId: string
+  front: string
+  back: string
   sourceLocation?: {
-    pdfPath?: string;
-    page?: number;
-  };
+    pdfPath?: string
+    page?: number
+  }
 }
 
 // 状态
-const showAnswer = ref(false);
-const currentCardIndex = ref(0);
-const queueInternal = ref<InternalQueueItem[]>([]);
-const reviewedCount = ref(0);
-const correctCount = ref(0);
-const startTime = ref(Date.now());
+const showAnswer = ref(false)
+const currentCardIndex = ref(0)
+const queueInternal = ref<InternalQueueItem[]>([])
+const reviewedCount = ref(0)
+const correctCount = ref(0)
+const startTime = ref(Date.now())
 
 // 初始化队列
 function initQueue() {
   if (props.queue && props.queue.length > 0) {
     queueInternal.value = props.queue
-      .filter(card => card.type === 'flashcard' || card.type === 'card' || card.type === 'excerpt')
-      .map(card => ({
+      .filter((card) => card.type === 'flashcard' || card.type === 'card' || card.type === 'excerpt')
+      .map((card) => ({
         cardId: card.id,
         front: card.content || '',
         back: card.note || card.content || '',
-        sourceLocation: card.sourceLocation
-      }));
+        sourceLocation: card.sourceLocation,
+      }))
   } else {
-    queueInternal.value = [];
+    queueInternal.value = []
   }
 }
 
 // 当前卡片
 const currentCard = computed(() => {
   if (currentCardIndex.value >= queueInternal.value.length) {
-    return null;
+    return null
   }
-  return queueInternal.value[currentCardIndex.value];
-});
+  return queueInternal.value[currentCardIndex.value]
+})
 
 // 进度
 const progress = computed(() => {
-  const total = queueInternal.value.length;
-  const current = Math.min(currentCardIndex.value + 1, total);
+  const total = queueInternal.value.length
+  const current = Math.min(currentCardIndex.value + 1, total)
   return {
     total,
     current,
-    percentage: total > 0 ? Math.round((current / total) * 100) : 0
-  };
-});
+    percentage: total > 0 ? Math.round((current / total) * 100) : 0,
+  }
+})
 
 // 剩余卡片
 const remainingCount = computed(() => {
-  return queueInternal.value.length - currentCardIndex.value - 1;
-});
+  return queueInternal.value.length - currentCardIndex.value - 1
+})
 
 // 会话统计
 const sessionStats = computed(() => {
-  const total = queueInternal.value.length;
-  const incorrect = reviewedCount.value - correctCount.value;
-  const duration = Math.round((Date.now() - startTime.value) / 1000);
+  const total = queueInternal.value.length
+  const incorrect = reviewedCount.value - correctCount.value
+  const duration = Math.round((Date.now() - startTime.value) / 1000)
   return {
     totalCards: total,
     correctCount: correctCount.value,
     incorrectCount: incorrect,
     accuracyRate: reviewedCount.value > 0 ? Math.round((correctCount.value / reviewedCount.value) * 100) : 0,
-    durationSeconds: duration
-  };
-});
+    durationSeconds: duration,
+  }
+})
 
 // 初始化
-initQueue();
+initQueue()
 
 // 键盘快捷键
 function handleKeyDown(e: KeyboardEvent) {
-  if (!currentCard.value) return;
+  if (!currentCard.value) return
 
   if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault();
+    e.preventDefault()
     if (!showAnswer.value) {
-      showAnswer.value = true;
+      showAnswer.value = true
     }
   } else if (showAnswer.value) {
     const keyMap: Record<string, number> = {
-      '1': 0,  // again
-      '2': 2,  // hard
-      '3': 4,  // good
-      '4': 5,  // easy
-    };
+      1: 0, // again
+      2: 2, // hard
+      3: 4, // good
+      4: 5, // easy
+    }
 
     if (keyMap[e.key] !== undefined) {
-      handleRateByScore(keyMap[e.key]);
+      handleRateByScore(keyMap[e.key])
     }
   }
 }
 
 // 评分处理
 function handleRate(label: ReviewQualityLabel) {
-  const quality = qualityLabelToScore(label);
-  handleRateByScore(quality);
+  const quality = qualityLabelToScore(label)
+  handleRateByScore(quality)
 }
 
 function handleRateByScore(quality: number) {
-  if (!currentCard.value) return;
+  if (!currentCard.value) return
 
   try {
     // 记录评分
-    reviewedCount.value++;
+    reviewedCount.value++
     if (quality >= 3) {
-      correctCount.value++;
+      correctCount.value++
     }
 
-    emit('rate', currentCard.value.cardId, quality);
+    emit('rate', currentCard.value.cardId, quality)
 
     // 移动到下一张
-    currentCardIndex.value++;
-    showAnswer.value = false;
+    currentCardIndex.value++
+    showAnswer.value = false
   } catch (error) {
-    console.error('处理复习失败:', error);
+    console.error('处理复习失败:', error)
   }
 }
 
 // 获取来源文本
 function getSourceText(location: InternalQueueItem['sourceLocation']): string {
-  if (!location) return '';
+  if (!location) return ''
   if (location.pdfPath) {
-    const fileName = location.pdfPath.split('/').pop() || '';
-    return `${fileName} - P${location.page}`;
+    const fileName = location.pdfPath.split('/').pop() || ''
+    return `${fileName} - P${location.page}`
   }
-  return '文档';
+  return '文档'
 }
 
 // 格式化时长
 function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
   if (mins > 0) {
-    return `${mins}分${secs}秒`;
+    return `${mins}分${secs}秒`
   }
-  return `${secs}秒`;
+  return `${secs}秒`
 }
 
 // 完成处理
@@ -298,26 +341,26 @@ function handleComplete() {
   emit('complete', {
     totalCards: queueInternal.value.length,
     correctCount: correctCount.value,
-    duration: Date.now() - startTime.value
-  });
+    duration: Date.now() - startTime.value,
+  })
   if (props.onClose) {
-    props.onClose();
+    props.onClose()
   }
 }
 
 // 继续复习
 function handleContinue() {
-  emit('continue');
+  emit('continue')
 }
 
 // 生命周期
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-});
+  window.addEventListener('keydown', handleKeyDown)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown);
-});
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <style scoped lang="scss">

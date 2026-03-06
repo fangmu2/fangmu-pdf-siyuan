@@ -1,16 +1,31 @@
 <template>
-  <div class="study-set-template-editor" v-if="visible">
+  <div
+    v-if="visible"
+    class="study-set-template-editor"
+  >
     <!-- 遮罩层 -->
-    <div class="overlay" @click="close"></div>
+    <div
+      class="overlay"
+      @click="close"
+    ></div>
 
     <!-- 编辑器面板 -->
     <div class="editor-panel">
       <!-- 头部 -->
       <div class="panel-header">
         <h2>{{ isEdit ? '编辑模板' : '创建自定义模板' }}</h2>
-        <button @click="close" class="close-btn" title="关闭">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        <button
+          class="close-btn"
+          title="关闭"
+          @click="close"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="currentColor"
+          >
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>
         </button>
       </div>
@@ -55,17 +70,35 @@
                 type="color"
                 class="color-input"
               />
-              <span class="color-preview" :style="{ backgroundColor: formData.color }"></span>
+              <span
+                class="color-preview"
+                :style="{ backgroundColor: formData.color }"
+              ></span>
             </div>
             <div class="form-item">
               <label>模板类型</label>
-              <select v-model="formData.type" class="select">
-                <option value="custom">自定义</option>
-                <option value="exam-review">考试复习</option>
-                <option value="literature-study">文献研读</option>
-                <option value="language-learning">语言学习</option>
-                <option value="skill-mastery">技能掌握</option>
-                <option value="project-research">项目研究</option>
+              <select
+                v-model="formData.type"
+                class="select"
+              >
+                <option value="custom">
+                  自定义
+                </option>
+                <option value="exam-review">
+                  考试复习
+                </option>
+                <option value="literature-study">
+                  文献研读
+                </option>
+                <option value="language-learning">
+                  语言学习
+                </option>
+                <option value="skill-mastery">
+                  技能掌握
+                </option>
+                <option value="project-research">
+                  项目研究
+                </option>
               </select>
             </div>
           </div>
@@ -104,7 +137,10 @@
                 使用 FSRS 算法
               </label>
             </div>
-            <div v-if="formData.reviewSettings.useFSRS" class="form-item">
+            <div
+              v-if="formData.reviewSettings.useFSRS"
+              class="form-item"
+            >
               <label>记忆保留率</label>
               <input
                 v-model.number="formData.reviewSettings.fsrsParams.requestRetention"
@@ -130,9 +166,17 @@
                 class="tag"
               >
                 {{ tag }}
-                <button @click="removeTag(index)" class="tag-remove">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <button
+                  class="tag-remove"
+                  @click="removeTag(index)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="currentColor"
+                  >
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                   </svg>
                 </button>
               </span>
@@ -140,12 +184,17 @@
             <div class="tag-input-container">
               <input
                 v-model="newTag"
-                @keyup.enter="addTag"
                 type="text"
                 class="input"
                 placeholder="输入标签后按回车添加"
+                @keyup.enter="addTag"
               />
-              <button @click="addTag" class="add-btn">添加</button>
+              <button
+                class="add-btn"
+                @click="addTag"
+              >
+                添加
+              </button>
             </div>
           </div>
         </div>
@@ -154,9 +203,17 @@
         <div class="section">
           <h3>
             预设卡片
-            <button @click="addCard" class="add-section-btn">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            <button
+              class="add-section-btn"
+              @click="addCard"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="currentColor"
+              >
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
               </svg>
               添加卡片
             </button>
@@ -168,23 +225,55 @@
               class="card-item"
             >
               <div class="card-item-header">
-                <div class="card-type-badge" :class="card.cardType">
+                <div
+                  class="card-type-badge"
+                  :class="card.cardType"
+                >
                   {{ card.cardType === 'flashcard' ? '📇 闪卡' : '📝 普通卡片' }}
                 </div>
                 <div class="card-actions">
-                  <button @click="moveCard(index, -1)" :disabled="index === 0" class="icon-btn" title="上移">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+                  <button
+                    :disabled="index === 0"
+                    class="icon-btn"
+                    title="上移"
+                    @click="moveCard(index, -1)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="currentColor"
+                    >
+                      <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
                     </svg>
                   </button>
-                  <button @click="moveCard(index, 1)" :disabled="index === formData.cards.length - 1" class="icon-btn" title="下移">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+                  <button
+                    :disabled="index === formData.cards.length - 1"
+                    class="icon-btn"
+                    title="下移"
+                    @click="moveCard(index, 1)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="currentColor"
+                    >
+                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
                     </svg>
                   </button>
-                  <button @click="removeCard(index)" class="icon-btn delete" title="删除">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  <button
+                    class="icon-btn delete"
+                    title="删除"
+                    @click="removeCard(index)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="currentColor"
+                    >
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                     </svg>
                   </button>
                 </div>
@@ -202,7 +291,10 @@
                   placeholder="卡片内容"
                   rows="2"
                 ></textarea>
-                <div v-if="card.cardType === 'flashcard'" class="flashcard-fields">
+                <div
+                  v-if="card.cardType === 'flashcard'"
+                  class="flashcard-fields"
+                >
                   <input
                     v-model="card.front"
                     type="text"
@@ -217,9 +309,16 @@
                   />
                 </div>
                 <div class="card-meta">
-                  <select v-model="card.cardType" class="select small">
-                    <option value="normal">普通卡片</option>
-                    <option value="flashcard">闪卡</option>
+                  <select
+                    v-model="card.cardType"
+                    class="select small"
+                  >
+                    <option value="normal">
+                      普通卡片
+                    </option>
+                    <option value="flashcard">
+                      闪卡
+                    </option>
                   </select>
                   <input
                     v-model.number="card.difficulty"
@@ -233,7 +332,10 @@
                 </div>
               </div>
             </div>
-            <div v-if="formData.cards.length === 0" class="empty-state">
+            <div
+              v-if="formData.cards.length === 0"
+              class="empty-state"
+            >
               <p>暂无预设卡片，点击上方按钮添加</p>
             </div>
           </div>
@@ -243,9 +345,17 @@
         <div class="section">
           <h3>
             脑图结构
-            <button @click="addMindMapNode" class="add-section-btn">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            <button
+              class="add-section-btn"
+              @click="addMindMapNode"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="currentColor"
+              >
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
               </svg>
               添加节点
             </button>
@@ -277,14 +387,32 @@
                   />
                 </div>
                 <div class="node-actions">
-                  <button @click="addChildNode(node.id)" class="icon-btn" title="添加子节点">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  <button
+                    class="icon-btn"
+                    title="添加子节点"
+                    @click="addChildNode(node.id)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="currentColor"
+                    >
+                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                     </svg>
                   </button>
-                  <button @click="removeNode(node.id)" class="icon-btn delete" title="删除">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  <button
+                    class="icon-btn delete"
+                    title="删除"
+                    @click="removeNode(node.id)"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="currentColor"
+                    >
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                     </svg>
                   </button>
                 </div>
@@ -315,16 +443,28 @@
                     />
                   </div>
                   <div class="node-actions">
-                    <button @click="removeNode(child.id)" class="icon-btn delete" title="删除">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    <button
+                      class="icon-btn delete"
+                      title="删除"
+                      @click="removeNode(child.id)"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="currentColor"
+                      >
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                       </svg>
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-            <div v-if="formData.mindMapNodes.length === 0" class="empty-state">
+            <div
+              v-if="formData.mindMapNodes.length === 0"
+              class="empty-state"
+            >
               <p>暂无脑图节点，点击上方按钮添加</p>
             </div>
           </div>
@@ -333,9 +473,23 @@
 
       <!-- 底部操作栏 -->
       <div class="panel-footer">
-        <button @click="close" class="cancel-btn">取消</button>
-        <button @click="saveAsNew" class="save-btn" v-if="isEdit">另存为新模板</button>
-        <button @click="save" class="save-btn primary">
+        <button
+          class="cancel-btn"
+          @click="close"
+        >
+          取消
+        </button>
+        <button
+          v-if="isEdit"
+          class="save-btn"
+          @click="saveAsNew"
+        >
+          另存为新模板
+        </button>
+        <button
+          class="save-btn primary"
+          @click="save"
+        >
           {{ isEdit ? '保存修改' : '创建模板' }}
         </button>
       </div>
@@ -344,26 +498,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { studySetTemplateService, type StudySetTemplate, type TemplateType } from '../services/studySetTemplateService';
+import type { StudySetTemplate } from '../services/studySetTemplateService'
+import {
+  computed,
+  ref,
+} from 'vue'
+import {
+
+  studySetTemplateService,
+} from '../services/studySetTemplateService'
 
 const props = defineProps<{
-  templateId?: string;
-}>();
+  templateId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'saved'): void;
-  (e: 'close'): void;
-}>();
+  (e: 'saved'): void
+  (e: 'close'): void
+}>()
 
 // 可见性
-const visible = ref(false);
+const visible = ref(false)
 
 // 是否编辑模式
-const isEdit = computed(() => !!props.templateId);
+const isEdit = computed(() => !!props.templateId)
 
 // 新标签输入
-const newTag = ref('');
+const newTag = ref('')
 
 // 表单数据
 const formData = ref<StudySetTemplate>({
@@ -381,42 +542,42 @@ const formData = ref<StudySetTemplate>({
     useFSRS: true,
     fsrsParams: {
       requestRetention: 0.9,
-      maximumInterval: 365
-    }
+      maximumInterval: 365,
+    },
   },
   defaultTags: [],
   createdAt: Date.now(),
   updatedAt: Date.now(),
-  isBuiltIn: false
-});
+  isBuiltIn: false,
+})
 
 // 根节点
 const rootNodes = computed(() => {
-  return formData.value.mindMapNodes.filter(n => !n.parentId);
-});
+  return formData.value.mindMapNodes.filter((n) => !n.parentId)
+})
 
 // 获取子节点
 function getChildNodes(parentId: string) {
-  return formData.value.mindMapNodes.filter(n => n.parentId === parentId);
+  return formData.value.mindMapNodes.filter((n) => n.parentId === parentId)
 }
 
 // 打开
 function open(templateId?: string) {
   if (templateId) {
-    const template = studySetTemplateService.getTemplateById(templateId);
+    const template = studySetTemplateService.getTemplateById(templateId)
     if (template) {
-      formData.value = JSON.parse(JSON.stringify(template));
+      formData.value = JSON.parse(JSON.stringify(template))
     }
   } else {
-    resetForm();
+    resetForm()
   }
-  visible.value = true;
+  visible.value = true
 }
 
 // 关闭
 function close() {
-  visible.value = false;
-  emit('close');
+  visible.value = false
+  emit('close')
 }
 
 // 重置表单
@@ -436,27 +597,27 @@ function resetForm() {
       useFSRS: true,
       fsrsParams: {
         requestRetention: 0.9,
-        maximumInterval: 365
-      }
+        maximumInterval: 365,
+      },
     },
     defaultTags: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    isBuiltIn: false
-  };
+    isBuiltIn: false,
+  }
 }
 
 // 添加标签
 function addTag() {
   if (newTag.value.trim()) {
-    formData.value.defaultTags.push(newTag.value.trim());
-    newTag.value = '';
+    formData.value.defaultTags.push(newTag.value.trim())
+    newTag.value = ''
   }
 }
 
 // 删除标签
 function removeTag(index: number) {
-  formData.value.defaultTags.splice(index, 1);
+  formData.value.defaultTags.splice(index, 1)
 }
 
 // 添加卡片
@@ -466,23 +627,23 @@ function addCard() {
     content: '',
     cardType: 'normal',
     difficulty: 3,
-    tags: []
-  });
+    tags: [],
+  })
 }
 
 // 删除卡片
 function removeCard(index: number) {
-  formData.value.cards.splice(index, 1);
+  formData.value.cards.splice(index, 1)
 }
 
 // 移动卡片
 function moveCard(index: number, direction: number) {
-  const newIndex = index + direction;
-  if (newIndex < 0 || newIndex >= formData.value.cards.length) return;
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= formData.value.cards.length) return
 
-  const temp = formData.value.cards[index];
-  formData.value.cards[index] = formData.value.cards[newIndex];
-  formData.value.cards[newIndex] = temp;
+  const temp = formData.value.cards[index]
+  formData.value.cards[index] = formData.value.cards[newIndex]
+  formData.value.cards[newIndex] = temp
 }
 
 // 添加脑图节点
@@ -493,9 +654,9 @@ function addMindMapNode() {
     style: {
       backgroundColor: '#4285f4',
       color: '#fff',
-      icon: '📌'
-    }
-  });
+      icon: '📌',
+    },
+  })
 }
 
 // 添加子节点
@@ -503,66 +664,69 @@ function addChildNode(parentId: string) {
   formData.value.mindMapNodes.push({
     id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     text: '子节点',
-    parentId: parentId,
+    parentId,
     style: {
       backgroundColor: '#34a853',
       color: '#fff',
-      icon: ''
-    }
-  });
+      icon: '',
+    },
+  })
 }
 
 // 删除节点
 function removeNode(id: string) {
   // 递归删除子节点
   const childIds = formData.value.mindMapNodes
-    .filter(n => n.parentId === id)
-    .map(n => n.id);
+    .filter((n) => n.parentId === id)
+    .map((n) => n.id)
 
-  childIds.forEach(childId => removeNode(childId));
+  childIds.forEach((childId) => removeNode(childId))
 
-  const index = formData.value.mindMapNodes.findIndex(n => n.id === id);
+  const index = formData.value.mindMapNodes.findIndex((n) => n.id === id)
   if (index !== -1) {
-    formData.value.mindMapNodes.splice(index, 1);
+    formData.value.mindMapNodes.splice(index, 1)
   }
 }
 
 // 保存
 function save() {
   if (!formData.value.name.trim()) {
-    alert('请输入模板名称');
-    return;
+    alert('请输入模板名称')
+    return
   }
 
   try {
     if (isEdit.value && props.templateId) {
       studySetTemplateService.updateTemplate(props.templateId, {
         ...formData.value,
-        updatedAt: Date.now()
-      });
+        updatedAt: Date.now(),
+      })
     } else {
       studySetTemplateService.saveTemplate({
         ...formData.value,
-        isBuiltIn: false
-      });
+        isBuiltIn: false,
+      })
     }
-    emit('saved');
-    close();
+    emit('saved')
+    close()
   } catch (error) {
-    console.error('保存模板失败:', error);
-    alert('保存失败，请重试');
+    console.error('保存模板失败:', error)
+    alert('保存失败，请重试')
   }
 }
 
 // 另存为新模板
 function saveAsNew() {
-  formData.value.id = '';
-  formData.value.name = formData.value.name + ' (副本)';
-  save();
+  formData.value.id = ''
+  formData.value.name = `${formData.value.name} (副本)`
+  save()
 }
 
 // 暴露方法
-defineExpose({ open, close });
+defineExpose({
+  open,
+  close,
+})
 </script>
 
 <style scoped lang="scss">

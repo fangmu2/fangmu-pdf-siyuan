@@ -3,30 +3,37 @@
  * @fileoverview 提供跨分支关联、远程知识联系、一键跳转等功能的 Vue 3 组合式 API
  */
 
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Ref, ComputedRef } from 'vue'
+import type {
+  ComputedRef,
+  Ref,
+} from 'vue'
 import type {
   CrossBranchLink,
-  RemoteKnowledgeLink,
-  NodeLinkRelation,
-  ViewportFocusConfig,
-  LayoutSuggestion,
+  FreeMindMapEdge,
   FreeMindMapNode,
-  FreeMindMapEdge
+  LayoutSuggestion,
+  NodeLinkRelation,
+  RemoteKnowledgeLink,
+  ViewportFocusConfig,
 } from '@/types/mindmapFree'
 import {
-  createCrossBranchLink as createCrossBranchLinkService,
-  getCrossBranchLinks as getCrossBranchLinksService,
-  deleteCrossBranchLink as deleteCrossBranchLinkService,
-  createRemoteKnowledgeLink as createRemoteKnowledgeLinkService,
-  getRemoteKnowledgeLinks as getRemoteKnowledgeLinksService,
-  deleteRemoteKnowledgeLink as deleteRemoteKnowledgeLinkService,
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import {
   analyzeNodeLinks,
+  createCrossBranchLink as createCrossBranchLinkService,
+  createRemoteKnowledgeLink as createRemoteKnowledgeLinkService,
   createViewportFocusConfig,
-  getNodePosition,
-  generateLayoutSuggestions,
   crossLinkToVueFlowEdge,
-  remoteLinkToVueFlowEdge
+  deleteCrossBranchLink as deleteCrossBranchLinkService,
+  deleteRemoteKnowledgeLink as deleteRemoteKnowledgeLinkService,
+  generateLayoutSuggestions,
+  getCrossBranchLinks as getCrossBranchLinksService,
+  getRemoteKnowledgeLinks as getRemoteKnowledgeLinksService,
+  remoteLinkToVueFlowEdge,
 } from '@/services/mindmapLinkEnhanceService'
 
 export interface UseMindMapLinkEnhanceOptions {
@@ -48,7 +55,7 @@ export interface UseMindMapLinkEnhanceReturn {
     sourceNodeId: string,
     targetNodeId: string,
     linkType?: CrossBranchLink['linkType'],
-    label?: string
+    label?: string,
   ) => Promise<CrossBranchLink | null>
   deleteCrossBranchLink: (linkId: string) => Promise<boolean>
   getCrossLinkEdge: (link: CrossBranchLink) => Partial<FreeMindMapEdge>
@@ -61,7 +68,7 @@ export interface UseMindMapLinkEnhanceReturn {
     targetId: string,
     targetType: RemoteKnowledgeLink['targetType'],
     linkType?: RemoteKnowledgeLink['linkType'],
-    description?: string
+    description?: string,
   ) => Promise<RemoteKnowledgeLink | null>
   deleteRemoteKnowledgeLink: (linkId: string) => Promise<boolean>
   getRemoteLinkEdge: (link: RemoteKnowledgeLink) => Partial<FreeMindMapEdge>
@@ -75,14 +82,14 @@ export interface UseMindMapLinkEnhanceReturn {
     nodeId: string,
     zoom?: number,
     highlight?: boolean,
-    highlightColor?: string
+    highlightColor?: string,
   ) => void
   viewportConfig: Ref<ViewportFocusConfig | null>
 
   // 智能布局建议
   layoutSuggestions: Ref<LayoutSuggestion[]>
   refreshLayoutSuggestions: () => void
-  applySuggestion: (suggestion: LayoutSuggestion) => { nodeId: string; x: number; y: number }[]
+  applySuggestion: (suggestion: LayoutSuggestion) => { nodeId: string, x: number, y: number }[]
 
   // 刷新数据
   refreshAll: () => Promise<void>
@@ -92,13 +99,13 @@ export interface UseMindMapLinkEnhanceReturn {
  * 思维导图链接图谱增强组合式函数
  */
 export function useMindMapLinkEnhance(
-  options: UseMindMapLinkEnhanceOptions
+  options: UseMindMapLinkEnhanceOptions,
 ): UseMindMapLinkEnhanceReturn {
   const {
     mindMapBlockId,
     nodes,
     edges,
-    enabled = true
+    enabled = true,
   } = options
 
   // ==================== 跨分支关联 ====================
@@ -130,7 +137,7 @@ export function useMindMapLinkEnhance(
     sourceNodeId: string,
     targetNodeId: string,
     linkType: CrossBranchLink['linkType'] = 'relation',
-    label?: string
+    label?: string,
   ): Promise<CrossBranchLink | null> {
     if (!enabled || !mindMapBlockId.value) return null
 
@@ -139,7 +146,7 @@ export function useMindMapLinkEnhance(
       sourceNodeId,
       targetNodeId,
       linkType,
-      label
+      label,
     )
 
     if (result) {
@@ -157,7 +164,7 @@ export function useMindMapLinkEnhance(
 
     const success = await deleteCrossBranchLinkService(mindMapBlockId.value, linkId)
     if (success) {
-      crossLinks.value = crossLinks.value.filter(l => l.id !== linkId)
+      crossLinks.value = crossLinks.value.filter((l) => l.id !== linkId)
     }
     return success
   }
@@ -199,7 +206,7 @@ export function useMindMapLinkEnhance(
     targetId: string,
     targetType: RemoteKnowledgeLink['targetType'],
     linkType: RemoteKnowledgeLink['linkType'] = 'relation',
-    description?: string
+    description?: string,
   ): Promise<RemoteKnowledgeLink | null> {
     if (!enabled || !mindMapBlockId.value) return null
 
@@ -209,7 +216,7 @@ export function useMindMapLinkEnhance(
       targetId,
       targetType,
       linkType,
-      description
+      description,
     )
 
     if (result) {
@@ -227,7 +234,7 @@ export function useMindMapLinkEnhance(
 
     const success = await deleteRemoteKnowledgeLinkService(mindMapBlockId.value, linkId)
     if (success) {
-      remoteLinks.value = remoteLinks.value.filter(l => l.id !== linkId)
+      remoteLinks.value = remoteLinks.value.filter((l) => l.id !== linkId)
     }
     return success
   }
@@ -253,7 +260,7 @@ export function useMindMapLinkEnhance(
    */
   const allNodeLinks = computed(() => {
     const map = new Map<string, NodeLinkRelation>()
-    nodes.value.forEach(node => {
+    nodes.value.forEach((node) => {
       map.set(node.id, getNodeLinks(node.id))
     })
     return map
@@ -270,14 +277,14 @@ export function useMindMapLinkEnhance(
     nodeId: string,
     zoom?: number,
     highlight: boolean = true,
-    highlightColor?: string
+    highlightColor?: string,
   ): void {
     const config = createViewportFocusConfig(nodeId, zoom, highlight, highlightColor)
     viewportConfig.value = config
 
     // 触发自定义事件，由组件处理视图定位
     const event = new CustomEvent('mindmap-focus-node', {
-      detail: config
+      detail: config,
     })
     window.dispatchEvent(event)
   }
@@ -298,10 +305,10 @@ export function useMindMapLinkEnhance(
   /**
    * 应用布局建议
    */
-  function applySuggestion(suggestion: LayoutSuggestion): { nodeId: string; x: number; y: number }[] {
+  function applySuggestion(suggestion: LayoutSuggestion): { nodeId: string, x: number, y: number }[] {
     // 这里返回位置更新，实际由组件应用
-    const nodeMap = new Map(nodes.value.map(n => [n.id, n]))
-    const updates: { nodeId: string; x: number; y: number }[] = []
+    const nodeMap = new Map(nodes.value.map((n) => [n.id, n]))
+    const updates: { nodeId: string, x: number, y: number }[] = []
 
     const { layoutConfig } = suggestion
     const spacing = 150
@@ -310,14 +317,14 @@ export function useMindMapLinkEnhance(
     if (suggestion.type === 'cluster' && layoutConfig.groups) {
       let startX = 0
       for (const group of layoutConfig.groups) {
-        const groupNodes = group.nodeIds.map(id => nodeMap.get(id)).filter(Boolean) as FreeMindMapNode[]
+        const groupNodes = group.nodeIds.map((id) => nodeMap.get(id)).filter(Boolean) as FreeMindMapNode[]
         if (groupNodes.length === 0) continue
 
         groupNodes.forEach((node, index) => {
           updates.push({
             nodeId: node.id,
             x: startX + (index % 5) * spacing,
-            y: Math.floor(index / 5) * verticalSpacing
+            y: Math.floor(index / 5) * verticalSpacing,
           })
         })
 
@@ -333,7 +340,7 @@ export function useMindMapLinkEnhance(
   async function refreshAll(): Promise<void> {
     await Promise.all([
       loadCrossLinks(),
-      loadRemoteLinks()
+      loadRemoteLinks(),
     ])
     refreshLayoutSuggestions()
   }
@@ -391,7 +398,7 @@ export function useMindMapLinkEnhance(
     applySuggestion,
 
     // 刷新数据
-    refreshAll
+    refreshAll,
   }
 }
 

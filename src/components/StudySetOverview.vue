@@ -2,29 +2,61 @@
   <div class="study-set-overview">
     <!-- 头部：学习集标题和封面 -->
     <div class="overview-header">
-      <div class="cover-image" :style="{ backgroundImage: coverImage ? `url(${coverImage})` : '' }">
-        <div v-if="!coverImage" class="cover-placeholder">
+      <div
+        class="cover-image"
+        :style="{ backgroundImage: coverImage ? `url(${coverImage})` : '' }"
+      >
+        <div
+          v-if="!coverImage"
+          class="cover-placeholder"
+        >
           <span class="cover-icon">📚</span>
         </div>
-        <button class="change-cover-btn" @click="showCoverSelector = true" title="更换封面">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        <button
+          class="change-cover-btn"
+          title="更换封面"
+          @click="showCoverSelector = true"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
           </svg>
         </button>
       </div>
       <div class="header-info">
-        <h2 class="study-set-title">{{ studySet?.name || '学习集' }}</h2>
-        <p v-if="studySet?.description" class="study-set-description">{{ studySet.description }}</p>
+        <h2 class="study-set-title">
+          {{ studySet?.name || '学习集' }}
+        </h2>
+        <p
+          v-if="studySet?.description"
+          class="study-set-description"
+        >
+          {{ studySet.description }}
+        </p>
         <div class="header-meta">
           <span class="meta-item">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="currentColor"
+            >
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
             {{ stats.totalCards }} 张卡片
           </span>
           <span class="meta-item">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="currentColor"
+            >
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
             </svg>
             {{ formatLastStudyTime(stats.lastStudyTime) }}
           </span>
@@ -36,7 +68,9 @@
     <div class="stats-grid">
       <!-- 总卡片数 -->
       <div class="stat-card stat-total">
-        <div class="stat-icon">📊</div>
+        <div class="stat-icon">
+          📊
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.totalCards }}</span>
           <span class="stat-label">总卡片数</span>
@@ -45,7 +79,9 @@
 
       <!-- 新学卡片 -->
       <div class="stat-card stat-new">
-        <div class="stat-icon">🆕</div>
+        <div class="stat-icon">
+          🆕
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.newCards }}</span>
           <span class="stat-label">新学</span>
@@ -54,7 +90,9 @@
 
       <!-- 学习中 -->
       <div class="stat-card stat-learning">
-        <div class="stat-icon">📖</div>
+        <div class="stat-icon">
+          📖
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.learningCards }}</span>
           <span class="stat-label">学习中</span>
@@ -62,20 +100,30 @@
       </div>
 
       <!-- 待复习 -->
-      <div class="stat-card stat-review" :class="{ 'has-due': stats.todayDueCards > 0 }">
-        <div class="stat-icon">🔄</div>
+      <div
+        class="stat-card stat-review"
+        :class="{ 'has-due': stats.todayDueCards > 0 }"
+      >
+        <div class="stat-icon">
+          🔄
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.todayDueCards }}</span>
           <span class="stat-label">
             今日待复习
-            <span v-if="stats.overdueCards > 0" class="overdue-hint">({{ stats.overdueCards }} 过期)</span>
+            <span
+              v-if="stats.overdueCards > 0"
+              class="overdue-hint"
+            >({{ stats.overdueCards }} 过期)</span>
           </span>
         </div>
       </div>
 
       <!-- 已完成 -->
       <div class="stat-card stat-completed">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon">
+          ✅
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.completedCards }}</span>
           <span class="stat-label">已完成</span>
@@ -84,7 +132,9 @@
 
       <!-- 今日学习 -->
       <div class="stat-card stat-today">
-        <div class="stat-icon">📅</div>
+        <div class="stat-icon">
+          📅
+        </div>
         <div class="stat-content">
           <span class="stat-value">{{ stats.todayStudyTime }}</span>
           <span class="stat-label">今日学习 (分钟)</span>
@@ -99,7 +149,10 @@
         <span class="progress-value">{{ stats.progress }}%</span>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: `${stats.progress}%` }"></div>
+        <div
+          class="progress-fill"
+          :style="{ width: `${stats.progress}%` }"
+        ></div>
       </div>
       <div class="progress-legend">
         <span class="legend-item">
@@ -121,24 +174,48 @@
     <div class="charts-section">
       <!-- 状态分布饼图 -->
       <div class="chart-card">
-        <h3 class="chart-title">卡片状态分布</h3>
-        <div class="pie-chart" ref="pieChartRef">
-          <svg viewBox="0 0 100 100" class="pie-svg">
-            <template v-for="(slice, index) in pieSlices" :key="index">
+        <h3 class="chart-title">
+          卡片状态分布
+        </h3>
+        <div
+          ref="pieChartRef"
+          class="pie-chart"
+        >
+          <svg
+            viewBox="0 0 100 100"
+            class="pie-svg"
+          >
+            <template
+              v-for="(slice, index) in pieSlices"
+              :key="index"
+            >
               <path
                 :d="slice.path"
                 :fill="slice.color"
                 class="pie-slice"
               />
             </template>
-            <text x="50" y="50" text-anchor="middle" dominant-baseline="middle" class="pie-center">
+            <text
+              x="50"
+              y="50"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              class="pie-center"
+            >
               {{ stats.totalCards }}
             </text>
           </svg>
         </div>
         <div class="pie-legend">
-          <div class="pie-legend-item" v-for="item in pieLegend" :key="item.label">
-            <span class="pie-dot" :style="{ backgroundColor: item.color }"></span>
+          <div
+            v-for="item in pieLegend"
+            :key="item.label"
+            class="pie-legend-item"
+          >
+            <span
+              class="pie-dot"
+              :style="{ backgroundColor: item.color }"
+            ></span>
             <span class="pie-label">{{ item.label }}: {{ item.value }}</span>
           </div>
         </div>
@@ -146,8 +223,13 @@
 
       <!-- 学习时间趋势 -->
       <div class="chart-card">
-        <h3 class="chart-title">近 7 天学习趋势</h3>
-        <div class="bar-chart" ref="barChartRef">
+        <h3 class="chart-title">
+          近 7 天学习趋势
+        </h3>
+        <div
+          ref="barChartRef"
+          class="bar-chart"
+        >
           <div class="bar-container">
             <div
               v-for="(day, index) in studyTimeData"
@@ -170,74 +252,144 @@
 
     <!-- 今日复习概览 -->
     <div class="review-overview-section">
-      <h3 class="section-title">📋 今日复习概览</h3>
+      <h3 class="section-title">
+        📋 今日复习概览
+      </h3>
       <div class="review-cards-row">
         <div class="review-stat-card due">
-          <div class="review-stat-value">{{ reviewOverview.due }}</div>
-          <div class="review-stat-label">待复习</div>
+          <div class="review-stat-value">
+            {{ reviewOverview.due }}
+          </div>
+          <div class="review-stat-label">
+            待复习
+          </div>
         </div>
         <div class="review-stat-card completed">
-          <div class="review-stat-value">{{ reviewOverview.completed }}</div>
-          <div class="review-stat-label">已完成</div>
+          <div class="review-stat-value">
+            {{ reviewOverview.completed }}
+          </div>
+          <div class="review-stat-label">
+            已完成
+          </div>
         </div>
         <div class="review-stat-card overdue">
-          <div class="review-stat-value">{{ reviewOverview.overdue }}</div>
-          <div class="review-stat-label">已过期</div>
+          <div class="review-stat-value">
+            {{ reviewOverview.overdue }}
+          </div>
+          <div class="review-stat-label">
+            已过期
+          </div>
         </div>
         <div class="review-stat-card next">
-          <div class="review-stat-value">{{ reviewOverview.nextDue || '-' }}</div>
-          <div class="review-stat-label">下次到期</div>
+          <div class="review-stat-value">
+            {{ reviewOverview.nextDue || '-' }}
+          </div>
+          <div class="review-stat-label">
+            下次到期
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 快速操作 -->
     <div class="quick-actions">
-      <button class="action-btn primary" @click="startReview">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+      <button
+        class="action-btn primary"
+        @click="startReview"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="currentColor"
+        >
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
         </svg>
         开始复习
       </button>
-      <button class="action-btn" @click="viewMindMap">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-          <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/>
+      <button
+        class="action-btn"
+        @click="viewMindMap"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="currentColor"
+        >
+          <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z" />
         </svg>
         思维导图
       </button>
-      <button class="action-btn" @click="viewCards">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h6v2h-6V7zm0 4h6v2h-6v-2zm0 4h6v2h-6v-2z"/>
+      <button
+        class="action-btn"
+        @click="viewCards"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="currentColor"
+        >
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 7h2v2H7V7zm0 4h2v2H7v-2zm0 4h2v2H7v-2zm4-8h6v2h-6V7zm0 4h6v2h-6v-2zm0 4h6v2h-6v-2z" />
         </svg>
         卡片列表
       </button>
-      <button class="action-btn" @click="viewAnnotations">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+      <button
+        class="action-btn"
+        @click="viewAnnotations"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="currentColor"
+        >
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
         </svg>
         标注列表
       </button>
     </div>
 
     <!-- 封面选择器弹窗 -->
-    <div v-if="showCoverSelector" class="cover-selector-overlay" @click.self="showCoverSelector = false">
+    <div
+      v-if="showCoverSelector"
+      class="cover-selector-overlay"
+      @click.self="showCoverSelector = false"
+    >
       <div class="cover-selector-panel">
         <div class="panel-header">
           <span>选择封面图片</span>
-          <button @click="showCoverSelector = false" class="close-btn">✕</button>
+          <button
+            class="close-btn"
+            @click="showCoverSelector = false"
+          >
+            ✕
+          </button>
         </div>
         <div class="panel-body">
           <div class="cover-options">
-            <div class="cover-option" @click="selectCover('')">
+            <div
+              class="cover-option"
+              @click="selectCover('')"
+            >
               <div class="option-placeholder">
                 <span>📚</span>
                 <span>默认封面</span>
               </div>
             </div>
-            <div class="cover-option" @click="triggerFileSelect">
+            <div
+              class="cover-option"
+              @click="triggerFileSelect"
+            >
               <div class="option-upload">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                >
+                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
                 </svg>
                 <span>上传图片</span>
               </div>
@@ -258,31 +410,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { getStudySetStats, getStudyTimeData, getTodayReviewOverview, type StudySetStats, type StudyTimeData } from '../services/studySetStatsService';
-import { uploadFileToAssets } from '../api/siyuanApi';
+import type {
+  StudySetStats,
+  StudyTimeData,
+} from '../services/studySetStatsService'
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import { uploadFileToAssets } from '../api/siyuanApi'
+import {
+  getStudySetStats,
+  getStudyTimeData,
+  getTodayReviewOverview,
+
+} from '../services/studySetStatsService'
 
 interface StudySet {
-  id: string;
-  name: string;
-  description?: string;
-  coverImage?: string;
+  id: string
+  name: string
+  description?: string
+  coverImage?: string
 }
 
 interface Props {
-  studySet?: StudySet | null;
+  studySet?: StudySet | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  studySet: null
-});
+  studySet: null,
+})
 
 const emit = defineEmits<{
-  (e: 'start-review'): void;
-  (e: 'view-mindmap'): void;
-  (e: 'view-cards'): void;
-  (e: 'view-annotations'): void;
-}>();
+  (e: 'start-review'): void
+  (e: 'view-mindmap'): void
+  (e: 'view-cards'): void
+  (e: 'view-annotations'): void
+}>()
 
 // 状态
 const stats = ref<StudySetStats>({
@@ -300,85 +466,100 @@ const stats = ref<StudySetStats>({
   totalDocuments: 0,
   totalAnnotations: 0,
   progress: 0,
-  masteryLevel: 0
-});
+  masteryLevel: 0,
+})
 
-const studyTimeData = ref<StudyTimeData[]>([]);
+const studyTimeData = ref<StudyTimeData[]>([])
 const reviewOverview = ref({
   due: 0,
   completed: 0,
   overdue: 0,
-  nextDue: null as string | null
-});
+  nextDue: null as string | null,
+})
 
-const coverImage = ref('');
-const showCoverSelector = ref(false);
-const fileInputRef = ref<HTMLInputElement>();
-const pieChartRef = ref<HTMLElement>();
-const barChartRef = ref<HTMLElement>();
+const coverImage = ref('')
+const showCoverSelector = ref(false)
+const fileInputRef = ref<HTMLInputElement>()
+const pieChartRef = ref<HTMLElement>()
+const barChartRef = ref<HTMLElement>()
 
 // 封面图
 watch(() => props.studySet, (newVal) => {
   if (newVal) {
-    coverImage.value = newVal.coverImage || '';
-    loadStats();
+    coverImage.value = newVal.coverImage || ''
+    loadStats()
   }
-}, { immediate: true });
+}, { immediate: true })
 
 // 加载统计数据
 const loadStats = async () => {
-  if (!props.studySet?.id) return;
+  if (!props.studySet?.id) return
 
   try {
     const [statsData, timeData, reviewData] = await Promise.all([
       getStudySetStats(props.studySet.id),
       getStudyTimeData(props.studySet.id, 7),
-      getTodayReviewOverview(props.studySet.id)
-    ]);
+      getTodayReviewOverview(props.studySet.id),
+    ])
 
-    stats.value = statsData;
-    studyTimeData.value = timeData;
-    reviewOverview.value = reviewData;
+    stats.value = statsData
+    studyTimeData.value = timeData
+    reviewOverview.value = reviewData
   } catch (error) {
-    console.error('[StudySetOverview] 加载统计数据失败:', error);
+    console.error('[StudySetOverview] 加载统计数据失败:', error)
   }
-};
+}
 
 // 饼图数据
 const pieSlices = computed(() => {
-  const total = stats.value.totalCards;
-  if (total === 0) return [];
+  const total = stats.value.totalCards
+  if (total === 0) return []
 
   const colors = {
     new: '#e0e7ff',
     learning: '#93c5fd',
     review: '#fcd34d',
     completed: '#86efac',
-    suspended: '#d1d5db'
-  };
+    suspended: '#d1d5db',
+  }
 
-  const slices: Array<{ path: string; color: string }> = [];
-  let startAngle = 0;
+  const slices: Array<{ path: string, color: string }> = []
+  let startAngle = 0
 
   const data = [
-    { value: stats.value.newCards, color: colors.new },
-    { value: stats.value.learningCards, color: colors.learning },
-    { value: stats.value.reviewCards, color: colors.review },
-    { value: stats.value.completedCards, color: colors.completed }
-  ].filter(item => item.value > 0);
+    {
+      value: stats.value.newCards,
+      color: colors.new,
+    },
+    {
+      value: stats.value.learningCards,
+      color: colors.learning,
+    },
+    {
+      value: stats.value.reviewCards,
+      color: colors.review,
+    },
+    {
+      value: stats.value.completedCards,
+      color: colors.completed,
+    },
+  ].filter((item) => item.value > 0)
 
-  data.forEach(item => {
-    const angle = (item.value / total) * 360;
-    const endAngle = startAngle + angle;
+  data.forEach((item) => {
+    const angle = (item.value / total) * 360
+    const endAngle = startAngle + angle
 
-    const path = describeArc(50, 50, 40, startAngle, endAngle);
-    slices.push({ path, color: item.color });
+    const path = describeArc(50, 50, 40, startAngle, endAngle)
+    slices.push({
+      path,
+      color: item.color,
+    })
 
-    startAngle = endAngle;
-  });
+    startAngle = endAngle
+  })
 
-  return slices;
-});
+  return slices
+})
 
 // 饼图图例
 const pieLegend = computed(() => {
@@ -387,114 +568,141 @@ const pieLegend = computed(() => {
     learning: '#93c5fd',
     review: '#fcd34d',
     completed: '#86efac',
-    suspended: '#d1d5db'
-  };
+    suspended: '#d1d5db',
+  }
 
   return [
-    { label: '新学', value: stats.value.newCards, color: colors.new },
-    { label: '学习中', value: stats.value.learningCards, color: colors.learning },
-    { label: '待复习', value: stats.value.reviewCards, color: colors.review },
-    { label: '已完成', value: stats.value.completedCards, color: colors.completed }
-  ].filter(item => item.value > 0);
-});
+    {
+      label: '新学',
+      value: stats.value.newCards,
+      color: colors.new,
+    },
+    {
+      label: '学习中',
+      value: stats.value.learningCards,
+      color: colors.learning,
+    },
+    {
+      label: '待复习',
+      value: stats.value.reviewCards,
+      color: colors.review,
+    },
+    {
+      label: '已完成',
+      value: stats.value.completedCards,
+      color: colors.completed,
+    },
+  ].filter((item) => item.value > 0)
+})
 
 // 计算圆弧路径
 function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number): string {
-  const start = polarToCartesian(x, y, radius, endAngle);
-  const end = polarToCartesian(x, y, radius, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  const start = polarToCartesian(x, y, radius, endAngle)
+  const end = polarToCartesian(x, y, radius, startAngle)
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
 
   return [
-    'M', x, y,
-    'L', start.x, start.y,
-    'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y,
-    'Z'
-  ].join(' ');
+    'M',
+    x,
+    y,
+    'L',
+    start.x,
+    start.y,
+    'A',
+    radius,
+    radius,
+    0,
+    largeArcFlag,
+    0,
+    end.x,
+    end.y,
+    'Z',
+  ].join(' ')
 }
 
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
-  const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+  const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0
   return {
     x: centerX + radius * Math.cos(angleInRadians),
-    y: centerY + radius * Math.sin(angleInRadians)
-  };
+    y: centerY + radius * Math.sin(angleInRadians),
+  }
 }
 
 // 柱状图高度计算
 const maxDuration = computed(() => {
-  return Math.max(...studyTimeData.value.map(d => d.duration), 1);
-});
+  return Math.max(...studyTimeData.value.map((d) => d.duration), 1)
+})
 
 const getBarHeight = (duration: number) => {
-  return (duration / maxDuration.value) * 100;
-};
+  return (duration / maxDuration.value) * 100
+}
 
 const getDayLabel = (dateStr: string) => {
-  const date = new Date(dateStr);
-  const today = new Date();
-  const diff = Math.floor((today.getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
+  const date = new Date(dateStr)
+  const today = new Date()
+  const diff = Math.floor((today.getTime() - date.getTime()) / (24 * 60 * 60 * 1000))
 
-  if (diff === 0) return '今天';
-  if (diff === 1) return '昨天';
-  if (diff < 7) return ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-};
+  if (diff === 0) return '今天'
+  if (diff === 1) return '昨天'
+  if (diff < 7) return ['日', '一', '二', '三', '四', '五', '六'][date.getDay()]
+  return `${date.getMonth() + 1}/${date.getDate()}`
+}
 
 // 格式化最后学习时间
 const formatLastStudyTime = (timestamp: number) => {
-  if (!timestamp) return '尚未学习';
+  if (!timestamp) return '尚未学习'
 
-  const now = Date.now();
-  const diff = now - timestamp;
+  const now = Date.now()
+  const diff = now - timestamp
 
-  if (diff < 60000) return '刚刚';
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`
 
-  return new Date(timestamp).toLocaleDateString();
-};
+  return new Date(timestamp).toLocaleDateString()
+}
 
 // 事件处理
 const startReview = () => {
-  emit('start-review');
-};
+  emit('start-review')
+}
 
 const viewMindMap = () => {
-  emit('view-mindmap');
-};
+  emit('view-mindmap')
+}
 
 const viewCards = () => {
-  emit('view-cards');
-};
+  emit('view-cards')
+}
 
 const viewAnnotations = () => {
-  emit('view-annotations');
-};
+  emit('view-annotations')
+}
 
 const triggerFileSelect = () => {
-  fileInputRef.value?.click();
-};
+  fileInputRef.value?.click()
+}
 
 const handleCoverFileChange = async (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
 
   try {
-    const result = await uploadFileToAssets(file);
-    coverImage.value = result.path;
-    showCoverSelector.value = false;
+    const result = await uploadFileToAssets(file)
+    coverImage.value = result.path
+    showCoverSelector.value = false
     // TODO: 保存封面图到学习集
   } catch (error) {
-    console.error('[handleCoverFileChange] 上传封面失败:', error);
+    console.error('[handleCoverFileChange] 上传封面失败:', error)
   }
-};
+}
 
 // 初始化
 onMounted(() => {
-  loadStats();
-});
+  loadStats()
+})
 </script>
 
 <style scoped lang="scss">

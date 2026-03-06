@@ -3,41 +3,46 @@
  * @fileoverview 提供实时高亮同步、拖拽创建节点、智能布局建议、标注颜色映射等功能的 Vue 3 组合式 API
  */
 
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { Ref } from 'vue'
+import type { DragData } from '@/services/pdfMindMapLinkageService'
+import type { Annotation } from '@/types/annotation'
 import type {
-  FreeMindMapNode,
-  FreeMindMapEdge,
-  HighlightState,
-  PdfLinkageConfig,
   AnnotationColorMapping,
   CreateNodeParams,
-  LayoutSuggestion
+  FreeMindMapEdge,
+  FreeMindMapNode,
+  HighlightState,
+  LayoutSuggestion,
+  PdfLinkageConfig,
 } from '@/types/mindmapFree'
-import type { Annotation } from '@/types/annotation'
 import {
-  getPdfLinkageConfig,
-  updatePdfLinkageConfig as updateConfig,
-  resetPdfLinkageConfig,
-  handlePdfTextSelection,
-  handlePdfAnnotationCreated,
-  highlightNode as highlightNodeService,
-  unhighlightNode,
-  clearAllHighlights,
-  getHighlightState,
-  setDragData as setDragDataService,
-  handleCanvasDragEnter,
-  handleCanvasDrop,
-  generateSmartLayoutSuggestions,
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import {
   applyLayoutSuggestion,
+  cancelPendingSync,
+  clearAllHighlights,
+  clearColorMapping,
   createColorMapping,
+
+  flushSync,
+  generateSmartLayoutSuggestions,
   getColorMapping,
   getNodeStyleFromAnnotation,
-  clearColorMapping,
+  getPdfLinkageConfig,
+  handleCanvasDragEnter,
+  handleCanvasDrop,
+  handlePdfAnnotationCreated,
+  handlePdfTextSelection,
+  highlightNode as highlightNodeService,
   queueSync,
-  flushSync,
-  cancelPendingSync,
-  type DragData
+  resetPdfLinkageConfig,
+  setDragData as setDragDataService,
+  unhighlightNode,
+  updatePdfLinkageConfig as updateConfig,
 } from '@/services/pdfMindMapLinkageService'
 
 export interface UsePdfMindMapLinkageOptions {
@@ -62,9 +67,9 @@ export interface UsePdfMindMapLinkageReturn {
   handleTextSelection: (
     selection: string,
     pageNumber: number,
-    rect: { x: number; y: number; width: number; height: number }
+    rect: { x: number, y: number, width: number, height: number },
   ) => void
-  handleAnnotationCreated: (annotation: Annotation) => { exists: boolean; nodeId?: string }
+  handleAnnotationCreated: (annotation: Annotation) => { exists: boolean, nodeId?: string }
   highlightNode: (nodeId: string, color?: string, reason?: HighlightState['reason']) => void
   unhighlightNode: (nodeId: string) => void
   clearHighlights: () => void
@@ -75,13 +80,13 @@ export interface UsePdfMindMapLinkageReturn {
   handleDrop: (
     event: DragEvent,
     canvasX: number,
-    canvasY: number
+    canvasY: number,
   ) => CreateNodeParams | null
 
   // 智能布局建议
   layoutSuggestions: Ref<LayoutSuggestion[]>
   refreshLayoutSuggestions: (annotations?: Annotation[]) => void
-  applySuggestion: (suggestion: LayoutSuggestion) => { nodeId: string; x: number; y: number }[]
+  applySuggestion: (suggestion: LayoutSuggestion) => { nodeId: string, x: number, y: number }[]
 
   // 标注颜色映射
   colorMappings: Ref<Map<string, AnnotationColorMapping>>
@@ -89,10 +94,10 @@ export interface UsePdfMindMapLinkageReturn {
     annotationId: string,
     annotationColor: string,
     nodeId: string,
-    autoSync?: boolean
+    autoSync?: boolean,
   ) => AnnotationColorMapping
   getColorMapping: (annotationId: string) => AnnotationColorMapping | undefined
-  getNodeStyle: (annotation: Annotation, nodeId: string) => { borderColor: string; backgroundColor?: string } | null
+  getNodeStyle: (annotation: Annotation, nodeId: string) => { borderColor: string, backgroundColor?: string } | null
   clearColorMappings: (annotationId?: string) => void
 
   // 自动同步
@@ -109,13 +114,13 @@ export interface UsePdfMindMapLinkageReturn {
  * PDF 与思维导图联动组合式函数
  */
 export function usePdfMindMapLinkage(
-  options: UsePdfMindMapLinkageOptions = {}
+  options: UsePdfMindMapLinkageOptions = {},
 ): UsePdfMindMapLinkageReturn {
   const {
     enabled = true,
     nodes,
     edges,
-    initialConfig
+    initialConfig,
   } = options
 
   // 初始化配置
@@ -149,7 +154,7 @@ export function usePdfMindMapLinkage(
   function handleTextSelection(
     selection: string,
     pageNumber: number,
-    rect: { x: number; y: number; width: number; height: number }
+    rect: { x: number, y: number, width: number, height: number },
   ): void {
     if (!enabled) return
     handlePdfTextSelection(selection, pageNumber, rect)
@@ -158,7 +163,7 @@ export function usePdfMindMapLinkage(
   /**
    * 处理标注创建
    */
-  function handleAnnotationCreated(annotation: Annotation): { exists: boolean; nodeId?: string } {
+  function handleAnnotationCreated(annotation: Annotation): { exists: boolean, nodeId?: string } {
     if (!enabled || !nodes) {
       return { exists: false }
     }
@@ -172,7 +177,7 @@ export function usePdfMindMapLinkage(
         isHighlighted: true,
         color: '#409eff',
         reason: 'pdf-annotation',
-        startTime: Date.now()
+        startTime: Date.now(),
       }
       highlightedNodes.value.set(result.nodeId, state)
     }
@@ -186,7 +191,7 @@ export function usePdfMindMapLinkage(
   function highlightNode(
     nodeId: string,
     color: string = '#409eff',
-    reason: HighlightState['reason'] = 'manual'
+    reason: HighlightState['reason'] = 'manual',
   ): void {
     if (!enabled) return
 
@@ -197,7 +202,7 @@ export function usePdfMindMapLinkage(
       isHighlighted: true,
       color,
       reason,
-      startTime: Date.now()
+      startTime: Date.now(),
     }
     highlightedNodes.value.set(nodeId, state)
   }
@@ -246,7 +251,7 @@ export function usePdfMindMapLinkage(
   function handleDropWrapper(
     event: DragEvent,
     canvasX: number,
-    canvasY: number
+    canvasY: number,
   ): CreateNodeParams | null {
     if (!enabled || !config.value.enableDragToCreate) return null
     return handleCanvasDrop(event, canvasX, canvasY)
@@ -265,14 +270,14 @@ export function usePdfMindMapLinkage(
     layoutSuggestions.value = generateSmartLayoutSuggestions(
       nodes.value,
       edges.value,
-      annotations
+      annotations,
     )
   }
 
   /**
    * 应用布局建议
    */
-  function applySuggestionWrapper(suggestion: LayoutSuggestion): { nodeId: string; x: number; y: number }[] {
+  function applySuggestionWrapper(suggestion: LayoutSuggestion): { nodeId: string, x: number, y: number }[] {
     if (!nodes) return []
     return applyLayoutSuggestion(suggestion, nodes.value)
   }
@@ -288,7 +293,7 @@ export function usePdfMindMapLinkage(
     annotationId: string,
     annotationColor: string,
     nodeId: string,
-    autoSync: boolean = true
+    autoSync: boolean = true,
   ): AnnotationColorMapping {
     const mapping = createColorMapping(annotationId, annotationColor, nodeId, autoSync)
     colorMappings.value.set(annotationId, mapping)
@@ -307,8 +312,8 @@ export function usePdfMindMapLinkage(
    */
   function getNodeStyleWrapper(
     annotation: Annotation,
-    nodeId: string
-  ): { borderColor: string; backgroundColor?: string } | null {
+    nodeId: string,
+  ): { borderColor: string, backgroundColor?: string } | null {
     if (!enabled || !config.value.enableColorMapping) return null
 
     const style = getNodeStyleFromAnnotation(annotation, nodeId)
@@ -366,7 +371,12 @@ export function usePdfMindMapLinkage(
       reason?: HighlightState['reason']
     }>
 
-    const { nodeId, isHighlighted, color, reason } = customEvent.detail
+    const {
+      nodeId,
+      isHighlighted,
+      color,
+      reason,
+    } = customEvent.detail
 
     if (isHighlighted) {
       const state: HighlightState = {
@@ -374,7 +384,7 @@ export function usePdfMindMapLinkage(
         isHighlighted: true,
         color: color || '#409eff',
         reason: reason || 'manual',
-        startTime: Date.now()
+        startTime: Date.now(),
       }
       highlightedNodes.value.set(nodeId, state)
     } else {
@@ -479,7 +489,7 @@ export function usePdfMindMapLinkage(
 
     // 事件监听器管理
     setupEventListeners,
-    cleanupEventListeners
+    cleanupEventListeners,
   }
 }
 

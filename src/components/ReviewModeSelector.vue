@@ -2,20 +2,31 @@
 <template>
   <div class="review-mode-selector">
     <div class="mode-header">
-      <h3 class="mode-title">📚 复习模式</h3>
-      <p class="mode-desc">选择适合你的复习方式</p>
+      <h3 class="mode-title">
+        📚 复习模式
+      </h3>
+      <p class="mode-desc">
+        选择适合你的复习方式
+      </p>
     </div>
 
     <div class="mode-grid">
       <!-- 普通复习 -->
       <div
-        :class="['mode-card', { active: modelValue === 'normal' }]"
+        class="mode-card"
+        :class="[{ active: modelValue === 'normal' }]"
         @click="$emit('update:modelValue', 'normal')"
       >
-        <div class="mode-card__icon">📖</div>
+        <div class="mode-card__icon">
+          📖
+        </div>
         <div class="mode-card__content">
-          <h4 class="mode-card__title">普通复习</h4>
-          <p class="mode-card__desc">复习所有到期的卡片</p>
+          <h4 class="mode-card__title">
+            普通复习
+          </h4>
+          <p class="mode-card__desc">
+            复习所有到期的卡片
+          </p>
           <div class="mode-card__meta">
             <span class="meta-item">
               <span class="meta-label">到期</span>
@@ -32,13 +43,20 @@
 
       <!-- 学习新卡 -->
       <div
-        :class="['mode-card', { active: modelValue === 'new' }]"
+        class="mode-card"
+        :class="[{ active: modelValue === 'new' }]"
         @click="$emit('update:modelValue', 'new')"
       >
-        <div class="mode-card__icon">🆕</div>
+        <div class="mode-card__icon">
+          🆕
+        </div>
         <div class="mode-card__content">
-          <h4 class="mode-card__title">学习新卡</h4>
-          <p class="mode-card__desc">学习还未学过的卡片</p>
+          <h4 class="mode-card__title">
+            学习新卡
+          </h4>
+          <p class="mode-card__desc">
+            学习还未学过的卡片
+          </p>
           <div class="mode-card__meta">
             <span class="meta-item">
               <span class="meta-label">新卡</span>
@@ -55,13 +73,20 @@
 
       <!-- 错题复习 -->
       <div
-        :class="['mode-card', { active: modelValue === 'wrong' }]"
+        class="mode-card"
+        :class="[{ active: modelValue === 'wrong' }]"
         @click="$emit('update:modelValue', 'wrong')"
       >
-        <div class="mode-card__icon">❌</div>
+        <div class="mode-card__icon">
+          ❌
+        </div>
         <div class="mode-card__content">
-          <h4 class="mode-card__title">错题复习</h4>
-          <p class="mode-card__desc">重点复习经常出错的卡片</p>
+          <h4 class="mode-card__title">
+            错题复习
+          </h4>
+          <p class="mode-card__desc">
+            重点复习经常出错的卡片
+          </p>
           <div class="mode-card__meta">
             <span class="meta-item">
               <span class="meta-label">错题</span>
@@ -78,13 +103,20 @@
 
       <!-- 随机测试 -->
       <div
-        :class="['mode-card', { active: modelValue === 'random' }]"
+        class="mode-card"
+        :class="[{ active: modelValue === 'random' }]"
         @click="$emit('update:modelValue', 'random')"
       >
-        <div class="mode-card__icon">🎲</div>
+        <div class="mode-card__icon">
+          🎲
+        </div>
         <div class="mode-card__content">
-          <h4 class="mode-card__title">随机测试</h4>
-          <p class="mode-card__desc">随机抽取卡片进行自测</p>
+          <h4 class="mode-card__title">
+            随机测试
+          </h4>
+          <p class="mode-card__desc">
+            随机抽取卡片进行自测
+          </p>
           <div class="mode-card__meta">
             <span class="meta-item">
               <span class="meta-label">总数</span>
@@ -103,8 +135,13 @@
     <!-- 高级模式 -->
     <div class="advanced-section">
       <div class="advanced-header">
-        <h4 class="advanced-title">⚙️ 高级设置</h4>
-        <button class="toggle-btn" @click="showAdvanced = !showAdvanced">
+        <h4 class="advanced-title">
+          ⚙️ 高级设置
+        </h4>
+        <button
+          class="toggle-btn"
+          @click="showAdvanced = !showAdvanced"
+        >
           <svg
             viewBox="0 0 24 24"
             width="20"
@@ -112,12 +149,15 @@
             fill="currentColor"
             :class="{ 'rotate-180': showAdvanced }"
           >
-            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
           </svg>
         </button>
       </div>
 
-      <div v-show="showAdvanced" class="advanced-content">
+      <div
+        v-show="showAdvanced"
+        class="advanced-content"
+      >
         <!-- 复习数量设置 -->
         <div class="setting-row">
           <label class="setting-label">复习数量</label>
@@ -148,25 +188,29 @@
           <label class="setting-label">时间限制</label>
           <div class="time-limit-options">
             <button
-              :class="['time-option', { active: timeLimit === 0 }]"
+              class="time-option"
+              :class="[{ active: timeLimit === 0 }]"
               @click="timeLimit = 0"
             >
               无限制
             </button>
             <button
-              :class="['time-option', { active: timeLimit === 15 }]"
+              class="time-option"
+              :class="[{ active: timeLimit === 15 }]"
               @click="timeLimit = 15"
             >
               15 分钟
             </button>
             <button
-              :class="['time-option', { active: timeLimit === 30 }]"
+              class="time-option"
+              :class="[{ active: timeLimit === 30 }]"
               @click="timeLimit = 30"
             >
               30 分钟
             </button>
             <button
-              :class="['time-option', { active: timeLimit === 60 }]"
+              class="time-option"
+              :class="[{ active: timeLimit === 60 }]"
               @click="timeLimit = 60"
             >
               60 分钟
@@ -179,25 +223,29 @@
           <label class="setting-label">卡片顺序</label>
           <div class="order-options">
             <button
-              :class="['order-option', { active: cardOrder === 'due' }]"
+              class="order-option"
+              :class="[{ active: cardOrder === 'due' }]"
               @click="cardOrder = 'due'"
             >
               到期时间
             </button>
             <button
-              :class="['order-option', { active: cardOrder === 'difficulty' }]"
+              class="order-option"
+              :class="[{ active: cardOrder === 'difficulty' }]"
               @click="cardOrder = 'difficulty'"
             >
               难度优先
             </button>
             <button
-              :class="['order-option', { active: cardOrder === 'random' }]"
+              class="order-option"
+              :class="[{ active: cardOrder === 'random' }]"
               @click="cardOrder = 'random'"
             >
               随机排序
             </button>
             <button
-              :class="['order-option', { active: cardOrder === 'alphabetical' }]"
+              class="order-option"
+              :class="[{ active: cardOrder === 'alphabetical' }]"
               @click="cardOrder = 'alphabetical'"
             >
               字母顺序
@@ -240,7 +288,10 @@
 
     <!-- 开始按钮 -->
     <div class="start-section">
-      <button class="start-btn" @click="startReview">
+      <button
+        class="start-btn"
+        @click="startReview"
+      >
         <span class="start-btn__icon">🚀</span>
         <span class="start-btn__text">开始复习</span>
         <span class="start-btn__count">{{ selectedCount }} 张卡片</span>
@@ -250,15 +301,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 
 interface Props {
-  modelValue?: string;
-  dueCount?: number;
-  newCount?: number;
-  wrongCount?: number;
-  totalCount?: number;
-  dailyNewLimit?: number;
+  modelValue?: string
+  dueCount?: number
+  newCount?: number
+  wrongCount?: number
+  totalCount?: number
+  dailyNewLimit?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -268,59 +323,59 @@ const props = withDefaults(defineProps<Props>(), {
   wrongCount: 0,
   totalCount: 0,
   dailyNewLimit: 20,
-});
+})
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void;
-  (e: 'start', options: ReviewOptions): void;
-}>();
+  (e: 'update:modelValue', value: string): void
+  (e: 'start', options: ReviewOptions): void
+}>()
 
 interface ReviewOptions {
-  mode: string;
-  minCards: number;
-  maxCards: number;
-  timeLimit: number;
-  cardOrder: string;
-  showHints: boolean;
-  showExplanation: boolean;
-  autoPlay: boolean;
+  mode: string
+  minCards: number
+  maxCards: number
+  timeLimit: number
+  cardOrder: string
+  showHints: boolean
+  showExplanation: boolean
+  autoPlay: boolean
 }
 
 // 状态
-const showAdvanced = ref(false);
-const minCards = ref(10);
-const maxCards = ref(50);
-const timeLimit = ref(0);
-const cardOrder = ref('due');
-const showHints = ref(true);
-const showExplanation = ref(true);
-const autoPlay = ref(false);
-const randomCount = ref(10);
+const showAdvanced = ref(false)
+const minCards = ref(10)
+const maxCards = ref(50)
+const timeLimit = ref(0)
+const cardOrder = ref('due')
+const showHints = ref(true)
+const showExplanation = ref(true)
+const autoPlay = ref(false)
+const randomCount = ref(10)
 
 // 计算属性
 const estimatedMinutes = computed(() => {
-  return Math.round(props.dueCount * 0.5);
-});
+  return Math.round(props.dueCount * 0.5)
+})
 
 const masteryRate = computed(() => {
-  if (props.totalCount === 0) return 0;
-  return Math.round(((props.totalCount - props.wrongCount) / props.totalCount) * 100);
-});
+  if (props.totalCount === 0) return 0
+  return Math.round(((props.totalCount - props.wrongCount) / props.totalCount) * 100)
+})
 
 const selectedCount = computed(() => {
   switch (props.modelValue) {
     case 'normal':
-      return props.dueCount;
+      return props.dueCount
     case 'new':
-      return Math.min(props.newCount, props.dailyNewLimit);
+      return Math.min(props.newCount, props.dailyNewLimit)
     case 'wrong':
-      return props.wrongCount;
+      return props.wrongCount
     case 'random':
-      return randomCount.value;
+      return randomCount.value
     default:
-      return 0;
+      return 0
   }
-});
+})
 
 // 方法
 function startReview() {
@@ -333,16 +388,16 @@ function startReview() {
     showHints: showHints.value,
     showExplanation: showExplanation.value,
     autoPlay: autoPlay.value,
-  });
+  })
 }
 
 // 监听模式变化
 watch(() => props.modelValue, (newMode) => {
   // 根据模式调整默认值
   if (newMode === 'random') {
-    randomCount.value = Math.min(10, props.totalCount);
+    randomCount.value = Math.min(10, props.totalCount)
   }
-});
+})
 </script>
 
 <style scoped lang="scss">

@@ -1,17 +1,434 @@
+<template>
+  <div
+    v-if="visible"
+    class="links-graph-panel"
+  >
+    <!-- 标签页 -->
+    <div class="panel-tabs">
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'cross' }]"
+        @click="activeTab = 'cross'"
+      >
+        🔗 跨分支关联
+        <span class="badge">{{ crossLinks.length }}</span>
+      </button>
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'remote' }]"
+        @click="activeTab = 'remote'"
+      >
+        🌐 远程知识
+        <span class="badge">{{ remoteLinks.length }}</span>
+      </button>
+      <button
+        class="tab-btn"
+        :class="[{ active: activeTab === 'layout' }]"
+        @click="activeTab = 'layout'"
+      >
+        💡 布局建议
+        <span class="badge">{{ layoutSuggestions.length }}</span>
+      </button>
+    </div>
+
+    <!-- 跨分支关联 -->
+    <div
+      v-if="activeTab === 'cross'"
+      class="panel-content"
+    >
+      <!-- 加载状态 -->
+      <div
+        v-if="loadingCrossLinks"
+        class="loading"
+      >
+        <span>加载中...</span>
+      </div>
+
+      <!-- 空状态 -->
+      <div
+        v-else-if="!hasCrossLinks"
+        class="empty-state"
+      >
+        <span class="empty-icon">🔗</span>
+        <p>暂无跨分支关联</p>
+        <button
+          class="btn-primary"
+          @click="creatingLink = true"
+        >
+          创建关联
+        </button>
+      </div>
+
+      <!-- 关联列表 -->
+      <div
+        v-else
+        class="link-list"
+      >
+        <div
+          v-for="link in crossLinks"
+          :key="link.id"
+          class="link-item"
+          :style="{ borderLeftColor: crossLinkTypeColors[link.linkType] }"
+        >
+          <div class="link-header">
+            <span
+              class="link-type"
+              :style="{ backgroundColor: crossLinkTypeColors[link.linkType] }"
+            >
+              {{ crossLinkTypeLabels[link.linkType] }}
+            </span>
+            <div class="link-actions">
+              <button
+                class="btn-icon"
+                title="定位源节点"
+                @click="handleFocusNode(link.sourceNodeId)"
+              >
+                📍
+              </button>
+              <button
+                class="btn-icon"
+                title="定位目标节点"
+                @click="handleFocusNode(link.targetNodeId)"
+              >
+                📍
+              </button>
+              <button
+                class="btn-icon delete"
+                title="删除"
+                @click="handleDeleteCrossLink(link.id)"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+          <div class="link-content">
+            <span class="node-name">{{ getNodeTitle(link.sourceNodeId) }}</span>
+            <span class="link-arrow">→</span>
+            <span class="node-name">{{ getNodeTitle(link.targetNodeId) }}</span>
+          </div>
+          <div
+            v-if="link.label"
+            class="link-label"
+          >
+            {{ link.label }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 创建关联对话框 -->
+      <div
+        v-if="creatingLink"
+        class="dialog-overlay"
+        @click="creatingLink = false"
+      >
+        <div
+          class="dialog"
+          @click.stop
+        >
+          <h3>创建跨分支关联</h3>
+          <div class="form-group">
+            <label>源节点</label>
+            <select v-model="selectedSourceNode">
+              <option value="">
+                选择节点
+              </option>
+              <option
+                v-for="node in nodes"
+                :key="node.id"
+                :value="node.id"
+              >
+                {{ node.data.title }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>目标节点</label>
+            <select v-model="selectedTargetNode">
+              <option value="">
+                选择节点
+              </option>
+              <option
+                v-for="node in nodes"
+                :key="node.id"
+                :value="node.id"
+                :disabled="node.id === selectedSourceNode"
+              >
+                {{ node.data.title }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>关联类型</label>
+            <select v-model="newLinkType">
+              <option value="relation">
+                关联
+              </option>
+              <option value="seeAlso">
+                参见
+              </option>
+              <option value="contrast">
+                对比
+              </option>
+              <option value="cause">
+                因果
+              </option>
+              <option value="example">
+                示例
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>标签（可选）</label>
+            <input
+              v-model="newLinkLabel"
+              type="text"
+              placeholder="输入关联描述"
+            />
+          </div>
+          <div class="dialog-actions">
+            <button
+              class="btn-cancel"
+              @click="creatingLink = false"
+            >
+              取消
+            </button>
+            <button
+              class="btn-primary"
+              @click="handleCreateCrossLink"
+            >
+              创建
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 远程知识联系 -->
+    <div
+      v-if="activeTab === 'remote'"
+      class="panel-content"
+    >
+      <!-- 加载状态 -->
+      <div
+        v-if="loadingRemoteLinks"
+        class="loading"
+      >
+        <span>加载中...</span>
+      </div>
+
+      <!-- 空状态 -->
+      <div
+        v-else-if="!hasRemoteLinks"
+        class="empty-state"
+      >
+        <span class="empty-icon">🌐</span>
+        <p>暂无远程知识联系</p>
+        <button
+          class="btn-primary"
+          @click="creatingRemoteLink = true"
+        >
+          创建联系
+        </button>
+      </div>
+
+      <!-- 联系列表 -->
+      <div
+        v-else
+        class="link-list"
+      >
+        <div
+          v-for="link in remoteLinks"
+          :key="link.id"
+          class="link-item"
+          :style="{ borderLeftColor: remoteLinkTypeColors[link.linkType] }"
+        >
+          <div class="link-header">
+            <span
+              class="link-type"
+              :style="{ backgroundColor: remoteLinkTypeColors[link.linkType] }"
+            >
+              {{ remoteLinkTypeLabels[link.linkType] }}
+            </span>
+            <span class="target-type-badge">{{ link.targetType }}</span>
+            <div class="link-actions">
+              <button
+                class="btn-icon"
+                title="定位源节点"
+                @click="handleFocusNode(link.sourceNodeId)"
+              >
+                📍
+              </button>
+              <button
+                class="btn-icon delete"
+                title="删除"
+                @click="handleDeleteRemoteLink(link.id)"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+          <div class="link-content">
+            <span class="node-name">{{ getNodeTitle(link.sourceNodeId) }}</span>
+            <span class="link-arrow">→</span>
+            <span class="node-name">{{ link.targetId }}</span>
+          </div>
+          <div
+            v-if="link.description"
+            class="link-label"
+          >
+            {{ link.description }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 创建远程联系对话框 -->
+      <div
+        v-if="creatingRemoteLink"
+        class="dialog-overlay"
+        @click="creatingRemoteLink = false"
+      >
+        <div
+          class="dialog"
+          @click.stop
+        >
+          <h3>创建远程知识联系</h3>
+          <div class="form-group">
+            <label>源节点</label>
+            <select v-model="selectedSourceNode">
+              <option value="">
+                选择节点
+              </option>
+              <option
+                v-for="node in nodes"
+                :key="node.id"
+                :value="node.id"
+              >
+                {{ node.data.title }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>目标类型</label>
+            <select v-model="remoteLinkTargetType">
+              <option value="node">
+                节点
+              </option>
+              <option value="annotation">
+                标注
+              </option>
+              <option value="document">
+                文档
+              </option>
+              <option value="external">
+                外部资源
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>目标 ID</label>
+            <input
+              v-model="remoteLinkTargetId"
+              type="text"
+              placeholder="输入目标 ID"
+            />
+          </div>
+          <div class="form-group">
+            <label>描述（可选）</label>
+            <input
+              v-model="remoteLinkDescription"
+              type="text"
+              placeholder="输入联系描述"
+            />
+          </div>
+          <div class="dialog-actions">
+            <button
+              class="btn-cancel"
+              @click="creatingRemoteLink = false"
+            >
+              取消
+            </button>
+            <button
+              class="btn-primary"
+              @click="handleCreateRemoteLink"
+            >
+              创建
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 布局建议 -->
+    <div
+      v-if="activeTab === 'layout'"
+      class="panel-content"
+    >
+      <!-- 空状态 -->
+      <div
+        v-if="!hasLayoutSuggestions"
+        class="empty-state"
+      >
+        <span class="empty-icon">💡</span>
+        <p>暂无布局建议</p>
+        <button
+          class="btn-primary"
+          @click="refreshLayoutSuggestions"
+        >
+          刷新建议
+        </button>
+      </div>
+
+      <!-- 建议列表 -->
+      <div
+        v-else
+        class="suggestion-list"
+      >
+        <div
+          v-for="(suggestion, index) in layoutSuggestions"
+          :key="suggestion.id"
+          class="suggestion-item"
+        >
+          <div class="suggestion-header">
+            <span class="suggestion-type">{{ suggestion.type }}</span>
+            <span class="suggestion-confidence">
+              置信度：{{ Math.round(suggestion.confidence * 100) }}%
+            </span>
+          </div>
+          <p class="suggestion-description">
+            {{ suggestion.description }}
+          </p>
+          <div class="suggestion-actions">
+            <button
+              class="btn-primary"
+              @click="handleApplySuggestion(index)"
+            >
+              应用
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * 链接图谱面板组件
  * 显示跨分支关联和远程知识联系
  */
 
-import { ref, computed, onMounted, watch } from 'vue'
 import type { Ref } from 'vue'
 import type {
   CrossBranchLink,
-  RemoteKnowledgeLink,
+  FreeMindMapEdge,
   FreeMindMapNode,
-  FreeMindMapEdge
+  RemoteKnowledgeLink,
 } from '@/types/mindmapFree'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 import { useMindMapLinkEnhance } from '@/composables/useMindMapLinkEnhance'
 
 // Props
@@ -27,7 +444,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  visible: true
+  visible: true,
 })
 
 // Emit
@@ -56,12 +473,12 @@ const {
   layoutSuggestions,
   refreshLayoutSuggestions,
   applySuggestion,
-  refreshAll
+  refreshAll,
 } = useMindMapLinkEnhance({
   mindMapBlockId: props.mindMapBlockId,
   nodes: props.nodes,
   edges: props.edges,
-  enabled: true
+  enabled: true,
 })
 
 // 本地状态
@@ -84,7 +501,7 @@ const crossLinkTypeLabels: Record<CrossBranchLink['linkType'], string> = {
   seeAlso: '参见',
   contrast: '对比',
   cause: '因果',
-  example: '示例'
+  example: '示例',
 }
 
 const crossLinkTypeColors: Record<CrossBranchLink['linkType'], string> = {
@@ -92,21 +509,21 @@ const crossLinkTypeColors: Record<CrossBranchLink['linkType'], string> = {
   seeAlso: '#67c23a',
   contrast: '#e6a23c',
   cause: '#f56c6c',
-  example: '#909399'
+  example: '#909399',
 }
 
 const remoteLinkTypeLabels: Record<RemoteKnowledgeLink['linkType'], string> = {
   reference: '引用',
   relation: '关联',
   seeAlso: '参见',
-  quote: '引述'
+  quote: '引述',
 }
 
 const remoteLinkTypeColors: Record<RemoteKnowledgeLink['linkType'], string> = {
   reference: '#909399',
   relation: '#409eff',
   seeAlso: '#67c23a',
-  quote: '#e6a23c'
+  quote: '#e6a23c',
 }
 
 const hasCrossLinks = computed(() => crossLinks.value.length > 0)
@@ -115,7 +532,7 @@ const hasLayoutSuggestions = computed(() => layoutSuggestions.value.length > 0)
 
 // 获取节点标题
 function getNodeTitle(nodeId: string): string {
-  const node = props.nodes.value.find(n => n.id === nodeId)
+  const node = props.nodes.value.find((n) => n.id === nodeId)
   return node?.data?.title || nodeId
 }
 
@@ -127,7 +544,7 @@ async function handleCreateCrossLink(): Promise<void> {
     selectedSourceNode.value,
     selectedTargetNode.value,
     newLinkType.value,
-    newLinkLabel.value || undefined
+    newLinkLabel.value || undefined,
   )
 
   // 重置状态
@@ -146,7 +563,7 @@ async function handleCreateRemoteLink(): Promise<void> {
     remoteLinkTargetId.value,
     remoteLinkTargetType.value,
     'relation',
-    remoteLinkDescription.value || undefined
+    remoteLinkDescription.value || undefined,
   )
 
   // 重置状态
@@ -188,285 +605,9 @@ watch([crossLinks, remoteLinks], () => {
 
 // 暴露刷新方法
 defineExpose({
-  refresh: refreshAll
+  refresh: refreshAll,
 })
 </script>
-
-<template>
-  <div class="links-graph-panel" v-if="visible">
-    <!-- 标签页 -->
-    <div class="panel-tabs">
-      <button
-        :class="['tab-btn', { active: activeTab === 'cross' }]"
-        @click="activeTab = 'cross'"
-      >
-        🔗 跨分支关联
-        <span class="badge">{{ crossLinks.length }}</span>
-      </button>
-      <button
-        :class="['tab-btn', { active: activeTab === 'remote' }]"
-        @click="activeTab = 'remote'"
-      >
-        🌐 远程知识
-        <span class="badge">{{ remoteLinks.length }}</span>
-      </button>
-      <button
-        :class="['tab-btn', { active: activeTab === 'layout' }]"
-        @click="activeTab = 'layout'"
-      >
-        💡 布局建议
-        <span class="badge">{{ layoutSuggestions.length }}</span>
-      </button>
-    </div>
-
-    <!-- 跨分支关联 -->
-    <div v-if="activeTab === 'cross'" class="panel-content">
-      <!-- 加载状态 -->
-      <div v-if="loadingCrossLinks" class="loading">
-        <span>加载中...</span>
-      </div>
-
-      <!-- 空状态 -->
-      <div v-else-if="!hasCrossLinks" class="empty-state">
-        <span class="empty-icon">🔗</span>
-        <p>暂无跨分支关联</p>
-        <button class="btn-primary" @click="creatingLink = true">
-          创建关联
-        </button>
-      </div>
-
-      <!-- 关联列表 -->
-      <div v-else class="link-list">
-        <div
-          v-for="link in crossLinks"
-          :key="link.id"
-          class="link-item"
-          :style="{ borderLeftColor: crossLinkTypeColors[link.linkType] }"
-        >
-          <div class="link-header">
-            <span
-              class="link-type"
-              :style="{ backgroundColor: crossLinkTypeColors[link.linkType] }"
-            >
-              {{ crossLinkTypeLabels[link.linkType] }}
-            </span>
-            <div class="link-actions">
-              <button class="btn-icon" @click="handleFocusNode(link.sourceNodeId)" title="定位源节点">
-                📍
-              </button>
-              <button class="btn-icon" @click="handleFocusNode(link.targetNodeId)" title="定位目标节点">
-                📍
-              </button>
-              <button class="btn-icon delete" @click="handleDeleteCrossLink(link.id)" title="删除">
-                🗑️
-              </button>
-            </div>
-          </div>
-          <div class="link-content">
-            <span class="node-name">{{ getNodeTitle(link.sourceNodeId) }}</span>
-            <span class="link-arrow">→</span>
-            <span class="node-name">{{ getNodeTitle(link.targetNodeId) }}</span>
-          </div>
-          <div v-if="link.label" class="link-label">
-            {{ link.label }}
-          </div>
-        </div>
-      </div>
-
-      <!-- 创建关联对话框 -->
-      <div v-if="creatingLink" class="dialog-overlay" @click="creatingLink = false">
-        <div class="dialog" @click.stop>
-          <h3>创建跨分支关联</h3>
-          <div class="form-group">
-            <label>源节点</label>
-            <select v-model="selectedSourceNode">
-              <option value="">选择节点</option>
-              <option
-                v-for="node in nodes"
-                :key="node.id"
-                :value="node.id"
-              >
-                {{ node.data.title }}
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>目标节点</label>
-            <select v-model="selectedTargetNode">
-              <option value="">选择节点</option>
-              <option
-                v-for="node in nodes"
-                :key="node.id"
-                :value="node.id"
-                :disabled="node.id === selectedSourceNode"
-              >
-                {{ node.data.title }}
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>关联类型</label>
-            <select v-model="newLinkType">
-              <option value="relation">关联</option>
-              <option value="seeAlso">参见</option>
-              <option value="contrast">对比</option>
-              <option value="cause">因果</option>
-              <option value="example">示例</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>标签（可选）</label>
-            <input
-              v-model="newLinkLabel"
-              type="text"
-              placeholder="输入关联描述"
-            />
-          </div>
-          <div class="dialog-actions">
-            <button class="btn-cancel" @click="creatingLink = false">取消</button>
-            <button class="btn-primary" @click="handleCreateCrossLink">创建</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 远程知识联系 -->
-    <div v-if="activeTab === 'remote'" class="panel-content">
-      <!-- 加载状态 -->
-      <div v-if="loadingRemoteLinks" class="loading">
-        <span>加载中...</span>
-      </div>
-
-      <!-- 空状态 -->
-      <div v-else-if="!hasRemoteLinks" class="empty-state">
-        <span class="empty-icon">🌐</span>
-        <p>暂无远程知识联系</p>
-        <button class="btn-primary" @click="creatingRemoteLink = true">
-          创建联系
-        </button>
-      </div>
-
-      <!-- 联系列表 -->
-      <div v-else class="link-list">
-        <div
-          v-for="link in remoteLinks"
-          :key="link.id"
-          class="link-item"
-          :style="{ borderLeftColor: remoteLinkTypeColors[link.linkType] }"
-        >
-          <div class="link-header">
-            <span
-              class="link-type"
-              :style="{ backgroundColor: remoteLinkTypeColors[link.linkType] }"
-            >
-              {{ remoteLinkTypeLabels[link.linkType] }}
-            </span>
-            <span class="target-type-badge">{{ link.targetType }}</span>
-            <div class="link-actions">
-              <button class="btn-icon" @click="handleFocusNode(link.sourceNodeId)" title="定位源节点">
-                📍
-              </button>
-              <button class="btn-icon delete" @click="handleDeleteRemoteLink(link.id)" title="删除">
-                🗑️
-              </button>
-            </div>
-          </div>
-          <div class="link-content">
-            <span class="node-name">{{ getNodeTitle(link.sourceNodeId) }}</span>
-            <span class="link-arrow">→</span>
-            <span class="node-name">{{ link.targetId }}</span>
-          </div>
-          <div v-if="link.description" class="link-label">
-            {{ link.description }}
-          </div>
-        </div>
-      </div>
-
-      <!-- 创建远程联系对话框 -->
-      <div v-if="creatingRemoteLink" class="dialog-overlay" @click="creatingRemoteLink = false">
-        <div class="dialog" @click.stop>
-          <h3>创建远程知识联系</h3>
-          <div class="form-group">
-            <label>源节点</label>
-            <select v-model="selectedSourceNode">
-              <option value="">选择节点</option>
-              <option
-                v-for="node in nodes"
-                :key="node.id"
-                :value="node.id"
-              >
-                {{ node.data.title }}
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>目标类型</label>
-            <select v-model="remoteLinkTargetType">
-              <option value="node">节点</option>
-              <option value="annotation">标注</option>
-              <option value="document">文档</option>
-              <option value="external">外部资源</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>目标 ID</label>
-            <input
-              v-model="remoteLinkTargetId"
-              type="text"
-              placeholder="输入目标 ID"
-            />
-          </div>
-          <div class="form-group">
-            <label>描述（可选）</label>
-            <input
-              v-model="remoteLinkDescription"
-              type="text"
-              placeholder="输入联系描述"
-            />
-          </div>
-          <div class="dialog-actions">
-            <button class="btn-cancel" @click="creatingRemoteLink = false">取消</button>
-            <button class="btn-primary" @click="handleCreateRemoteLink">创建</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 布局建议 -->
-    <div v-if="activeTab === 'layout'" class="panel-content">
-      <!-- 空状态 -->
-      <div v-if="!hasLayoutSuggestions" class="empty-state">
-        <span class="empty-icon">💡</span>
-        <p>暂无布局建议</p>
-        <button class="btn-primary" @click="refreshLayoutSuggestions">
-          刷新建议
-        </button>
-      </div>
-
-      <!-- 建议列表 -->
-      <div v-else class="suggestion-list">
-        <div
-          v-for="(suggestion, index) in layoutSuggestions"
-          :key="suggestion.id"
-          class="suggestion-item"
-        >
-          <div class="suggestion-header">
-            <span class="suggestion-type">{{ suggestion.type }}</span>
-            <span class="suggestion-confidence">
-              置信度：{{ Math.round(suggestion.confidence * 100) }}%
-            </span>
-          </div>
-          <p class="suggestion-description">{{ suggestion.description }}</p>
-          <div class="suggestion-actions">
-            <button class="btn-primary" @click="handleApplySuggestion(index)">
-              应用
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .links-graph-panel {

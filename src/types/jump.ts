@@ -4,134 +4,134 @@
  */
 
 /** 跳转目标类型 */
-export type JumpTargetType = 'pdf' | 'mindmap' | 'card' | 'annotation';
+export type JumpTargetType = 'pdf' | 'mindmap' | 'card' | 'annotation'
 
 /** PDF 矩形坐标 */
 export interface PdfRect {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  x1: number
+  y1: number
+  x2: number
+  y2: number
 }
 
 /** 跳转目标 */
 export interface JumpTarget {
   /** 目标类型 */
-  type: JumpTargetType;
+  type: JumpTargetType
   /** 目标 ID（块 ID、节点 ID 等） */
-  targetId: string;
+  targetId: string
   /** PDF 路径（PDF 跳转时） */
-  pdfPath?: string;
+  pdfPath?: string
   /** 页码 */
-  page?: number;
+  page?: number
   /** 坐标区域 */
-  rect?: PdfRect;
+  rect?: PdfRect
   /** 缩放比例 */
-  scale?: number;
+  scale?: number
   /** 脑图 ID */
-  mindmapId?: string;
+  mindmapId?: string
   /** 节点路径 */
-  nodePath?: string[];
+  nodePath?: string[]
   /** 高亮选项 */
   highlight?: {
-    enabled: boolean;
-    color?: string;
-    duration?: number;
-  };
+    enabled: boolean
+    color?: string
+    duration?: number
+  }
 }
 
 /** 跳转结果 */
 export interface JumpResult {
   /** 是否成功 */
-  success: boolean;
+  success: boolean
   /** 错误信息 */
-  error?: string;
+  error?: string
   /** 跳转目标 */
-  target?: JumpTarget;
+  target?: JumpTarget
 }
 
 /** 双向链接 */
 export interface BiDirectionalLink {
   /** 链接 ID */
-  id: string;
+  id: string
   /** 源类型 */
-  sourceType: 'card' | 'mindmap' | 'annotation';
+  sourceType: 'card' | 'mindmap' | 'annotation'
   /** 源 ID */
-  sourceId: string;
+  sourceId: string
   /** 目标类型 */
-  targetType: 'pdf' | 'mindmap' | 'card';
+  targetType: 'pdf' | 'mindmap' | 'card'
   /** 目标 ID */
-  targetId: string;
+  targetId: string
   /** 目标详细信息 */
   targetInfo?: {
-    pdfPath?: string;
-    page?: number;
-    rect?: PdfRect;
-    nodeId?: string;
-    nodePath?: string[];
-  };
+    pdfPath?: string
+    page?: number
+    rect?: PdfRect
+    nodeId?: string
+    nodePath?: string[]
+  }
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
 }
 
 /** 跳转历史记录 */
 export interface JumpHistoryItem {
   /** 记录 ID */
-  id: string;
+  id: string
   /** 跳转目标 */
-  target: JumpTarget;
+  target: JumpTarget
   /** 跳转时间 */
-  timestamp: number;
+  timestamp: number
   /** 来源描述 */
-  sourceDesc?: string;
+  sourceDesc?: string
 }
 
 /** 跳转事件详情 */
 export interface JumpEventDetail {
   /** 目标类型 */
-  type: JumpTargetType;
+  type: JumpTargetType
   /** 目标 ID */
-  targetId: string;
+  targetId: string
   /** PDF 路径 */
-  pdfPath?: string;
+  pdfPath?: string
   /** 页码 */
-  page?: number;
+  page?: number
   /** 坐标 */
-  rect?: PdfRect;
+  rect?: PdfRect
   /** 缩放 */
-  scale?: number;
+  scale?: number
   /** 脑图 ID */
-  mindmapId?: string;
+  mindmapId?: string
   /** 节点 ID */
-  nodeId?: string;
+  nodeId?: string
   /** 高亮颜色 */
-  highlightColor?: string;
+  highlightColor?: string
   /** 高亮持续时间 */
-  highlightDuration?: number;
+  highlightDuration?: number
 }
 
 /** 脑图节点高亮事件详情 */
 export interface MindMapHighlightEventDetail {
   /** 脑图 ID */
-  mindmapId: string;
+  mindmapId: string
   /** 节点 ID */
-  nodeId: string;
+  nodeId: string
   /** 高亮持续时间 */
-  duration?: number;
+  duration?: number
   /** 高亮颜色 */
-  color?: string;
+  color?: string
   /** 是否滚动到节点 */
-  scrollIntoView?: boolean;
+  scrollIntoView?: boolean
 }
 
 /** 卡片高亮事件详情 */
 export interface CardHighlightEventDetail {
   /** 卡片 ID */
-  cardId: string;
+  cardId: string
   /** 高亮持续时间 */
-  duration?: number;
+  duration?: number
   /** 高亮颜色 */
-  color?: string;
+  color?: string
   /** 是否滚动到卡片 */
-  scrollIntoView?: boolean;
+  scrollIntoView?: boolean
 }

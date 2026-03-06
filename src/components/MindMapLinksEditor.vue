@@ -5,8 +5,8 @@
       <button
         class="tool-btn"
         :class="{ active: tool === 'select' }"
-        @click="tool = 'select'"
         title="选择工具"
+        @click="tool = 'select'"
       >
         <span>🖱️</span>
         选择
@@ -14,8 +14,8 @@
       <button
         class="tool-btn"
         :class="{ active: tool === 'link' }"
-        @click="tool = 'link'"
         title="连线工具"
+        @click="tool = 'link'"
       >
         <span>🔗</span>
         连线
@@ -23,8 +23,8 @@
       <button
         class="tool-btn"
         :class="{ active: tool === 'free' }"
-        @click="tool = 'free'"
         title="自由节点工具"
+        @click="tool = 'free'"
       >
         <span>📌</span>
         自由节点
@@ -32,16 +32,16 @@
       <div class="divider"></div>
       <button
         class="tool-btn"
-        @click="showThemeSelector = !showThemeSelector"
         title="切换主题"
+        @click="showThemeSelector = !showThemeSelector"
       >
         <span>🎨</span>
         主题
       </button>
       <button
         class="tool-btn"
-        @click="exportSVG"
         title="导出 SVG"
+        @click="exportSVG"
       >
         <span>📤</span>
         导出
@@ -49,12 +49,16 @@
     </div>
 
     <!-- 主题选择器 -->
-    <div v-if="showThemeSelector" class="theme-selector">
+    <div
+      v-if="showThemeSelector"
+      class="theme-selector"
+    >
       <div class="theme-grid">
         <button
           v-for="theme in themes"
           :key="theme.id"
-          :class="['theme-btn', { active: currentTheme === theme.id }]"
+          class="theme-btn"
+          :class="[{ active: currentTheme === theme.id }]"
           @click="selectTheme(theme.id)"
         >
           <div
@@ -80,32 +84,68 @@
     </div>
 
     <!-- 连线设置面板 -->
-    <div v-if="selectedLink" class="link-settings">
+    <div
+      v-if="selectedLink"
+      class="link-settings"
+    >
       <h4>连线设置</h4>
       <div class="setting-row">
         <label>类型</label>
-        <select v-model="selectedLink.type" @change="updateLink">
-          <option value="default">默认</option>
-          <option value="dashed">虚线</option>
-          <option value="dotted">点线</option>
-          <option value="curved">曲线</option>
-          <option value="straight">直线</option>
+        <select
+          v-model="selectedLink.type"
+          @change="updateLink"
+        >
+          <option value="default">
+            默认
+          </option>
+          <option value="dashed">
+            虚线
+          </option>
+          <option value="dotted">
+            点线
+          </option>
+          <option value="curved">
+            曲线
+          </option>
+          <option value="straight">
+            直线
+          </option>
         </select>
       </div>
       <div class="setting-row">
         <label>颜色</label>
-        <input type="color" v-model="selectedLink.color" @change="updateLink" />
+        <input
+          v-model="selectedLink.color"
+          type="color"
+          @change="updateLink"
+        />
       </div>
       <div class="setting-row">
         <label>线宽</label>
-        <input type="range" min="1" max="10" v-model.number="selectedLink.strokeWidth" @change="updateLink" />
+        <input
+          v-model.number="selectedLink.strokeWidth"
+          type="range"
+          min="1"
+          max="10"
+          @change="updateLink"
+        />
         <span>{{ selectedLink.strokeWidth }}px</span>
       </div>
       <div class="setting-row">
         <label>标签</label>
-        <input type="text" v-model="selectedLink.label" @change="updateLink" placeholder="输入关系说明" />
+        <input
+          v-model="selectedLink.label"
+          type="text"
+          placeholder="输入关系说明"
+          @change="updateLink"
+        />
       </div>
-      <button class="delete-btn" @click="deleteSelectedLink">删除连线</button>
+      <button
+        class="delete-btn"
+        @click="deleteSelectedLink"
+      >
+        删除连线
+      </button>
     </div>
 
     <!-- 自由节点列表 -->
@@ -115,29 +155,46 @@
         <div
           v-for="node in freeNodes"
           :key="node.id"
-          :class="['free-node-item', { selected: selectedNodeId === node.id }]"
+          class="free-node-item"
+          :class="[{ selected: selectedNodeId === node.id }]"
           @click="selectNode(node.id)"
         >
           <span class="node-content">{{ node.content }}</span>
           <div class="node-actions">
-            <button @click.stop="convertToBranch(node)" title="转换为分支节点">🌿</button>
-            <button @click.stop="deleteFreeNode(node.id)" title="删除">🗑️</button>
+            <button
+              title="转换为分支节点"
+              @click.stop="convertToBranch(node)"
+            >
+              🌿
+            </button>
+            <button
+              title="删除"
+              @click.stop="deleteFreeNode(node.id)"
+            >
+              🗑️
+            </button>
           </div>
         </div>
       </div>
-      <button class="add-free-node-btn" @click="startAddFreeNode">
+      <button
+        class="add-free-node-btn"
+        @click="startAddFreeNode"
+      >
         + 添加自由节点
       </button>
     </div>
 
     <!-- SVG 画布 -->
-    <div class="canvas-container" ref="canvasContainer">
+    <div
+      ref="canvasContainer"
+      class="canvas-container"
+    >
       <svg
         ref="svgCanvas"
         class="mindmap-canvas"
         :style="{
           backgroundColor: currentThemeData.colors.background,
-          cursor: canvasCursor
+          cursor: canvasCursor,
         }"
         @mousedown="handleMouseDown"
         @mousemove="handleMouseMove"
@@ -154,7 +211,8 @@
             :stroke-width="link.strokeWidth || 2"
             :stroke-dasharray="getLinkDashArray(link.type)"
             fill="none"
-            :class="['link-path', { selected: selectedLink?.id === link.id }]"
+            class="link-path"
+            :class="[{ selected: selectedLink?.id === link.id }]"
             @click.stop="selectLink(link)"
           />
         </g>
@@ -166,7 +224,8 @@
             v-for="node in treeNodes"
             :key="node.id"
             :transform="`translate(${node.position.x}, ${node.position.y})`"
-            :class="['tree-node', { selected: selectedNodeId === node.id }]"
+            class="tree-node"
+            :class="[{ selected: selectedNodeId === node.id }]"
             @click.stop="selectNode(node.id)"
           >
             <rect
@@ -193,7 +252,10 @@
             v-for="node in freeNodes"
             :key="node.id"
             :transform="`translate(${node.position.x}, ${node.position.y})`"
-            :class="['free-node', { selected: selectedNodeId === node.id, dragging: draggingNodeId === node.id }]"
+            class="free-node"
+            :class="[{
+              selected: selectedNodeId === node.id, dragging: draggingNodeId === node.id,
+            }]"
             @mousedown.stop="startDragNode($event, node.id)"
             @click.stop="selectNode(node.id)"
           >
@@ -218,7 +280,10 @@
         </g>
 
         <!-- 拖拽连线预览 -->
-        <g v-if="dragLink" class="drag-link-preview">
+        <g
+          v-if="dragLink"
+          class="drag-link-preview"
+        >
           <path
             :d="dragLinkPath"
             :stroke="currentThemeData.colors.link"
@@ -233,104 +298,107 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
+  computed,
+  ref,
+} from 'vue'
+import { mindMapLinkService } from '@/services/mindmapLinkService'
+import {
+  EnhancedMindMapData,
+  EnhancedMindMapNode,
+  getNodeCanvasPosition,
+  MINDMAP_THEMES,
   MindMapLink,
   MindMapLinkType,
-  EnhancedMindMapNode,
-  EnhancedMindMapData,
   MindMapNodeType,
-  MindMapTheme,
-  MINDMAP_THEMES,
-  createId,
-  createMindMapLink,
-  createEnhancedNode,
-  calculateLinkPath,
-  getNodeCanvasPosition
-} from '@/types/mindmapEnhanced';
-import { mindMapLinkService } from '@/services/mindmapLinkService';
+} from '@/types/mindmapEnhanced'
 
 interface Props {
-  mindMap: EnhancedMindMapData;
+  mindMap: EnhancedMindMapData
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 const emit = defineEmits<{
-  (e: 'update:mindMap', value: EnhancedMindMapData): void;
-  (e: 'node-select', nodeId: string): void;
-  (e: 'link-select', linkId: string): void;
-}>();
+  (e: 'update:mindMap', value: EnhancedMindMapData): void
+  (e: 'node-select', nodeId: string): void
+  (e: 'link-select', linkId: string): void
+}>()
 
 // 工具状态
-const tool = ref<'select' | 'link' | 'free'>('select');
+const tool = ref<'select' | 'link' | 'free'>('select')
 
 // 主题相关
-const showThemeSelector = ref(false);
-const currentTheme = ref<string>('default');
-const themes = MINDMAP_THEMES;
+const showThemeSelector = ref(false)
+const currentTheme = ref<string>('default')
+const themes = MINDMAP_THEMES
 
 const currentThemeData = computed(() => {
-  return themes.find(t => t.id === currentTheme.value) || themes[0];
-});
+  return themes.find((t) => t.id === currentTheme.value) || themes[0]
+})
 
 const selectTheme = (themeId: string) => {
-  currentTheme.value = themeId;
+  currentTheme.value = themeId
   if (props.mindMap) {
-    props.mindMap.theme = currentThemeData.value;
-    emit('update:mindMap', { ...props.mindMap });
+    props.mindMap.theme = currentThemeData.value
+    emit('update:mindMap', { ...props.mindMap })
   }
-};
+}
 
 // 节点和连线
-const treeNodes = computed(() => Object.values(props.mindMap?.nodes || {}));
-const freeNodes = computed(() => props.mindMap?.freeNodes || []);
-const links = computed(() => props.mindMap?.links || []);
+const treeNodes = computed(() => Object.values(props.mindMap?.nodes || {}))
+const freeNodes = computed(() => props.mindMap?.freeNodes || [])
+const links = computed(() => props.mindMap?.links || [])
 
 // 选中状态
-const selectedNodeId = ref<string | null>(null);
-const selectedLink = ref<MindMapLink | null>(null);
+const selectedNodeId = ref<string | null>(null)
+const selectedLink = ref<MindMapLink | null>(null)
 
 // 拖拽状态
-const draggingNodeId = ref<string | null>(null);
+const draggingNodeId = ref<string | null>(null)
 const dragLink = ref<{
-  sourceId: string;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-} | null>(null);
+  sourceId: string
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+} | null>(null)
 
 const dragLinkPath = computed(() => {
-  if (!dragLink.value) return '';
-  const { startX, startY, endX, endY } = dragLink.value;
+  if (!dragLink.value) return ''
+  const {
+    startX,
+    startY,
+    endX,
+    endY,
+  } = dragLink.value
   // 简单的直线路径
-  return `M ${startX} ${startY} L ${endX} ${endY}`;
-});
+  return `M ${startX} ${startY} L ${endX} ${endY}`
+})
 
 // 画布引用
-const canvasContainer = ref<HTMLElement | null>(null);
-const svgCanvas = ref<SVGSVGElement | null>(null);
+const canvasContainer = ref<HTMLElement | null>(null)
+const svgCanvas = ref<SVGSVGElement | null>(null)
 
 // 画布光标
 const canvasCursor = computed(() => {
-  if (tool.value === 'link') return 'crosshair';
-  if (draggingNodeId.value) return 'grabbing';
-  return 'default';
-});
+  if (tool.value === 'link') return 'crosshair'
+  if (draggingNodeId.value) return 'grabbing'
+  return 'default'
+})
 
 // 选择节点
 const selectNode = (nodeId: string) => {
-  selectedNodeId.value = nodeId;
-  selectedLink.value = null;
-  emit('node-select', nodeId);
-};
+  selectedNodeId.value = nodeId
+  selectedLink.value = null
+  emit('node-select', nodeId)
+}
 
 // 选择连线
 const selectLink = (link: MindMapLink) => {
-  selectedLink.value = link;
-  selectedNodeId.value = null;
-  emit('link-select', link.id);
-};
+  selectedLink.value = link
+  selectedNodeId.value = null
+  emit('link-select', link.id)
+}
 
 // 更新连线
 const updateLink = () => {
@@ -339,144 +407,147 @@ const updateLink = () => {
       type: selectedLink.value.type,
       color: selectedLink.value.color,
       strokeWidth: selectedLink.value.strokeWidth,
-      label: selectedLink.value.label
-    });
-    emit('update:mindMap', { ...props.mindMap });
+      label: selectedLink.value.label,
+    })
+    emit('update:mindMap', { ...props.mindMap })
   }
-};
+}
 
 // 删除选中的连线
 const deleteSelectedLink = () => {
   if (selectedLink.value && props.mindMap) {
-    mindMapLinkService.removeLink(props.mindMap, selectedLink.value.id);
-    selectedLink.value = null;
-    emit('update:mindMap', { ...props.mindMap });
+    mindMapLinkService.removeLink(props.mindMap, selectedLink.value.id)
+    selectedLink.value = null
+    emit('update:mindMap', { ...props.mindMap })
   }
-};
+}
 
 // 获取连线路径
 const getLinkPath = (link: MindMapLink) => {
-  if (!props.mindMap) return '';
-  return mindMapLinkService.getLinkPath(props.mindMap, link);
-};
+  if (!props.mindMap) return ''
+  return mindMapLinkService.getLinkPath(props.mindMap, link)
+}
 
 // 获取虚线样式
 const getLinkDashArray = (type: MindMapLinkType) => {
   switch (type) {
     case MindMapLinkType.DASHED:
-      return '5,5';
+      return '5,5'
     case MindMapLinkType.DOTTED:
-      return '2,2';
+      return '2,2'
     default:
-      return 'none';
+      return 'none'
   }
-};
+}
 
 // 获取节点颜色
 const getNodeColor = (type: MindMapNodeType) => {
   switch (type) {
     case MindMapNodeType.ROOT:
-      return currentThemeData.value.colors.root;
+      return currentThemeData.value.colors.root
     case MindMapNodeType.BRANCH:
-      return currentThemeData.value.colors.branch;
+      return currentThemeData.value.colors.branch
     case MindMapNodeType.FREE:
-      return currentThemeData.value.colors.free;
+      return currentThemeData.value.colors.free
     default:
-      return currentThemeData.value.colors.branch;
+      return currentThemeData.value.colors.branch
   }
-};
+}
 
 // 开始添加自由节点
 const startAddFreeNode = () => {
-  tool.value = 'free';
+  tool.value = 'free'
   if (canvasContainer.value) {
-    const rect = canvasContainer.value.getBoundingClientRect();
+    const rect = canvasContainer.value.getBoundingClientRect()
     const node = mindMapLinkService.addFreeNode(
       props.mindMap,
       '新节点',
       {
         x: rect.width / 2 - 50,
-        y: rect.height / 2 - 20
-      }
-    );
-    selectNode(node.id);
-    emit('update:mindMap', { ...props.mindMap });
+        y: rect.height / 2 - 20,
+      },
+    )
+    selectNode(node.id)
+    emit('update:mindMap', { ...props.mindMap })
   }
-};
+}
 
 // 删除自由节点
 const deleteFreeNode = (nodeId: string) => {
   if (props.mindMap) {
-    mindMapLinkService.removeFreeNode(props.mindMap, nodeId);
+    mindMapLinkService.removeFreeNode(props.mindMap, nodeId)
     if (selectedNodeId.value === nodeId) {
-      selectedNodeId.value = null;
+      selectedNodeId.value = null
     }
-    emit('update:mindMap', { ...props.mindMap });
+    emit('update:mindMap', { ...props.mindMap })
   }
-};
+}
 
 // 转换自由节点为分支节点
 const convertToBranch = (node: EnhancedMindMapNode) => {
-  if (!props.mindMap || !props.mindMap.rootId) return;
-  mindMapLinkService.convertToBranchNode(props.mindMap, node.id, props.mindMap.rootId);
-  emit('update:mindMap', { ...props.mindMap });
-};
+  if (!props.mindMap || !props.mindMap.rootId) return
+  mindMapLinkService.convertToBranchNode(props.mindMap, node.id, props.mindMap.rootId)
+  emit('update:mindMap', { ...props.mindMap })
+}
 
 // 鼠标事件处理
 const handleMouseDown = (e: MouseEvent) => {
   if (tool.value === 'link' && selectedNodeId.value) {
     // 开始拖拽连线
-    const rect = svgCanvas.value?.getBoundingClientRect();
+    const rect = svgCanvas.value?.getBoundingClientRect()
     if (rect) {
       dragLink.value = {
         sourceId: selectedNodeId.value,
         startX: e.clientX - rect.left,
         startY: e.clientY - rect.top,
         endX: e.clientX - rect.left,
-        endY: e.clientY - rect.top
-      };
+        endY: e.clientY - rect.top,
+      }
     }
   }
-};
+}
 
 const handleMouseMove = (e: MouseEvent) => {
   if (dragLink.value) {
-    const rect = svgCanvas.value?.getBoundingClientRect();
+    const rect = svgCanvas.value?.getBoundingClientRect()
     if (rect) {
-      dragLink.value.endX = e.clientX - rect.left;
-      dragLink.value.endY = e.clientY - rect.top;
+      dragLink.value.endX = e.clientX - rect.left
+      dragLink.value.endY = e.clientY - rect.top
     }
   }
 
   if (draggingNodeId.value && props.mindMap) {
-    const rect = svgCanvas.value?.getBoundingClientRect();
+    const rect = svgCanvas.value?.getBoundingClientRect()
     if (rect) {
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      mindMapLinkService.moveFreeNode(props.mindMap, draggingNodeId.value, { x, y });
-      emit('update:mindMap', { ...props.mindMap });
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      mindMapLinkService.moveFreeNode(props.mindMap, draggingNodeId.value, {
+        x,
+        y,
+      })
+      emit('update:mindMap', { ...props.mindMap })
     }
   }
-};
+}
 
 const handleMouseUp = (e: MouseEvent) => {
   if (dragLink.value) {
     // 检查是否释放到另一个节点上
-    const rect = svgCanvas.value?.getBoundingClientRect();
+    const rect = svgCanvas.value?.getBoundingClientRect()
     if (rect) {
-      const endX = e.clientX - rect.left;
-      const endY = e.clientY - rect.top;
+      const endX = e.clientX - rect.left
+      const endY = e.clientY - rect.top
 
       // 查找目标节点
-      const targetNode = [...treeNodes.value, ...freeNodes.value].find(node => {
+      const targetNode = [...treeNodes.value, ...freeNodes.value].find((node) => {
         const pos = node.type === MindMapNodeType.FREE
           ? node.position
-          : getNodeCanvasPosition(node, props.mindMap?.nodes || {});
-        const width = node.size?.width || 100;
-        const height = node.size?.height || 40;
-        return endX >= pos.x && endX <= pos.x + width &&
-               endY >= pos.y && endY <= pos.y + height;
-      });
+          : getNodeCanvasPosition(node, props.mindMap?.nodes || {})
+        const width = node.size?.width || 100
+        const height = node.size?.height || 40
+        return endX >= pos.x && endX <= pos.x + width
+          && endY >= pos.y && endY <= pos.y + height
+      })
 
       if (targetNode && targetNode.id !== dragLink.value.sourceId) {
         // 创建连线
@@ -485,62 +556,65 @@ const handleMouseUp = (e: MouseEvent) => {
             props.mindMap,
             dragLink.value.sourceId,
             targetNode.id,
-            MindMapLinkType.CURVED
-          );
-          emit('update:mindMap', { ...props.mindMap });
+            MindMapLinkType.CURVED,
+          )
+          emit('update:mindMap', { ...props.mindMap })
         }
       }
     }
 
-    dragLink.value = null;
+    dragLink.value = null
   }
 
-  draggingNodeId.value = null;
-};
+  draggingNodeId.value = null
+}
 
 const handleCanvasClick = (e: MouseEvent) => {
   if (tool.value === 'free') {
-    const rect = svgCanvas.value?.getBoundingClientRect();
+    const rect = svgCanvas.value?.getBoundingClientRect()
     if (rect) {
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
       const node = mindMapLinkService.addFreeNode(
         props.mindMap,
         '新节点',
-        { x, y }
-      );
-      selectNode(node.id);
-      emit('update:mindMap', { ...props.mindMap });
+        {
+          x,
+          y,
+        },
+      )
+      selectNode(node.id)
+      emit('update:mindMap', { ...props.mindMap })
     }
   } else {
-    selectedNodeId.value = null;
-    selectedLink.value = null;
+    selectedNodeId.value = null
+    selectedLink.value = null
   }
-};
+}
 
 // 开始拖拽节点
 const startDragNode = (e: MouseEvent, nodeId: string) => {
   if (tool.value === 'select') {
-    draggingNodeId.value = nodeId;
-    selectNode(nodeId);
+    draggingNodeId.value = nodeId
+    selectNode(nodeId)
   }
-};
+}
 
 // 导出 SVG
 const exportSVG = () => {
-  if (!props.mindMap || !canvasContainer.value) return;
+  if (!props.mindMap || !canvasContainer.value) return
 
-  const svgContent = mindMapLinkService.exportToSVG(props.mindMap, canvasContainer.value.id);
-  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
+  const svgContent = mindMapLinkService.exportToSVG(props.mindMap, canvasContainer.value.id)
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${props.mindMap.title || 'mindmap'}.svg`;
-  a.click();
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${props.mindMap.title || 'mindmap'}.svg`
+  a.click()
 
-  URL.revokeObjectURL(url);
-};
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <style scoped lang="scss">

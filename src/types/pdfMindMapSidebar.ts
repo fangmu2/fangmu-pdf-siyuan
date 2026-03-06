@@ -4,8 +4,11 @@
  * @version 1.2.31
  */
 
-import type { MindMapNode, MindMapEdge } from './mindmapFree';
-import type { PDFAnnotation } from './annotation';
+import type { PDFAnnotation } from './annotation'
+import type {
+  MindMapEdge,
+  MindMapNode,
+} from './mindmapFree'
 
 // ==================== 实时同步相关类型 ====================
 
@@ -14,19 +17,19 @@ import type { PDFAnnotation } from './annotation';
  */
 export interface RealtimeSyncConfig {
   /** 启用实时同步 */
-  enableRealtimeSync: boolean;
+  enableRealtimeSync: boolean
   /** 同步延迟（毫秒） */
-  syncDelay: number;
+  syncDelay: number
   /** 自动创建节点 */
-  autoCreateNode: boolean;
+  autoCreateNode: boolean
   /** 选中时高亮 */
-  highlightOnSelect: boolean;
+  highlightOnSelect: boolean
   /** 同步颜色映射 */
-  syncColorMapping: boolean;
+  syncColorMapping: boolean
   /** 批量处理大小 */
-  batchSize: number;
+  batchSize: number
   /** 布局策略 */
-  layoutStrategy: 'auto' | 'pageGroup' | 'timeline';
+  layoutStrategy: 'auto' | 'pageGroup' | 'timeline'
 }
 
 /**
@@ -34,19 +37,19 @@ export interface RealtimeSyncConfig {
  */
 export interface AnnotationNodeMapping {
   /** 标注 ID */
-  annotationId: string;
+  annotationId: string
   /** 节点 ID */
-  nodeId: string;
+  nodeId: string
   /** PDF 页码 */
-  pdfPage: number;
+  pdfPage: number
   /** PDF 坐标矩形 [x1, y1, x2, y2] */
-  pdfRect: [number, number, number, number];
+  pdfRect: [number, number, number, number]
   /** 画布位置 */
-  canvasPosition: { x: number; y: number };
+  canvasPosition: { x: number, y: number }
   /** 创建时间戳 */
-  createdAt: number;
+  createdAt: number
   /** 更新时间戳 */
-  updatedAt: number;
+  updatedAt: number
 }
 
 /**
@@ -54,13 +57,13 @@ export interface AnnotationNodeMapping {
  */
 export interface SyncQueueItem {
   /** 同步类型 */
-  type: 'create' | 'update' | 'delete' | 'highlight';
+  type: 'create' | 'update' | 'delete' | 'highlight'
   /** 标注 ID */
-  annotationId: string;
+  annotationId: string
   /** 同步数据 */
-  data: PDFAnnotation | null;
+  data: PDFAnnotation | null
   /** 时间戳（可选，内部自动添加） */
-  timestamp?: number;
+  timestamp?: number
 }
 
 /**
@@ -68,13 +71,13 @@ export interface SyncQueueItem {
  */
 export interface CoordinateTransformResult {
   /** X 坐标 */
-  x: number;
+  x: number
   /** Y 坐标 */
-  y: number;
+  y: number
   /** 节点宽度 */
-  width: number;
+  width: number
   /** 节点高度 */
-  height: number;
+  height: number
 }
 
 /**
@@ -82,11 +85,11 @@ export interface CoordinateTransformResult {
  */
 export interface UseRealtimeSyncOptions {
   /** PDF 文档 ID */
-  pdfDocId?: string;
+  pdfDocId?: string
   /** 自动初始化 */
-  autoInit?: boolean;
+  autoInit?: boolean
   /** 用户配置 */
-  config?: Partial<RealtimeSyncConfig>;
+  config?: Partial<RealtimeSyncConfig>
 }
 
 /**
@@ -97,50 +100,50 @@ export interface UseRealtimeSyncReturn {
   // Vue 响应式类型 - 在实际使用时通过 ReturnType 推断
   // 这里使用 any 作为占位符，避免循环依赖
   /** 是否已初始化 */
-  isInitialized: { value: boolean };
+  isInitialized: { value: boolean }
   /** 是否正在同步 */
-  isSyncing: { value: boolean };
+  isSyncing: { value: boolean }
   /** 是否启用 */
-  isEnabled: { value: boolean };
+  isEnabled: { value: boolean }
   /** 上次同步时间 */
-  lastSyncTime: { value: number | null };
+  lastSyncTime: { value: number | null }
   /** 待处理数量 */
-  pendingCount: { value: number };
+  pendingCount: { value: number }
   /** 错误信息 */
-  error: { value: string | null };
+  error: { value: string | null }
   /** 映射数量 */
-  mappingCount: { value: number };
+  mappingCount: { value: number }
   /** 队列长度 */
-  queueLength: { value: number };
+  queueLength: { value: number }
 
   /** 初始化 */
-  init: (config?: Partial<RealtimeSyncConfig>) => void;
+  init: (config?: Partial<RealtimeSyncConfig>) => void
   /** 处理标注创建 */
-  handleAnnotationCreated: (annotation: PDFAnnotation) => void;
+  handleAnnotationCreated: (annotation: PDFAnnotation) => void
   /** 处理标注更新 */
-  handleAnnotationUpdated: (annotation: PDFAnnotation) => void;
+  handleAnnotationUpdated: (annotation: PDFAnnotation) => void
   /** 处理标注删除 */
-  handleAnnotationDeleted: (annotationId: string) => void;
+  handleAnnotationDeleted: (annotationId: string) => void
   /** 处理标注选中 */
-  handleAnnotationSelected: (annotation: PDFAnnotation) => void;
+  handleAnnotationSelected: (annotation: PDFAnnotation) => void
   /** 同步所有标注 */
-  syncAllAnnotations: (annotations: PDFAnnotation[]) => void;
+  syncAllAnnotations: (annotations: PDFAnnotation[]) => void
   /** 根据节点获取标注 ID */
-  getAnnotationIdByNode: (nodeId: string) => string | null;
+  getAnnotationIdByNode: (nodeId: string) => string | null
   /** 根据标注获取节点 ID */
-  getNodeIdByAnnotation: (annotationId: string) => string | null;
+  getNodeIdByAnnotation: (annotationId: string) => string | null
   /** 切换同步开关 */
-  toggleSync: (enabled?: boolean) => void;
+  toggleSync: (enabled?: boolean) => void
   /** 更新配置 */
-  updateConfig: (config: Partial<RealtimeSyncConfig>) => void;
+  updateConfig: (config: Partial<RealtimeSyncConfig>) => void
   /** 获取配置 */
-  getConfig: () => RealtimeSyncConfig;
+  getConfig: () => RealtimeSyncConfig
   /** 清空数据 */
-  clear: () => void;
+  clear: () => void
   /** 导出映射 */
-  exportMappings: () => AnnotationNodeMapping[];
+  exportMappings: () => AnnotationNodeMapping[]
   /** 导入映射 */
-  importMappings: (mappings: AnnotationNodeMapping[]) => void;
+  importMappings: (mappings: AnnotationNodeMapping[]) => void
 }
 
 // ==================== 侧边栏配置类型 ====================
@@ -150,17 +153,17 @@ export interface UseRealtimeSyncReturn {
  */
 export interface PdfMindMapSidebarOptions {
   /** 默认宽度（像素） */
-  defaultWidth?: number;
+  defaultWidth?: number
   /** 最小宽度（像素） */
-  minWidth?: number;
+  minWidth?: number
   /** 最大宽度（相对于视口宽度的比例） */
-  maxWidthRatio?: number;
+  maxWidthRatio?: number
   /** 默认是否可见 */
-  defaultVisible?: boolean;
+  defaultVisible?: boolean
   /** 默认自动同步状态 */
-  defaultAutoSync?: boolean;
+  defaultAutoSync?: boolean
   /** 默认自动添加摘录到导图 */
-  defaultAutoAddExcerpt?: boolean;
+  defaultAutoAddExcerpt?: boolean
 }
 
 /**
@@ -168,19 +171,19 @@ export interface PdfMindMapSidebarOptions {
  */
 export interface PdfMindMapSidebarState {
   /** 是否可见 */
-  visible: boolean;
+  visible: boolean
   /** 当前宽度 */
-  width: number;
+  width: number
   /** 自动同步是否启用 */
-  autoSyncEnabled: boolean;
+  autoSyncEnabled: boolean
   /** 自动添加摘录到导图 */
-  autoAddExcerpt: boolean;
+  autoAddExcerpt: boolean
   /** 是否正在调整大小 */
-  isResizing: boolean;
+  isResizing: boolean
   /** 上次同步时间戳 */
-  lastSyncTime: number | null;
+  lastSyncTime: number | null
   /** 画布是否已就绪 */
-  canvasReady: boolean;
+  canvasReady: boolean
 }
 
 /**
@@ -188,19 +191,19 @@ export interface PdfMindMapSidebarState {
  */
 export interface ExcerptNodeData {
   /** 摘录 ID */
-  id: string;
+  id: string
   /** 摘录文本内容 */
-  text: string;
+  text: string
   /** 所在页码 */
-  page: number;
+  page: number
   /** 摘录颜色 */
-  color?: string;
+  color?: string
   /** 图片 URL（如果是图片摘录） */
-  imageUrl?: string;
+  imageUrl?: string
   /** PDF 坐标矩形 [x1, y1, x2, y2] */
-  rect?: [number, number, number, number];
+  rect?: [number, number, number, number]
   /** 创建时间戳 */
-  createdAt?: number;
+  createdAt?: number
 }
 
 /**
@@ -208,30 +211,30 @@ export interface ExcerptNodeData {
  */
 export interface NodeClickEvent {
   /** 节点 ID */
-  nodeId: string;
+  nodeId: string
   /** 关联的摘录 ID */
-  annotationId?: string;
+  annotationId?: string
   /** 页码 */
-  page?: number;
+  page?: number
   /** 坐标矩形 */
-  rect?: [number, number, number, number];
+  rect?: [number, number, number, number]
 }
 
 /**
  * 同步请求类型
  */
-export type SyncRequestType = 'all' | 'current-page' | 'selected';
+export type SyncRequestType = 'all' | 'current-page' | 'selected'
 
 /**
  * 同步请求事件
  */
 export interface SyncRequestEvent {
   /** 请求类型 */
-  type: SyncRequestType;
+  type: SyncRequestType
   /** 目标页码（如果适用） */
-  page?: number;
+  page?: number
   /** 选中的标注 ID 列表 */
-  annotationIds?: string[];
+  annotationIds?: string[]
 }
 
 /**
@@ -242,22 +245,22 @@ export const SIDEBAR_STORAGE_KEYS = {
   VISIBLE: 'pdfMindMapSidebarVisible',
   AUTO_SYNC: 'pdfMindMapAutoSync',
   AUTO_ADD_EXCERPT: 'pdfMindMapAutoAddExcerpt',
-} as const;
+} as const
 
 /**
  * 侧边栏主题类型
  */
-export type SidebarTheme = 'light' | 'dark';
+export type SidebarTheme = 'light' | 'dark'
 
 /**
  * 紧凑模式下的节点样式覆盖
  */
 export interface CompactNodeStyle {
-  width?: number;
-  minWidth?: string;
-  maxWidth?: string;
-  fontSize?: string;
-  padding?: string;
+  width?: number
+  minWidth?: string
+  maxWidth?: string
+  fontSize?: string
+  padding?: string
 }
 
 /**
@@ -265,19 +268,19 @@ export interface CompactNodeStyle {
  */
 export interface PdfMindMapSidebarEvents {
   /** 可见性变化 */
-  'update:visible': boolean;
+  'update:visible': boolean
   /** 宽度变化 */
-  'update:width': number;
+  'update:width': number
   /** 节点点击 */
-  'node-click': NodeClickEvent;
+  'node-click': NodeClickEvent
   /** 同步请求 */
-  'sync-request': SyncRequestEvent;
+  'sync-request': SyncRequestEvent
   /** 节点创建 */
-  'node-created': MindMapNode;
+  'node-created': MindMapNode
   /** 节点更新 */
-  'node-updated': MindMapNode;
+  'node-updated': MindMapNode
   /** 节点删除 */
-  'node-deleted': string;
+  'node-deleted': string
 }
 
 /**
@@ -285,15 +288,15 @@ export interface PdfMindMapSidebarEvents {
  */
 export interface PdfMindMapSidebarProps {
   /** PDF 文档 ID/路径 */
-  pdfDocId: string;
+  pdfDocId: string
   /** 是否可见（支持 v-model） */
-  visible?: boolean;
+  visible?: boolean
   /** 宽度（支持 v-model） */
-  width?: number;
+  width?: number
   /** 初始节点列表 */
-  initialNodes?: MindMapNode[];
+  initialNodes?: MindMapNode[]
   /** 初始边列表 */
-  initialEdges?: MindMapEdge[];
+  initialEdges?: MindMapEdge[]
 }
 
 /**
@@ -301,18 +304,17 @@ export interface PdfMindMapSidebarProps {
  */
 export interface PdfMindMapSidebarExpose {
   /** 刷新画布 */
-  refresh: () => void;
+  refresh: () => void
   /** 适应视图 */
-  fitView: () => void;
+  fitView: () => void
   /** 从摘录添加节点 */
-  addNodeFromAnnotation: (annotation: ExcerptNodeData) => void;
+  addNodeFromAnnotation: (annotation: ExcerptNodeData) => void
   /** 高亮显示节点 */
-  highlightNode: (nodeId: string) => void;
+  highlightNode: (nodeId: string) => void
   /** 清除所有节点 */
-  clearAllNodes: () => void;
+  clearAllNodes: () => void
   /** 导出导图数据 */
-  exportData: () => { nodes: MindMapNode[]; edges: MindMapEdge[] };
+  exportData: () => { nodes: MindMapNode[], edges: MindMapEdge[] }
   /** 导入导图数据 */
-  importData: (data: { nodes: MindMapNode[]; edges: MindMapEdge[] }) => void;
+  importData: (data: { nodes: MindMapNode[], edges: MindMapEdge[] }) => void
 }
-</content>

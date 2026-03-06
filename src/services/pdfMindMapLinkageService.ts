@@ -3,16 +3,16 @@
  * @fileoverview 提供实时高亮同步、拖拽创建节点、智能布局建议、标注颜色映射等功能
  */
 
+import type { Annotation } from '@/types/annotation'
 import type {
-  FreeMindMapNode,
-  FreeMindMapEdge,
-  HighlightState,
-  PdfLinkageConfig,
   AnnotationColorMapping,
   CreateNodeParams,
-  LayoutSuggestion
+  FreeMindMapEdge,
+  FreeMindMapNode,
+  HighlightState,
+  LayoutSuggestion,
+  PdfLinkageConfig,
 } from '@/types/mindmapFree'
-import type { Annotation } from '@/types/annotation'
 import { generateLayoutSuggestions } from './mindmapLinkEnhanceService'
 
 /**
@@ -41,7 +41,7 @@ const DEFAULT_LINKAGE_CONFIG: PdfLinkageConfig = {
   enableColorMapping: true,
   enableAutoSyncEnhanced: true,
   autoSyncDelay: 300,
-  batchSyncThreshold: 5
+  batchSyncThreshold: 5,
 }
 
 let currentConfig: PdfLinkageConfig = { ...DEFAULT_LINKAGE_CONFIG }
@@ -58,7 +58,10 @@ export function getPdfLinkageConfig(): PdfLinkageConfig {
  * @param config 配置更新
  */
 export function updatePdfLinkageConfig(config: Partial<PdfLinkageConfig>): void {
-  currentConfig = { ...currentConfig, ...config }
+  currentConfig = {
+    ...currentConfig,
+    ...config,
+  }
 }
 
 /**
@@ -85,12 +88,16 @@ const highlightStates: Map<string, HighlightState> = new Map()
 export function handlePdfTextSelection(
   selection: string,
   pageNumber: number,
-  rect: { x: number; y: number; width: number; height: number },
-  callback?: (node: FreeMindMapNode) => void
+  rect: { x: number, y: number, width: number, height: number },
+  callback?: (node: FreeMindMapNode) => void,
 ): void {
   if (!currentConfig.enableRealtimeHighlight) return
 
-  console.log('[PDF Linkage] 文本选中:', { selection, pageNumber, rect })
+  console.log('[PDF Linkage] 文本选中:', {
+    selection,
+    pageNumber,
+    rect,
+  })
 
   // 触发高亮效果（由组件处理）
   dispatchHighlightEvent('pdf-selection', selection)
@@ -106,19 +113,22 @@ export function handlePdfTextSelection(
 export function handlePdfAnnotationCreated(
   annotation: Annotation,
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
-): { exists: boolean; nodeId?: string } {
+  edges: FreeMindMapEdge[],
+): { exists: boolean, nodeId?: string } {
   if (!currentConfig.enableRealtimeHighlight) {
     return { exists: false }
   }
 
   // 检查是否已存在关联节点
-  const existingNode = nodes.find(n => n.data.annotationId === annotation.id)
+  const existingNode = nodes.find((n) => n.data.annotationId === annotation.id)
 
   if (existingNode) {
     // 高亮现有节点
     highlightNode(existingNode.id, 'pdf-annotation')
-    return { exists: true, nodeId: existingNode.id }
+    return {
+      exists: true,
+      nodeId: existingNode.id,
+    }
   }
 
   // 触发高亮效果（提示用户可创建新节点）
@@ -136,21 +146,26 @@ export function handlePdfAnnotationCreated(
 export function highlightNode(
   nodeId: string,
   reason: HighlightState['reason'] = 'manual',
-  color: string = '#409eff'
+  color: string = '#409eff',
 ): void {
   const state: HighlightState = {
     nodeId,
     isHighlighted: true,
     color,
     reason,
-    startTime: now()
+    startTime: now(),
   }
 
   highlightStates.set(nodeId, state)
 
   // 触发自定义事件
   const event = new CustomEvent('mindmap-node-highlight', {
-    detail: { nodeId, isHighlighted: true, color, reason }
+    detail: {
+      nodeId,
+      isHighlighted: true,
+      color,
+      reason,
+    },
   })
   window.dispatchEvent(event)
 }
@@ -163,7 +178,10 @@ export function unhighlightNode(nodeId: string): void {
   highlightStates.delete(nodeId)
 
   const event = new CustomEvent('mindmap-node-highlight', {
-    detail: { nodeId, isHighlighted: false }
+    detail: {
+      nodeId,
+      isHighlighted: false,
+    },
   })
   window.dispatchEvent(event)
 }
@@ -176,7 +194,7 @@ export function clearAllHighlights(): void {
   highlightStates.clear()
 
   const event = new CustomEvent('mindmap-clear-highlights', {
-    detail: { nodeIds }
+    detail: { nodeIds },
   })
   window.dispatchEvent(event)
 }
@@ -194,7 +212,11 @@ export function getHighlightState(nodeId: string): HighlightState | undefined {
  */
 function dispatchHighlightEvent(reason: HighlightState['reason'], content: string): void {
   const event = new CustomEvent('pdf-mindmap-highlight-request', {
-    detail: { reason, content, timestamp: now() }
+    detail: {
+      reason,
+      content,
+      timestamp: now(),
+    },
   })
   window.dispatchEvent(event)
 }
@@ -208,7 +230,7 @@ export interface DragData {
   type: 'pdf-text' | 'pdf-image' | 'annotation'
   content: string
   pageNumber: number
-  rect?: { x: number; y: number; width: number; height: number }
+  rect?: { x: number, y: number, width: number, height: number }
   imageUrl?: string
   annotationId?: string
   color?: string
@@ -253,7 +275,7 @@ export function handleCanvasDragEnter(event: DragEvent): boolean {
 export function handleCanvasDrop(
   event: DragEvent,
   canvasX: number,
-  canvasY: number
+  canvasY: number,
 ): CreateNodeParams | null {
   if (!currentConfig.enableDragToCreate) return null
 
@@ -269,8 +291,11 @@ export function handleCanvasDrop(
         type: 'textCard',
         title: dragData.content.substring(0, 50) + (dragData.content.length > 50 ? '...' : ''),
         content: dragData.content,
-        position: { x: canvasX, y: canvasY },
-        annotationId: dragData.annotationId
+        position: {
+          x: canvasX,
+          y: canvasY,
+        },
+        annotationId: dragData.annotationId,
       }
     }
 
@@ -279,9 +304,12 @@ export function handleCanvasDrop(
         type: 'imageCard',
         title: `第 ${dragData.pageNumber} 页摘录`,
         content: dragData.content,
-        position: { x: canvasX, y: canvasY },
+        position: {
+          x: canvasX,
+          y: canvasY,
+        },
         annotationId: dragData.annotationId,
-        cardId: generateId()
+        cardId: generateId(),
       }
     }
 
@@ -290,9 +318,12 @@ export function handleCanvasDrop(
         type: dragData.imageUrl ? 'imageCard' : 'textCard',
         title: dragData.content.substring(0, 50) + (dragData.content.length > 50 ? '...' : ''),
         content: dragData.content,
-        position: { x: canvasX, y: canvasY },
+        position: {
+          x: canvasX,
+          y: canvasY,
+        },
         annotationId: dragData.annotationId,
-        imageUrl: dragData.imageUrl
+        imageUrl: dragData.imageUrl,
       }
     }
 
@@ -333,7 +364,7 @@ function createDragImage(data: DragData): HTMLDivElement | null {
 export function generateSmartLayoutSuggestions(
   nodes: FreeMindMapNode[],
   edges: FreeMindMapEdge[],
-  pdfAnnotations?: Annotation[]
+  pdfAnnotations?: Annotation[],
 ): LayoutSuggestion[] {
   if (!currentConfig.enableSmartLayout) {
     return []
@@ -350,16 +381,16 @@ export function generateSmartLayoutSuggestions(
         id: generateId(),
         type: 'cluster',
         description: `按 PDF 页码分组（${pageGroups.length} 页）`,
-        nodeIds: pageGroups.flatMap(g => g.nodeIds),
+        nodeIds: pageGroups.flatMap((g) => g.nodeIds),
         layoutConfig: {
           direction: 'vertical',
           groups: pageGroups.map((g, i) => ({
             groupId: `page-${g.pageNumber}`,
             nodeIds: g.nodeIds,
-            title: `第 ${g.pageNumber} 页`
-          }))
+            title: `第 ${g.pageNumber} 页`,
+          })),
         },
-        confidence: 0.85
+        confidence: 0.85,
       })
     }
   }
@@ -372,10 +403,10 @@ export function generateSmartLayoutSuggestions(
  */
 function groupNodesByPage(
   nodes: FreeMindMapNode[],
-  annotations: Annotation[]
-): { pageNumber: number; nodeIds: string[] }[] {
+  annotations: Annotation[],
+): { pageNumber: number, nodeIds: string[] }[] {
   const annotationPageMap = new Map<string, number>()
-  annotations.forEach(a => annotationPageMap.set(a.id, a.pageNumber))
+  annotations.forEach((a) => annotationPageMap.set(a.id, a.pageNumber))
 
   const pageGroups = new Map<number, string[]>()
 
@@ -394,7 +425,7 @@ function groupNodesByPage(
 
   return Array.from(pageGroups.entries()).map(([pageNumber, nodeIds]) => ({
     pageNumber,
-    nodeIds
+    nodeIds,
   }))
 }
 
@@ -406,10 +437,10 @@ function groupNodesByPage(
  */
 export function applyLayoutSuggestion(
   suggestion: LayoutSuggestion,
-  nodes: FreeMindMapNode[]
-): { nodeId: string; x: number; y: number }[] {
-  const updates: { nodeId: string; x: number; y: number }[] = []
-  const nodeMap = new Map(nodes.map(n => [n.id, n]))
+  nodes: FreeMindMapNode[],
+): { nodeId: string, x: number, y: number }[] {
+  const updates: { nodeId: string, x: number, y: number }[] = []
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]))
 
   const { layoutConfig } = suggestion
   const spacing = 150
@@ -418,7 +449,7 @@ export function applyLayoutSuggestion(
   if (suggestion.type === 'cluster' && layoutConfig.groups) {
     let startX = 0
     for (const group of layoutConfig.groups) {
-      const groupNodes = group.nodeIds.map(id => nodeMap.get(id)).filter(Boolean) as FreeMindMapNode[]
+      const groupNodes = group.nodeIds.map((id) => nodeMap.get(id)).filter(Boolean) as FreeMindMapNode[]
       if (groupNodes.length === 0) continue
 
       // 计算组内布局
@@ -426,7 +457,7 @@ export function applyLayoutSuggestion(
         updates.push({
           nodeId: node.id,
           x: startX + (index % 5) * spacing,
-          y: Math.floor(index / 5) * verticalSpacing
+          y: Math.floor(index / 5) * verticalSpacing,
         })
       })
 
@@ -440,34 +471,42 @@ export function applyLayoutSuggestion(
     if (root) {
       // BFS 遍历
       const visited = new Set<string>()
-      const queue: [{ nodeId: string; x: number; y: number }] = [{ nodeId: root.id, x: 0, y: 0 }]
+      const queue: [{ nodeId: string, x: number, y: number }] = [{
+        nodeId: root.id,
+        x: 0,
+        y: 0,
+      }]
       visited.add(root.id)
 
       while (queue.length > 0) {
         const current = queue.shift()!
-        updates.push({ nodeId: current.nodeId, x: current.x, y: current.y })
+        updates.push({
+          nodeId: current.nodeId,
+          x: current.x,
+          y: current.y,
+        })
 
         // 查找子节点
-        const children = nodes.filter(n => n.parentId === current.nodeId)
+        const children = nodes.filter((n) => n.parentId === current.nodeId)
         children.forEach((child, index) => {
           if (!visited.has(child.id)) {
             visited.add(child.id)
             queue.push({
               nodeId: child.id,
               x: direction === 'horizontal' ? current.x + spacing : current.x + (index - children.length / 2) * spacing,
-              y: direction === 'horizontal' ? current.y + (index - children.length / 2) * verticalSpacing : current.y + verticalSpacing
+              y: direction === 'horizontal' ? current.y + (index - children.length / 2) * verticalSpacing : current.y + verticalSpacing,
             })
           }
         })
       }
 
       // 居中处理
-      const allX = updates.map(u => u.x)
-      const allY = updates.map(u => u.y)
+      const allX = updates.map((u) => u.x)
+      const allY = updates.map((u) => u.y)
       const minX = Math.min(...allX)
       const minY = Math.min(...allY)
 
-      updates.forEach(u => {
+      updates.forEach((u) => {
         u.x -= minX + (Math.max(...allX) - minX) / 2
         u.y -= minY + (Math.max(...allY) - minY) / 2
       })
@@ -475,9 +514,13 @@ export function applyLayoutSuggestion(
   } else if (suggestion.type === 'radial' && layoutConfig.rootId) {
     const root = nodeMap.get(layoutConfig.rootId)
     if (root) {
-      updates.push({ nodeId: root.id, x: 0, y: 0 })
+      updates.push({
+        nodeId: root.id,
+        x: 0,
+        y: 0,
+      })
 
-      const children = nodes.filter(n => n.parentId === layoutConfig.rootId)
+      const children = nodes.filter((n) => n.parentId === layoutConfig.rootId)
       const angleStep = (2 * Math.PI) / children.length
 
       children.forEach((child, index) => {
@@ -486,7 +529,7 @@ export function applyLayoutSuggestion(
         updates.push({
           nodeId: child.id,
           x: Math.cos(angle) * radius,
-          y: Math.sin(angle) * radius
+          y: Math.sin(angle) * radius,
         })
       })
     }
@@ -514,7 +557,7 @@ export function createColorMapping(
   annotationId: string,
   annotationColor: string,
   nodeId: string,
-  autoSync: boolean = true
+  autoSync: boolean = true,
 ): AnnotationColorMapping {
   const mapping: AnnotationColorMapping = {
     id: generateId(),
@@ -523,14 +566,14 @@ export function createColorMapping(
     nodeId,
     nodeBorderColor: annotationColor,
     nodeBackgroundColor: lightenColor(annotationColor, 0.8),
-    autoSync
+    autoSync,
   }
 
   colorMappingCache.set(annotationId, mapping)
 
   // 触发事件
   const event = new CustomEvent('mindmap-color-mapping-created', {
-    detail: mapping
+    detail: mapping,
   })
   window.dispatchEvent(event)
 
@@ -553,8 +596,8 @@ export function getColorMapping(annotationId: string): AnnotationColorMapping | 
  */
 export function getNodeStyleFromAnnotation(
   annotation: Annotation,
-  nodeId: string
-): { borderColor: string; backgroundColor?: string } | null {
+  nodeId: string,
+): { borderColor: string, backgroundColor?: string } | null {
   if (!currentConfig.enableColorMapping) return null
 
   let mapping = colorMappingCache.get(annotation.id)
@@ -564,14 +607,14 @@ export function getNodeStyleFromAnnotation(
     mapping = createColorMapping(
       annotation.id,
       annotation.color || '#409eff',
-      nodeId
+      nodeId,
     )
   }
 
   if (mapping && mapping.autoSync) {
     return {
       borderColor: mapping.nodeBorderColor,
-      backgroundColor: mapping.nodeBackgroundColor
+      backgroundColor: mapping.nodeBackgroundColor,
     }
   }
 
@@ -590,7 +633,7 @@ export function clearColorMapping(annotationId?: string): void {
   }
 
   const event = new CustomEvent('mindmap-color-mappings-cleared', {
-    detail: { annotationId }
+    detail: { annotationId },
   })
   window.dispatchEvent(event)
 }
@@ -604,15 +647,15 @@ function lightenColor(color: string, factor: number): string {
 
   if (color.startsWith('#')) {
     const hex = color.slice(1)
-    r = parseInt(hex.substr(0, 2), 16)
-    g = parseInt(hex.substr(2, 2), 16)
-    b = parseInt(hex.substr(4, 2), 16)
+    r = Number.parseInt(hex.substr(0, 2), 16)
+    g = Number.parseInt(hex.substr(2, 2), 16)
+    b = Number.parseInt(hex.substr(4, 2), 16)
   } else if (color.startsWith('rgb')) {
     const match = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
     if (match) {
-      r = parseInt(match[1])
-      g = parseInt(match[2])
-      b = parseInt(match[3])
+      r = Number.parseInt(match[1])
+      g = Number.parseInt(match[2])
+      b = Number.parseInt(match[3])
     } else {
       return color
     }
@@ -652,7 +695,7 @@ export function queueSync(annotation: Annotation, action: 'create' | 'update' | 
   syncQueue.push({
     annotation,
     action,
-    timestamp: now()
+    timestamp: now(),
   })
 
   // 防抖处理
@@ -679,8 +722,8 @@ function processSyncQueue(): void {
   const event = new CustomEvent('mindmap-batch-sync', {
     detail: {
       operations: batch,
-      timestamp: now()
-    }
+      timestamp: now(),
+    },
   })
   window.dispatchEvent(event)
 
@@ -719,15 +762,15 @@ export function cancelPendingSync(): void {
  * @returns 画布坐标
  */
 export function pdfRectToCanvasCoords(
-  rect: { x: number; y: number; width: number; height: number },
+  rect: { x: number, y: number, width: number, height: number },
   pdfScale: number,
-  canvasOffset: { x: number; y: number }
-): { x: number; y: number; width: number; height: number } {
+  canvasOffset: { x: number, y: number },
+): { x: number, y: number, width: number, height: number } {
   return {
     x: rect.x * pdfScale + canvasOffset.x,
     y: rect.y * pdfScale + canvasOffset.y,
     width: rect.width * pdfScale,
-    height: rect.height * pdfScale
+    height: rect.height * pdfScale,
   }
 }
 
@@ -743,11 +786,11 @@ export function canvasCoordsToPdfRect(
   x: number,
   y: number,
   pdfScale: number,
-  canvasOffset: { x: number; y: number }
-): { x: number; y: number } {
+  canvasOffset: { x: number, y: number },
+): { x: number, y: number } {
   return {
     x: (x - canvasOffset.x) / pdfScale,
-    y: (y - canvasOffset.y) / pdfScale
+    y: (y - canvasOffset.y) / pdfScale,
   }
 }
 
@@ -758,16 +801,25 @@ export function canvasCoordsToPdfRect(
  * @returns 是否在视口内
  */
 export function isNodeInViewport(
-  nodePosition: { x: number; y: number },
-  viewport: { x: number; y: number; width: number; height: number; zoom: number }
+  nodePosition: { x: number, y: number },
+  viewport: { x: number, y: number, width: number, height: number, zoom: number },
 ): boolean {
-  const { x, y } = nodePosition
-  const { x: vx, y: vy, width: vw, height: vh, zoom } = viewport
+  const {
+    x,
+    y,
+  } = nodePosition
+  const {
+    x: vx,
+    y: vy,
+    width: vw,
+    height: vh,
+    zoom,
+  } = viewport
 
   return (
-    x * zoom + vx >= 0 &&
-    x * zoom + vx <= vw &&
-    y * zoom + vy >= 0 &&
-    y * zoom + vy <= vh
+    x * zoom + vx >= 0
+    && x * zoom + vx <= vw
+    && y * zoom + vy >= 0
+    && y * zoom + vy <= vh
   )
 }

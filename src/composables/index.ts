@@ -5,33 +5,57 @@
  * - 封装通用逻辑供组件使用
  */
 
-export { useCard } from './useCard';
-export type { UseCardOptions, UseCardReturn } from './useCard';
+export { useCard } from './useCard'
+export type {
+  UseCardOptions,
+  UseCardReturn,
+} from './useCard'
 
-export { useLearningSet } from './useLearningSet';
-export type { UseLearningSetOptions, UseLearningSetReturn } from './useLearningSet';
+export { useLearningSet } from './useLearningSet'
+export type {
+  UseLearningSetOptions,
+  UseLearningSetReturn,
+} from './useLearningSet'
 
-export { useMindMap } from './useMindMap';
-export type { UseMindMapOptions, UseMindMapReturn } from './useMindMap';
+export { useMindMap } from './useMindMap'
+export type {
+  UseMindMapOptions,
+  UseMindMapReturn,
+} from './useMindMap'
 
-export { useReview } from './useReview';
-export type { UseReviewOptions, UseReviewReturn, ReviewRating } from './useReview';
+// 链接图谱增强组合式函数（第 3 期）
+export { useMindMapLinkEnhance } from './useMindMapLinkEnhance'
+export type {
+  UseMindMapLinkEnhanceOptions,
+  UseMindMapLinkEnhanceReturn,
+} from './useMindMapLinkEnhance'
 
-export { useSiyuan } from './useSiyuan';
-export type { UseSiyuanReturn, SiyuanConfig } from './useSiyuan';
+// PDF 与思维导图联动组合式函数（第 4 期）
+export { usePdfMindMapLinkage } from './usePdfMindMapLinkage'
+export type {
+  UsePdfMindMapLinkageOptions,
+  UsePdfMindMapLinkageReturn,
+} from './usePdfMindMapLinkage'
 
 // ==================== MarginNote 4 风格升级组合式函数（第二十二阶段） ====================
 
-// 链接图谱增强组合式函数（第 3 期）
-export { useMindMapLinkEnhance } from './useMindMapLinkEnhance';
+export { useReview } from './useReview'
 export type {
-  UseMindMapLinkEnhanceOptions,
-  UseMindMapLinkEnhanceReturn
-} from './useMindMapLinkEnhance';
+  ReviewRating,
+  UseReviewOptions,
+  UseReviewReturn,
+} from './useReview'
 
-// PDF 与思维导图联动组合式函数（第 4 期）
-export { usePdfMindMapLinkage } from './usePdfMindMapLinkage';
+export { useSiyuan } from './useSiyuan'
 export type {
-  UsePdfMindMapLinkageOptions,
-  UsePdfMindMapLinkageReturn
-} from './usePdfMindMapLinkage';
+  SiyuanConfig,
+  UseSiyuanReturn,
+} from './useSiyuan'
+
+// ==================== 虚拟滚动组合式函数（性能优化） ====================
+
+export { useVirtualAnnotations } from './useVirtualAnnotations'
+export type {
+  UseVirtualAnnotationsOptions,
+  UseVirtualAnnotationsReturn,
+} from './useVirtualAnnotations'

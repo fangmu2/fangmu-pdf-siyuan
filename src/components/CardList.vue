@@ -14,23 +14,48 @@
 
       <!-- 筛选器 -->
       <div class="card-list__filters">
-        <select v-model="filterStatus" class="card-list__select">
-          <option value="">全部状态</option>
-          <option value="new">新卡片</option>
-          <option value="learning">学习中</option>
-          <option value="review">复习中</option>
-          <option value="suspended">已暂停</option>
+        <select
+          v-model="filterStatus"
+          class="card-list__select"
+        >
+          <option value="">
+            全部状态
+          </option>
+          <option value="new">
+            新卡片
+          </option>
+          <option value="learning">
+            学习中
+          </option>
+          <option value="review">
+            复习中
+          </option>
+          <option value="suspended">
+            已暂停
+          </option>
         </select>
 
-        <select v-model="sortBy" class="card-list__select">
-          <option value="created">创建时间</option>
-          <option value="updated">更新时间</option>
-          <option value="difficulty">难度</option>
-          <option value="nextReview">下次复习</option>
+        <select
+          v-model="sortBy"
+          class="card-list__select"
+        >
+          <option value="created">
+            创建时间
+          </option>
+          <option value="updated">
+            更新时间
+          </option>
+          <option value="difficulty">
+            难度
+          </option>
+          <option value="nextReview">
+            下次复习
+          </option>
         </select>
 
         <button
-          :class="['card-list__sort-btn', { active: sortOrder === 'asc' }]"
+          class="card-list__sort-btn"
+          :class="[{ active: sortOrder === 'asc' }]"
           @click="toggleSortOrder"
         >
           <span v-if="sortOrder === 'asc'">↑</span>
@@ -39,11 +64,29 @@
       </div>
 
       <!-- 批量操作 -->
-      <div class="card-list__bulk-actions" v-if="selectedCards.length > 0">
+      <div
+        v-if="selectedCards.length > 0"
+        class="card-list__bulk-actions"
+      >
         <span class="card-list__selected-count">已选 {{ selectedCards.length }} 张</span>
-        <button class="card-list__action-btn" @click="handleBulkConvert">转为闪卡</button>
-        <button class="card-list__action-btn" @click="handleBulkTag">批量标签</button>
-        <button class="card-list__action-btn card-list__action-btn--danger" @click="handleBulkDelete">删除</button>
+        <button
+          class="card-list__action-btn"
+          @click="handleBulkConvert"
+        >
+          转为闪卡
+        </button>
+        <button
+          class="card-list__action-btn"
+          @click="handleBulkTag"
+        >
+          批量标签
+        </button>
+        <button
+          class="card-list__action-btn card-list__action-btn--danger"
+          @click="handleBulkDelete"
+        >
+          删除
+        </button>
       </div>
     </div>
 
@@ -73,33 +116,46 @@
 
     <!-- 卡片列表 -->
     <div class="card-list__content">
-      <div v-if="filteredCards.length === 0" class="card-list__empty">
+      <div
+        v-if="filteredCards.length === 0"
+        class="card-list__empty"
+      >
         <span>暂无卡片</span>
       </div>
 
-      <div v-else class="card-list__cards">
+      <div
+        v-else
+        class="card-list__cards"
+      >
         <div
           v-for="card in filteredCards"
           :key="card.id"
-          :class="['card-item', { selected: selectedCards.includes(card.id) }]"
+          class="card-item"
+          :class="[{ selected: selectedCards.includes(card.id) }]"
           @click="handleCardClick(card)"
         >
           <!-- 复选框 -->
           <input
             type="checkbox"
             :checked="selectedCards.includes(card.id)"
+            class="card-item__checkbox"
             @change="toggleSelection(card.id)"
             @click.stop
-            class="card-item__checkbox"
           />
 
           <!-- 卡片内容 -->
           <div class="card-item__content">
             <div class="card-item__header">
-              <span :class="['card-item__type', `card-item__type--${card.type}`]">
+              <span
+                class="card-item__type"
+                :class="[`card-item__type--${card.type}`]"
+              >
                 {{ card.type === 'flashcard' ? '闪卡' : '卡片' }}
               </span>
-              <span :class="['card-item__status', `card-item__status--${card.status}`]">
+              <span
+                class="card-item__status"
+                :class="[`card-item__status--${card.status}`]"
+              >
                 {{ getStatusLabel(card.status) }}
               </span>
             </div>
@@ -115,15 +171,25 @@
 
             <div class="card-item__meta">
               <div class="card-item__tags">
-                <span v-for="tag in card.tags.slice(0, 3)" :key="tag" class="card-item__tag">
+                <span
+                  v-for="tag in card.tags.slice(0, 3)"
+                  :key="tag"
+                  class="card-item__tag"
+                >
                   {{ tag }}
                 </span>
-                <span v-if="card.tags.length > 3" class="card-item__tag-more">
+                <span
+                  v-if="card.tags.length > 3"
+                  class="card-item__tag-more"
+                >
                   +{{ card.tags.length - 3 }}
                 </span>
               </div>
               <span class="card-item__difficulty">难度：{{ card.difficulty }}</span>
-              <span v-if="card.type === 'flashcard'" class="card-item__review">
+              <span
+                v-if="card.type === 'flashcard'"
+                class="card-item__review"
+              >
                 复习：{{ formatNextReview((card as FlashCard).srs.nextReview) }}
               </span>
             </div>
@@ -134,12 +200,15 @@
             <button
               v-if="card.sourceLocation?.pdfPath"
               class="card-item__action-btn card-item__action-btn--pdf"
-              @click.stop="handleNavigateToPdf(card)"
               title="跳转到PDF源位置"
+              @click.stop="handleNavigateToPdf(card)"
             >
               📄 定位
             </button>
-            <button class="card-item__action-btn" @click.stop="handleEdit(card)">
+            <button
+              class="card-item__action-btn"
+              @click.stop="handleEdit(card)"
+            >
               编辑
             </button>
             <button
@@ -157,73 +226,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import type { Card, FlashCard } from '../types/card';
-import { cardService } from '../services/cardService';
-import { truncateText } from '../utils';
-import { formatNextReview } from '../review/sm2';
-import { navigateToCardPdf } from '../services/pdfExcerptService';
+import type {
+  Card,
+  FlashCard,
+} from '../types/card'
+import {
+  computed,
+  ref,
+} from 'vue'
+import { formatNextReview } from '../review/sm2'
+import { cardService } from '../services/cardService'
+import { navigateToCardPdf } from '../services/pdfExcerptService'
+import { truncateText } from '../utils'
 
 interface Props {
-  cards: Card[];
-  studySetId?: string;
+  cards: Card[]
+  studySetId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   studySetId: '',
-});
+})
 
 const emit = defineEmits<{
-  (e: 'select', card: Card): void;
-  (e: 'edit', card: Card): void;
-  (e: 'convert', card: Card): void;
-  (e: 'delete', card: Card): void;
-}>();
+  (e: 'select', card: Card): void
+  (e: 'edit', card: Card): void
+  (e: 'convert', card: Card): void
+  (e: 'delete', card: Card): void
+}>()
 
 // 搜索和筛选
-const searchQuery = ref('');
-const filterStatus = ref('');
-const sortBy = ref('created');
-const sortOrder = ref<'asc' | 'desc'>('desc');
-const selectedCards = ref<string[]>([]);
+const searchQuery = ref('')
+const filterStatus = ref('')
+const sortBy = ref('created')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+const selectedCards = ref<string[]>([])
 
 // 计算统计
 const stats = computed(() => {
-  return cardService.countCards(props.cards);
-});
+  return cardService.countCards(props.cards)
+})
 
 // 筛选和排序卡片
 const filteredCards = computed(() => {
-  let result = [...props.cards];
+  let result = [...props.cards]
 
   // 搜索
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(card => {
-      if (card.content.toLowerCase().includes(query)) return true;
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter((card) => {
+      if (card.content.toLowerCase().includes(query)) return true
       if (card.type === 'flashcard') {
-        const fc = card as FlashCard;
+        const fc = card as FlashCard
         if (fc.front.toLowerCase().includes(query) || fc.back.toLowerCase().includes(query)) {
-          return true;
+          return true
         }
       }
-      return false;
-    });
+      return false
+    })
   }
 
   // 状态筛选
   if (filterStatus.value) {
-    result = result.filter(card => card.status === filterStatus.value);
+    result = result.filter((card) => card.status === filterStatus.value)
   }
 
   // 排序
   result = cardService.sortCards(result, {
     sortBy: sortBy.value as any,
     sortOrder: sortOrder.value,
-  });
+  })
 
-  return result;
-});
+  return result
+})
 
 // 获取状态标签
 function getStatusLabel(status: string): string {
@@ -232,78 +307,78 @@ function getStatusLabel(status: string): string {
     learning: '学习中',
     review: '复习中',
     suspended: '已暂停',
-  };
-  return labels[status] || status;
+  }
+  return labels[status] || status
 }
 
 // 切换排序顺序
 function toggleSortOrder() {
-  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
 }
 
 // 切换选择
 function toggleSelection(cardId: string) {
-  const index = selectedCards.value.indexOf(cardId);
+  const index = selectedCards.value.indexOf(cardId)
   if (index === -1) {
-    selectedCards.value.push(cardId);
+    selectedCards.value.push(cardId)
   } else {
-    selectedCards.value.splice(index, 1);
+    selectedCards.value.splice(index, 1)
   }
 }
 
 // 卡片点击
 function handleCardClick(card: Card) {
-  emit('select', card);
+  emit('select', card)
 }
 
 // 编辑卡片
 function handleEdit(card: Card) {
-  emit('edit', card);
+  emit('edit', card)
 }
 
 // 转换为闪卡
 function handleConvertToFlashCard(card: Card) {
-  emit('convert', card);
+  emit('convert', card)
 }
 
 // 批量转换
 function handleBulkConvert() {
-  selectedCards.value.forEach(id => {
-    const card = props.cards.find(c => c.id === id);
+  selectedCards.value.forEach((id) => {
+    const card = props.cards.find((c) => c.id === id)
     if (card && card.type !== 'flashcard') {
-      emit('convert', card);
+      emit('convert', card)
     }
-  });
-  selectedCards.value = [];
+  })
+  selectedCards.value = []
 }
 
 // 批量标签
 function handleBulkTag() {
   // TODO: 实现批量标签功能
-  console.log('批量标签', selectedCards.value);
-  selectedCards.value = [];
+  console.log('批量标签', selectedCards.value)
+  selectedCards.value = []
 }
 
 // 批量删除
 function handleBulkDelete() {
-  selectedCards.value.forEach(id => {
-    const card = props.cards.find(c => c.id === id);
+  selectedCards.value.forEach((id) => {
+    const card = props.cards.find((c) => c.id === id)
     if (card) {
-      emit('delete', card);
+      emit('delete', card)
     }
-  });
-  selectedCards.value = [];
+  })
+  selectedCards.value = []
 }
 
 // 跳转到 PDF 源位置
 async function handleNavigateToPdf(card: Card) {
   try {
-    const success = await navigateToCardPdf(card);
+    const success = await navigateToCardPdf(card)
     if (!success) {
-      console.warn('[CardList] 无法跳转到 PDF，卡片可能不是 PDF 摘录');
+      console.warn('[CardList] 无法跳转到 PDF，卡片可能不是 PDF 摘录')
     }
   } catch (error) {
-    console.error('[CardList] 跳转到 PDF 失败:', error);
+    console.error('[CardList] 跳转到 PDF 失败:', error)
   }
 }
 </script>

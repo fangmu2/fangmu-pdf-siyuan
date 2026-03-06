@@ -1,412 +1,3 @@
-<script setup lang="ts">
-/**
- * 文本卡片节点组件
- * MarginNote 风格的文本卡片节点 - 支持展开/折叠、缩放
- */
-
-import { computed, toRefs, inject, ref } from 'vue'
-import type { NodeProps } from '@vue-flow/core'
-import { Handle, Position } from '@vue-flow/core'
-import type { FreeMindMapNodeData } from '@/types/mindmapFree'
-
-interface Props extends NodeProps {
-  data: FreeMindMapNodeData
-}
-
-const props = defineProps<Props>()
-
-const emit = defineEmits<{
-  (e: 'toggle-expand', nodeId: string): void
-  (e: 'resize-start', nodeId: string): void
-  (e: 'resize', nodeId: string, size: { width: number; height: number }): void
-  (e: 'resize-end', nodeId: string): void
-  (e: 'node-click', payload: {
-    nodeId: string
-    pdfPath?: string
-    page?: number
-    rect?: [number, number, number, number]
-    annotationId?: string
-  }): void
-}>()
-
-const { data } = toRefs(props)
-
-// 注入父组件提供的事件处理函数
-const onToggleExpand = inject<(nodeId: string) => void>('onToggleExpand')
-const onResizeStart = inject<(nodeId: string) => void>('onResizeStart')
-const onResize = inject<(nodeId: string, size: { width: number; height: number }) => void>('onResize')
-const onResizeEnd = inject<(nodeId: string) => void>('onResizeEnd')
-
-// 展开/折叠状态
-const isExpanded = computed(() => {
-  return data.value.isExpanded !== false && !data.value.collapsed
-})
-
-// 节点旋转角度
-const rotation = computed(() => {
-  return data.value.rotation || 0
-})
-
-// 计算背景样式
-const backgroundStyle = computed(() => {
-  const bg = data.value.backgroundImage
-  if (!bg?.url) {
-    return {}
-  }
-
-  const style: Record<string, string> = {
-    backgroundImage: `url(${bg.url})`,
-    backgroundSize: bg.mode === 'tile' ? 'auto' : bg.mode,
-    backgroundRepeat: bg.mode === 'tile' ? 'repeat' : 'no-repeat',
-    backgroundPosition: bg.position ? `${bg.position.x}px ${bg.position.y}px` : 'center',
-    opacity: String(bg.opacity ?? 1)
-  }
-
-  return style
-})
-
-// 是否为引用节点（视觉区分）
-const isReferenceNode = computed(() => {
-  return data.value.nodeType === 'reference'
-})
-
-// 是否为克隆节点（视觉标识）
-const isCloneNode = computed(() => {
-  return data.value.nodeType === 'clone'
-})
-
-// 节点卡片样式
-const cardBodyStyle = computed(() => {
-  const baseStyle: Record<string, string> = {}
-  
-  // 优先使用自定义边框样式
-  if (data.value.borderStyle && data.value.borderStyle !== 'none') {
-    const borderWidth = data.value.borderWidth ?? 2
-    const borderColor = data.value.borderColor || '#333333'
-    baseStyle['borderStyle'] = data.value.borderStyle
-    baseStyle['borderWidth'] = `${borderWidth}px`
-    baseStyle['borderColor'] = borderColor
-  } else {
-    // 引用节点：蓝色边框
-    if (isReferenceNode.value) {
-      baseStyle['border'] = '2px solid #409eff'
-      baseStyle['box-shadow'] = '0 0 8px rgba(64, 158, 255, 0.3)'
-    }
-    
-    // 克隆节点：虚线边框
-    if (isCloneNode.value) {
-      baseStyle['border'] = '2px dashed #909399'
-      baseStyle['opacity'] = '0.85'
-    }
-  }
-  
-  return baseStyle
-})
-
-// 节点尺寸（默认值）
-const nodeWidth = computed(() => {
-  return data.value.size?.width || 200
-})
-
-const nodeHeight = computed(() => {
-  return data.value.size?.height || 'auto'
-})
-
-// 缩放手柄样式
-const resizeHandleStyle = computed(() => {
-  return {
-    position: 'absolute' as const,
-    right: '4px',
-    bottom: '4px',
-    width: '16px',
-    height: '16px',
-    cursor: 'nwse-resize',
-    zIndex: 100
-  }
-})
-
-// 是否正在拖拽缩放
-const isResizing = ref(false)
-
-// 是否正在旋转
-const isRotating = ref(false)
-
-// 旋转手柄样式
-const rotateHandleStyle = computed(() => {
-  return {
-    position: 'absolute' as const,
-    right: '4px',
-    top: '-20px',
-    width: '24px',
-    height: '24px',
-    cursor: 'grab',
-    zIndex: 100,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'rgba(64, 158, 255, 0.8)',
-    borderRadius: '50%',
-    border: '2px solid #fff',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-  }
-})
-
-// 点击节点处理 - 跳转到 PDF
-function handleNodeClick(event: MouseEvent): void {
-  // 检查是否有文档引用信息
-  // 字段映射：data.value.pdfPath -> pdfPath, data.value.page -> page
-  const pdfPath = data.value.pdfPath
-  const page = data.value.page
-  
-  if (pdfPath && page) {
-    // 发送跳转事件到父组件
-    emit('node-click', {
-      nodeId: props.id,
-      pdfPath,
-      page,
-      rect: data.value.rect || undefined,
-      annotationId: data.value.annotationId || undefined
-    })
-  }
-}
-
-// 旋转移处理
-function handleRotateMove(event: MouseEvent): void {
-  if (!isRotating.value) return
-
-  // 获取节点中心点
-  const target = event.target as HTMLElement
-  const nodeElement = target.closest('.marginnote-text-card-wrapper')
-  
-  if (nodeElement) {
-    const rect = nodeElement.getBoundingClientRect()
-    const centerX = rect.left + rect.width / 2
-    const centerY = rect.top + rect.height / 2
-    
-    // 计算旋转角度
-    const rad = Math.atan2(event.clientY - centerY, event.clientX - centerX)
-    let deg = rad * (180 / Math.PI) + 90
-    
-    // 吸附到 15°倍数
-    deg = Math.round(deg / 15) * 15
-    
-    // 直接更新 data.value.rotation（响应式）
-    data.value.rotation = deg
-  }
-}
-
-// 旋转结束处理
-function handleRotateEnd(): void {
-  if (!isRotating.value) return
-  isRotating.value = false
-
-  // 移除全局事件监听
-  document.removeEventListener('mousemove', handleRotateMove)
-  document.removeEventListener('mouseup', handleRotateEnd)
-}
-
-// 双击重置旋转角度
-function handleRotateReset(): void {
-  data.value.rotation = 0
-}
-
-// 计算页码显示
-const showPage = computed(() => {
-  return data.value.page !== undefined && data.value.page !== null
-})
-
-// 计算内容预览
-const contentPreview = computed(() => {
-  if (!data.value.content) return ''
-  const content = data.value.content
-  if (content.length > 100) {
-    return content.substring(0, 100) + '...'
-  }
-  return content
-})
-
-// 计算层级图标
-const levelIcon = computed(() => {
-  const level = data.value.level || ''
-  switch (level) {
-    case 'title':
-      return '🎯'
-    case 'h1':
-      return '📌'
-    case 'h2':
-      return '📍'
-    case 'h3':
-      return '📎'
-    case 'h4':
-    case 'h5':
-      return '🏷️'
-    default:
-      return ''
-  }
-})
-
-// 获取层级文本描述
-function getLevelText(level: string | undefined): string {
-  const levelMap: Record<string, string> = {
-    title: '标题',
-    h1: '一级标题',
-    h2: '二级标题',
-    h3: '三级标题',
-    h4: '四级标题',
-    h5: '五级标题'
-  }
-  return levelMap[level || ''] || '正文'
-}
-
-// 切换展开/折叠状态
-function toggleExpand(): void {
-  // 使用注入的事件处理函数
-  if (onToggleExpand) {
-    onToggleExpand(props.id)
-  }
-}
-
-// 计算卡片头部渐变色（MarginNote4 风格 - 紫色渐变）
-const headerGradient = computed(() => {
-  const color = data.value.color
-  if (color) {
-    return `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`
-  }
-  // MarginNote4 经典紫色渐变
-  return 'linear-gradient(135deg, #6B5CE7 0%, #A869C9 100%)'
-})
-
-// MarginNote4 风格胶囊形状
-const capsuleStyle = computed(() => {
-  return {
-    background: headerGradient.value,
-    borderRadius: '20px',
-    padding: '10px 16px 10px 24px', // 左侧留更多空间给圆点
-    minWidth: '180px',
-    maxWidth: '300px',
-    border: 'none',
-    boxShadow: '0 4px 12px rgba(107, 92, 231, 0.3)',
-    color: '#fff',
-    position: 'relative' as const,
-    overflow: 'hidden',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
-  }
-})
-
-// 引用/克隆节点样式
-const referenceNodeStyle = computed(() => {
-  const style: Record<string, string> = {}
-  
-  // 引用节点：蓝色边框和发光效果
-  if (isReferenceNode.value) {
-    style.border = '2px solid #409eff'
-    style.boxShadow = '0 0 12px rgba(64, 158, 255, 0.5)'
-  }
-  
-  // 克隆节点：虚线边框和半透明
-  if (isCloneNode.value) {
-    style.border = '2px dashed #909399'
-    style.opacity = '0.85'
-  }
-  
-  return style
-})
-
-// 展开/折叠图标
-const expandIcon = computed(() => {
-  return isExpanded.value ? '▼' : '▶'
-})
-
-// 子节点数量（从 parentId 关系计算）
-const childrenCount = computed(() => {
-  return data.value.childrenIds?.length || 0
-})
-
-// 节点容器样式（支持缩放）
-const nodeContainerStyle = computed(() => {
-  const style: Record<string, string | number> = {
-    position: 'relative',
-    display: 'inline-block',
-    minWidth: '180px',
-    minHeight: '60px'
-  }
-
-  if (data.value.size?.width) {
-    style.width = `${data.value.size.width}px`
-  }
-
-  if (data.value.size?.height) {
-    style.height = `${data.value.size.height}px`
-  }
-
-  // 合并背景样式
-  if (backgroundStyle.value) {
-    Object.assign(style, backgroundStyle.value)
-  }
-
-  return style
-})
-
-// 开始缩放
-function handleResizeStart(event: MouseEvent): void {
-  event.preventDefault()
-  event.stopPropagation()
-  isResizing.value = true
-
-  if (onResizeStart) {
-    onResizeStart(props.id)
-  }
-
-  // 添加全局事件监听
-  document.addEventListener('mousemove', handleResizeMove)
-  document.addEventListener('mouseup', handleResizeEnd)
-}
-
-// 缩放移动处理
-function handleResizeMove(event: MouseEvent): void {
-  if (!isResizing.value) return
-
-  const target = event.target as HTMLElement
-  const nodeElement = target.closest('.marginnote-text-card-wrapper')
-
-  if (nodeElement) {
-    const rect = nodeElement.getBoundingClientRect()
-    const newWidth = event.clientX - rect.left
-    const newHeight = event.clientY - rect.top
-
-    // 限制最小/最大尺寸
-    const minWidth = 180
-    const minHeight = 60
-    const maxWidth = 500
-    const maxHeight = 400
-
-    const width = Math.max(minWidth, Math.min(newWidth, maxWidth))
-    const height = Math.max(minHeight, Math.min(newHeight, maxHeight))
-
-    if (onResize) {
-      onResize(props.id, { width, height })
-    }
-  }
-}
-
-// 结束缩放
-function handleResizeEnd(): void {
-  isResizing.value = false
-
-  if (onResizeEnd) {
-    onResizeEnd(props.id)
-  }
-
-  // 移除全局事件监听
-  document.removeEventListener('mousemove', handleResizeMove)
-  document.removeEventListener('mouseup', handleResizeEnd)
-}
-</script>
-
 <template>
   <div
     class="marginnote-text-card-wrapper"
@@ -417,7 +8,7 @@ function handleResizeEnd(): void {
       v-if="data.backgroundImage?.url"
       class="background-overlay"
       :style="{
-        opacity: data.backgroundImage.opacity ?? 1
+        opacity: data.backgroundImage.opacity ?? 1,
       }"
     ></div>
 
@@ -433,8 +24,8 @@ function handleResizeEnd(): void {
       <button
         v-if="childrenCount > 0"
         class="expand-toggle-btn"
-        @click.stop="toggleExpand"
         :title="isExpanded ? '折叠子节点' : '展开子节点'"
+        @click.stop="toggleExpand"
       >
         {{ expandIcon }}
       </button>
@@ -497,26 +88,464 @@ function handleResizeEnd(): void {
     <!-- 旋转手柄 -->
     <div
       class="rotate-handle"
+      title="拖拽旋转（双击重置）"
       @mousedown="handleRotateStart"
-      :title="'拖拽旋转（双击重置）'"
     >
-      <svg viewBox="0 0 24 24" class="rotate-icon">
-        <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <svg
+        viewBox="0 0 24 24"
+        class="rotate-icon"
+      >
+        <path
+          d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+        />
       </svg>
     </div>
 
     <!-- 缩放手柄 -->
     <div
       class="resize-handle"
-      @mousedown="handleResizeStart"
       :title="拖拽调整大小"
+      @mousedown="handleResizeStart"
     >
-      <svg viewBox="0 0 16 16" class="resize-icon">
-        <path d="M14 14V4m0 10H4m10 0L8 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <svg
+        viewBox="0 0 16 16"
+        class="resize-icon"
+      >
+        <path
+          d="M14 14V4m0 10H4m10 0L8 8"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+        />
       </svg>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+/**
+ * 文本卡片节点组件
+ * MarginNote 风格的文本卡片节点 - 支持展开/折叠、缩放
+ */
+
+import type { NodeProps } from '@vue-flow/core'
+import type { FreeMindMapNodeData } from '@/types/mindmapFree'
+import {
+  Handle,
+  Position,
+} from '@vue-flow/core'
+import {
+  computed,
+  inject,
+  ref,
+  toRefs,
+} from 'vue'
+
+interface Props extends NodeProps {
+  data: FreeMindMapNodeData
+}
+
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  (e: 'toggle-expand', nodeId: string): void
+  (e: 'resize-start', nodeId: string): void
+  (e: 'resize', nodeId: string, size: { width: number, height: number }): void
+  (e: 'resize-end', nodeId: string): void
+  (e: 'node-click', payload: {
+    nodeId: string
+    pdfPath?: string
+    page?: number
+    rect?: [number, number, number, number]
+    annotationId?: string
+  }): void
+}>()
+
+const { data } = toRefs(props)
+
+// 注入父组件提供的事件处理函数
+const onToggleExpand = inject<(nodeId: string) => void>('onToggleExpand')
+const onResizeStart = inject<(nodeId: string) => void>('onResizeStart')
+const onResize = inject<(nodeId: string, size: { width: number, height: number }) => void>('onResize')
+const onResizeEnd = inject<(nodeId: string) => void>('onResizeEnd')
+
+// 展开/折叠状态
+const isExpanded = computed(() => {
+  return data.value.isExpanded !== false && !data.value.collapsed
+})
+
+// 节点旋转角度
+const rotation = computed(() => {
+  return data.value.rotation || 0
+})
+
+// 计算背景样式
+const backgroundStyle = computed(() => {
+  const bg = data.value.backgroundImage
+  if (!bg?.url) {
+    return {}
+  }
+
+  const style: Record<string, string> = {
+    backgroundImage: `url(${bg.url})`,
+    backgroundSize: bg.mode === 'tile' ? 'auto' : bg.mode,
+    backgroundRepeat: bg.mode === 'tile' ? 'repeat' : 'no-repeat',
+    backgroundPosition: bg.position ? `${bg.position.x}px ${bg.position.y}px` : 'center',
+    opacity: String(bg.opacity ?? 1),
+  }
+
+  return style
+})
+
+// 是否为引用节点（视觉区分）
+const isReferenceNode = computed(() => {
+  return data.value.nodeType === 'reference'
+})
+
+// 是否为克隆节点（视觉标识）
+const isCloneNode = computed(() => {
+  return data.value.nodeType === 'clone'
+})
+
+// 节点卡片样式
+const cardBodyStyle = computed(() => {
+  const baseStyle: Record<string, string> = {}
+
+  // 优先使用自定义边框样式
+  if (data.value.borderStyle && data.value.borderStyle !== 'none') {
+    const borderWidth = data.value.borderWidth ?? 2
+    const borderColor = data.value.borderColor || '#333333'
+    baseStyle.borderStyle = data.value.borderStyle
+    baseStyle.borderWidth = `${borderWidth}px`
+    baseStyle.borderColor = borderColor
+  } else {
+    // 引用节点：蓝色边框
+    if (isReferenceNode.value) {
+      baseStyle.border = '2px solid #409eff'
+      baseStyle['box-shadow'] = '0 0 8px rgba(64, 158, 255, 0.3)'
+    }
+
+    // 克隆节点：虚线边框
+    if (isCloneNode.value) {
+      baseStyle.border = '2px dashed #909399'
+      baseStyle.opacity = '0.85'
+    }
+  }
+
+  return baseStyle
+})
+
+// 节点尺寸（默认值）
+const nodeWidth = computed(() => {
+  return data.value.size?.width || 200
+})
+
+const nodeHeight = computed(() => {
+  return data.value.size?.height || 'auto'
+})
+
+// 缩放手柄样式
+const resizeHandleStyle = computed(() => {
+  return {
+    position: 'absolute' as const,
+    right: '4px',
+    bottom: '4px',
+    width: '16px',
+    height: '16px',
+    cursor: 'nwse-resize',
+    zIndex: 100,
+  }
+})
+
+// 是否正在拖拽缩放
+const isResizing = ref(false)
+
+// 是否正在旋转
+const isRotating = ref(false)
+
+// 旋转手柄样式
+const rotateHandleStyle = computed(() => {
+  return {
+    position: 'absolute' as const,
+    right: '4px',
+    top: '-20px',
+    width: '24px',
+    height: '24px',
+    cursor: 'grab',
+    zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'rgba(64, 158, 255, 0.8)',
+    borderRadius: '50%',
+    border: '2px solid #fff',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+  }
+})
+
+// 点击节点处理 - 跳转到 PDF
+function handleNodeClick(event: MouseEvent): void {
+  // 检查是否有文档引用信息
+  // 字段映射：data.value.pdfPath -> pdfPath, data.value.page -> page
+  const pdfPath = data.value.pdfPath
+  const page = data.value.page
+
+  if (pdfPath && page) {
+    // 发送跳转事件到父组件
+    emit('node-click', {
+      nodeId: props.id,
+      pdfPath,
+      page,
+      rect: data.value.rect || undefined,
+      annotationId: data.value.annotationId || undefined,
+    })
+  }
+}
+
+// 旋转移处理
+function handleRotateMove(event: MouseEvent): void {
+  if (!isRotating.value) return
+
+  // 获取节点中心点
+  const target = event.target as HTMLElement
+  const nodeElement = target.closest('.marginnote-text-card-wrapper')
+
+  if (nodeElement) {
+    const rect = nodeElement.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+
+    // 计算旋转角度
+    const rad = Math.atan2(event.clientY - centerY, event.clientX - centerX)
+    let deg = rad * (180 / Math.PI) + 90
+
+    // 吸附到 15°倍数
+    deg = Math.round(deg / 15) * 15
+
+    // 直接更新 data.value.rotation（响应式）
+    data.value.rotation = deg
+  }
+}
+
+// 旋转结束处理
+function handleRotateEnd(): void {
+  if (!isRotating.value) return
+  isRotating.value = false
+
+  // 移除全局事件监听
+  document.removeEventListener('mousemove', handleRotateMove)
+  document.removeEventListener('mouseup', handleRotateEnd)
+}
+
+// 双击重置旋转角度
+function handleRotateReset(): void {
+  data.value.rotation = 0
+}
+
+// 计算页码显示
+const showPage = computed(() => {
+  return data.value.page !== undefined && data.value.page !== null
+})
+
+// 计算内容预览
+const contentPreview = computed(() => {
+  if (!data.value.content) return ''
+  const content = data.value.content
+  if (content.length > 100) {
+    return `${content.substring(0, 100)}...`
+  }
+  return content
+})
+
+// 计算层级图标
+const levelIcon = computed(() => {
+  const level = data.value.level || ''
+  switch (level) {
+    case 'title':
+      return '🎯'
+    case 'h1':
+      return '📌'
+    case 'h2':
+      return '📍'
+    case 'h3':
+      return '📎'
+    case 'h4':
+    case 'h5':
+      return '🏷️'
+    default:
+      return ''
+  }
+})
+
+// 获取层级文本描述
+function getLevelText(level: string | undefined): string {
+  const levelMap: Record<string, string> = {
+    title: '标题',
+    h1: '一级标题',
+    h2: '二级标题',
+    h3: '三级标题',
+    h4: '四级标题',
+    h5: '五级标题',
+  }
+  return levelMap[level || ''] || '正文'
+}
+
+// 切换展开/折叠状态
+function toggleExpand(): void {
+  // 使用注入的事件处理函数
+  if (onToggleExpand) {
+    onToggleExpand(props.id)
+  }
+}
+
+// 计算卡片头部渐变色（MarginNote4 风格 - 紫色渐变）
+const headerGradient = computed(() => {
+  const color = data.value.color
+  if (color) {
+    return `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`
+  }
+  // MarginNote4 经典紫色渐变
+  return 'linear-gradient(135deg, #6B5CE7 0%, #A869C9 100%)'
+})
+
+// MarginNote4 风格胶囊形状
+const capsuleStyle = computed(() => {
+  return {
+    background: headerGradient.value,
+    borderRadius: '20px',
+    padding: '10px 16px 10px 24px', // 左侧留更多空间给圆点
+    minWidth: '180px',
+    maxWidth: '300px',
+    border: 'none',
+    boxShadow: '0 4px 12px rgba(107, 92, 231, 0.3)',
+    color: '#fff',
+    position: 'relative' as const,
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  }
+})
+
+// 引用/克隆节点样式
+const referenceNodeStyle = computed(() => {
+  const style: Record<string, string> = {}
+
+  // 引用节点：蓝色边框和发光效果
+  if (isReferenceNode.value) {
+    style.border = '2px solid #409eff'
+    style.boxShadow = '0 0 12px rgba(64, 158, 255, 0.5)'
+  }
+
+  // 克隆节点：虚线边框和半透明
+  if (isCloneNode.value) {
+    style.border = '2px dashed #909399'
+    style.opacity = '0.85'
+  }
+
+  return style
+})
+
+// 展开/折叠图标
+const expandIcon = computed(() => {
+  return isExpanded.value ? '▼' : '▶'
+})
+
+// 子节点数量（从 parentId 关系计算）
+const childrenCount = computed(() => {
+  return data.value.childrenIds?.length || 0
+})
+
+// 节点容器样式（支持缩放）
+const nodeContainerStyle = computed(() => {
+  const style: Record<string, string | number> = {
+    position: 'relative',
+    display: 'inline-block',
+    minWidth: '180px',
+    minHeight: '60px',
+  }
+
+  if (data.value.size?.width) {
+    style.width = `${data.value.size.width}px`
+  }
+
+  if (data.value.size?.height) {
+    style.height = `${data.value.size.height}px`
+  }
+
+  // 合并背景样式
+  if (backgroundStyle.value) {
+    Object.assign(style, backgroundStyle.value)
+  }
+
+  return style
+})
+
+// 开始缩放
+function handleResizeStart(event: MouseEvent): void {
+  event.preventDefault()
+  event.stopPropagation()
+  isResizing.value = true
+
+  if (onResizeStart) {
+    onResizeStart(props.id)
+  }
+
+  // 添加全局事件监听
+  document.addEventListener('mousemove', handleResizeMove)
+  document.addEventListener('mouseup', handleResizeEnd)
+}
+
+// 缩放移动处理
+function handleResizeMove(event: MouseEvent): void {
+  if (!isResizing.value) return
+
+  const target = event.target as HTMLElement
+  const nodeElement = target.closest('.marginnote-text-card-wrapper')
+
+  if (nodeElement) {
+    const rect = nodeElement.getBoundingClientRect()
+    const newWidth = event.clientX - rect.left
+    const newHeight = event.clientY - rect.top
+
+    // 限制最小/最大尺寸
+    const minWidth = 180
+    const minHeight = 60
+    const maxWidth = 500
+    const maxHeight = 400
+
+    const width = Math.max(minWidth, Math.min(newWidth, maxWidth))
+    const height = Math.max(minHeight, Math.min(newHeight, maxHeight))
+
+    if (onResize) {
+      onResize(props.id, {
+        width,
+        height,
+      })
+    }
+  }
+}
+
+// 结束缩放
+function handleResizeEnd(): void {
+  isResizing.value = false
+
+  if (onResizeEnd) {
+    onResizeEnd(props.id)
+  }
+
+  // 移除全局事件监听
+  document.removeEventListener('mousemove', handleResizeMove)
+  document.removeEventListener('mouseup', handleResizeEnd)
+}
+</script>
 
 <style scoped>
 /* MarginNote 风格文本卡片 - MarginNote4 胶囊形状 */

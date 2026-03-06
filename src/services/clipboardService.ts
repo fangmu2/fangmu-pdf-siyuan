@@ -3,7 +3,10 @@
  * @fileoverview 提供思维导图节点的内存剪贴板功能，支持复制/粘贴/剪切操作
  */
 
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+} from '@/types/mindmapFree'
 
 /**
  * 剪贴板数据类型
@@ -45,7 +48,7 @@ class ClipboardService {
     nodes: FreeMindMapNode[],
     edges: FreeMindMapEdge[],
     studySetId: string,
-    canvasId?: string
+    canvasId?: string,
   ): void {
     if (!nodes || nodes.length === 0) {
       console.warn('[ClipboardService] 没有要复制的节点')
@@ -63,8 +66,8 @@ class ClipboardService {
         edges: clonedEdges,
         studySetId,
         canvasId,
-        copiedAt: Date.now()
-      }
+        copiedAt: Date.now(),
+      },
     }
 
     console.log(`[ClipboardService] 已复制 ${nodes.length} 个节点到剪贴板`)
@@ -112,11 +115,11 @@ class ClipboardService {
    * 获取剪贴板数据来源信息
    * @returns 来源学习集 ID 和画布 ID
    */
-  getSourceInfo(): { studySetId: string; canvasId?: string } | null {
+  getSourceInfo(): { studySetId: string, canvasId?: string } | null {
     if (!this.clipboard) return null
     return {
       studySetId: this.clipboard.data.studySetId,
-      canvasId: this.clipboard.data.canvasId
+      canvasId: this.clipboard.data.canvasId,
     }
   }
 }
@@ -149,17 +152,20 @@ export function generateNewEdgeId(): string {
  */
 export function calculatePasteOffset(
   nodes: FreeMindMapNode[],
-  offset: number = 30
-): { x: number; y: number } {
+  offset: number = 30,
+): { x: number, y: number } {
   if (!nodes || nodes.length === 0) {
-    return { x: offset, y: offset }
+    return {
+      x: offset,
+      y: offset,
+    }
   }
 
   // 找到所有节点的最小 X 和 Y 坐标
   let minX = Infinity
   let minY = Infinity
 
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     if (node.position.x < minX) minX = node.position.x
     if (node.position.y < minY) minY = node.position.y
   })
@@ -167,6 +173,6 @@ export function calculatePasteOffset(
   // 返回偏移量
   return {
     x: offset,
-    y: offset
+    y: offset,
   }
 }

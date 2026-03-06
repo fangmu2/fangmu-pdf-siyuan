@@ -3,19 +3,22 @@
  * MarginNote 4 风格学习插件 - 复习相关思源 API 调用
  */
 
-import { insertBlock, updateBlockAttrs, sqlQuery } from './siyuanApi';
-import type { ReviewRecord, ReviewSession } from '../types/review';
-import { getReviewRecordsByDateRange } from '../services/dataPersistenceService';
+import type { ReviewRecord } from '../types/review'
+import {
+  insertBlock,
+  sqlQuery,
+  updateBlockAttrs,
+} from './siyuanApi'
 
 // 避免循环依赖，本地定义类型
 interface ReviewRecordLocal {
-  id: string;
-  cardId: string;
-  studySetId: string;
-  quality: number;
-  reviewedAt: number;
-  timeSpent: number;
-  correct: boolean;
+  id: string
+  cardId: string
+  studySetId: string
+  quality: number
+  reviewedAt: number
+  timeSpent: number
+  correct: boolean
 }
 
 /**
@@ -26,7 +29,7 @@ interface ReviewRecordLocal {
 export async function getOrCreateReviewRecordDoc(): Promise<string> {
   // TODO: 检查是否存在复习记录文档，不存在则创建
   // 这里可以创建一个专门的文档来存储复习记录
-  return '';
+  return ''
 }
 
 /**
@@ -38,7 +41,7 @@ export async function getOrCreateReviewRecordDoc(): Promise<string> {
  */
 export async function saveReviewRecord(
   record: ReviewRecord,
-  parentBlockId: string
+  parentID: string,
 ): Promise<boolean> {
   try {
     // 创建复习记录块
@@ -54,31 +57,31 @@ export async function saveReviewRecord(
         previousRepetitions: record.previousRepetitions,
         newRepetitions: record.newRepetitions,
       }),
-      parentBlockId,
-    });
+      parentID,
+    })
 
     if (result && result[0]?.doOperations?.[0]?.id) {
-      const blockId = result[0].doOperations[0].id;
+      const blockId = result[0].doOperations[0].id
 
       // 设置属性
       await updateBlockAttrs({
         blockId,
         attrs: {
           type: 'review_record',
-          'review_card_id': record.cardId,
-          'review_study_set_id': record.studySetId,
-          'review_quality': record.quality.toString(),
-          'review_reviewed_at': record.reviewedAt.toString(),
+          review_card_id: record.cardId,
+          review_study_set_id: record.studySetId,
+          review_quality: record.quality.toString(),
+          review_reviewed_at: record.reviewedAt.toString(),
         },
-      });
+      })
 
-      return true;
+      return true
     }
 
-    return false;
+    return false
   } catch (error) {
-    console.error('保存复习记录失败:', error);
-    return false;
+    console.error('保存复习记录失败:', error)
+    return false
   }
 }
 
@@ -91,18 +94,18 @@ export async function saveReviewRecord(
  */
 export async function batchSaveReviewRecords(
   records: ReviewRecord[],
-  parentBlockId: string
+  parentID: string,
 ): Promise<number> {
-  let successCount = 0;
+  let successCount = 0
 
   for (const record of records) {
-    const success = await saveReviewRecord(record, parentBlockId);
+    const success = await saveReviewRecord(record, parentID)
     if (success) {
-      successCount++;
+      successCount++
     }
   }
 
-  return successCount;
+  return successCount
 }
 
 /**
@@ -114,7 +117,7 @@ export async function batchSaveReviewRecords(
  */
 export async function getCardReviewHistory(
   cardId: string,
-  limit: number = 50
+  limit: number = 50,
 ): Promise<ReviewRecord[]> {
   const sql = `
     SELECT * FROM blocks
@@ -122,27 +125,30 @@ export async function getCardReviewHistory(
     AND custom-type = 'review_record'
     ORDER BY custom-review_reviewed_at DESC
     LIMIT :limit
-  `;
+  `
 
   try {
-    const result = await sqlQuery(sql, { cardId, limit: limit.toString() });
+    const result = await sqlQuery(sql, {
+      cardId,
+      limit: limit.toString(),
+    })
 
-    return result.map(row => ({
+    return result.map((row) => ({
       id: row.id,
       cardId: row['custom-review_card_id'],
       studySetId: row['custom-review_study_set_id'],
-      reviewedAt: parseInt(row['custom-review_reviewed_at'] || '0'),
-      quality: parseInt(row['custom-review_quality'] || '0'),
-      previousInterval: parseInt(row['custom-review_prev_interval'] || '0'),
-      newInterval: parseInt(row['custom-review_new_interval'] || '0'),
-      previousEaseFactor: parseFloat(row['custom-review_prev_ease'] || '0'),
-      newEaseFactor: parseFloat(row['custom-review_new_ease'] || '0'),
-      previousRepetitions: parseInt(row['custom-review_prev_reps'] || '0'),
-      newRepetitions: parseInt(row['custom-review_new_reps'] || '0'),
-    } as ReviewRecord));
+      reviewedAt: Number.parseInt(row['custom-review_reviewed_at'] || '0'),
+      quality: Number.parseInt(row['custom-review_quality'] || '0'),
+      previousInterval: Number.parseInt(row['custom-review_prev_interval'] || '0'),
+      newInterval: Number.parseInt(row['custom-review_new_interval'] || '0'),
+      previousEaseFactor: Number.parseFloat(row['custom-review_prev_ease'] || '0'),
+      newEaseFactor: Number.parseFloat(row['custom-review_new_ease'] || '0'),
+      previousRepetitions: Number.parseInt(row['custom-review_prev_reps'] || '0'),
+      newRepetitions: Number.parseInt(row['custom-review_new_reps'] || '0'),
+    } as ReviewRecord))
   } catch (error) {
-    console.error('获取复习历史失败:', error);
-    return [];
+    console.error('获取复习历史失败:', error)
+    return []
   }
 }
 
@@ -157,45 +163,45 @@ export async function getCardReviewHistory(
 export async function getStudySetReviewHistory(
   studySetId: string,
   startDate?: number,
-  endDate?: number
+  endDate?: number,
 ): Promise<ReviewRecord[]> {
   let sql = `
     SELECT * FROM blocks
     WHERE custom-review_study_set_id = :studySetId
     AND custom-type = 'review_record'
-  `;
+  `
 
-  const params: Record<string, string> = { studySetId };
+  const params: Record<string, string> = { studySetId }
 
   if (startDate) {
-    sql += ` AND custom-review_reviewed_at >= :startDate`;
-    params.startDate = startDate.toString();
+    sql += ` AND custom-review_reviewed_at >= :startDate`
+    params.startDate = startDate.toString()
   }
 
   if (endDate) {
-    sql += ` AND custom-review_reviewed_at <= :endDate`;
-    params.endDate = endDate.toString();
+    sql += ` AND custom-review_reviewed_at <= :endDate`
+    params.endDate = endDate.toString()
   }
 
   try {
-    const result = await sqlQuery(sql, params);
+    const result = await sqlQuery(sql, params)
 
-    return result.map(row => ({
+    return result.map((row) => ({
       id: row.id,
       cardId: row['custom-review_card_id'],
       studySetId: row['custom-review_study_set_id'],
-      reviewedAt: parseInt(row['custom-review_reviewed_at'] || '0'),
-      quality: parseInt(row['custom-review_quality'] || '0'),
-      previousInterval: parseInt(row['custom-review_prev_interval'] || '0'),
-      newInterval: parseInt(row['custom-review_new_interval'] || '0'),
-      previousEaseFactor: parseFloat(row['custom-review_prev_ease'] || '0'),
-      newEaseFactor: parseFloat(row['custom-review_new_ease'] || '0'),
-      previousRepetitions: parseInt(row['custom-review_prev_reps'] || '0'),
-      newRepetitions: parseInt(row['custom-review_new_reps'] || '0'),
-    } as ReviewRecord));
+      reviewedAt: Number.parseInt(row['custom-review_reviewed_at'] || '0'),
+      quality: Number.parseInt(row['custom-review_quality'] || '0'),
+      previousInterval: Number.parseInt(row['custom-review_prev_interval'] || '0'),
+      newInterval: Number.parseInt(row['custom-review_new_interval'] || '0'),
+      previousEaseFactor: Number.parseFloat(row['custom-review_prev_ease'] || '0'),
+      newEaseFactor: Number.parseFloat(row['custom-review_new_ease'] || '0'),
+      previousRepetitions: Number.parseInt(row['custom-review_prev_reps'] || '0'),
+      newRepetitions: Number.parseInt(row['custom-review_new_reps'] || '0'),
+    } as ReviewRecord))
   } catch (error) {
-    console.error('获取学习集复习历史失败:', error);
-    return [];
+    console.error('获取学习集复习历史失败:', error)
+    return []
   }
 }
 
@@ -208,10 +214,10 @@ export async function getStudySetReviewHistory(
  */
 export async function getReviewStats(
   studySetId?: string,
-  days: number = 30
-): Promise<{ date: string; count: number; avgQuality: number }[]> {
-  const now = Date.now();
-  const startDate = now - days * 24 * 60 * 60 * 1000;
+  days: number = 30,
+): Promise<{ date: string, count: number, avgQuality: number }[]> {
+  const now = Date.now()
+  const startDate = now - days * 24 * 60 * 60 * 1000
 
   let sql = `
     SELECT
@@ -219,36 +225,39 @@ export async function getReviewStats(
       custom-review_quality as quality
     FROM blocks
     WHERE custom-type = 'review_record'
-  `;
+  `
 
   const params: Record<string, string> = {
     startDate: startDate.toString(),
-  };
-
-  if (studySetId) {
-    sql += ` AND custom-review_study_set_id = :studySetId`;
-    params.studySetId = studySetId;
   }
 
-  sql += ` AND custom-review_reviewed_at >= :startDate`;
+  if (studySetId) {
+    sql += ` AND custom-review_study_set_id = :studySetId`
+    params.studySetId = studySetId
+  }
+
+  sql += ` AND custom-review_reviewed_at >= :startDate`
 
   try {
-    const result = await sqlQuery(sql, params);
+    const result = await sqlQuery(sql, params)
 
     // 按日期分组统计
-    const statsMap = new Map<string, { count: number; totalQuality: number }>();
+    const statsMap = new Map<string, { count: number, totalQuality: number }>()
 
     for (const row of result) {
-      const reviewedAt = parseInt(row['custom-review_reviewed_at'] || '0');
-      const quality = parseInt(row['custom-review_quality'] || '0');
+      const reviewedAt = Number.parseInt(row['custom-review_reviewed_at'] || '0')
+      const quality = Number.parseInt(row['custom-review_quality'] || '0')
 
       // 转换为日期字符串 (YYYY-MM-DD)
-      const date = new Date(reviewedAt).toISOString().split('T')[0];
+      const date = new Date(reviewedAt).toISOString().split('T')[0]
 
-      const existing = statsMap.get(date) || { count: 0, totalQuality: 0 };
-      existing.count++;
-      existing.totalQuality += quality;
-      statsMap.set(date, existing);
+      const existing = statsMap.get(date) || {
+        count: 0,
+        totalQuality: 0,
+      }
+      existing.count++
+      existing.totalQuality += quality
+      statsMap.set(date, existing)
     }
 
     // 转换为数组并排序
@@ -258,10 +267,10 @@ export async function getReviewStats(
         count: data.count,
         avgQuality: Math.round((data.totalQuality / data.count) * 100) / 100,
       }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => a.date.localeCompare(b.date))
   } catch (error) {
-    console.error('获取复习统计失败:', error);
-    return [];
+    console.error('获取复习统计失败:', error)
+    return []
   }
 }
 
@@ -271,14 +280,26 @@ export async function getReviewStats(
  * @param session - 复习会话
  * @returns 是否成功
  */
-export async function saveReviewSession(session: ReviewSession): Promise<boolean> {
+export async function saveReviewSession(session: any): Promise<boolean> {
   try {
-    // 保存会话元数据
-    // TODO: 实现会话存储
-    return true;
+    // 保存会话元数据到 local storage 作为临时存储
+    const sessions = JSON.parse(localStorage.getItem('review_sessions') || '[]')
+    sessions.push({
+      id: session.id,
+      studySetId: session.studySetId,
+      startedAt: session.startedAt,
+      endedAt: Date.now(),
+      stats: session.stats,
+      recordCount: session.records?.length || 0,
+    })
+    localStorage.setItem('review_sessions', JSON.stringify(sessions))
+
+    // TODO: 未来可以扩展到思源数据库存储
+    console.log('[reviewApi] 保存复习会话成功:', session.id)
+    return true
   } catch (error) {
-    console.error('保存复习会话失败:', error);
-    return false;
+    console.error('保存复习会话失败:', error)
+    return false
   }
 }
 
@@ -289,15 +310,12 @@ export async function saveReviewSession(session: ReviewSession): Promise<boolean
  * @returns 今日复习概览
  */
 export async function getTodayReviewOverview(studySetId?: string): Promise<{
-  totalReviewed: number;
-  avgQuality: number;
-  streakDays: number;
-  nextReviewCount: number;
+  totalReviewed: number
+  avgQuality: number
+  streakDays: number
+  nextReviewCount: number
 } | null> {
-  const now = Date.now();
-  const today = new Date(now).setHours(0, 0, 0, 0);
-
-  const stats = await getReviewStats(studySetId, 1);
+  const stats = await getReviewStats(studySetId, 1)
 
   if (stats.length === 0) {
     return {
@@ -305,59 +323,59 @@ export async function getTodayReviewOverview(studySetId?: string): Promise<{
       avgQuality: 0,
       streakDays: 0,
       nextReviewCount: 0,
-    };
+    }
   }
 
-  const todayStats = stats[stats.length - 1];
+  const todayStats = stats[stats.length - 1]
 
   // 计算连续天数
-  const streakDays = await calculateStreakDays(studySetId);
+  const streakDays = await calculateStreakDays()
 
   // TODO: 获取下次复习数量
-  const nextReviewCount = 0;
+  const nextReviewCount = 0
 
   return {
     totalReviewed: todayStats.count,
     avgQuality: todayStats.avgQuality,
     streakDays,
     nextReviewCount,
-  };
+  }
 }
 
 /**
  * 计算连续学习天数
  */
-async function calculateStreakDays(studySetId?: string): Promise<number> {
-  const now = Date.now();
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
+async function calculateStreakDays(): Promise<number> {
+  const now = Date.now()
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
 
-  let streak = 0;
-  let currentDate = today.getTime();
+  let streak = 0
+  let currentDate = today.getTime()
 
   // 检查今天是否已经复习过
-  const todayRecords = await getReviewRecordsByDateRange(currentDate, currentDate + 86400000);
+  const todayRecords = await getReviewRecordsByDateRange(currentDate, currentDate + 86400000)
   if (todayRecords.length === 0) {
     // 如果今天还没复习，检查昨天
-    currentDate -= 86400000;
+    currentDate -= 86400000
   }
 
   // 计算连续天数
   while (true) {
-    const dayStart = currentDate;
-    const dayEnd = dayStart + 86400000;
+    const dayStart = currentDate
+    const dayEnd = dayStart + 86400000
 
-    const dayRecords = await getReviewRecordsByDateRange(dayStart, dayEnd);
+    const dayRecords = await getReviewRecordsByDateRange(dayStart, dayEnd)
 
     if (dayRecords.length > 0) {
-      streak++;
-      currentDate -= 86400000;
+      streak++
+      currentDate -= 86400000
     } else {
-      break;
+      break
     }
   }
 
-  return streak;
+  return streak
 }
 
 /**
@@ -366,10 +384,10 @@ async function calculateStreakDays(studySetId?: string): Promise<number> {
 export async function getReviewCalendarData(
   year: number,
   month: number,
-  studySetId?: string
+  studySetId?: string,
 ): Promise<Record<number, number>> {
-  const startDate = new Date(year, month, 1).getTime();
-  const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime();
+  const startDate = new Date(year, month, 1).getTime()
+  const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).getTime()
 
   let sql = `
     SELECT custom_reviewedAt as reviewedAt
@@ -378,33 +396,33 @@ export async function getReviewCalendarData(
     AND custom_type = 'review_record'
     AND custom_reviewedAt >= ${startDate}
     AND custom_reviewedAt <= ${endDate}
-  `;
+  `
 
   if (studySetId) {
-    sql += ` AND custom_studySetId = '${studySetId}'`;
+    sql += ` AND custom_studySetId = '${studySetId}'`
   }
 
-  const result = await sqlQuery(sql);
-  const records = result || [];
+  const result = await sqlQuery(sql)
+  const records = result || []
 
   // 按天分组统计
-  const calendar: Record<number, number> = {};
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const calendar: Record<number, number> = {}
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
 
   // 初始化所有天数为 0
   for (let day = 1; day <= daysInMonth; day++) {
-    calendar[day] = 0;
+    calendar[day] = 0
   }
 
   // 统计每天的复习数量
   for (const row of records) {
-    const reviewedAt = parseInt(row.reviewedAt) || 0;
-    const date = new Date(reviewedAt);
-    const day = date.getDate();
-    calendar[day] = (calendar[day] || 0) + 1;
+    const reviewedAt = Number.parseInt(row.reviewedAt) || 0
+    const date = new Date(reviewedAt)
+    const day = date.getDate()
+    calendar[day] = (calendar[day] || 0) + 1
   }
 
-  return calendar;
+  return calendar
 }
 
 /**
@@ -413,9 +431,9 @@ export async function getReviewCalendarData(
  */
 export async function getReviewRecordsByDateRange(
   startDate: number,
-  endDate?: number
+  endDate?: number,
 ): Promise<ReviewRecordLocal[]> {
-  const end = endDate || Date.now();
+  const end = endDate || Date.now()
 
   const sql = `
     SELECT * FROM blocks
@@ -423,23 +441,23 @@ export async function getReviewRecordsByDateRange(
     AND custom_type = 'review_record'
     AND custom_reviewedAt >= ${startDate}
     AND custom_reviewedAt < ${end}
-  `;
+  `
 
-  const result = await sqlQuery(sql);
+  const result = await sqlQuery(sql)
 
-  return (result || []).map(row => ({
+  return (result || []).map((row) => ({
     id: row.custom_id || `review_${row.id}`,
     cardId: row.custom_cardId,
     studySetId: row.custom_studySetId || '',
-    quality: parseInt(row.custom_quality) || 0,
-    reviewedAt: parseInt(row.custom_reviewedAt) || 0,
-    timeSpent: parseInt(row.custom_timeSpent) || 0,
+    quality: Number.parseInt(row.custom_quality) || 0,
+    reviewedAt: Number.parseInt(row.custom_reviewedAt) || 0,
+    timeSpent: Number.parseInt(row.custom_timeSpent) || 0,
     correct: row.custom_correct === 'true',
-    previousInterval: parseInt(row.custom_prev_interval) || 0,
-    newInterval: parseInt(row.custom_new_interval) || 0,
-    previousEaseFactor: parseFloat(row.custom_prev_ease) || 2.5,
-    newEaseFactor: parseFloat(row.custom_new_ease) || 2.5,
-    previousRepetitions: parseInt(row.custom_prev_reps) || 0,
-    newRepetitions: parseInt(row.custom_new_reps) || 0,
-  } as ReviewRecordLocal));
+    previousInterval: Number.parseInt(row.custom_prev_interval) || 0,
+    newInterval: Number.parseInt(row.custom_new_interval) || 0,
+    previousEaseFactor: Number.parseFloat(row.custom_prev_ease) || 2.5,
+    newEaseFactor: Number.parseFloat(row.custom_new_ease) || 2.5,
+    previousRepetitions: Number.parseInt(row.custom_prev_reps) || 0,
+    newRepetitions: Number.parseInt(row.custom_new_reps) || 0,
+  } as ReviewRecordLocal))
 }

@@ -312,7 +312,9 @@
         "hidden": "隐藏节点"
       },
       "tags": "标签云",
-      "pages": "页码分布"
+      "pages": "页码分布",
+      "searchTagPlaceholder": "搜索标签...",
+      "noTagsFound": "无匹配标签"
     },
     "node": {
       "edit": "编辑节点",

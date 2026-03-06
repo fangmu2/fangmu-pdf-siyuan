@@ -1,13 +1,194 @@
+<template>
+  <div
+    v-if="visible"
+    class="recommendation-panel-overlay"
+    @click="close"
+  >
+    <div
+      class="recommendation-panel"
+      @click.stop
+    >
+      <!-- 面板头部 -->
+      <div class="panel-header">
+        <h3 class="panel-title">
+          <span class="title-icon">💡</span>
+          布局建议
+        </h3>
+        <div class="header-actions">
+          <button
+            v-if="hasAnalyzed"
+            class="header-btn"
+            title="重新分析"
+            @click="reanalyze"
+          >
+            🔄 重新分析
+          </button>
+          <button
+            class="header-btn close-btn"
+            @click="close"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- 分析结果摘要 -->
+      <div
+        v-if="analysis && hasAnalyzed"
+        class="analysis-result"
+      >
+        <div class="analysis-summary">
+          <div class="summary-item">
+            <span class="summary-icon">📊</span>
+            <span class="summary-value">{{ analysis.nodeCount }}</span>
+            <span class="summary-label">个节点</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-icon">🌲</span>
+            <span class="summary-value">{{ analysis.maxDepth }}</span>
+            <span class="summary-label">层深度</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-icon">🔗</span>
+            <span class="summary-value">{{ analysis.avgConnections.toFixed(2) }}</span>
+            <span class="summary-label">平均连接</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-icon">🎯</span>
+            <span class="summary-value">{{ analysis.clusterCount }}</span>
+            <span class="summary-label">个聚类</span>
+          </div>
+        </div>
+        <div
+          v-if="analysis.hasTimestamps"
+          class="timestamp-badge"
+        >
+          📅 包含时间信息
+        </div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div
+        v-if="isAnalyzing"
+        class="loading-state"
+      >
+        <div class="loading-spinner"></div>
+        <p class="loading-text">
+          正在分析图结构...
+        </p>
+      </div>
+
+      <!-- 推荐列表 -->
+      <div
+        v-if="hasAnalyzed && !isAnalyzing"
+        class="recommendations"
+      >
+        <div
+          v-for="(rec, index) in recommendations"
+          :key="rec.layoutType"
+          class="recommendation-card"
+          :class="{ 'top-recommendation': index === 0 }"
+          @click="applyLayout(rec.layoutType)"
+        >
+          <!-- 推荐头部 -->
+          <div class="rec-header">
+            <div class="rec-icon">
+              {{ getLayoutIcon(rec.layoutType) }}
+            </div>
+            <div class="rec-info">
+              <div class="rec-name">
+                {{ getLayoutName(rec.layoutType) }}
+              </div>
+              <div class="rec-reason">
+                {{ rec.reason }}
+              </div>
+            </div>
+            <div
+              v-if="index === 0"
+              class="badge"
+            >
+              推荐
+            </div>
+          </div>
+
+          <!-- 置信度条 -->
+          <div class="rec-confidence-bar">
+            <div
+              class="confidence-fill"
+              :style="{ width: `${rec.confidence * 100}%` }"
+              :class="{
+                high: rec.confidence >= 0.8,
+                medium: rec.confidence >= 0.5 && rec.confidence < 0.8,
+                low: rec.confidence < 0.5,
+              }"
+            ></div>
+            <span class="confidence-text">{{ (rec.confidence * 100).toFixed(0) }}%</span>
+          </div>
+
+          <!-- 推荐得分 -->
+          <div class="rec-score">
+            推荐指数：<span class="score-value">{{ rec.score }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 应用推荐按钮 -->
+      <div
+        v-if="topRecommendation && hasAnalyzed"
+        class="panel-footer"
+      >
+        <button
+          class="apply-btn"
+          @click="applyLayout(topRecommendation.layoutType)"
+        >
+          应用推荐布局（{{ getLayoutName(topRecommendation.layoutType) }}）
+        </button>
+      </div>
+
+      <!-- 无数据提示 -->
+      <div
+        v-if="hasAnalyzed && recommendations.length === 0"
+        class="empty-state"
+      >
+        <div class="empty-icon">
+          📊
+        </div>
+        <p class="empty-text">
+          暂无推荐布局
+        </p>
+        <p class="empty-hint">
+          节点数量较少，建议使用自由布局
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * 布局推荐面板组件
  * 提供智能布局推荐功能，根据图结构分析推荐最佳布局
  */
 
-import { ref, computed, watch } from 'vue'
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
-import type { LayoutAnalysis, LayoutRecommendation } from '@/utils/layoutAnalyzer'
-import { analyzeGraph, recommendLayout, getLayoutName, getLayoutIcon } from '@/utils/layoutAnalyzer'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+} from '@/types/mindmapFree'
+import type {
+  LayoutAnalysis,
+  LayoutRecommendation,
+} from '@/utils/layoutAnalyzer'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
+import {
+  analyzeGraph,
+  getLayoutIcon,
+  getLayoutName,
+  recommendLayout,
+} from '@/utils/layoutAnalyzer'
 
 interface Props {
   /** 是否可见 */
@@ -24,7 +205,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  visible: false
+  visible: false,
 })
 
 const emit = defineEmits<Emits>()
@@ -48,7 +229,7 @@ watch(
     if (newVisible && !hasAnalyzed.value) {
       analyze()
     }
-  }
+  },
 )
 
 // 监听节点和连线变化，重置分析状态
@@ -58,7 +239,7 @@ watch(
     hasAnalyzed.value = false
     analysis.value = null
     recommendations.value = []
-  }
+  },
 )
 
 /** 获取顶级推荐 */
@@ -69,7 +250,7 @@ const topRecommendation = computed(() => recommendations.value[0])
  */
 function analyze() {
   isAnalyzing.value = true
-  
+
   // 模拟异步分析（实际计算很快）
   setTimeout(() => {
     analysis.value = analyzeGraph(props.nodes, props.edges)
@@ -102,127 +283,6 @@ function close() {
   emit('update:visible', false)
 }
 </script>
-
-<template>
-  <div v-if="visible" class="recommendation-panel-overlay" @click="close">
-    <div class="recommendation-panel" @click.stop>
-      <!-- 面板头部 -->
-      <div class="panel-header">
-        <h3 class="panel-title">
-          <span class="title-icon">💡</span>
-          布局建议
-        </h3>
-        <div class="header-actions">
-          <button
-            v-if="hasAnalyzed"
-            class="header-btn"
-            @click="reanalyze"
-            title="重新分析"
-          >
-            🔄 重新分析
-          </button>
-          <button class="header-btn close-btn" @click="close">
-            ✕
-          </button>
-        </div>
-      </div>
-
-      <!-- 分析结果摘要 -->
-      <div v-if="analysis && hasAnalyzed" class="analysis-result">
-        <div class="analysis-summary">
-          <div class="summary-item">
-            <span class="summary-icon">📊</span>
-            <span class="summary-value">{{ analysis.nodeCount }}</span>
-            <span class="summary-label">个节点</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-icon">🌲</span>
-            <span class="summary-value">{{ analysis.maxDepth }}</span>
-            <span class="summary-label">层深度</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-icon">🔗</span>
-            <span class="summary-value">{{ analysis.avgConnections.toFixed(2) }}</span>
-            <span class="summary-label">平均连接</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-icon">🎯</span>
-            <span class="summary-value">{{ analysis.clusterCount }}</span>
-            <span class="summary-label">个聚类</span>
-          </div>
-        </div>
-        <div v-if="analysis.hasTimestamps" class="timestamp-badge">
-          📅 包含时间信息
-        </div>
-      </div>
-
-      <!-- 加载状态 -->
-      <div v-if="isAnalyzing" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p class="loading-text">正在分析图结构...</p>
-      </div>
-
-      <!-- 推荐列表 -->
-      <div v-if="hasAnalyzed && !isAnalyzing" class="recommendations">
-        <div
-          v-for="(rec, index) in recommendations"
-          :key="rec.layoutType"
-          class="recommendation-card"
-          :class="{ 'top-recommendation': index === 0 }"
-          @click="applyLayout(rec.layoutType)"
-        >
-          <!-- 推荐头部 -->
-          <div class="rec-header">
-            <div class="rec-icon">
-              {{ getLayoutIcon(rec.layoutType) }}
-            </div>
-            <div class="rec-info">
-              <div class="rec-name">{{ getLayoutName(rec.layoutType) }}</div>
-              <div class="rec-reason">{{ rec.reason }}</div>
-            </div>
-            <div v-if="index === 0" class="badge">推荐</div>
-          </div>
-
-          <!-- 置信度条 -->
-          <div class="rec-confidence-bar">
-            <div
-              class="confidence-fill"
-              :style="{ width: rec.confidence * 100 + '%' }"
-              :class="{
-                'high': rec.confidence >= 0.8,
-                'medium': rec.confidence >= 0.5 && rec.confidence < 0.8,
-                'low': rec.confidence < 0.5
-              }"
-            ></div>
-            <span class="confidence-text">{{ (rec.confidence * 100).toFixed(0) }}%</span>
-          </div>
-
-          <!-- 推荐得分 -->
-          <div class="rec-score">
-            推荐指数：<span class="score-value">{{ rec.score }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 应用推荐按钮 -->
-      <div v-if="topRecommendation && hasAnalyzed" class="panel-footer">
-        <button
-          class="apply-btn"
-          @click="applyLayout(topRecommendation.layoutType)"
-        >
-          应用推荐布局（{{ getLayoutName(topRecommendation.layoutType) }}）
-        </button>
-      </div>
-
-      <!-- 无数据提示 -->
-      <div v-if="hasAnalyzed && recommendations.length === 0" class="empty-state">
-        <div class="empty-icon">📊</div>
-        <p class="empty-text">暂无推荐布局</p>
-        <p class="empty-hint">节点数量较少，建议使用自由布局</p>
-      </div>
-    </div>
-  </div>
-</template>
 
 <style scoped>
 .recommendation-panel-overlay {

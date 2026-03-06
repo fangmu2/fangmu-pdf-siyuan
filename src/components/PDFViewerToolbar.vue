@@ -5,17 +5,17 @@
       <!-- 导航按钮 -->
       <button
         class="tool-btn"
-        @click="$emit('prev-page')"
         :disabled="currentPage <= 1"
         title="上一页 (PageUp)"
+        @click="$emit('prev-page')"
       >
         <span>◀</span>
       </button>
       <button
         class="tool-btn"
-        @click="$emit('next-page')"
         :disabled="currentPage >= totalPages"
         title="下一页 (PageDown)"
+        @click="$emit('next-page')"
       >
         <span>▶</span>
       </button>
@@ -25,10 +25,10 @@
         <input
           type="number"
           :value="currentPage"
-          @change="$emit('go-to-page', $event.target.value)"
           min="1"
           :max="totalPages"
           class="page-input"
+          @change="$emit('go-to-page', $event.target.value)"
         />
         <span class="page-total">/ {{ totalPages }}</span>
       </div>
@@ -40,24 +40,24 @@
         <button
           class="tool-btn"
           :class="{ active: viewMode === 'single' }"
-          @click="$emit('set-view-mode', 'single')"
           title="单页模式"
+          @click="$emit('set-view-mode', 'single')"
         >
           <span>📄</span>
         </button>
         <button
           class="tool-btn"
           :class="{ active: viewMode === 'double' }"
-          @click="$emit('set-view-mode', 'double')"
           title="双页模式"
+          @click="$emit('set-view-mode', 'double')"
         >
           <span>📖</span>
         </button>
         <button
           class="tool-btn"
           :class="{ active: viewMode === 'continuous' }"
-          @click="$emit('set-view-mode', 'continuous')"
           title="连续滚动"
+          @click="$emit('set-view-mode', 'continuous')"
         >
           <span>📜</span>
         </button>
@@ -69,27 +69,37 @@
       <div class="zoom-group">
         <button
           class="tool-btn"
-          @click="$emit('zoom-out')"
           title="缩小"
+          @click="$emit('zoom-out')"
         >
           <span>🔍-</span>
         </button>
         <select
           :value="zoomLevel"
-          @change="$emit('set-zoom', parseFloat($event.target.value))"
           class="zoom-select"
+          @change="$emit('set-zoom', parseFloat($event.target.value))"
         >
-          <option v-for="level in zoomLevels" :key="level" :value="level">
+          <option
+            v-for="level in zoomLevels"
+            :key="level"
+            :value="level"
+          >
             {{ Math.round(level * 100) }}%
           </option>
-          <option value="fit-width">适应宽度</option>
-          <option value="fit-page">适应页面</option>
-          <option value="actual">实际大小</option>
+          <option value="fit-width">
+            适应宽度
+          </option>
+          <option value="fit-page">
+            适应页面
+          </option>
+          <option value="actual">
+            实际大小
+          </option>
         </select>
         <button
           class="tool-btn"
-          @click="$emit('zoom-in')"
           title="放大"
+          @click="$emit('zoom-in')"
         >
           <span>🔍+</span>
         </button>
@@ -100,8 +110,8 @@
       <!-- 旋转 -->
       <button
         class="tool-btn"
-        @click="$emit('rotate')"
         title="顺时针旋转"
+        @click="$emit('rotate')"
       >
         <span>🔄</span>
       </button>
@@ -127,24 +137,24 @@
       <button
         class="tool-btn"
         :class="{ active: showOutline }"
-        @click="$emit('toggle-outline')"
         title="目录"
+        @click="$emit('toggle-outline')"
       >
         <span>📑</span>
       </button>
       <button
         class="tool-btn"
         :class="{ active: showThumbnails }"
-        @click="$emit('toggle-thumbnails')"
         title="缩略图"
+        @click="$emit('toggle-thumbnails')"
       >
         <span>🖼️</span>
       </button>
       <button
         class="tool-btn"
         :class="{ active: showBookmarks }"
-        @click="$emit('toggle-bookmarks')"
         title="书签"
+        @click="$emit('toggle-bookmarks')"
       >
         <span>🔖</span>
       </button>
@@ -155,29 +165,44 @@
       <button
         class="tool-btn"
         :class="{ active: darkMode }"
-        @click="$emit('toggle-dark-mode')"
         title="深色模式"
+        @click="$emit('toggle-dark-mode')"
       >
         <span>🌙</span>
       </button>
 
       <!-- 更多选项 -->
       <div class="dropdown">
-        <button class="tool-btn dropdown-toggle" title="更多选项">
+        <button
+          class="tool-btn dropdown-toggle"
+          title="更多选项"
+        >
           <span>⋮</span>
         </button>
         <div class="dropdown-menu">
-          <button @click="$emit('add-bookmark')" class="dropdown-item">
+          <button
+            class="dropdown-item"
+            @click="$emit('add-bookmark')"
+          >
             <span>🔖</span> 添加书签
           </button>
-          <button @click="$emit('search')" class="dropdown-item">
+          <button
+            class="dropdown-item"
+            @click="$emit('search')"
+          >
             <span>🔍</span> 搜索
           </button>
           <hr class="dropdown-divider" />
-          <button @click="$emit('export')" class="dropdown-item">
+          <button
+            class="dropdown-item"
+            @click="$emit('export')"
+          >
             <span>📤</span> 导出
           </button>
-          <button @click="$emit('settings')" class="dropdown-item">
+          <button
+            class="dropdown-item"
+            @click="$emit('settings')"
+          >
             <span>⚙️</span> 设置
           </button>
         </div>
@@ -187,45 +212,55 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { PDFViewMode } from '@/types/pdfViewer';
+import { PDFViewMode } from '@/types/pdfViewer'
 
 interface Props {
-  currentPage: number;
-  totalPages: number;
-  viewMode: PDFViewMode;
-  zoomLevel: number;
-  progress: number;
-  showOutline: boolean;
-  showThumbnails: boolean;
-  showBookmarks: boolean;
-  darkMode: boolean;
+  currentPage: number
+  totalPages: number
+  viewMode: PDFViewMode
+  zoomLevel: number
+  progress: number
+  showOutline: boolean
+  showThumbnails: boolean
+  showBookmarks: boolean
+  darkMode: boolean
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'prev-page'): void;
-  (e: 'next-page'): void;
-  (e: 'go-to-page', page: number): void;
-  (e: 'set-view-mode', mode: PDFViewMode): void;
-  (e: 'zoom-in'): void;
-  (e: 'zoom-out'): void;
-  (e: 'set-zoom', level: number): void;
-  (e: 'rotate'): void;
-  (e: 'toggle-outline'): void;
-  (e: 'toggle-thumbnails'): void;
-  (e: 'toggle-bookmarks'): void;
-  (e: 'toggle-dark-mode'): void;
-  (e: 'add-bookmark'): void;
-  (e: 'search'): void;
-  (e: 'export'): void;
-  (e: 'settings'): void;
-}>();
+  (e: 'prev-page'): void
+  (e: 'next-page'): void
+  (e: 'go-to-page', page: number): void
+  (e: 'set-view-mode', mode: PDFViewMode): void
+  (e: 'zoom-in'): void
+  (e: 'zoom-out'): void
+  (e: 'set-zoom', level: number): void
+  (e: 'rotate'): void
+  (e: 'toggle-outline'): void
+  (e: 'toggle-thumbnails'): void
+  (e: 'toggle-bookmarks'): void
+  (e: 'toggle-dark-mode'): void
+  (e: 'add-bookmark'): void
+  (e: 'search'): void
+  (e: 'export'): void
+  (e: 'settings'): void
+}>()
 
 const zoomLevels = [
-  0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0
-];
+  0.25,
+  0.5,
+  0.75,
+  1.0,
+  1.25,
+  1.5,
+  1.75,
+  2.0,
+  2.5,
+  3.0,
+  4.0,
+  5.0,
+]
 </script>
 
 <style scoped lang="scss">

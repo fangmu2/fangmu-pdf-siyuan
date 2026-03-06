@@ -3,28 +3,41 @@
     <!-- 插图画区域 -->
     <div class="empty-illustration">
       <div class="demo-card card-1">
-        <div class="card-header" :style="{ background: 'var(--b3-theme-primary)' }"></div>
+        <div
+          class="card-header"
+          :style="{ background: 'var(--b3-theme-primary)' }"
+        ></div>
         <div class="card-body">
           <div class="card-line line-1"></div>
           <div class="card-line line-2"></div>
         </div>
       </div>
       <div class="demo-card card-2">
-        <div class="card-header" :style="{ background: 'var(--b3-theme-secondary)' }"></div>
+        <div
+          class="card-header"
+          :style="{ background: 'var(--b3-theme-secondary)' }"
+        ></div>
         <div class="card-body">
           <div class="card-line line-1"></div>
           <div class="card-line line-2"></div>
         </div>
       </div>
       <div class="demo-arrow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>
       </div>
     </div>
 
     <!-- 标题 -->
-    <h3 class="empty-title">从 PDF 创建思维导图</h3>
+    <h3 class="empty-title">
+      从 PDF 创建思维导图
+    </h3>
 
     <!-- 步骤说明 -->
     <div class="empty-steps">
@@ -44,15 +57,31 @@
 
     <!-- 操作按钮 -->
     <div class="empty-actions">
-      <button class="action-btn primary" @click="handleAddDemoNode">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 5v14M5 12h14"/>
+      <button
+        class="action-btn primary"
+        @click="handleAddDemoNode"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M12 5v14M5 12h14" />
         </svg>
         添加示例卡片
       </button>
-      <button class="action-btn secondary" @click="handleImportExisting">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+      <button
+        class="action-btn secondary"
+        @click="handleImportExisting"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
         </svg>
         导入已有摘录
       </button>
@@ -60,9 +89,18 @@
 
     <!-- 提示信息 -->
     <div class="empty-tips">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 16v-4M12 8h.01"/>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+        />
+        <path d="M12 16v-4M12 8h.01" />
       </svg>
       <span>自动同步已开启，新创建的摘录将实时显示在思维导图中</span>
     </div>
@@ -71,19 +109,19 @@
 
 <script setup lang="ts">
 interface Emits {
-  (e: 'add-demo-node'): void;
-  (e: 'import-existing'): void;
+  (e: 'add-demo-node'): void
+  (e: 'import-existing'): void
 }
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
 const handleAddDemoNode = () => {
-  emit('add-demo-node');
-};
+  emit('add-demo-node')
+}
 
 const handleImportExisting = () => {
-  emit('import-existing');
-};
+  emit('import-existing')
+}
 </script>
 
 <style scoped lang="scss">

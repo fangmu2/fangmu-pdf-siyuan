@@ -1,11 +1,206 @@
+<template>
+  <Teleport to="body">
+    <Transition name="border-editor-fade">
+      <div
+        v-if="isVisible"
+        class="border-editor-panel"
+        :style="{
+          left: `${menuPosition.x}px`,
+          top: `${menuPosition.y}px`,
+        }"
+      >
+        <!-- 标题栏 -->
+        <div class="border-editor-header">
+          <span class="border-editor-title">
+            <svg
+              class="border-editor-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="2"
+              />
+            </svg>
+            {{ isMultiSelection ? `批量设置边框 (${selectedCount}个节点)` : '边框样式' }}
+          </span>
+          <button
+            class="border-editor-close"
+            title="关闭"
+            @click="close"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- 边框样式选择 -->
+        <div class="border-editor-section">
+          <div class="border-editor-label">
+            边框样式
+          </div>
+          <div class="border-style-options">
+            <button
+              v-for="option in borderStyleOptions"
+              :key="option.value"
+              class="border-style-btn"
+              :class="{ active: borderStyle === option.value }"
+              :title="option.label"
+              @click="borderStyle = option.value"
+            >
+              <div
+                class="style-preview"
+                :style="{
+                  borderTop: option.value === 'none'
+                    ? 'none'
+                    : `${option.value === 'double' ? '3px double' : `2px ${option.preview}`}`,
+                  borderColor: '#666',
+                }"
+              ></div>
+              <span class="style-label">{{ option.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 边框粗细 -->
+        <div class="border-editor-section">
+          <div class="border-editor-label">
+            <span>边框粗细</span>
+            <span class="border-width-value">{{ borderWidth }}px</span>
+          </div>
+          <input
+            v-model="borderWidth"
+            type="range"
+            class="border-width-slider"
+            min="1"
+            max="5"
+            step="1"
+          />
+          <div class="border-width-preview">
+            <div
+              v-for="w in 5"
+              :key="w"
+              class="width-marker"
+              :style="{
+                height: `${w}px`,
+                background: w === borderWidth ? 'var(--siyuan-primary, #409eff)' : '#ccc',
+              }"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 边框颜色 -->
+        <div class="border-editor-section">
+          <div class="border-editor-label">
+            边框颜色
+          </div>
+          <div class="color-presets">
+            <button
+              v-for="color in borderColorPresets"
+              :key="color"
+              class="color-preset-btn"
+              :style="{
+                backgroundColor: color,
+                border: borderColor === color ? '2px solid var(--siyuan-primary)' : '1px solid #ddd',
+              }"
+              :title="color"
+              @click="selectPresetColor(color)"
+            >
+              <span v-if="borderColor === color">✓</span>
+            </button>
+          </div>
+          <div class="custom-color-picker">
+            <label>自定义颜色：</label>
+            <input
+              v-model="customBorderColor"
+              type="color"
+              class="color-input"
+              @input="handleCustomColorChange"
+            />
+            <span class="color-hex">{{ customBorderColor }}</span>
+          </div>
+        </div>
+
+        <!-- 预览区域 -->
+        <div class="border-editor-section">
+          <div class="border-editor-label">
+            预览
+          </div>
+          <div class="preview-box">
+            <div
+              class="preview-node"
+              :style="{
+                borderStyle: borderStyle === 'none' ? 'none' : borderStyle,
+                borderWidth: borderStyle === 'none' ? '0' : `${borderWidth}px`,
+                borderColor: borderStyle === 'none' ? 'transparent' : borderColor,
+                backgroundColor: '#fff',
+              }"
+            >
+              <span>节点预览</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="border-editor-actions">
+          <button
+            class="btn-reset"
+            @click="resetToDefault"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            重置
+          </button>
+          <button
+            class="btn-apply"
+            @click="applyBorder"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {{ isMultiSelection ? '应用到选中节点' : '应用' }}
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
+
 <script setup lang="ts">
 /**
  * 节点边框样式编辑器
  * 支持边框样式/颜色/粗细配置
  */
 
-import { ref, computed, watch } from 'vue'
 import type { FreeMindMapNode } from '@/types/mindmapFree'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 
 interface Props {
   /** 是否显示编辑器 */
@@ -28,26 +223,58 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  selectedNodes: () => []
+  selectedNodes: () => [],
 })
 
 const emit = defineEmits<Emits>()
 
 // 边框样式选项
 const borderStyleOptions = [
-  { value: 'none', label: '无', preview: 'transparent' },
-  { value: 'solid', label: '实线', preview: 'solid' },
-  { value: 'dashed', label: '虚线', preview: 'dashed' },
-  { value: 'dotted', label: '点线', preview: 'dotted' },
-  { value: 'double', label: '双线', preview: 'double' }
+  {
+    value: 'none',
+    label: '无',
+    preview: 'transparent',
+  },
+  {
+    value: 'solid',
+    label: '实线',
+    preview: 'solid',
+  },
+  {
+    value: 'dashed',
+    label: '虚线',
+    preview: 'dashed',
+  },
+  {
+    value: 'dotted',
+    label: '点线',
+    preview: 'dotted',
+  },
+  {
+    value: 'double',
+    label: '双线',
+    preview: 'double',
+  },
 ]
 
 // 边框颜色预设
 const borderColorPresets = [
-  '#333333', '#666666', '#999999', '#cccccc',
-  '#f44336', '#ff9800', '#ffc107', '#ffeb3b',
-  '#4caf50', '#8bc34a', '#00bcd4', '#2196f3',
-  '#3f51b5', '#673ab7', '#9c27b0', '#e91e63'
+  '#333333',
+  '#666666',
+  '#999999',
+  '#cccccc',
+  '#f44336',
+  '#ff9800',
+  '#ffc107',
+  '#ffeb3b',
+  '#4caf50',
+  '#8bc34a',
+  '#00bcd4',
+  '#2196f3',
+  '#3f51b5',
+  '#673ab7',
+  '#9c27b0',
+  '#e91e63',
 ]
 
 // 内部状态
@@ -94,7 +321,7 @@ watch(
       customBorderColor.value = getCurrentBorderColor()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 应用边框样式
@@ -102,9 +329,9 @@ function applyBorder(): void {
   const border = {
     style: borderStyle.value === 'none' ? undefined : borderStyle.value,
     width: borderStyle.value === 'none' ? undefined : borderWidth.value,
-    color: borderStyle.value === 'none' ? undefined : borderColor.value
+    color: borderStyle.value === 'none' ? undefined : borderColor.value,
   }
-  
+
   emit('apply-border', border)
   emit('update:modelValue', false)
 }
@@ -144,158 +371,10 @@ const menuPosition = computed(() => {
 
   return {
     x: Math.min(props.x, screenWidth - menuWidth - 10),
-    y: Math.min(props.y, screenHeight - menuHeight - 10)
+    y: Math.min(props.y, screenHeight - menuHeight - 10),
   }
 })
 </script>
-
-<template>
-  <Teleport to="body">
-    <Transition name="border-editor-fade">
-      <div
-        v-if="isVisible"
-        class="border-editor-panel"
-        :style="{
-          left: menuPosition.x + 'px',
-          top: menuPosition.y + 'px'
-        }"
-      >
-        <!-- 标题栏 -->
-        <div class="border-editor-header">
-          <span class="border-editor-title">
-            <svg class="border-editor-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-            </svg>
-            {{ isMultiSelection ? `批量设置边框 (${selectedCount}个节点)` : '边框样式' }}
-          </span>
-          <button class="border-editor-close" @click="close" title="关闭">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- 边框样式选择 -->
-        <div class="border-editor-section">
-          <div class="border-editor-label">边框样式</div>
-          <div class="border-style-options">
-            <button
-              v-for="option in borderStyleOptions"
-              :key="option.value"
-              class="border-style-btn"
-              :class="{ active: borderStyle === option.value }"
-              @click="borderStyle = option.value"
-              :title="option.label"
-            >
-              <div
-                class="style-preview"
-                :style="{
-                  borderTop: option.value === 'none' 
-                    ? 'none' 
-                    : `${option.value === 'double' ? '3px double' : '2px ' + option.preview}` ,
-                  borderColor: '#666'
-                }"
-              ></div>
-              <span class="style-label">{{ option.label }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 边框粗细 -->
-        <div class="border-editor-section">
-          <div class="border-editor-label">
-            <span>边框粗细</span>
-            <span class="border-width-value">{{ borderWidth }}px</span>
-          </div>
-          <input
-            v-model="borderWidth"
-            type="range"
-            class="border-width-slider"
-            min="1"
-            max="5"
-            step="1"
-          />
-          <div class="border-width-preview">
-            <div
-              v-for="w in 5"
-              :key="w"
-              class="width-marker"
-              :style="{
-                height: w + 'px',
-                background: w === borderWidth ? 'var(--siyuan-primary, #409eff)' : '#ccc'
-              }"
-            ></div>
-          </div>
-        </div>
-
-        <!-- 边框颜色 -->
-        <div class="border-editor-section">
-          <div class="border-editor-label">边框颜色</div>
-          <div class="color-presets">
-            <button
-              v-for="color in borderColorPresets"
-              :key="color"
-              class="color-preset-btn"
-              :style="{
-                backgroundColor: color,
-                border: borderColor === color ? '2px solid var(--siyuan-primary)' : '1px solid #ddd'
-              }"
-              @click="selectPresetColor(color)"
-              :title="color"
-            >
-              <span v-if="borderColor === color">✓</span>
-            </button>
-          </div>
-          <div class="custom-color-picker">
-            <label>自定义颜色：</label>
-            <input
-              v-model="customBorderColor"
-              type="color"
-              class="color-input"
-              @input="handleCustomColorChange"
-            />
-            <span class="color-hex">{{ customBorderColor }}</span>
-          </div>
-        </div>
-
-        <!-- 预览区域 -->
-        <div class="border-editor-section">
-          <div class="border-editor-label">预览</div>
-          <div class="preview-box">
-            <div
-              class="preview-node"
-              :style="{
-                borderStyle: borderStyle === 'none' ? 'none' : borderStyle,
-                borderWidth: borderStyle === 'none' ? '0' : borderWidth + 'px',
-                borderColor: borderStyle === 'none' ? 'transparent' : borderColor,
-                backgroundColor: '#fff'
-              }"
-            >
-              <span>节点预览</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="border-editor-actions">
-          <button class="btn-reset" @click="resetToDefault">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-            </svg>
-            重置
-          </button>
-          <button class="btn-apply" @click="applyBorder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            {{ isMultiSelection ? '应用到选中节点' : '应用' }}
-          </button>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
-</template>
 
 <style scoped>
 /* 动画 */

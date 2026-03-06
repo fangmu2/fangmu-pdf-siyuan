@@ -3,11 +3,17 @@
  * @fileoverview 处理自由画布思维导图与现有标注数据的集成
  */
 
-import { postApi } from '@/api/siyuanApi'
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
 import type { PDFAnnotation } from '@/types/annotation'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+} from '@/types/mindmapFree'
 import { getAnnotationsForPdf } from '@/api/annotationApi'
-import { getBlock } from '@/api/siyuanApi'
+import {
+  getBlock,
+  postApi,
+} from '@/api/siyuanApi'
+
 
 /**
  * 思维导图块属性名
@@ -22,7 +28,16 @@ const MINDMAP_ATTRS = {
   /** 最后同步时间 */
   LAST_SYNC: 'custom-freemind-last-sync',
   /** 思维导图版本 */
-  VERSION: 'custom-freemind-version'
+  VERSION: 'custom-freemind-version',
+  /** === MarginNote 4 兼容性字段 === */
+  /** 节点类型（用于单个节点的块属性） */
+  NODE_TYPE: 'custom-node-type',
+  /** 原始节点 ID（克隆/引用） */
+  SOURCE_NODE_ID: 'custom-source-node-id',
+  /** 子脑图 ID */
+  SUBMAP_ID: 'custom-submap-id',
+  /** 是否同步修改 */
+  SYNC_CHANGES: 'custom-sync-changes',
 }
 
 /**
@@ -39,11 +54,11 @@ const MINDMAP_DATA_VERSION = '1.0.0'
 export async function loadMindMapFromBlock(blockId: string): Promise<{
   nodes: FreeMindMapNode[]
   edges: FreeMindMapEdge[]
-  viewport: { zoom: number; x: number; y: number }
+  viewport: { zoom: number, x: number, y: number }
   layout: 'free' | 'tree' | 'vertical' | 'horizontal'
 } | null> {
   console.log('[FreeMindMapDataIntegration] loadMindMapFromBlock 开始, blockId:', blockId)
-  
+
   // 检查是否是临时 ID（temp- 开头），临时 ID 不对应真实的思源块
   if (blockId.startsWith('temp-')) {
     console.log('[FreeMindMapDataIntegration] 临时 ID，从 localStorage 加载数据')
@@ -58,8 +73,12 @@ export async function loadMindMapFromBlock(blockId: string): Promise<{
         return {
           nodes: data.nodes || [],
           edges: data.edges || [],
-          viewport: data.viewport || { zoom: 1, x: 0, y: 0 },
-          layout: data.layout || 'free'
+          viewport: data.viewport || {
+            zoom: 1,
+            x: 0,
+            y: 0,
+          },
+          layout: data.layout || 'free',
         }
       } catch (e) {
         console.error('[FreeMindMapDataIntegration] 解析 localStorage 数据失败:', e)
@@ -77,7 +96,7 @@ export async function loadMindMapFromBlock(blockId: string): Promise<{
 
   try {
     const attrs = await postApi<{ [key: string]: string }>('/api/attr/getBlockAttrs', {
-      id: blockId
+      id: blockId,
     })
 
     const dataJson = attrs?.[MINDMAP_ATTRS.DATA]
@@ -89,8 +108,12 @@ export async function loadMindMapFromBlock(blockId: string): Promise<{
     return {
       nodes: data.nodes || [],
       edges: data.edges || [],
-      viewport: data.viewport || { zoom: 1, x: 0, y: 0 },
-      layout: data.layout || 'free'
+      viewport: data.viewport || {
+        zoom: 1,
+        x: 0,
+        y: 0,
+      },
+      layout: data.layout || 'free',
     }
   } catch (error) {
     console.error('[FreeMindMapDataIntegration] 加载思维导图数据失败:', error)
@@ -110,9 +133,9 @@ export async function saveMindMapToBlock(
   data: {
     nodes: FreeMindMapNode[]
     edges: FreeMindMapEdge[]
-    viewport: { zoom: number; x: number; y: number }
+    viewport: { zoom: number, x: number, y: number }
     layout: 'free' | 'tree' | 'vertical' | 'horizontal'
-  }
+  },
 ): Promise<void> {
   try {
     // 检查是否是临时 ID（temp- 开头）
@@ -136,12 +159,12 @@ export async function saveMindMapToBlock(
     const attrs: { [key: string]: string } = {
       [MINDMAP_ATTRS.DATA]: JSON.stringify(data),
       [MINDMAP_ATTRS.VERSION]: MINDMAP_DATA_VERSION,
-      [MINDMAP_ATTRS.LAST_SYNC]: Date.now().toString()
+      [MINDMAP_ATTRS.LAST_SYNC]: Date.now().toString(),
     }
 
     await postApi('/api/attr/setBlockAttrs', {
       id: blockId,
-      attrs
+      attrs,
     })
   } catch (error) {
     console.error('[FreeMindMapDataIntegration] 保存思维导图数据失败:', error)
@@ -170,7 +193,7 @@ export async function getMindMapPdfPath(blockId: string): Promise<string | null>
 
   try {
     const attrs = await postApi<{ [key: string]: string }>('/api/attr/getBlockAttrs', {
-      id: blockId
+      id: blockId,
     })
     return attrs?.[MINDMAP_ATTRS.PDF_PATH] || null
   } catch (error) {
@@ -206,8 +229,8 @@ export async function setMindMapPdfPath(blockId: string, pdfPath: string): Promi
     await postApi('/api/attr/setBlockAttrs', {
       id: blockId,
       attrs: {
-        [MINDMAP_ATTRS.PDF_PATH]: pdfPath
-      }
+        [MINDMAP_ATTRS.PDF_PATH]: pdfPath,
+      },
     })
   } catch (error) {
     console.error('[FreeMindMapDataIntegration] 设置 PDF 路径失败:', error)
@@ -222,7 +245,7 @@ export async function setMindMapPdfPath(blockId: string, pdfPath: string): Promi
  */
 export async function generateMindMapFromPdfAnnotations(
   pdfPath: string,
-  blockId: string
+  blockId: string,
 ): Promise<FreeMindMapNode[]> {
   // 获取 PDF 的所有标注
   const annotations = await getAnnotationsForPdf(pdfPath)
@@ -243,9 +266,12 @@ export async function generateMindMapFromPdfAnnotations(
       title: 'PDF 标注思维导图',
       content: `共 ${annotations.length} 个标注`,
       level: 'title',
-      color: '#409eff'
+      color: '#409eff',
     },
-    position: { x: 0, y: 0 }
+    position: {
+      x: 0,
+      y: 0,
+    },
   }
   nodes.push(rootNode)
 
@@ -269,9 +295,12 @@ export async function generateMindMapFromPdfAnnotations(
         title: `第 ${page} 页`,
         content: `${pageAnns.length} 个标注`,
         level: 'h1',
-        color: '#67c23a'
+        color: '#67c23a',
       },
-      position: { x: 300, y: yOffset }
+      position: {
+        x: 300,
+        y: yOffset,
+      },
     }
     pageNodes.push(pageNode)
     yOffset += 200
@@ -283,14 +312,19 @@ export async function generateMindMapFromPdfAnnotations(
         id: `card-${ann.id}`,
         type: 'textCard',
         data: {
-          title: ann.text.slice(0, 50) + (ann.text.length > 50 ? '...' : ''),
-          content: ann.text,
+          title: (ann.text || '[图片]').slice(0, 50) + ((ann.text?.length || 0) > 50 ? '...' : ''),
+          content: ann.text || '',
           level: ann.level || 'text',
           color: ann.color || 'yellow',
           annotationId: ann.id,
-          page: ann.page
+          page: ann.page,
+          pdfPath: ann.pdfPath,
+          rect: ann.rect,
         },
-        position: { x: 500, y: yOffset + cardOffset * 80 }
+        position: {
+          x: 500,
+          y: yOffset + cardOffset * 80,
+        },
       }
       nodes.push(cardNode)
 
@@ -299,7 +333,7 @@ export async function generateMindMapFromPdfAnnotations(
         id: `edge-page-${page}-card-${ann.id}`,
         source: pageNode.id,
         target: cardNode.id,
-        type: 'default'
+        type: 'default',
       })
 
       cardOffset++
@@ -310,7 +344,7 @@ export async function generateMindMapFromPdfAnnotations(
       id: `edge-root-page-${page}`,
       source: rootNode.id,
       target: pageNode.id,
-      type: 'default'
+      type: 'default',
     })
   }
 
@@ -320,8 +354,12 @@ export async function generateMindMapFromPdfAnnotations(
   await saveMindMapToBlock(blockId, {
     nodes,
     edges,
-    viewport: { zoom: 1, x: 0, y: 0 },
-    layout: 'free'
+    viewport: {
+      zoom: 1,
+      x: 0,
+      y: 0,
+    },
+    layout: 'free',
   })
 
   // 设置关联的 PDF 路径
@@ -331,36 +369,121 @@ export async function generateMindMapFromPdfAnnotations(
 }
 
 /**
- * 将思维导图节点同步回思源块（创建标注块）
+ * 同步思维导图节点到思源标注
  * @param blockId 思维导图块 ID
  * @param nodes 思维导图节点
+ *
+ * 实现说明：
+ * 1. 遍历所有节点，查找关联的 annotationId/cardId
+ * 2. 更新思源块的内容和属性
+ * 3. 确保脑图和 PDF 标注数据一致
  */
-export async function syncMindMapNodesToAnnotations(
+export async function syncMindMapToAnnotations(
   blockId: string,
-  nodes: FreeMindMapNode[]
+  nodes: FreeMindMapNode[],
 ): Promise<void> {
-  // 获取思维导图关联的 PDF 路径
-  const pdfPath = await getMindMapPdfPath(blockId)
-  if (!pdfPath) {
-    throw new Error('思维导图未关联 PDF 文件')
-  }
+  try {
+    console.log('[同步服务] 开始同步脑图到标注，节点数量:', nodes.length)
 
-  // 过滤出有 annotationId 的节点（已关联标注的节点）
-  const nodesWithAnnotation = nodes.filter(
-    n => n.data.annotationId
-  )
-
-  for (const node of nodesWithAnnotation) {
-    // 检查原标注块是否存在
-    try {
-      const block = await getBlock({ id: node.data.annotationId })
-      if (!block) {
-        // 原标注块已删除，需要重新创建
-        console.warn(`[FreeMindMapDataIntegration] 原标注块 ${node.data.annotationId} 不存在，跳过`)
+    // 遍历所有节点
+    for (const node of nodes) {
+      // 如果有 annotationId，更新对应的思源块
+      if (node.data.annotationId) {
+        await syncNodeToAnnotation(node)
       }
-    } catch (e) {
-      console.warn(`[FreeMindMapDataIntegration] 检查标注块失败:`, e)
+
+      // 如果有 cardId，更新对应的卡片块
+      if (node.data.cardId) {
+        await syncNodeToCard(node)
+      }
     }
+
+    // 更新最后同步时间
+    await postApi('/api/attr/setBlockAttrs', {
+      id: blockId,
+      attrs: {
+        [MINDMAP_ATTRS.LAST_SYNC]: Date.now().toString(),
+      },
+    })
+
+    console.log('[同步服务] 同步完成')
+  } catch (error) {
+    console.error('[同步服务] 同步失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 同步单个节点到标注
+ */
+async function syncNodeToAnnotation(node: FreeMindMapNode): Promise<void> {
+  if (!node.data.annotationId) return
+
+  try {
+    // 获取标注块信息
+    const block = await getBlock({ id: node.data.annotationId })
+    if (!block) {
+      console.warn('[同步服务] 标注块不存在:', node.data.annotationId)
+      return
+    }
+
+    // 更新标注内容（如果需要）
+    const content = node.data.content || node.data.title
+    if (content && content !== (block as any).content) {
+      await postApi('/api/block/updateBlock', {
+        blockID: node.data.annotationId,
+        data: content,
+      })
+    }
+
+    // 更新标注属性（颜色、级别等）
+    const attrs: Record<string, string> = {}
+    if (node.data.color) {
+      attrs['custom-color'] = node.data.color
+    }
+    if (node.data.level) {
+      attrs['custom-level'] = node.data.level
+    }
+
+    if (Object.keys(attrs).length > 0) {
+      await postApi('/api/attr/setBlockAttrs', {
+        id: node.data.annotationId,
+        attrs,
+      })
+    }
+
+    console.log('[同步服务] 节点同步到标注:', node.id, '->', node.data.annotationId)
+  } catch (error) {
+    console.error('[同步服务] 同步节点到标注失败:', error)
+  }
+}
+
+/**
+ * 同步单个节点到卡片
+ */
+async function syncNodeToCard(node: FreeMindMapNode): Promise<void> {
+  if (!node.data.cardId) return
+
+  try {
+    // 获取卡片块信息
+    const block = await getBlock({ id: node.data.cardId })
+    if (!block) {
+      console.warn('[同步服务] 卡片块不存在:', node.data.cardId)
+      return
+    }
+
+    // 更新卡片内容
+    const content = node.data.content || node.data.title
+    if (content && content !== (block as any).content) {
+      await postApi('/api/block/updateBlock', {
+        blockID: node.data.cardId,
+        data: content,
+      })
+    }
+
+    console.log('[同步服务] 节点同步到卡片:', node.id, '->', node.data.cardId)
+  } catch (error) {
+    console.error('[同步服务] 同步节点到卡片失败:', error)
   }
 }
 
@@ -385,7 +508,7 @@ export async function getMindMapStudySetId(blockId: string): Promise<string | nu
 
   try {
     const attrs = await postApi<{ [key: string]: string }>('/api/attr/getBlockAttrs', {
-      id: blockId
+      id: blockId,
     })
     return attrs?.[MINDMAP_ATTRS.STUDY_SET_ID] || null
   } catch (error) {
@@ -421,8 +544,8 @@ export async function setMindMapStudySetId(blockId: string, studySetId: string):
     await postApi('/api/attr/setBlockAttrs', {
       id: blockId,
       attrs: {
-        [MINDMAP_ATTRS.STUDY_SET_ID]: studySetId
-      }
+        [MINDMAP_ATTRS.STUDY_SET_ID]: studySetId,
+      },
     })
   } catch (error) {
     console.error('[FreeMindMapDataIntegration] 设置学习集 ID 失败:', error)

@@ -4,40 +4,79 @@
     <!-- 工具栏 -->
     <div class="concept-map-toolbar">
       <div class="toolbar-group">
-        <button @click="fitView" class="toolbar-btn" title="适应视图">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        <button
+          class="toolbar-btn"
+          title="适应视图"
+          @click="fitView"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
         </button>
-        <button @click="zoomIn" class="toolbar-btn" title="放大">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        <button
+          class="toolbar-btn"
+          title="放大"
+          @click="zoomIn"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
           </svg>
         </button>
-        <button @click="zoomOut" class="toolbar-btn" title="缩小">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 13H5v-2h14v2z"/>
+        <button
+          class="toolbar-btn"
+          title="缩小"
+          @click="zoomOut"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19 13H5v-2h14v2z" />
           </svg>
         </button>
       </div>
 
       <div class="toolbar-group">
         <button
-          :class="['toolbar-btn', { active: showLinksOnly }]"
-          @click="showLinksOnly = !showLinksOnly"
+          class="toolbar-btn"
+          :class="[{ active: showLinksOnly }]"
           title="只显示链接"
+          @click="showLinksOnly = !showLinksOnly"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
           </svg>
         </button>
         <button
-          :class="['toolbar-btn', { active: showBacklinks }]"
-          @click="showBacklinks = !showBacklinks"
+          class="toolbar-btn"
+          :class="[{ active: showBacklinks }]"
           title="显示反向链接"
+          @click="showBacklinks = !showBacklinks"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h-2V5h-2v2H5v2h3v7h2v-2h3v-2z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h-2V5h-2v2H5v2h3v7h2v-2h3v-2z" />
           </svg>
         </button>
       </div>
@@ -55,7 +94,10 @@
     </div>
 
     <!-- 概念图内容 -->
-    <div class="concept-map-content" ref="contentRef">
+    <div
+      ref="contentRef"
+      class="concept-map-content"
+    >
       <svg
         ref="svgRef"
         class="concept-map-svg"
@@ -77,7 +119,10 @@
             refY="3.5"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="var(--b3-theme-primary)" />
+            <polygon
+              points="0 0, 10 3.5, 0 7"
+              fill="var(--b3-theme-primary)"
+            />
           </marker>
           <!-- 高亮箭头标记 -->
           <marker
@@ -88,7 +133,10 @@
             refY="3.5"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="var(--b3-theme-warning)" />
+            <polygon
+              points="0 0, 10 3.5, 0 7"
+              fill="var(--b3-theme-warning)"
+            />
           </marker>
         </defs>
 
@@ -99,7 +147,8 @@
               v-for="link in visibleLinks"
               :key="link.id"
               :d="getLinkPath(link)"
-              :class="['concept-link', { 'concept-link--highlighted': isHighlightedLink(link) }]"
+              class="concept-link"
+              :class="[{ 'concept-link--highlighted': isHighlightedLink(link) }]"
               :stroke="getLinkColor(link)"
               @click="handleLinkClick(link)"
               @mouseenter="handleLinkEnter(link)"
@@ -111,7 +160,8 @@
           <g
             v-for="node in visibleNodes"
             :key="node.id"
-            :class="['concept-node', {
+            class="concept-node"
+            :class="[{
               'concept-node--selected': selectedNodeId === node.id,
               'concept-node--highlighted': highlightedNodeIds.has(node.id),
             }]"
@@ -174,28 +224,54 @@
       </svg>
 
       <!-- 空状态 -->
-      <div v-if="nodes.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" opacity="0.3">
-          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+      <div
+        v-if="nodes.length === 0"
+        class="empty-state"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="64"
+          height="64"
+          fill="currentColor"
+          opacity="0.3"
+        >
+          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
         </svg>
         <p>暂无概念链接</p>
-        <p class="empty-state-hint">概念链接将显示概念之间的关联关系</p>
+        <p class="empty-state-hint">
+          概念链接将显示概念之间的关联关系
+        </p>
       </div>
     </div>
 
     <!-- 侧边面板 - 显示选中节点的链接信息 -->
-    <div v-if="selectedNode" class="concept-side-panel">
+    <div
+      v-if="selectedNode"
+      class="concept-side-panel"
+    >
       <div class="side-panel-header">
-        <h3 class="side-panel-title">{{ selectedNode.label }}</h3>
-        <button @click="closeSidePanel" class="side-panel-close">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        <h3 class="side-panel-title">
+          {{ selectedNode.label }}
+        </h3>
+        <button
+          class="side-panel-close"
+          @click="closeSidePanel"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>
         </button>
       </div>
       <div class="side-panel-content">
         <div class="link-section">
-          <h4 class="link-section-title">相关链接</h4>
+          <h4 class="link-section-title">
+            相关链接
+          </h4>
           <div class="link-list">
             <div
               v-for="link in getNodeLinks(selectedNode.id)"
@@ -204,11 +280,18 @@
               @click="handleLinkClick(link)"
             >
               <div class="link-item__from">
-                <span class="link-item__dot" :style="{ backgroundColor: getLinkColor(link) }"></span>
+                <span
+                  class="link-item__dot"
+                  :style="{ backgroundColor: getLinkColor(link) }"
+                ></span>
                 {{ getLinkFromLabel(link) }}
               </div>
-              <div class="link-item__arrow">↓</div>
-              <div class="link-item__to">{{ getLinkToLabel(link) }}</div>
+              <div class="link-item__arrow">
+                ↓
+              </div>
+              <div class="link-item__to">
+                {{ getLinkToLabel(link) }}
+              </div>
             </div>
           </div>
         </div>
@@ -218,97 +301,109 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import type { Card } from '../types/card';
-import type { StudySet } from '../types/studySet';
+import type { Card } from '../types/card'
+import type { StudySet } from '../types/studySet'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 
 interface ConceptNode {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  type: 'card' | 'studySet' | 'keyword' | 'tag';
-  data?: Card | StudySet | any;
-  linkCount: number;
+  id: string
+  label: string
+  x: number
+  y: number
+  width: number
+  height: number
+  type: 'card' | 'studySet' | 'keyword' | 'tag'
+  data?: Card | StudySet | any
+  linkCount: number
 }
 
 interface ConceptLink {
-  id: string;
-  source: string;
-  target: string;
-  type: 'reference' | 'related' | 'contains' | 'tagged';
-  weight: number;
+  id: string
+  source: string
+  target: string
+  type: 'reference' | 'related' | 'contains' | 'tagged'
+  weight: number
 }
 
 interface Props {
-  cards: Card[];
-  studySets?: StudySet[];
+  cards: Card[]
+  studySets?: StudySet[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   cards: () => [],
-  studySets: () => []
-});
+  studySets: () => [],
+})
 
 const emit = defineEmits<{
-  (e: 'node-click', node: ConceptNode): void;
-  (e: 'link-click', link: ConceptLink): void;
-}>();
+  (e: 'node-click', node: ConceptNode): void
+  (e: 'link-click', link: ConceptLink): void
+}>()
 
-const contentRef = ref<HTMLDivElement>();
-const svgRef = ref<SVGSVGElement>();
+const contentRef = ref<HTMLDivElement>()
+const svgRef = ref<SVGSVGElement>()
 
 // 状态
-const nodes = ref<ConceptNode[]>([]);
-const links = ref<ConceptLink[]>([]);
-const selectedNodeId = ref<string | null>(null);
-const selectedNode = ref<ConceptNode | null>(null);
-const highlightedNodeIds = ref<Set<string>>(new Set());
-const hoveredLinkId = ref<string | null>(null);
-const showLinksOnly = ref(false);
-const showBacklinks = ref(true);
-const searchQuery = ref('');
+const nodes = ref<ConceptNode[]>([])
+const links = ref<ConceptLink[]>([])
+const selectedNodeId = ref<string | null>(null)
+const selectedNode = ref<ConceptNode | null>(null)
+const highlightedNodeIds = ref<Set<string>>(new Set())
+const hoveredLinkId = ref<string | null>(null)
+const showLinksOnly = ref(false)
+const showBacklinks = ref(true)
+const searchQuery = ref('')
 
 // 视图控制
-const svgWidth = ref(1200);
-const svgHeight = ref(800);
-const viewBox = ref({ x: 0, y: 0, width: 1200, height: 800 });
-const zoomLevel = ref(1);
-const isPanning = ref(false);
-const panStart = ref({ x: 0, y: 0 });
+const svgWidth = ref(1200)
+const svgHeight = ref(800)
+const viewBox = ref({
+  x: 0,
+  y: 0,
+  width: 1200,
+  height: 800,
+})
+const zoomLevel = ref(1)
+const isPanning = ref(false)
+const panStart = ref({
+  x: 0,
+  y: 0,
+})
 
 // 变换字符串
 const transformString = computed(() => {
-  return `translate(${-viewBox.value.x}, ${-viewBox.value.y}) scale(${zoomLevel.value})`;
-});
+  return `translate(${-viewBox.value.x}, ${-viewBox.value.y}) scale(${zoomLevel.value})`
+})
 
 // 可见节点
 const visibleNodes = computed(() => {
-  if (!searchQuery.value) return nodes.value;
-  const query = searchQuery.value.toLowerCase();
-  return nodes.value.filter(node =>
-    node.label.toLowerCase().includes(query)
-  );
-});
+  if (!searchQuery.value) return nodes.value
+  const query = searchQuery.value.toLowerCase()
+  return nodes.value.filter((node) =>
+    node.label.toLowerCase().includes(query),
+  )
+})
 
 // 可见链接
 const visibleLinks = computed(() => {
-  if (!showLinksOnly.value) return links.value;
-  return links.value.filter(link =>
-    highlightedNodeIds.value.has(link.source) ||
-    highlightedNodeIds.value.has(link.target)
-  );
-});
+  if (!showLinksOnly.value) return links.value
+  return links.value.filter((link) =>
+    highlightedNodeIds.value.has(link.source)
+    || highlightedNodeIds.value.has(link.target),
+  )
+})
 
 // 根据卡片生成概念节点
 const generateConceptNodes = () => {
-  const newNodes: ConceptNode[] = [];
-  const newLinks: ConceptLink[] = [];
+  const newNodes: ConceptNode[] = []
+  const newLinks: ConceptLink[] = []
 
   // 为每个学习集创建节点
-  const studySetMap = new Map<string, ConceptNode>();
+  const studySetMap = new Map<string, ConceptNode>()
   props.studySets?.forEach((set, index) => {
     const node: ConceptNode = {
       id: `studySet-${set.id}`,
@@ -320,20 +415,20 @@ const generateConceptNodes = () => {
       type: 'studySet',
       data: set,
       linkCount: 0,
-    };
-    newNodes.push(node);
-    studySetMap.set(set.id, node);
-  });
+    }
+    newNodes.push(node)
+    studySetMap.set(set.id, node)
+  })
 
   // 为每张卡片创建节点
-  const keywordMap = new Map<string, ConceptNode>();
-  const tagMap = new Map<string, ConceptNode>();
+  const keywordMap = new Map<string, ConceptNode>()
+  const tagMap = new Map<string, ConceptNode>()
 
   props.cards.forEach((card, index) => {
     // 卡片节点
     const cardNode: ConceptNode = {
       id: `card-${card.id}`,
-      label: (card.content || card.front || '').slice(0, 20) + '...',
+      label: `${(card.content || card.front || '').slice(0, 20)}...`,
       x: 200 + (index % 8) * 150,
       y: 200 + Math.floor(index / 8) * 100,
       width: 140,
@@ -341,8 +436,8 @@ const generateConceptNodes = () => {
       type: 'card',
       data: card,
       linkCount: 0,
-    };
-    newNodes.push(cardNode);
+    }
+    newNodes.push(cardNode)
 
     // 如果卡片属于学习集，创建链接
     if (card.studySetId && studySetMap.has(card.studySetId)) {
@@ -352,14 +447,14 @@ const generateConceptNodes = () => {
         target: `card-${card.id}`,
         type: 'contains',
         weight: 1,
-      });
-      studySetMap.get(card.studySetId)!.linkCount++;
+      })
+      studySetMap.get(card.studySetId)!.linkCount++
     }
 
     // 为卡片内容提取关键词并创建节点
-    const content = card.content || card.front || '';
-    const keywords = extractKeywords(content);
-    keywords.forEach(keyword => {
+    const content = card.content || card.front || ''
+    const keywords = extractKeywords(content)
+    keywords.forEach((keyword) => {
       if (!keywordMap.has(keyword)) {
         keywordMap.set(keyword, {
           id: `keyword-${keyword}`,
@@ -370,11 +465,11 @@ const generateConceptNodes = () => {
           height: 30,
           type: 'keyword',
           linkCount: 0,
-        });
+        })
       }
 
-      const keywordNode = keywordMap.get(keyword)!;
-      keywordNode.linkCount++;
+      const keywordNode = keywordMap.get(keyword)!
+      keywordNode.linkCount++
 
       // 创建卡片与关键词的链接
       newLinks.push({
@@ -383,11 +478,11 @@ const generateConceptNodes = () => {
         target: `keyword-${keyword}`,
         type: 'related',
         weight: 1,
-      });
-    });
+      })
+    })
 
     // 为卡片标签创建节点
-    card.tags?.forEach(tag => {
+    card.tags?.forEach((tag) => {
       if (!tagMap.has(tag)) {
         tagMap.set(tag, {
           id: `tag-${tag}`,
@@ -398,11 +493,11 @@ const generateConceptNodes = () => {
           height: 30,
           type: 'tag',
           linkCount: 0,
-        });
+        })
       }
 
-      const tagNode = tagMap.get(tag)!;
-      tagNode.linkCount++;
+      const tagNode = tagMap.get(tag)!
+      tagNode.linkCount++
 
       // 创建卡片与标签的链接
       newLinks.push({
@@ -411,50 +506,50 @@ const generateConceptNodes = () => {
         target: `tag-${tag}`,
         type: 'tagged',
         weight: 1,
-      });
-    });
-  });
+      })
+    })
+  })
 
   // 添加关键词节点
-  newNodes.push(...Array.from(keywordMap.values()));
+  newNodes.push(...Array.from(keywordMap.values()))
   // 添加标签节点
-  newNodes.push(...Array.from(tagMap.values()));
+  newNodes.push(...Array.from(tagMap.values()))
 
   // 如果启用了反向链接，添加跨学习集的关联
   if (showBacklinks.value) {
-    addCrossReferences(newNodes, newLinks);
+    addCrossReferences(newNodes, newLinks)
   }
 
-  nodes.value = newNodes;
-  links.value = newLinks;
-};
+  nodes.value = newNodes
+  links.value = newLinks
+}
 
 // 提取关键词
 const extractKeywords = (text: string): string[] => {
   // 简单实现：提取 2-4 个字符的中文词组
-  const keywords = new Set<string>();
-  const matches = text.match(/[\u4e00-\u9fa5]{2,4}/g);
+  const keywords = new Set<string>()
+  const matches = text.match(/[\u4E00-\u9FA5]{2,4}/g)
   if (matches) {
-    matches.slice(0, 5).forEach(k => keywords.add(k));
+    matches.slice(0, 5).forEach((k) => keywords.add(k))
   }
-  return Array.from(keywords);
-};
+  return Array.from(keywords)
+}
 
 // 添加跨引用链接
 const addCrossReferences = (nodeList: ConceptNode[], linkList: ConceptLink[]) => {
   // 查找共享相同关键词的卡片，建立关联
-  const keywordToCards = new Map<string, string[]>();
+  const keywordToCards = new Map<string, string[]>()
 
-  props.cards.forEach(card => {
-    const content = card.content || card.front || '';
-    const keywords = extractKeywords(content);
-    keywords.forEach(keyword => {
+  props.cards.forEach((card) => {
+    const content = card.content || card.front || ''
+    const keywords = extractKeywords(content)
+    keywords.forEach((keyword) => {
       if (!keywordToCards.has(keyword)) {
-        keywordToCards.set(keyword, []);
+        keywordToCards.set(keyword, [])
       }
-      keywordToCards.get(keyword)!.push(card.id);
-    });
-  });
+      keywordToCards.get(keyword)!.push(card.id)
+    })
+  })
 
   // 为共享关键词的卡片建立链接
   keywordToCards.forEach((cardIds, keyword) => {
@@ -467,32 +562,32 @@ const addCrossReferences = (nodeList: ConceptNode[], linkList: ConceptLink[]) =>
             target: `card-${cardIds[j]}`,
             type: 'related',
             weight: 2,
-          });
+          })
         }
       }
     }
-  });
-};
+  })
+}
 
 // 获取链接路径
 const getLinkPath = (link: ConceptLink): string => {
-  const source = nodes.value.find(n => n.id === link.source);
-  const target = nodes.value.find(n => n.id === link.target);
+  const source = nodes.value.find((n) => n.id === link.source)
+  const target = nodes.value.find((n) => n.id === link.target)
 
-  if (!source || !target) return '';
+  if (!source || !target) return ''
 
-  const startX = source.x + source.width / 2;
-  const startY = source.y + source.height / 2;
-  const endX = target.x + target.width / 2;
-  const endY = target.y + target.height / 2;
+  const startX = source.x + source.width / 2
+  const startY = source.y + source.height / 2
+  const endX = target.x + target.width / 2
+  const endY = target.y + target.height / 2
 
   // 使用贝塞尔曲线
-  const midX = (startX + endX) / 2;
-  const midY = (startY + endY) / 2;
-  const offset = 50;
+  const midX = (startX + endX) / 2
+  const midY = (startY + endY) / 2
+  const offset = 50
 
-  return `M ${startX} ${startY} Q ${midX + offset} ${midY - offset} ${endX} ${endY}`;
-};
+  return `M ${startX} ${startY} Q ${midX + offset} ${midY - offset} ${endX} ${endY}`
+}
 
 // 获取节点颜色
 const getNodeColor = (node: ConceptNode): string => {
@@ -501,28 +596,28 @@ const getNodeColor = (node: ConceptNode): string => {
     studySet: 'var(--b3-theme-primary-light)',
     keyword: 'var(--b3-theme-background)',
     tag: 'var(--b3-theme-warning-light)',
-  };
-  return colors[node.type] || 'var(--b3-theme-surface)';
-};
+  }
+  return colors[node.type] || 'var(--b3-theme-surface)'
+}
 
 // 获取节点描边颜色
 const getNodeStrokeColor = (node: ConceptNode): string => {
   if (selectedNodeId.value === node.id) {
-    return 'var(--b3-theme-primary)';
+    return 'var(--b3-theme-primary)'
   }
   const colors: Record<string, string> = {
     card: 'var(--b3-theme-border)',
     studySet: 'var(--b3-theme-primary)',
     keyword: 'var(--b3-theme-border)',
     tag: 'var(--b3-theme-warning)',
-  };
-  return colors[node.type] || 'var(--b3-theme-border)';
-};
+  }
+  return colors[node.type] || 'var(--b3-theme-border)'
+}
 
 // 获取节点文字颜色
 const getNodeTextColor = (node: ConceptNode): string => {
-  return 'var(--b3-theme-on-surface)';
-};
+  return 'var(--b3-theme-on-surface)'
+}
 
 // 获取链接颜色
 const getLinkColor = (link: ConceptLink): string => {
@@ -531,14 +626,14 @@ const getLinkColor = (link: ConceptLink): string => {
     related: 'var(--b3-theme-success)',
     contains: 'var(--b3-theme-primary)',
     tagged: 'var(--b3-theme-warning)',
-  };
-  return colors[link.type] || 'var(--b3-theme-primary)';
-};
+  }
+  return colors[link.type] || 'var(--b3-theme-primary)'
+}
 
 // 判断链接是否高亮
 const isHighlightedLink = (link: ConceptLink): boolean => {
-  return hoveredLinkId.value === link.id;
-};
+  return hoveredLinkId.value === link.id
+}
 
 // 获取节点图标
 const getNodeIcon = (node: ConceptNode): string => {
@@ -547,128 +642,136 @@ const getNodeIcon = (node: ConceptNode): string => {
     studySet: '📚',
     keyword: '🔑',
     tag: '🏷️',
-  };
-  return icons[node.type] || '📄';
-};
+  }
+  return icons[node.type] || '📄'
+}
 
 // 获取节点的链接
 const getNodeLinks = (nodeId: string): ConceptLink[] => {
   return links.value.filter(
-    link => link.source === nodeId || link.target === nodeId
-  );
-};
+    (link) => link.source === nodeId || link.target === nodeId,
+  )
+}
 
 // 获取链接来源标签
 const getLinkFromLabel = (link: ConceptLink): string => {
-  const node = nodes.value.find(n => n.id === link.source);
-  return node?.label || '';
-};
+  const node = nodes.value.find((n) => n.id === link.source)
+  return node?.label || ''
+}
 
 // 获取链接目标标签
 const getLinkToLabel = (link: ConceptLink): string => {
-  const node = nodes.value.find(n => n.id === link.target);
-  return node?.label || '';
-};
+  const node = nodes.value.find((n) => n.id === link.target)
+  return node?.label || ''
+}
 
 // 节点点击
 const handleNodeClick = (node: ConceptNode) => {
-  selectedNodeId.value = node.id;
-  selectedNode.value = node;
-  highlightedNodeIds.value.clear();
+  selectedNodeId.value = node.id
+  selectedNode.value = node
+  highlightedNodeIds.value.clear()
 
   // 高亮相连的节点
-  const connectedLinks = getNodeLinks(node.id);
-  connectedLinks.forEach(link => {
-    const otherId = link.source === node.id ? link.target : link.source;
-    highlightedNodeIds.value.add(otherId);
-  });
+  const connectedLinks = getNodeLinks(node.id)
+  connectedLinks.forEach((link) => {
+    const otherId = link.source === node.id ? link.target : link.source
+    highlightedNodeIds.value.add(otherId)
+  })
 
-  emit('node-click', node);
-};
+  emit('node-click', node)
+}
 
 // 节点双击
 const handleNodeDoubleClick = (node: ConceptNode) => {
   // 可以打开详细视图
-  console.log('Double click node:', node);
-};
+  console.log('Double click node:', node)
+}
 
 // 链接点击
 const handleLinkClick = (link: ConceptLink) => {
-  emit('link-click', link);
-};
+  emit('link-click', link)
+}
 
 // 链接悬停
 const handleLinkEnter = (link: ConceptLink) => {
-  hoveredLinkId.value = link.id;
-  highlightedNodeIds.value.clear();
-  highlightedNodeIds.value.add(link.source);
-  highlightedNodeIds.value.add(link.target);
-};
+  hoveredLinkId.value = link.id
+  highlightedNodeIds.value.clear()
+  highlightedNodeIds.value.add(link.source)
+  highlightedNodeIds.value.add(link.target)
+}
 
 // 链接离开
 const handleLinkLeave = () => {
-  hoveredLinkId.value = null;
-};
+  hoveredLinkId.value = null
+}
 
 // 关闭侧边面板
 const closeSidePanel = () => {
-  selectedNode.value = null;
-  selectedNodeId.value = null;
-  highlightedNodeIds.value.clear();
-};
+  selectedNode.value = null
+  selectedNodeId.value = null
+  highlightedNodeIds.value.clear()
+}
 
 // 适应视图
 const fitView = () => {
-  viewBox.value = { x: 0, y: 0, width: 1200, height: 800 };
-  zoomLevel.value = 1;
-};
+  viewBox.value = {
+    x: 0,
+    y: 0,
+    width: 1200,
+    height: 800,
+  }
+  zoomLevel.value = 1
+}
 
 // 放大
 const zoomIn = () => {
-  zoomLevel.value = Math.min(3, zoomLevel.value + 0.2);
-};
+  zoomLevel.value = Math.min(3, zoomLevel.value + 0.2)
+}
 
 // 缩小
 const zoomOut = () => {
-  zoomLevel.value = Math.max(0.3, zoomLevel.value - 0.2);
-};
+  zoomLevel.value = Math.max(0.3, zoomLevel.value - 0.2)
+}
 
 // 滚轮缩放
 const handleWheel = (e: WheelEvent) => {
-  e.preventDefault();
-  const delta = e.deltaY > 0 ? -0.1 : 0.1;
-  zoomLevel.value = Math.max(0.3, Math.min(3, zoomLevel.value + delta));
-};
+  e.preventDefault()
+  const delta = e.deltaY > 0 ? -0.1 : 0.1
+  zoomLevel.value = Math.max(0.3, Math.min(3, zoomLevel.value + delta))
+}
 
 // 开始平移
 const startPan = (e: MouseEvent) => {
-  isPanning.value = true;
+  isPanning.value = true
   panStart.value = {
     x: e.clientX + viewBox.value.x,
     y: e.clientY + viewBox.value.y,
-  };
-};
+  }
+}
 
 // 平移
 const pan = (e: MouseEvent) => {
-  if (!isPanning.value) return;
-  viewBox.value.x = panStart.value.x - e.clientX;
-  viewBox.value.y = panStart.value.y - e.clientY;
-};
+  if (!isPanning.value) return
+  viewBox.value.x = panStart.value.x - e.clientX
+  viewBox.value.y = panStart.value.y - e.clientY
+}
 
 // 结束平移
 const endPan = () => {
-  isPanning.value = false;
-};
+  isPanning.value = false
+}
 
 // 监听数据变化
 watch(
   () => [props.cards, props.studySets, showBacklinks.value],
   () => {
-    generateConceptNodes();
+    generateConceptNodes()
   },
-  { immediate: true, deep: true }
-);
+  {
+    immediate: true,
+    deep: true,
+  },
+)
 </script>
 
 <style scoped lang="scss">

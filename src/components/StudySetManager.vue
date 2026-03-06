@@ -2,8 +2,13 @@
   <div class="study-set-manager">
     <!-- 学习集列表 -->
     <div class="study-set-manager__header">
-      <h3 class="study-set-manager__title">学习集</h3>
-      <button class="study-set-manager__create-btn" @click="showCreateDialog = true">
+      <h3 class="study-set-manager__title">
+        学习集
+      </h3>
+      <button
+        class="study-set-manager__create-btn"
+        @click="showCreateDialog = true"
+      >
         <span class="icon">+</span>
         新建学习集
       </button>
@@ -14,45 +19,84 @@
       <div
         v-for="set in learningSets"
         :key="set.id"
-        :class="['study-set-manager__item', { active: currentSetId === set.id }]"
+        class="study-set-manager__item"
+        :class="[{ active: currentSetId === set.id }]"
         @click="selectSet(set.id)"
       >
         <div class="study-set-manager__item-main">
-          <div class="study-set-manager__item-name">{{ set.name }}</div>
-          <div class="study-set-manager__item-desc">{{ set.description || '暂无描述' }}</div>
+          <div class="study-set-manager__item-name">
+            {{ set.name }}
+          </div>
+          <div class="study-set-manager__item-desc">
+            {{ set.description || '暂无描述' }}
+          </div>
         </div>
         <div class="study-set-manager__item-meta">
           <span class="study-set-manager__item-count">
             {{ set.cardCount }} 张卡片
           </span>
-          <span class="study-set-manager__item-due" :class="{ 'is-due': set.dueToday > 0 }">
+          <span
+            class="study-set-manager__item-due"
+            :class="{ 'is-due': set.dueToday > 0 }"
+          >
             {{ set.dueToday }} 到期
           </span>
         </div>
         <div class="study-set-manager__item-actions">
-          <button class="study-set-manager__action-btn" @click.stop="editSet(set)" title="编辑">
+          <button
+            class="study-set-manager__action-btn"
+            title="编辑"
+            @click.stop="editSet(set)"
+          >
             ✏️
           </button>
-          <button class="study-set-manager__action-btn study-set-manager__action-btn--danger" @click.stop="deleteSet(set.id)" title="删除">
+          <button
+            class="study-set-manager__action-btn study-set-manager__action-btn--danger"
+            title="删除"
+            @click.stop="deleteSet(set.id)"
+          >
             🗑️
           </button>
         </div>
       </div>
 
       <!-- 空状态 -->
-      <div v-if="learningSets.length === 0" class="study-set-manager__empty">
-        <div class="study-set-manager__empty-icon">📚</div>
-        <div class="study-set-manager__empty-text">暂无学习集</div>
-        <div class="study-set-manager__empty-hint">点击"新建学习集"开始学习</div>
+      <div
+        v-if="learningSets.length === 0"
+        class="study-set-manager__empty"
+      >
+        <div class="study-set-manager__empty-icon">
+          📚
+        </div>
+        <div class="study-set-manager__empty-text">
+          暂无学习集
+        </div>
+        <div class="study-set-manager__empty-hint">
+          点击"新建学习集"开始学习
+        </div>
       </div>
     </div>
 
     <!-- 创建/编辑对话框 -->
-    <div v-if="showCreateDialog || showEditDialog" class="study-set-dialog-overlay" @click="closeDialogs">
-      <div class="study-set-dialog" @click.stop>
+    <div
+      v-if="showCreateDialog || showEditDialog"
+      class="study-set-dialog-overlay"
+      @click="closeDialogs"
+    >
+      <div
+        class="study-set-dialog"
+        @click.stop
+      >
         <div class="study-set-dialog__header">
-          <h4 class="study-set-dialog__title">{{ isEditing ? '编辑学习集' : '创建学习集' }}</h4>
-          <button class="study-set-dialog__close" @click="closeDialogs">×</button>
+          <h4 class="study-set-dialog__title">
+            {{ isEditing ? '编辑学习集' : '创建学习集' }}
+          </h4>
+          <button
+            class="study-set-dialog__close"
+            @click="closeDialogs"
+          >
+            ×
+          </button>
         </div>
 
         <div class="study-set-dialog__body">
@@ -64,7 +108,12 @@
               placeholder="输入学习集名称"
               :class="{ 'is-error': errors.name }"
             />
-            <div v-if="errors.name" class="study-set-dialog__error">{{ errors.name }}</div>
+            <div
+              v-if="errors.name"
+              class="study-set-dialog__error"
+            >
+              {{ errors.name }}
+            </div>
           </div>
 
           <div class="study-set-dialog__field">
@@ -79,8 +128,15 @@
 
           <div class="study-set-dialog__field">
             <label class="study-set-dialog__label">选择笔记本</label>
-            <select v-model="form.notebookId" class="study-set-dialog__select">
-              <option v-for="nb in notebooks" :key="nb.id" :value="nb.id">
+            <select
+              v-model="form.notebookId"
+              class="study-set-dialog__select"
+            >
+              <option
+                v-for="nb in notebooks"
+                :key="nb.id"
+                :value="nb.id"
+              >
                 {{ nb.name }}
               </option>
             </select>
@@ -101,20 +157,39 @@
               </div>
               <div class="study-set-dialog__field study-set-dialog__field--half">
                 <label class="study-set-dialog__label-sm">复习算法</label>
-                <select v-model="form.reviewSettings.algorithm" class="study-set-dialog__select study-set-dialog__select--sm">
-                  <option value="SM2">SM-2</option>
-                  <option value="FSRS">FSRS</option>
+                <select
+                  v-model="form.reviewSettings.algorithm"
+                  class="study-set-dialog__select study-set-dialog__select--sm"
+                >
+                  <option value="SM2">
+                    SM-2
+                  </option>
+                  <option value="FSRS">
+                    FSRS
+                  </option>
                 </select>
               </div>
             </div>
           </div>
 
           <!-- 创建模式：选择 PDF -->
-          <div v-if="!isEditing" class="study-set-dialog__field">
+          <div
+            v-if="!isEditing"
+            class="study-set-dialog__field"
+          >
             <label class="study-set-dialog__label">关联 PDF（可选）</label>
-            <select v-model="form.initialPdfPath" class="study-set-dialog__select">
-              <option value="">暂不关联</option>
-              <option v-for="pdf in availablePdfs" :key="pdf.path" :value="pdf.path">
+            <select
+              v-model="form.initialPdfPath"
+              class="study-set-dialog__select"
+            >
+              <option value="">
+                暂不关联
+              </option>
+              <option
+                v-for="pdf in availablePdfs"
+                :key="pdf.path"
+                :value="pdf.path"
+              >
                 {{ pdf.name }}
               </option>
             </select>
@@ -122,8 +197,16 @@
         </div>
 
         <div class="study-set-dialog__footer">
-          <button class="study-set-dialog__btn" @click="closeDialogs">取消</button>
-          <button class="study-set-dialog__btn study-set-dialog__btn--primary" @click="handleSubmit">
+          <button
+            class="study-set-dialog__btn"
+            @click="closeDialogs"
+          >
+            取消
+          </button>
+          <button
+            class="study-set-dialog__btn study-set-dialog__btn--primary"
+            @click="handleSubmit"
+          >
             {{ isEditing ? '保存' : '创建' }}
           </button>
         </div>
@@ -133,19 +216,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { postApi } from '../api/siyuanApi';
-import { useLearningSetStore } from '../stores/learningSetStore';
-import type { StudySet, ReviewSettings } from '../types/studySet';
+import type {
+  ReviewSettings,
+  StudySet,
+} from '../types/studySet'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
+import { postApi } from '../api/siyuanApi'
+import { useLearningSetStore } from '../stores/learningSetStore'
 
-const learningSetStore = useLearningSetStore();
+const learningSetStore = useLearningSetStore()
 
 // 状态
-const showCreateDialog = ref(false);
-const showEditDialog = ref(false);
-const editingSetId = ref<string | null>(null);
-const notebooks = ref<any[]>([]);
-const availablePdfs = ref<any[]>([]);
+const showCreateDialog = ref(false)
+const showEditDialog = ref(false)
+const editingSetId = ref<string | null>(null)
+const notebooks = ref<any[]>([])
+const availablePdfs = ref<any[]>([])
 
 // 表单数据
 const form = ref({
@@ -157,50 +247,50 @@ const form = ref({
     algorithm: 'SM2' as ReviewSettings['algorithm'],
   } as ReviewSettings,
   initialPdfPath: '',
-});
+})
 
 // 错误信息
-const errors = ref<Record<string, string>>({});
+const errors = ref<Record<string, string>>({})
 
 // 计算属性
-const learningSets = computed(() => learningSetStore.learningSets);
-const currentSetId = computed(() => learningSetStore.currentSetId);
-const isEditing = computed(() => showEditDialog.value);
+const learningSets = computed(() => learningSetStore.learningSets)
+const currentSetId = computed(() => learningSetStore.currentSetId)
+const isEditing = computed(() => showEditDialog.value)
 
 // 加载数据
 onMounted(async () => {
-  await loadNotebooks();
-  await loadAvailablePdfs();
-  await learningSetStore.loadLearningSets();
-});
+  await loadNotebooks()
+  await loadAvailablePdfs()
+  await learningSetStore.loadLearningSets()
+})
 
 // 加载笔记本列表
 async function loadNotebooks() {
   try {
-    const result = await postApi<any>('/api/notebook/lsNotebooks', {});
+    const result = await postApi<any>('/api/notebook/lsNotebooks', {})
     if (Array.isArray(result)) {
       notebooks.value = result.map((nb: any) => ({
         id: nb.id || nb.box || nb.uuid,
         name: nb.name,
-      }));
+      }))
     } else if (result && Array.isArray(result.notebooks)) {
       notebooks.value = result.notebooks.map((nb: any) => ({
         id: nb.id || nb.box || nb.uuid,
         name: nb.name,
-      }));
+      }))
     } else if (result && Array.isArray(result.data)) {
       notebooks.value = result.data.map((nb: any) => ({
         id: nb.id || nb.box || nb.uuid,
         name: nb.name,
-      }));
+      }))
     }
 
     // 默认选择第一个笔记本
     if (notebooks.value.length > 0 && !form.value.notebookId) {
-      form.value.notebookId = notebooks.value[0].id;
+      form.value.notebookId = notebooks.value[0].id
     }
   } catch (error) {
-    console.error('加载笔记本列表失败:', error);
+    console.error('加载笔记本列表失败:', error)
   }
 }
 
@@ -209,52 +299,52 @@ async function loadAvailablePdfs() {
   try {
     const result = await postApi<any>('/api/filetree/readDir', {
       path: '/data/assets',
-    });
+    })
     if (Array.isArray(result)) {
       availablePdfs.value = result
         .filter((f: any) => !f.isDir && f.name.toLowerCase().endsWith('.pdf'))
         .map((f: any) => ({
           path: `/data/assets/${f.name}`,
           name: f.name,
-        }));
+        }))
     }
   } catch (error) {
-    console.error('加载 PDF 列表失败:', error);
+    console.error('加载 PDF 列表失败:', error)
   }
 }
 
 // 选择学习集
 function selectSet(setId: string) {
-  learningSetStore.setCurrentSet(setId);
+  learningSetStore.setCurrentSet(setId)
 }
 
 // 编辑学习集
 function editSet(set: StudySet) {
-  editingSetId.value = set.id;
+  editingSetId.value = set.id
   form.value = {
     name: set.name,
     description: set.description || '',
     notebookId: set.notebookId,
     reviewSettings: { ...set.reviewSettings },
     initialPdfPath: '',
-  };
-  showEditDialog.value = true;
+  }
+  showEditDialog.value = true
 }
 
 // 删除学习集
 async function deleteSet(setId: string) {
   if (!confirm('确定要删除这个学习集吗？删除后无法恢复。')) {
-    return;
+    return
   }
-  await learningSetStore.deleteLearningSet(setId);
+  await learningSetStore.deleteLearningSet(setId)
 }
 
 // 关闭对话框
 function closeDialogs() {
-  showCreateDialog.value = false;
-  showEditDialog.value = false;
-  editingSetId.value = null;
-  resetForm();
+  showCreateDialog.value = false
+  showEditDialog.value = false
+  editingSetId.value = null
+  resetForm()
 }
 
 // 重置表单
@@ -268,18 +358,18 @@ function resetForm() {
       algorithm: 'SM2',
     },
     initialPdfPath: '',
-  };
-  errors.value = {};
+  }
+  errors.value = {}
 }
 
 // 提交表单
 async function handleSubmit() {
-  errors.value = {};
+  errors.value = {}
 
   // 验证
   if (!form.value.name.trim()) {
-    errors.value.name = '请输入学习集名称';
-    return;
+    errors.value.name = '请输入学习集名称'
+    return
   }
 
   try {
@@ -289,7 +379,7 @@ async function handleSubmit() {
         name: form.value.name,
         description: form.value.description,
         reviewSettings: form.value.reviewSettings,
-      });
+      })
     } else {
       // 创建学习集
       await learningSetStore.createLearningSet(
@@ -297,14 +387,14 @@ async function handleSubmit() {
         form.value.description,
         form.value.notebookId,
         form.value.reviewSettings,
-        form.value.initialPdfPath || undefined
-      );
+        form.value.initialPdfPath || undefined,
+      )
     }
 
-    closeDialogs();
+    closeDialogs()
   } catch (error) {
-    console.error('操作失败:', error);
-    alert('操作失败，请重试');
+    console.error('操作失败:', error)
+    alert('操作失败，请重试')
   }
 }
 </script>

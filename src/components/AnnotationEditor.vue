@@ -1,10 +1,20 @@
 <!-- src/components/AnnotationEditor.vue -->
 <template>
-  <div v-if="visible" class="annotation-editor-overlay" @click="handleClose">
-    <div class="editor-dialog" @click.stop>
+  <div
+    v-if="visible"
+    class="annotation-editor-overlay"
+    @click="handleClose"
+  >
+    <div
+      class="editor-dialog"
+      @click.stop
+    >
       <div class="dialog-header">
         <span class="dialog-title">编辑标注</span>
-        <button @click="handleClose" class="close-btn">
+        <button
+          class="close-btn"
+          @click="handleClose"
+        >
           <svg><use xlink:href="#iconClose"></use></svg>
         </button>
       </div>
@@ -13,7 +23,9 @@
         <!-- 标注文本（只读） -->
         <div class="form-item">
           <label>标注文本：</label>
-          <div class="text-preview">{{ annotation?.text }}</div>
+          <div class="text-preview">
+            {{ annotation?.text }}
+          </div>
         </div>
 
         <!-- 颜色选择 -->
@@ -23,11 +35,11 @@
             <button
               v-for="color in colors"
               :key="color.value"
-              @click="selectedColor = color.value"
               class="color-btn"
               :class="{ active: selectedColor === color.value }"
               :style="{ background: color.hex }"
               :title="color.label"
+              @click="selectedColor = color.value"
             ></button>
           </div>
         </div>
@@ -47,11 +59,17 @@
         <div class="form-item comments-section">
           <label class="comments-label">
             <span>批注</span>
-            <span class="comments-count" v-if="comments.length > 0">({{ comments.length }})</span>
+            <span
+              v-if="comments.length > 0"
+              class="comments-count"
+            >({{ comments.length }})</span>
           </label>
 
           <!-- 批注列表 -->
-          <div v-if="comments.length > 0" class="comments-list">
+          <div
+            v-if="comments.length > 0"
+            class="comments-list"
+          >
             <div
               v-for="comment in comments"
               :key="comment.id"
@@ -59,26 +77,55 @@
               :class="[`comment-priority-${comment.priority}`, `comment-status-${comment.status}`]"
             >
               <div class="comment-header">
-                <span class="comment-priority" :style="{ color: getPriorityColor(comment.priority) }">
+                <span
+                  class="comment-priority"
+                  :style="{ color: getPriorityColor(comment.priority) }"
+                >
                   {{ getPriorityLabel(comment.priority) }}
                 </span>
-                <span class="comment-status" :style="{ color: getStatusColor(comment.status) }">
+                <span
+                  class="comment-status"
+                  :style="{ color: getStatusColor(comment.status) }"
+                >
                   {{ getStatusLabel(comment.status) }}
                 </span>
                 <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
               </div>
-              <div class="comment-text">{{ comment.text }}</div>
-              <div v-if="comment.tags && comment.tags.length > 0" class="comment-tags">
-                <span v-for="tag in comment.tags" :key="tag" class="comment-tag">#{{ tag }}</span>
+              <div class="comment-text">
+                {{ comment.text }}
+              </div>
+              <div
+                v-if="comment.tags && comment.tags.length > 0"
+                class="comment-tags"
+              >
+                <span
+                  v-for="tag in comment.tags"
+                  :key="tag"
+                  class="comment-tag"
+                >#{{ tag }}</span>
               </div>
               <div class="comment-actions">
-                <button class="comment-action-btn" @click="resolveComment(comment.id)" v-if="comment.status === 'active'" title="标记已解决">
+                <button
+                  v-if="comment.status === 'active'"
+                  class="comment-action-btn"
+                  title="标记已解决"
+                  @click="resolveComment(comment.id)"
+                >
                   ✅
                 </button>
-                <button class="comment-action-btn" @click="reopenComment(comment.id)" v-else title="重新打开">
+                <button
+                  v-else
+                  class="comment-action-btn"
+                  title="重新打开"
+                  @click="reopenComment(comment.id)"
+                >
                   🔄
                 </button>
-                <button class="comment-action-btn delete" @click="removeComment(comment.id)" title="删除">
+                <button
+                  class="comment-action-btn delete"
+                  title="删除"
+                  @click="removeComment(comment.id)"
+                >
                   🗑️
                 </button>
               </div>
@@ -94,13 +141,22 @@
               placeholder="添加批注..."
             ></textarea>
             <div class="comment-options">
-              <select v-model="newCommentPriority" class="b3-select">
-                <option v-for="p in priorityOptions" :key="p.value" :value="p.value">{{ p.label }}</option>
+              <select
+                v-model="newCommentPriority"
+                class="b3-select"
+              >
+                <option
+                  v-for="p in priorityOptions"
+                  :key="p.value"
+                  :value="p.value"
+                >
+                  {{ p.label }}
+                </option>
               </select>
               <button
                 class="b3-button b3-button--primary add-comment-btn"
-                @click="addComment"
                 :disabled="!newCommentText.trim()"
+                @click="addComment"
               >
                 添加批注
               </button>
@@ -110,198 +166,240 @@
       </div>
 
       <div class="dialog-footer">
-        <button @click="handleClose" class="b3-button">取消</button>
-        <button @click="handleSave" class="b3-button b3-button--primary">保存</button>
+        <button
+          class="b3-button"
+          @click="handleClose"
+        >
+          取消
+        </button>
+        <button
+          class="b3-button b3-button--primary"
+          @click="handleSave"
+        >
+          保存
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import type { PDFAnnotation, AnnotationColor, AnnotationComment, CommentPriority, CommentStatus } from '../types/annotation';
+import type {
+  AnnotationColor,
+  AnnotationComment,
+  CommentPriority,
+  CommentStatus,
+  PDFAnnotation,
+} from '../types/annotation'
 import {
-  updateAnnotationNote,
-  updateAnnotationColor,
-  getAnnotationComments,
+  ref,
+  watch,
+} from 'vue'
+import {
   addAnnotationComment,
+  deleteAnnotationComment,
+  getAnnotationComments,
+  updateAnnotationColor,
   updateAnnotationComment,
-  deleteAnnotationComment
-} from '../api/annotationApi';
-import { COMMENT_PRIORITIES, COMMENT_STATUSES } from '../types/annotation';
+  updateAnnotationNote,
+} from '../api/annotationApi'
+import {
+  COMMENT_PRIORITIES,
+  COMMENT_STATUSES,
+} from '../types/annotation'
 
 const props = defineProps<{
-  annotation: PDFAnnotation | null;
-  visible: boolean;
-}>();
+  annotation: PDFAnnotation | null
+  visible: boolean
+}>()
 
 const emit = defineEmits<{
-  (e: 'update:visible', visible: boolean): void;
-  (e: 'saved'): void;
-}>();
+  (e: 'update:visible', visible: boolean): void
+  (e: 'saved'): void
+}>()
 
-const note = ref('');
-const selectedColor = ref<AnnotationColor>('yellow');
-const comments = ref<AnnotationComment[]>([]);
-const newCommentText = ref('');
-const newCommentPriority = ref<CommentPriority>('normal');
-const loadingComments = ref(false);
+const note = ref('')
+const selectedColor = ref<AnnotationColor>('yellow')
+const comments = ref<AnnotationComment[]>([])
+const newCommentText = ref('')
+const newCommentPriority = ref<CommentPriority>('normal')
+const loadingComments = ref(false)
 
 const colors = [
-  { value: 'red' as AnnotationColor, hex: '#ff6b6b', label: '关键内容' },
-  { value: 'yellow' as AnnotationColor, hex: '#ffd93d', label: '普通高亮' },
-  { value: 'green' as AnnotationColor, hex: '#6bcb77', label: '重要概念' },
-  { value: 'blue' as AnnotationColor, hex: '#4d96ff', label: '方法/数据' },
-  { value: 'purple' as AnnotationColor, hex: '#9b59b6', label: '评论/思考' }
-];
+  {
+    value: 'red' as AnnotationColor,
+    hex: '#ff6b6b',
+    label: '关键内容',
+  },
+  {
+    value: 'yellow' as AnnotationColor,
+    hex: '#ffd93d',
+    label: '普通高亮',
+  },
+  {
+    value: 'green' as AnnotationColor,
+    hex: '#6bcb77',
+    label: '重要概念',
+  },
+  {
+    value: 'blue' as AnnotationColor,
+    hex: '#4d96ff',
+    label: '方法/数据',
+  },
+  {
+    value: 'purple' as AnnotationColor,
+    hex: '#9b59b6',
+    label: '评论/思考',
+  },
+]
 
-const priorityOptions = COMMENT_PRIORITIES;
+const priorityOptions = COMMENT_PRIORITIES
 
 // 获取优先级颜色
 const getPriorityColor = (priority: CommentPriority): string => {
-  return COMMENT_PRIORITIES.find(p => p.value === priority)?.color || '#909399';
-};
+  return COMMENT_PRIORITIES.find((p) => p.value === priority)?.color || '#909399'
+}
 
 // 获取优先级标签
 const getPriorityLabel = (priority: CommentPriority): string => {
-  return COMMENT_PRIORITIES.find(p => p.value === priority)?.label || '普通';
-};
+  return COMMENT_PRIORITIES.find((p) => p.value === priority)?.label || '普通'
+}
 
 // 获取状态颜色
 const getStatusColor = (status: CommentStatus): string => {
-  return COMMENT_STATUSES.find(s => s.value === status)?.color || '#909399';
-};
+  return COMMENT_STATUSES.find((s) => s.value === status)?.color || '#909399'
+}
 
 // 获取状态标签
 const getStatusLabel = (status: CommentStatus): string => {
-  return COMMENT_STATUSES.find(s => s.value === status)?.label || '活跃';
-};
+  return COMMENT_STATUSES.find((s) => s.value === status)?.label || '活跃'
+}
 
 // 格式化时间
 const formatTime = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-};
+  const date = new Date(timestamp)
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+}
 
 // 加载批注
 const loadComments = async () => {
-  if (!props.annotation?.blockId) return;
+  if (!props.annotation?.blockId) return
 
-  loadingComments.value = true;
+  loadingComments.value = true
   try {
-    comments.value = await getAnnotationComments(props.annotation.blockId);
+    comments.value = await getAnnotationComments(props.annotation.blockId)
   } catch (e) {
-    console.error('加载批注失败:', e);
-    comments.value = [];
+    console.error('加载批注失败:', e)
+    comments.value = []
   } finally {
-    loadingComments.value = false;
+    loadingComments.value = false
   }
-};
+}
 
 // 添加批注
 const addComment = async () => {
-  if (!props.annotation?.blockId || !newCommentText.value.trim()) return;
+  if (!props.annotation?.blockId || !newCommentText.value.trim()) return
 
   try {
     const newComment = await addAnnotationComment(props.annotation.blockId, {
       text: newCommentText.value.trim(),
       priority: newCommentPriority.value,
-    });
-    comments.value.push(newComment);
-    newCommentText.value = '';
-    newCommentPriority.value = 'normal';
+    })
+    comments.value.push(newComment)
+    newCommentText.value = ''
+    newCommentPriority.value = 'normal'
   } catch (e) {
-    console.error('添加批注失败:', e);
-    alert('添加批注失败');
+    console.error('添加批注失败:', e)
+    alert('添加批注失败')
   }
-};
+}
 
 // 解决批注
 const resolveComment = async (commentId: string) => {
-  if (!props.annotation?.blockId) return;
+  if (!props.annotation?.blockId) return
 
   try {
-    const updated = await updateAnnotationComment(props.annotation.blockId, commentId, { status: 'resolved' });
+    const updated = await updateAnnotationComment(props.annotation.blockId, commentId, { status: 'resolved' })
     if (updated) {
-      const index = comments.value.findIndex(c => c.id === commentId);
+      const index = comments.value.findIndex((c) => c.id === commentId)
       if (index !== -1) {
-        comments.value[index] = updated;
+        comments.value[index] = updated
       }
     }
   } catch (e) {
-    console.error('更新批注失败:', e);
+    console.error('更新批注失败:', e)
   }
-};
+}
 
 // 重新打开批注
 const reopenComment = async (commentId: string) => {
-  if (!props.annotation?.blockId) return;
+  if (!props.annotation?.blockId) return
 
   try {
-    const updated = await updateAnnotationComment(props.annotation.blockId, commentId, { status: 'active' });
+    const updated = await updateAnnotationComment(props.annotation.blockId, commentId, { status: 'active' })
     if (updated) {
-      const index = comments.value.findIndex(c => c.id === commentId);
+      const index = comments.value.findIndex((c) => c.id === commentId)
       if (index !== -1) {
-        comments.value[index] = updated;
+        comments.value[index] = updated
       }
     }
   } catch (e) {
-    console.error('更新批注失败:', e);
+    console.error('更新批注失败:', e)
   }
-};
+}
 
 // 删除批注
 const removeComment = async (commentId: string) => {
-  if (!props.annotation?.blockId) return;
+  if (!props.annotation?.blockId) return
 
-  if (!confirm('确定要删除这条批注吗？')) return;
+  if (!confirm('确定要删除这条批注吗？')) return
 
   try {
-    const success = await deleteAnnotationComment(props.annotation.blockId, commentId);
+    const success = await deleteAnnotationComment(props.annotation.blockId, commentId)
     if (success) {
-      comments.value = comments.value.filter(c => c.id !== commentId);
+      comments.value = comments.value.filter((c) => c.id !== commentId)
     }
   } catch (e) {
-    console.error('删除批注失败:', e);
+    console.error('删除批注失败:', e)
   }
-};
+}
 
 // 监听标注变化，初始化表单
 watch(() => props.annotation, (ann) => {
   if (ann) {
-    note.value = ann.note || '';
-    selectedColor.value = ann.color;
-    loadComments();
+    note.value = ann.note || ''
+    selectedColor.value = ann.color
+    loadComments()
   } else {
-    comments.value = [];
+    comments.value = []
   }
-}, { immediate: true });
+}, { immediate: true })
 
 const handleClose = () => {
-  emit('update:visible', false);
-};
+  emit('update:visible', false)
+}
 
 const handleSave = async () => {
-  if (!props.annotation) return;
+  if (!props.annotation) return
 
   try {
     // 更新笔记
     if (note.value !== props.annotation.note) {
-      await updateAnnotationNote(props.annotation.blockId, note.value);
+      await updateAnnotationNote(props.annotation.blockId, note.value)
     }
 
     // 更新颜色
     if (selectedColor.value !== props.annotation.color) {
-      await updateAnnotationColor(props.annotation.blockId, selectedColor.value);
+      await updateAnnotationColor(props.annotation.blockId, selectedColor.value)
     }
 
-    emit('saved');
-    handleClose();
+    emit('saved')
+    handleClose()
   } catch (e) {
-    console.error('保存失败:', e);
-    alert('保存失败');
+    console.error('保存失败:', e)
+    alert('保存失败')
   }
-};
+}
 </script>
 
 <style scoped>

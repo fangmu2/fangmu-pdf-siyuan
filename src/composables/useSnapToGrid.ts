@@ -3,12 +3,13 @@
  * 提供节点拖拽时的网格吸附功能
  */
 
-import { ref, type Ref } from 'vue'
+import type { Ref } from 'vue'
+import { ref } from 'vue'
 
 export interface SnapConfig {
-  gridSize: number        // 网格大小（默认 20px）
-  snapThreshold: number   // 吸附阈值（默认 10px）
-  enabled: boolean        // 是否启用吸附
+  gridSize: number // 网格大小（默认 20px）
+  snapThreshold: number // 吸附阈值（默认 10px）
+  enabled: boolean // 是否启用吸附
 }
 
 export interface Position {
@@ -21,7 +22,7 @@ export interface UseSnapToGridReturn {
   gridSize: Ref<number>
   snapThreshold: Ref<number>
   enabled: Ref<boolean>
-  
+
   // 方法
   snapToGrid: (position: Position) => Position
   isNearGridPoint: (position: Position) => boolean
@@ -53,7 +54,7 @@ export function useSnapToGrid(initialConfig: Partial<SnapConfig> = {}): UseSnapT
 
     return {
       x: snappedX,
-      y: snappedY
+      y: snappedY,
     }
   }
 
@@ -64,10 +65,10 @@ export function useSnapToGrid(initialConfig: Partial<SnapConfig> = {}): UseSnapT
     const remainderX = position.x % gridSize.value
     const remainderY = position.y % gridSize.value
 
-    const nearX = Math.abs(remainderX) < snapThreshold.value ||
-                  Math.abs(remainderX - gridSize.value) < snapThreshold.value
-    const nearY = Math.abs(remainderY) < snapThreshold.value ||
-                  Math.abs(remainderY - gridSize.value) < snapThreshold.value
+    const nearX = Math.abs(remainderX) < snapThreshold.value
+      || Math.abs(remainderX - gridSize.value) < snapThreshold.value
+    const nearY = Math.abs(remainderY) < snapThreshold.value
+      || Math.abs(remainderY - gridSize.value) < snapThreshold.value
 
     return nearX || nearY
   }
@@ -102,12 +103,12 @@ export function useSnapToGrid(initialConfig: Partial<SnapConfig> = {}): UseSnapT
     gridSize,
     snapThreshold,
     enabled,
-    
+
     // 方法
     snapToGrid,
     isNearGridPoint,
     toggleEnabled,
     setGridSize,
-    setSnapThreshold
+    setSnapThreshold,
   }
 }

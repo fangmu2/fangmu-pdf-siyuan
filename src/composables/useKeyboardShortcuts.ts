@@ -3,8 +3,11 @@
  * MarginNote 风格的键盘快捷操作
  */
 
-import { onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
+import {
+  onMounted,
+  onUnmounted,
+} from 'vue'
 
 export interface ShortcutConfig {
   key: string
@@ -258,21 +261,27 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
    * 批量注册快捷键
    */
   function registerAll(shortcuts: ShortcutConfig[]): void {
-    shortcuts.forEach(shortcut => registerShortcut(shortcut))
+    shortcuts.forEach((shortcut) => registerShortcut(shortcut))
   }
 
   /**
    * 批量注销快捷键
    */
   function unregisterAll(shortcuts: ShortcutConfig[]): void {
-    shortcuts.forEach(shortcut => unregisterShortcut(shortcut))
+    shortcuts.forEach((shortcut) => unregisterShortcut(shortcut))
   }
 
   /**
    * 更新快捷键处理函数
    */
   function updateHandler(key: string, ctrl = false, shift = false, alt = false, handler: () => void): void {
-    const config = { key, ctrl, shift, alt, handler }
+    const config = {
+      key,
+      ctrl,
+      shift,
+      alt,
+      handler,
+    }
     unregisterShortcut(config)
     registerShortcut(config)
   }
@@ -304,7 +313,7 @@ export function useKeyboardShortcuts(options: KeyboardShortcutsOptions = {}) {
 export function createShortcut(
   key: string,
   handler: () => void,
-  options: { ctrl?: boolean; shift?: boolean; alt?: boolean; description?: string } = {}
+  options: { ctrl?: boolean, shift?: boolean, alt?: boolean, description?: string } = {},
 ): ShortcutConfig {
   return {
     key,

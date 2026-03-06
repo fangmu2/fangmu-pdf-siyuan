@@ -1,80 +1,3 @@
-<script setup lang="ts">
-/**
- * 悬浮工具栏组件
- * MarginNote 风格的快捷操作工具栏
- */
-
-import { computed } from 'vue'
-
-export interface ToolbarButton {
-  id: string
-  icon: string
-  tooltip: string
-  shortcut?: string
-  active?: boolean
-}
-
-const props = defineProps<{
-  // 是否显示网格
-  showGrid?: boolean
-  // 是否启用自动同步
-  autoSync?: boolean
-  // 当前布局模式
-  layout?: string
-}>()
-
-const emit = defineEmits<{
-  (e: 'add-text-card'): void
-  (e: 'add-image-card'): void
-  (e: 'add-group'): void
-  (e: 'auto-layout'): void
-  (e: 'fit-view'): void
-  (e: 'toggle-grid'): void
-  (e: 'toggle-sync'): void
-  (e: 'change-layout', layout: string): void
-}>()
-
-// 工具栏按钮配置
-const toolbarButtons = computed<ToolbarButton[]>(() => [
-  { id: 'text', icon: 'T', tooltip: '添加文字卡片', shortcut: 'N' },
-  { id: 'image', icon: '🖼️', tooltip: '添加图片卡片', shortcut: 'I' },
-  { id: 'group', icon: '📦', tooltip: '添加分组', shortcut: 'G' },
-])
-
-const layoutButtons = computed<ToolbarButton[]>(() => [
-  { id: 'free', icon: '🔓', tooltip: '自由布局', active: props.layout === 'free' },
-  { id: 'tree', icon: '🌳', tooltip: '树状布局', active: props.layout === 'tree' },
-  { id: 'vertical', icon: '⬇️', tooltip: '垂直布局', active: props.layout === 'vertical' },
-  { id: 'horizontal', icon: '➡️', tooltip: '水平布局', active: props.layout === 'horizontal' },
-])
-
-// 处理按钮点击
-function handleButtonClick(action: string): void {
-  switch (action) {
-    case 'text':
-      emit('add-text-card')
-      break
-    case 'image':
-      emit('add-image-card')
-      break
-    case 'group':
-      emit('add-group')
-      break
-    case 'auto-layout':
-      emit('auto-layout')
-      break
-    case 'fit-view':
-      emit('fit-view')
-      break
-  }
-}
-
-// 处理布局切换
-function handleLayoutChange(layout: string): void {
-  emit('change-layout', layout)
-}
-</script>
-
 <template>
   <div class="marginnote-floating-toolbar">
     <!-- 节点添加工具组 -->
@@ -88,7 +11,10 @@ function handleLayoutChange(layout: string): void {
         <span class="btn-icon">{{ btn.icon }}</span>
         <span class="btn-tooltip">
           {{ btn.tooltip }}
-          <span v-if="btn.shortcut" class="btn-shortcut">{{ btn.shortcut }}</span>
+          <span
+            v-if="btn.shortcut"
+            class="btn-shortcut"
+          >{{ btn.shortcut }}</span>
         </span>
       </button>
     </div>
@@ -155,6 +81,118 @@ function handleLayoutChange(layout: string): void {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+/**
+ * 悬浮工具栏组件
+ * MarginNote 风格的快捷操作工具栏
+ */
+
+import { computed } from 'vue'
+
+export interface ToolbarButton {
+  id: string
+  icon: string
+  tooltip: string
+  shortcut?: string
+  active?: boolean
+}
+
+const props = defineProps<{
+  // 是否显示网格
+  showGrid?: boolean
+  // 是否启用自动同步
+  autoSync?: boolean
+  // 当前布局模式
+  layout?: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'add-text-card'): void
+  (e: 'add-image-card'): void
+  (e: 'add-group'): void
+  (e: 'auto-layout'): void
+  (e: 'fit-view'): void
+  (e: 'toggle-grid'): void
+  (e: 'toggle-sync'): void
+  (e: 'change-layout', layout: string): void
+}>()
+
+// 工具栏按钮配置
+const toolbarButtons = computed<ToolbarButton[]>(() => [
+  {
+    id: 'text',
+    icon: 'T',
+    tooltip: '添加文字卡片',
+    shortcut: 'N',
+  },
+  {
+    id: 'image',
+    icon: '🖼️',
+    tooltip: '添加图片卡片',
+    shortcut: 'I',
+  },
+  {
+    id: 'group',
+    icon: '📦',
+    tooltip: '添加分组',
+    shortcut: 'G',
+  },
+])
+
+const layoutButtons = computed<ToolbarButton[]>(() => [
+  {
+    id: 'free',
+    icon: '🔓',
+    tooltip: '自由布局',
+    active: props.layout === 'free',
+  },
+  {
+    id: 'tree',
+    icon: '🌳',
+    tooltip: '树状布局',
+    active: props.layout === 'tree',
+  },
+  {
+    id: 'vertical',
+    icon: '⬇️',
+    tooltip: '垂直布局',
+    active: props.layout === 'vertical',
+  },
+  {
+    id: 'horizontal',
+    icon: '➡️',
+    tooltip: '水平布局',
+    active: props.layout === 'horizontal',
+  },
+])
+
+// 处理按钮点击
+function handleButtonClick(action: string): void {
+  switch (action) {
+    case 'text':
+      emit('add-text-card')
+      break
+    case 'image':
+      emit('add-image-card')
+      break
+    case 'group':
+      emit('add-group')
+      break
+    case 'auto-layout':
+      emit('auto-layout')
+      break
+    case 'fit-view':
+      emit('fit-view')
+      break
+  }
+}
+
+// 处理布局切换
+function handleLayoutChange(layout: string): void {
+  emit('change-layout', layout)
+}
+</script>
 
 <style scoped lang="scss">
 .marginnote-floating-toolbar {

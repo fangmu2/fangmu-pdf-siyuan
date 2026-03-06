@@ -3,46 +3,87 @@
     <!-- 日期选择器 -->
     <div class="review-stats__header">
       <div class="review-stats__date">
-        <button class="review-stats__nav-btn" @click="prevDay">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        <button
+          class="review-stats__nav-btn"
+          @click="prevDay"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
           </svg>
         </button>
         <span class="review-stats__date-text">{{ currentDateText }}</span>
-        <button class="review-stats__nav-btn" @click="nextDay">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+        <button
+          class="review-stats__nav-btn"
+          @click="nextDay"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
           </svg>
         </button>
-        <button class="review-stats__today-btn" @click="goToToday">今天</button>
+        <button
+          class="review-stats__today-btn"
+          @click="goToToday"
+        >
+          今天
+        </button>
       </div>
     </div>
 
     <!-- 总览统计 -->
     <div class="review-stats__overview">
       <div class="overview-card">
-        <div class="overview-card__icon" style="color: var(--b3-theme-primary)">📊</div>
+        <div
+          class="overview-card__icon"
+          style="color: var(--b3-theme-primary)"
+        >
+          📊
+        </div>
         <div class="overview-card__content">
           <span class="overview-card__value">{{ stats.totalReviewed }}</span>
           <span class="overview-card__label">已复习</span>
         </div>
       </div>
       <div class="overview-card">
-        <div class="overview-card__icon" style="color: var(--b3-theme-success)">✅</div>
+        <div
+          class="overview-card__icon"
+          style="color: var(--b3-theme-success)"
+        >
+          ✅
+        </div>
         <div class="overview-card__content">
           <span class="overview-card__value">{{ stats.correctCount }}</span>
           <span class="overview-card__label">正确</span>
         </div>
       </div>
       <div class="overview-card">
-        <div class="overview-card__icon" style="color: var(--b3-theme-error)">❌</div>
+        <div
+          class="overview-card__icon"
+          style="color: var(--b3-theme-error)"
+        >
+          ❌
+        </div>
         <div class="overview-card__content">
           <span class="overview-card__value">{{ stats.incorrectCount }}</span>
           <span class="overview-card__label">错误</span>
         </div>
       </div>
       <div class="overview-card">
-        <div class="overview-card__icon" style="color: var(--b3-theme-warning)">⏱️</div>
+        <div
+          class="overview-card__icon"
+          style="color: var(--b3-theme-warning)"
+        >
+          ⏱️
+        </div>
         <div class="overview-card__content">
           <span class="overview-card__value">{{ formatDuration(stats.totalTimeSpent) }}</span>
           <span class="overview-card__label">用时</span>
@@ -52,9 +93,14 @@
 
     <!-- 正确率环形图 -->
     <div class="review-stats__accuracy">
-      <h3 class="section-title">正确率</h3>
+      <h3 class="section-title">
+        正确率
+      </h3>
       <div class="accuracy-chart">
-        <svg viewBox="0 0 100 100" class="accuracy-chart__svg">
+        <svg
+          viewBox="0 0 100 100"
+          class="accuracy-chart__svg"
+        >
           <!-- 背景圆 -->
           <circle
             cx="50"
@@ -93,7 +139,9 @@
 
     <!-- 复习日历 -->
     <div class="review-stats__calendar">
-      <h3 class="section-title">复习日历</h3>
+      <h3 class="section-title">
+        复习日历
+      </h3>
       <div class="calendar">
         <div class="calendar__header">
           <span class="calendar__weekday">日</span>
@@ -108,7 +156,8 @@
           <div
             v-for="day in calendarDays"
             :key="day.date"
-            :class="['calendar__day', {
+            class="calendar__day"
+            :class="[{
               'calendar__day--today': day.isToday,
               'calendar__day--selected': day.date === selectedDate,
             }]"
@@ -116,7 +165,10 @@
             @click="selectDate(day.date)"
           >
             <span class="calendar__day-num">{{ day.day }}</span>
-            <span v-if="day.count > 0" class="calendar__day-count">{{ day.count }}</span>
+            <span
+              v-if="day.count > 0"
+              class="calendar__day-count"
+            >{{ day.count }}</span>
           </div>
         </div>
       </div>
@@ -124,7 +176,9 @@
 
     <!-- 学习集统计 -->
     <div class="review-stats__study-sets">
-      <h3 class="section-title">学习集分布</h3>
+      <h3 class="section-title">
+        学习集分布
+      </h3>
       <div class="study-set-list">
         <div
           v-for="item in studySetStats"
@@ -148,7 +202,9 @@
 
     <!-- 复习质量分布 -->
     <div class="review-stats__quality">
-      <h3 class="section-title">复习质量分布</h3>
+      <h3 class="section-title">
+        复习质量分布
+      </h3>
       <div class="quality-chart">
         <div
           v-for="item in qualityDistribution"
@@ -165,7 +221,9 @@
           <div class="quality-item__bar">
             <div
               class="quality-item__fill"
-              :style="{ width: `${item.percentage}%`, backgroundColor: item.color }"
+              :style="{
+                width: `${item.percentage}%`, backgroundColor: item.color,
+              }"
             ></div>
           </div>
           <span class="quality-item__count">{{ item.count }}</span>
@@ -176,28 +234,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { getReviewCalendarData, getReviewStats as getReviewStatsApi, getReviewRecordsByDateRange } from '../api/reviewApi';
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import {
+  getReviewCalendarData,
+  getReviewRecordsByDateRange,
+} from '../api/reviewApi'
 
 interface Props {
-  studySetId?: string;
+  studySetId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   studySetId: '',
-});
+})
 
 const emit = defineEmits<{
-  (e: 'date-change', date: string): void;
-  (e: 'study-set-click', studySetId: string): void;
-}>();
+  (e: 'date-change', date: string): void
+  (e: 'study-set-click', studySetId: string): void
+}>()
 
 // 当前选中的日期
-const selectedDate = ref<string>(new Date().toISOString().split('T')[0]);
-const currentDate = ref(new Date());
+const selectedDate = ref<string>(new Date().toISOString().split('T')[0])
+const currentDate = ref(new Date())
 
 // 圆周率
-const circumference = 2 * Math.PI * 40;
+const circumference = 2 * Math.PI * 40
 
 // 统计信息
 const stats = ref({
@@ -205,201 +271,206 @@ const stats = ref({
   correctCount: 0,
   incorrectCount: 0,
   totalTimeSpent: 0,
-});
+})
 
 // 学习集统计
-const studySetStats = ref<Array<{ id: string; name: string; reviewed: number; percentage: number }>>([]);
+const studySetStats = ref<Array<{ id: string, name: string, reviewed: number, percentage: number }>>([])
 
 // 质量分布
-const qualityDistribution = ref<Array<{ label: string; count: number; percentage: number; color: string }>>([]);
+const qualityDistribution = ref<Array<{ label: string, count: number, percentage: number, color: string }>>([])
 
 // 日历数据
-const calendarData = ref<Record<number, number>>({});
+const calendarData = ref<Record<number, number>>({})
 
 // 当前日期文本
 const currentDateText = computed(() => {
-  const date = new Date(selectedDate.value);
+  const date = new Date(selectedDate.value)
   return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
-});
+  })
+})
 
 // 正确率
 const accuracyRate = computed(() => {
-  const total = stats.value.totalReviewed;
-  if (total === 0) return 0;
-  return Math.round((stats.value.correctCount / total) * 100);
-});
+  const total = stats.value.totalReviewed
+  if (total === 0) return 0
+  return Math.round((stats.value.correctCount / total) * 100)
+})
 
 // 环形图偏移量
 const dashOffset = computed(() => {
-  return circumference - (accuracyRate.value / 100) * circumference;
-});
+  return circumference - (accuracyRate.value / 100) * circumference
+})
 
 // 日历天数
 const calendarDays = computed(() => {
   const days: Array<{
-    date: string;
-    day: number;
-    count: number;
-    isToday: boolean;
-  }> = [];
+    date: string
+    day: number
+    count: number
+    isToday: boolean
+  }> = []
 
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
 
   // 获取当月第一天
-  const firstDay = new Date(currentYear, currentMonth, 1);
-  const startDay = firstDay.getDay();
+  const firstDay = new Date(currentYear, currentMonth, 1)
+  const startDay = firstDay.getDay()
 
   // 获取当月天数
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
 
   // 填充前面的空白
   for (let i = 0; i < startDay; i++) {
-    days.push({ date: '', day: 0, count: 0, isToday: false });
+    days.push({
+      date: '',
+      day: 0,
+      count: 0,
+      isToday: false,
+    })
   }
 
   // 填充日期
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(currentYear, currentMonth, day);
-    const dateStr = date.toISOString().split('T')[0];
-    const isToday = dateStr === new Date().toISOString().split('T')[0];
+    const date = new Date(currentYear, currentMonth, day)
+    const dateStr = date.toISOString().split('T')[0]
+    const isToday = dateStr === new Date().toISOString().split('T')[0]
 
     days.push({
       date: dateStr,
       day,
       count: calendarData.value[day] || 0,
       isToday,
-    });
+    })
   }
 
-  return days;
-});
+  return days
+})
 
 // 选择日期
 const selectDate = (date: string) => {
-  selectedDate.value = date;
-  emit('date-change', date);
-  loadStats();
-};
+  selectedDate.value = date
+  emit('date-change', date)
+  loadStats()
+}
 
 // 前一天
 const prevDay = () => {
-  const date = new Date(selectedDate.value);
-  date.setDate(date.getDate() - 1);
-  selectDate(date.toISOString().split('T')[0]);
-};
+  const date = new Date(selectedDate.value)
+  date.setDate(date.getDate() - 1)
+  selectDate(date.toISOString().split('T')[0])
+}
 
 // 后一天
 const nextDay = () => {
-  const date = new Date(selectedDate.value);
-  date.setDate(date.getDate() + 1);
-  selectDate(date.toISOString().split('T')[0]);
-};
+  const date = new Date(selectedDate.value)
+  date.setDate(date.getDate() + 1)
+  selectDate(date.toISOString().split('T')[0])
+}
 
 // 回到今天
 const goToToday = () => {
-  selectDate(new Date().toISOString().split('T')[0]);
-};
+  selectDate(new Date().toISOString().split('T')[0])
+}
 
 // 加载统计
 const loadStats = async () => {
   try {
-    const date = new Date(selectedDate.value);
-    const startDate = date.setHours(0, 0, 0, 0);
-    const endDate = startDate + 86400000;
+    const date = new Date(selectedDate.value)
+    const startDate = date.setHours(0, 0, 0, 0)
+    const endDate = startDate + 86400000
 
     // 获取当天的复习记录
-    const records = await getReviewRecordsByDateRange(startDate, endDate);
+    const records = await getReviewRecordsByDateRange(startDate, endDate)
 
     stats.value = {
       totalReviewed: records.length,
-      correctCount: records.filter(r => r.correct).length,
-      incorrectCount: records.filter(r => !r.correct).length,
+      correctCount: records.filter((r) => r.correct).length,
+      incorrectCount: records.filter((r) => !r.correct).length,
       totalTimeSpent: records.reduce((sum, r) => sum + (r.timeSpent || 0), 0),
-    };
+    }
 
     // 计算质量分布
-    const qualityMap: Record<number, number> = {};
-    records.forEach(r => {
-      qualityMap[r.quality] = (qualityMap[r.quality] || 0) + 1;
-    });
+    const qualityMap: Record<number, number> = {}
+    records.forEach((r) => {
+      qualityMap[r.quality] = (qualityMap[r.quality] || 0) + 1
+    })
 
-    const total = records.length;
+    const total = records.length
     qualityDistribution.value = [
       {
         label: '简单',
         count: qualityMap[5] || 0,
         percentage: total > 0 ? Math.round(((qualityMap[5] || 0) / total) * 100) : 0,
-        color: 'var(--b3-theme-success)'
+        color: 'var(--b3-theme-success)',
       },
       {
         label: '良好',
         count: qualityMap[4] || 0,
         percentage: total > 0 ? Math.round(((qualityMap[4] || 0) / total) * 100) : 0,
-        color: 'var(--b3-theme-primary)'
+        color: 'var(--b3-theme-primary)',
       },
       {
         label: '困难',
         count: qualityMap[3] || 0,
         percentage: total > 0 ? Math.round(((qualityMap[3] || 0) / total) * 100) : 0,
-        color: 'var(--b3-theme-warning)'
+        color: 'var(--b3-theme-warning)',
       },
       {
         label: '忘记',
         count: (qualityMap[0] || 0) + (qualityMap[1] || 0) + (qualityMap[2] || 0),
         percentage: total > 0 ? Math.round((((qualityMap[0] || 0) + (qualityMap[1] || 0) + (qualityMap[2] || 0)) / total) * 100) : 0,
-        color: 'var(--b3-theme-error)'
+        color: 'var(--b3-theme-error)',
       },
-    ];
+    ]
 
     // TODO: 加载学习集统计
-    studySetStats.value = [];
+    studySetStats.value = []
   } catch (error) {
-    console.error('加载统计数据失败:', error);
+    console.error('加载统计数据失败:', error)
   }
-};
+}
 
 // 加载日历数据
 const loadCalendarData = async () => {
   try {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = today.getMonth()
 
-    calendarData.value = await getReviewCalendarData(year, month, props.studySetId || undefined);
+    calendarData.value = await getReviewCalendarData(year, month, props.studySetId || undefined)
   } catch (error) {
-    console.error('加载日历数据失败:', error);
+    console.error('加载日历数据失败:', error)
   }
-};
+}
 
-watch(() => selectedDate.value, loadStats, { immediate: true });
+watch(() => selectedDate.value, loadStats, { immediate: true })
 onMounted(() => {
-  loadCalendarData();
-});
+  loadCalendarData()
+})
 
 // 格式化时长
 const formatDuration = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
   if (mins >= 60) {
-    const hours = Math.floor(mins / 60);
-    return `${hours}小时${mins % 60}分`;
+    const hours = Math.floor(mins / 60)
+    return `${hours}小时${mins % 60}分`
   }
   if (mins > 0) {
-    return `${mins}分${secs}秒`;
+    return `${mins}分${secs}秒`
   }
-  return `${secs}秒`;
-};
+  return `${secs}秒`
+}
 
 // 学习集点击
 const handleStudySetClick = (studySetId: string) => {
-  emit('study-set-click', studySetId);
-};
+  emit('study-set-click', studySetId)
+}
 </script>
 
 <style scoped lang="scss">

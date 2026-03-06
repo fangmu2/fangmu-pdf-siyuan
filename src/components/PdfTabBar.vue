@@ -2,27 +2,30 @@
   <div class="pdf-tab-bar">
     <!-- 标签页列表 -->
     <div
-      class="pdf-tab-bar__list"
       ref="tabListRef"
+      class="pdf-tab-bar__list"
       @wheel="handleWheel"
     >
       <div
         v-for="tab in tabs"
         :key="tab.id"
+        class="pdf-tab-bar__tab"
         :class="[
-          'pdf-tab-bar__tab',
           { 'pdf-tab-bar__tab--active': tab.id === activeTabId },
-          { 'pdf-tab-bar__tab--loading': !tab.loaded }
+          { 'pdf-tab-bar__tab--loading': !tab.loaded },
         ]"
+        draggable="true"
         @click="handleTabClick(tab.id)"
         @contextmenu.prevent="handleContextMenu($event, tab.id)"
-        draggable="true"
         @dragstart="handleDragStart($event, tab.id)"
         @dragover.prevent
         @drop="handleDrop($event, tab.id)"
       >
         <!-- 加载指示器 -->
-        <span v-if="!tab.loaded" class="pdf-tab-bar__loading">
+        <span
+          v-if="!tab.loaded"
+          class="pdf-tab-bar__loading"
+        >
           <span class="pdf-tab-bar__loading-spinner"></span>
         </span>
 
@@ -38,18 +41,24 @@
         </span>
 
         <!-- 进度指示 -->
-        <span v-if="tab.progress > 0" class="pdf-tab-bar__progress">
+        <span
+          v-if="tab.progress > 0"
+          class="pdf-tab-bar__progress"
+        >
           {{ tab.progress }}%
         </span>
 
         <!-- 修改标记 -->
-        <span v-if="tab.hasChanges" class="pdf-tab-bar__changed">●</span>
+        <span
+          v-if="tab.hasChanges"
+          class="pdf-tab-bar__changed"
+        >●</span>
 
         <!-- 关闭按钮 -->
         <button
           class="pdf-tab-bar__close"
-          @click.stop="handleClose(tab.id)"
           title="关闭"
+          @click.stop="handleClose(tab.id)"
         >
           ✕
         </button>
@@ -61,9 +70,9 @@
       <!-- 新建标签按钮 -->
       <button
         class="pdf-tab-bar__action"
-        @click="handleNewTab"
         title="打开新 PDF"
         :disabled="tabCount >= maxTabs"
+        @click="handleNewTab"
       >
         +
       </button>
@@ -72,17 +81,28 @@
       <div class="pdf-tab-bar__more">
         <button
           class="pdf-tab-bar__action"
-          @click="toggleMoreMenu"
           title="更多操作"
+          @click="toggleMoreMenu"
         >
           ⋮
         </button>
-        <div v-if="showMoreMenu" class="pdf-tab-bar__menu">
-          <button @click="handleCloseOthers">关闭其他</button>
-          <button @click="handleCloseRight">关闭右侧</button>
-          <button @click="handleCloseAll">关闭所有</button>
+        <div
+          v-if="showMoreMenu"
+          class="pdf-tab-bar__menu"
+        >
+          <button @click="handleCloseOthers">
+            关闭其他
+          </button>
+          <button @click="handleCloseRight">
+            关闭右侧
+          </button>
+          <button @click="handleCloseAll">
+            关闭所有
+          </button>
           <hr />
-          <button @click="handleCopyPath">复制文件路径</button>
+          <button @click="handleCopyPath">
+            复制文件路径
+          </button>
         </div>
       </div>
     </div>
@@ -91,13 +111,23 @@
     <div
       v-if="contextMenu.visible"
       class="pdf-tab-bar__context-menu"
-      :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+      :style="{
+        left: `${contextMenu.x}px`, top: `${contextMenu.y}px`,
+      }"
     >
-      <button @click="handleContextClose">关闭</button>
-      <button @click="handleContextCloseOthers">关闭其他</button>
-      <button @click="handleContextCloseRight">关闭右侧</button>
+      <button @click="handleContextClose">
+        关闭
+      </button>
+      <button @click="handleContextCloseOthers">
+        关闭其他
+      </button>
+      <button @click="handleContextCloseRight">
+        关闭右侧
+      </button>
       <hr />
-      <button @click="handleContextCopyPath">复制路径</button>
+      <button @click="handleContextCopyPath">
+        复制路径
+      </button>
     </div>
 
     <!-- 遮罩层（点击关闭菜单） -->
@@ -110,69 +140,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { usePdfTabStore, type PdfTab } from '../stores/pdfTabStore';
+import { storeToRefs } from 'pinia'
+import {
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import {
+  usePdfTabStore,
+} from '../stores/pdfTabStore'
 
 // Props
 interface Props {
   /** 最大标签页数量 */
-  maxTabs?: number;
+  maxTabs?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   maxTabs: 10,
-});
+})
 
 // Emits
 const emit = defineEmits<{
-  (e: 'tab-click', tabId: string): void;
-  (e: 'tab-close', tabId: string): void;
-  (e: 'tab-new'): void;
-  (e: 'tab-change', tabId: string): void;
-}>();
+  (e: 'tab-click', tabId: string): void
+  (e: 'tab-close', tabId: string): void
+  (e: 'tab-new'): void
+  (e: 'tab-change', tabId: string): void
+}>()
 
 // Store
-const pdfTabStore = usePdfTabStore();
-const { tabs, activeTabId, tabCount } = storeToRefs(pdfTabStore);
+const pdfTabStore = usePdfTabStore()
+const {
+  tabs,
+  activeTabId,
+  tabCount,
+} = storeToRefs(pdfTabStore)
 
 // Refs
-const tabListRef = ref<HTMLDivElement | null>(null);
+const tabListRef = ref<HTMLDivElement | null>(null)
 
 // 状态
-const showMoreMenu = ref(false);
+const showMoreMenu = ref(false)
 const contextMenu = ref({
   visible: false,
   x: 0,
   y: 0,
   tabId: '' as string,
-});
+})
 
 // 拖拽状态
-const dragTabId = ref<string | null>(null);
+const dragTabId = ref<string | null>(null)
 
 // 方法
 const handleTabClick = (tabId: string): void => {
-  pdfTabStore.activateTab(tabId);
-  emit('tab-click', tabId);
-};
+  pdfTabStore.activateTab(tabId)
+  emit('tab-click', tabId)
+}
 
 const handleClose = (tabId: string): void => {
-  emit('tab-close', tabId);
-};
+  emit('tab-close', tabId)
+}
 
 const handleNewTab = (): void => {
-  emit('tab-new');
-};
+  emit('tab-new')
+}
 
 const toggleMoreMenu = (): void => {
-  showMoreMenu.value = !showMoreMenu.value;
-};
+  showMoreMenu.value = !showMoreMenu.value
+}
 
 const closeMenus = (): void => {
-  showMoreMenu.value = false;
-  contextMenu.value.visible = false;
-};
+  showMoreMenu.value = false
+  contextMenu.value.visible = false
+}
 
 const handleContextMenu = (event: MouseEvent, tabId: string): void => {
   contextMenu.value = {
@@ -180,125 +220,125 @@ const handleContextMenu = (event: MouseEvent, tabId: string): void => {
     x: event.clientX,
     y: event.clientY,
     tabId,
-  };
-};
+  }
+}
 
 const handleContextClose = (): void => {
-  emit('tab-close', contextMenu.value.tabId);
-  closeMenus();
-};
+  emit('tab-close', contextMenu.value.tabId)
+  closeMenus()
+}
 
 const handleContextCloseOthers = (): void => {
-  pdfTabStore.closeOtherTabs(contextMenu.value.tabId);
-  closeMenus();
-};
+  pdfTabStore.closeOtherTabs(contextMenu.value.tabId)
+  closeMenus()
+}
 
 const handleContextCloseRight = (): void => {
-  pdfTabStore.closeTabsToRight(contextMenu.value.tabId);
-  closeMenus();
-};
+  pdfTabStore.closeTabsToRight(contextMenu.value.tabId)
+  closeMenus()
+}
 
 const handleContextCopyPath = (): void => {
-  const tab = tabs.value.find(t => t.id === contextMenu.value.tabId);
+  const tab = tabs.value.find((t) => t.id === contextMenu.value.tabId)
   if (tab) {
-    navigator.clipboard.writeText(tab.path);
+    navigator.clipboard.writeText(tab.path)
   }
-  closeMenus();
-};
+  closeMenus()
+}
 
 const handleCloseOthers = (): void => {
   if (activeTabId.value) {
-    pdfTabStore.closeOtherTabs(activeTabId.value);
+    pdfTabStore.closeOtherTabs(activeTabId.value)
   }
-  closeMenus();
-};
+  closeMenus()
+}
 
 const handleCloseRight = (): void => {
   if (activeTabId.value) {
-    pdfTabStore.closeTabsToRight(activeTabId.value);
+    pdfTabStore.closeTabsToRight(activeTabId.value)
   }
-  closeMenus();
-};
+  closeMenus()
+}
 
 const handleCloseAll = (): void => {
-  pdfTabStore.closeAllTabs();
-  closeMenus();
-};
+  pdfTabStore.closeAllTabs()
+  closeMenus()
+}
 
 const handleCopyPath = (): void => {
   if (activeTabId.value) {
-    const tab = tabs.value.find(t => t.id === activeTabId.value);
+    const tab = tabs.value.find((t) => t.id === activeTabId.value)
     if (tab) {
-      navigator.clipboard.writeText(tab.path);
+      navigator.clipboard.writeText(tab.path)
     }
   }
-  closeMenus();
-};
+  closeMenus()
+}
 
 // 滚轮切换标签页
 const handleWheel = (event: WheelEvent): void => {
   if (event.deltaY > 0) {
-    pdfTabStore.nextTab();
+    pdfTabStore.nextTab()
   } else {
-    pdfTabStore.prevTab();
+    pdfTabStore.prevTab()
   }
-};
+}
 
 // 拖拽排序
 const handleDragStart = (event: DragEvent, tabId: string): void => {
-  dragTabId.value = tabId;
+  dragTabId.value = tabId
   if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', tabId);
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', tabId)
   }
-};
+}
 
 const handleDrop = (event: DragEvent, targetTabId: string): void => {
-  if (!dragTabId.value || dragTabId.value === targetTabId) return;
+  if (!dragTabId.value || dragTabId.value === targetTabId) return
 
-  const fromIndex = pdfTabStore.getTabIndex(dragTabId.value);
-  const toIndex = pdfTabStore.getTabIndex(targetTabId);
+  const fromIndex = pdfTabStore.getTabIndex(dragTabId.value)
+  const toIndex = pdfTabStore.getTabIndex(targetTabId)
 
   if (fromIndex !== -1 && toIndex !== -1) {
-    pdfTabStore.moveTab(fromIndex, toIndex);
+    pdfTabStore.moveTab(fromIndex, toIndex)
   }
 
-  dragTabId.value = null;
-};
+  dragTabId.value = null
+}
 
 // 键盘快捷键
 const handleKeydown = (event: KeyboardEvent): void => {
   // Ctrl+Tab 或 Ctrl+PageDown: 下一个标签
-  if ((event.ctrlKey && event.key === 'Tab') ||
-      (event.ctrlKey && event.key === 'PageDown')) {
-    event.preventDefault();
-    pdfTabStore.nextTab();
+  if ((event.ctrlKey && event.key === 'Tab')
+    || (event.ctrlKey && event.key === 'PageDown')) {
+    event.preventDefault()
+    pdfTabStore.nextTab()
   }
 
   // Ctrl+Shift+Tab 或 Ctrl+PageUp: 上一个标签
-  if ((event.ctrlKey && event.shiftKey && event.key === 'Tab') ||
-      (event.ctrlKey && event.key === 'PageUp')) {
-    event.preventDefault();
-    pdfTabStore.prevTab();
+  if ((event.ctrlKey && event.shiftKey && event.key === 'Tab')
+    || (event.ctrlKey && event.key === 'PageUp')) {
+    event.preventDefault()
+    pdfTabStore.prevTab()
   }
 
   // Ctrl+W: 关闭当前标签
   if (event.ctrlKey && event.key === 'w') {
-    event.preventDefault();
+    event.preventDefault()
     if (activeTabId.value) {
-      emit('tab-close', activeTabId.value);
+      emit('tab-close', activeTabId.value)
     }
   }
-};
+}
 
 // 生命周期
 onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
+  window.addEventListener('keydown', handleKeydown)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
-});
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>

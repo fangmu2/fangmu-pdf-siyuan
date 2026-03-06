@@ -3,31 +3,55 @@
     <!-- 顶部统计卡片 -->
     <div class="review-manager__stats">
       <div class="stat-card">
-        <div class="stat-card__icon">📚</div>
+        <div class="stat-card__icon">
+          📚
+        </div>
         <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats.totalCards }}</div>
-          <div class="stat-card__label">总卡片数</div>
+          <div class="stat-card__value">
+            {{ stats.totalCards }}
+          </div>
+          <div class="stat-card__label">
+            总卡片数
+          </div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-card__icon">⏰</div>
+        <div class="stat-card__icon">
+          ⏰
+        </div>
         <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats.dueToday }}</div>
-          <div class="stat-card__label">今日到期</div>
+          <div class="stat-card__value">
+            {{ stats.dueToday }}
+          </div>
+          <div class="stat-card__label">
+            今日到期
+          </div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-card__icon">✅</div>
+        <div class="stat-card__icon">
+          ✅
+        </div>
         <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats.learnedCards }}</div>
-          <div class="stat-card__label">已掌握</div>
+          <div class="stat-card__value">
+            {{ stats.learnedCards }}
+          </div>
+          <div class="stat-card__label">
+            已掌握
+          </div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-card__icon">🔥</div>
+        <div class="stat-card__icon">
+          🔥
+        </div>
         <div class="stat-card__content">
-          <div class="stat-card__value">{{ stats.streak }}</div>
-          <div class="stat-card__label">连续天数</div>
+          <div class="stat-card__value">
+            {{ stats.streak }}
+          </div>
+          <div class="stat-card__label">
+            连续天数
+          </div>
         </div>
       </div>
     </div>
@@ -35,18 +59,25 @@
     <!-- 学习集选择 -->
     <div class="review-manager__section">
       <div class="section-header">
-        <h3 class="section-title">选择学习集</h3>
+        <h3 class="section-title">
+          选择学习集
+        </h3>
       </div>
       <div class="study-set-list">
         <div
           v-for="set in learningSets"
           :key="set.id"
-          :class="['study-set-item', { active: selectedSetId === set.id }]"
+          class="study-set-item"
+          :class="[{ active: selectedSetId === set.id }]"
           @click="selectStudySet(set.id)"
         >
           <div class="study-set-item__info">
-            <div class="study-set-item__name">{{ set.name }}</div>
-            <div class="study-set-item__desc">{{ set.description }}</div>
+            <div class="study-set-item__name">
+              {{ set.name }}
+            </div>
+            <div class="study-set-item__desc">
+              {{ set.description }}
+            </div>
           </div>
           <div class="study-set-item__stats">
             <span class="study-set-item__stat">
@@ -63,11 +94,14 @@
     <!-- 复习模式选择 -->
     <div class="review-manager__section">
       <div class="section-header">
-        <h3 class="section-title">复习模式</h3>
+        <h3 class="section-title">
+          复习模式
+        </h3>
       </div>
       <div class="mode-selector">
         <button
-          :class="['mode-btn', { active: reviewMode === 'normal' }]"
+          class="mode-btn"
+          :class="[{ active: reviewMode === 'normal' }]"
           @click="reviewMode = 'normal'"
         >
           <span class="mode-btn__icon">📖</span>
@@ -75,7 +109,8 @@
           <span class="mode-btn__desc">复习所有到期卡片</span>
         </button>
         <button
-          :class="['mode-btn', { active: reviewMode === 'new' }]"
+          class="mode-btn"
+          :class="[{ active: reviewMode === 'new' }]"
           @click="reviewMode = 'new'"
         >
           <span class="mode-btn__icon">🆕</span>
@@ -83,7 +118,8 @@
           <span class="mode-btn__desc">学习未学过的卡片</span>
         </button>
         <button
-          :class="['mode-btn', { active: reviewMode === 'wrong' }]"
+          class="mode-btn"
+          :class="[{ active: reviewMode === 'wrong' }]"
           @click="reviewMode = 'wrong'"
         >
           <span class="mode-btn__icon">❌</span>
@@ -91,7 +127,8 @@
           <span class="mode-btn__desc">复习经常出错的卡片</span>
         </button>
         <button
-          :class="['mode-btn', { active: reviewMode === 'random' }]"
+          class="mode-btn"
+          :class="[{ active: reviewMode === 'random' }]"
           @click="reviewMode = 'random'"
         >
           <span class="mode-btn__icon">🎲</span>
@@ -104,7 +141,9 @@
     <!-- 复习设置 -->
     <div class="review-manager__section">
       <div class="section-header">
-        <h3 class="section-title">复习设置</h3>
+        <h3 class="section-title">
+          复习设置
+        </h3>
       </div>
       <div class="settings-list">
         <div class="setting-item">
@@ -143,9 +182,16 @@
             <span class="setting-item__hint">间隔重复算法选择</span>
           </div>
           <div class="setting-item__control">
-            <select v-model="settings.algorithm" class="setting-select">
-              <option value="sm2">SM-2（经典算法）</option>
-              <option value="fsrs">FSRS（最新算法）</option>
+            <select
+              v-model="settings.algorithm"
+              class="setting-select"
+            >
+              <option value="sm2">
+                SM-2（经典算法）
+              </option>
+              <option value="fsrs">
+                FSRS（最新算法）
+              </option>
             </select>
           </div>
         </div>
@@ -163,7 +209,10 @@
         <span class="start-review-btn__text">
           {{ canStartReview ? '开始复习' : '暂无待复习卡片' }}
         </span>
-        <span v-if="selectedSetId && getDueCount(selectedSetId) > 0" class="start-review-btn__badge">
+        <span
+          v-if="selectedSetId && getDueCount(selectedSetId) > 0"
+          class="start-review-btn__badge"
+        >
           {{ getDueCount(selectedSetId) }}
         </span>
       </button>
@@ -172,16 +221,32 @@
     <!-- 复习日历 -->
     <div class="review-manager__section">
       <div class="section-header">
-        <h3 class="section-title">复习日历</h3>
+        <h3 class="section-title">
+          复习日历
+        </h3>
         <div class="calendar-nav">
-          <button class="calendar-nav__btn" @click="prevMonth">◀</button>
+          <button
+            class="calendar-nav__btn"
+            @click="prevMonth"
+          >
+            ◀
+          </button>
           <span class="calendar-nav__label">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
-          <button class="calendar-nav__btn" @click="nextMonth">▶</button>
+          <button
+            class="calendar-nav__btn"
+            @click="nextMonth"
+          >
+            ▶
+          </button>
         </div>
       </div>
       <div class="calendar">
         <div class="calendar__header">
-          <div v-for="day in ['日', '一', '二', '三', '四', '五', '六']" :key="day" class="calendar__day-header">
+          <div
+            v-for="day in ['日', '一', '二', '三', '四', '五', '六']"
+            :key="day"
+            class="calendar__day-header"
+          >
             {{ day }}
           </div>
         </div>
@@ -189,15 +254,23 @@
           <div
             v-for="day in calendarDays"
             :key="day.date"
-            :class="['calendar__day', {
+            class="calendar__day"
+            :class="[{
               'is-today': day.isToday,
               'is-selected': day.isSelected,
-              'has-review': day.reviewCount > 0
+              'has-review': day.reviewCount > 0,
             }]"
             @click="selectDate(day)"
           >
-            <div class="calendar__day-num">{{ day.day }}</div>
-            <div v-if="day.reviewCount > 0" class="calendar__day-dot">{{ day.reviewCount }}</div>
+            <div class="calendar__day-num">
+              {{ day.day }}
+            </div>
+            <div
+              v-if="day.reviewCount > 0"
+              class="calendar__day-dot"
+            >
+              {{ day.reviewCount }}
+            </div>
           </div>
         </div>
       </div>
@@ -206,40 +279,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useLearningSetStore } from '../stores/learningSetStore';
-import { useCardStore } from '../stores/cardStore';
-import { useReviewStore } from '../stores/reviewStore';
-import { reviewService } from '../services/reviewService';
-import type { StudySet } from '../types/studySet';
-import type { Card, FlashCard } from '../types/card';
+import type {
+  FlashCard,
+} from '../types/card'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
+import { reviewService } from '../services/reviewService'
+import { useCardStore } from '../stores/cardStore'
+import { useLearningSetStore } from '../stores/learningSetStore'
+import { useReviewStore } from '../stores/reviewStore'
 
 const emit = defineEmits<{
-  (e: 'start-review', queue: FlashCard[], mode: string): void;
-}>();
+  (e: 'start-review', queue: FlashCard[], mode: string): void
+}>()
 
-const learningSetStore = useLearningSetStore();
-const cardStore = useCardStore();
-const reviewStore = useReviewStore();
+const learningSetStore = useLearningSetStore()
+const cardStore = useCardStore()
+const reviewStore = useReviewStore()
 
 // 选中的学习集
-const selectedSetId = ref<string>('');
+const selectedSetId = ref<string>('')
 
 // 复习模式
-const reviewMode = ref<'normal' | 'new' | 'wrong' | 'random'>('normal');
+const reviewMode = ref<'normal' | 'new' | 'wrong' | 'random'>('normal')
 
 // 复习设置
 const settings = ref({
   dailyNewCards: 20,
   dailyReviewLimit: 200,
   algorithm: 'sm2' as 'sm2' | 'fsrs',
-});
+})
 
 // 日历状态
-const currentDate = new Date();
-const currentYear = ref(currentDate.getFullYear());
-const currentMonth = ref(currentDate.getMonth());
-const selectedDate = ref<Date | null>(null);
+const currentDate = new Date()
+const currentYear = ref(currentDate.getFullYear())
+const currentMonth = ref(currentDate.getMonth())
+const selectedDate = ref<Date | null>(null)
 
 // 统计数据
 const stats = ref({
@@ -247,192 +325,192 @@ const stats = ref({
   dueToday: 0,
   learnedCards: 0,
   streak: 0,
-});
+})
 
 // 计算属性
-const learningSets = computed(() => learningSetStore.learningSets);
-const cards = computed(() => cardStore.cards);
+const learningSets = computed(() => learningSetStore.learningSets)
+const cards = computed(() => cardStore.cards)
 
 const canStartReview = computed(() => {
-  if (!selectedSetId.value) return false;
-  const dueCount = getDueCount(selectedSetId.value);
-  return dueCount > 0 || reviewMode.value !== 'normal';
-});
+  if (!selectedSetId.value) return false
+  const dueCount = getDueCount(selectedSetId.value)
+  return dueCount > 0 || reviewMode.value !== 'normal'
+})
 
 // 日历天数
 const calendarDays = computed(() => {
-  const year = currentYear.value;
-  const month = currentMonth.value;
+  const year = currentYear.value
+  const month = currentMonth.value
 
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startDay = firstDay.getDay();
-  const totalDays = lastDay.getDate();
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const startDay = firstDay.getDay()
+  const totalDays = lastDay.getDate()
 
   const days: Array<{
-    day: number;
-    date: string;
-    reviewCount: number;
-    isToday: boolean;
-    isSelected: boolean;
-  }> = [];
+    day: number
+    date: string
+    reviewCount: number
+    isToday: boolean
+    isSelected: boolean
+  }> = []
 
   // 添加上月的日期
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  const prevMonthLastDay = new Date(year, month, 0).getDate()
   for (let i = startDay - 1; i >= 0; i--) {
-    const day = prevMonthLastDay - i;
-    const date = new Date(year, month - 1, day);
+    const day = prevMonthLastDay - i
+    const date = new Date(year, month - 1, day)
     days.push({
       day,
       date: date.toISOString().split('T')[0],
       reviewCount: 0,
       isToday: false,
       isSelected: false,
-    });
+    })
   }
 
   // 添加当月的日期
-  const today = new Date();
+  const today = new Date()
   for (let i = 1; i <= totalDays; i++) {
-    const date = new Date(year, month, i);
-    const dateStr = date.toISOString().split('T')[0];
+    const date = new Date(year, month, i)
+    const dateStr = date.toISOString().split('T')[0]
     days.push({
       day: i,
       date: dateStr,
       reviewCount: Math.floor(Math.random() * 10), // TODO: 从实际数据获取
       isToday: date.toDateString() === today.toDateString(),
       isSelected: selectedDate.value?.toDateString() === date.toDateString(),
-    });
+    })
   }
 
   // 添加下月的日期
-  const remainingDays = 42 - days.length;
+  const remainingDays = 42 - days.length
   for (let i = 1; i <= remainingDays; i++) {
-    const date = new Date(year, month + 1, i);
+    const date = new Date(year, month + 1, i)
     days.push({
       day: i,
       date: date.toISOString().split('T')[0],
       reviewCount: 0,
       isToday: false,
       isSelected: false,
-    });
+    })
   }
 
-  return days;
-});
+  return days
+})
 
 // 方法
 function selectStudySet(id: string) {
-  selectedSetId.value = id;
+  selectedSetId.value = id
 }
 
 function getCardCount(setId: string): number {
-  const set = learningSets.value.find(s => s.id === setId);
-  return set?.cardIds?.length || 0;
+  const set = learningSets.value.find((s) => s.id === setId)
+  return set?.cardIds?.length || 0
 }
 
 function getDueCount(setId: string): number {
-  const setCards = cards.value.filter(c => c.studySetId === setId && c.type === 'flashcard');
-  const now = Date.now();
-  return setCards.filter(c => {
-    const flashCard = c as FlashCard;
-    return flashCard.srs?.nextReview && flashCard.srs.nextReview <= now;
-  }).length;
+  const setCards = cards.value.filter((c) => c.studySetId === setId && c.type === 'flashcard')
+  const now = Date.now()
+  return setCards.filter((c) => {
+    const flashCard = c as FlashCard
+    return flashCard.srs?.nextReview && flashCard.srs.nextReview <= now
+  }).length
 }
 
 function prevMonth() {
   if (currentMonth.value === 0) {
-    currentMonth.value = 11;
-    currentYear.value--;
+    currentMonth.value = 11
+    currentYear.value--
   } else {
-    currentMonth.value--;
+    currentMonth.value--
   }
 }
 
 function nextMonth() {
   if (currentMonth.value === 11) {
-    currentMonth.value = 0;
-    currentYear.value++;
+    currentMonth.value = 0
+    currentYear.value++
   } else {
-    currentMonth.value++;
+    currentMonth.value++
   }
 }
 
 function selectDate(day: any) {
-  selectedDate.value = new Date(day.date);
+  selectedDate.value = new Date(day.date)
 }
 
 async function handleStartReview() {
-  if (!selectedSetId.value) return;
+  if (!selectedSetId.value) return
 
   // 获取复习队列
-  const setCards = cards.value.filter(c => c.studySetId === selectedSetId.value);
-  let queue: FlashCard[] = [];
+  const setCards = cards.value.filter((c) => c.studySetId === selectedSetId.value)
+  let queue: FlashCard[] = []
 
   if (reviewMode.value === 'normal') {
     // 普通复习：获取到期卡片
-    const now = Date.now();
+    const now = Date.now()
     queue = setCards
-      .filter(c => c.type === 'flashcard')
-      .map(c => c as FlashCard)
-      .filter(c => c.srs?.nextReview && c.srs.nextReview <= now);
+      .filter((c) => c.type === 'flashcard')
+      .map((c) => c as FlashCard)
+      .filter((c) => c.srs?.nextReview && c.srs.nextReview <= now)
   } else if (reviewMode.value === 'new') {
     // 学习新卡
     queue = setCards
-      .filter(c => c.type === 'flashcard' && c.status === 'new')
-      .map(c => c as FlashCard)
-      .slice(0, settings.value.dailyNewCards);
+      .filter((c) => c.type === 'flashcard' && c.status === 'new')
+      .map((c) => c as FlashCard)
+      .slice(0, settings.value.dailyNewCards)
   } else if (reviewMode.value === 'wrong') {
     // 错题复习：选择经常出错的卡片
     queue = setCards
-      .filter(c => c.type === 'flashcard')
-      .map(c => c as FlashCard)
-      .filter(c => c.srs && c.srs.easeFactor < 2.0)
-      .slice(0, 20);
+      .filter((c) => c.type === 'flashcard')
+      .map((c) => c as FlashCard)
+      .filter((c) => c.srs && c.srs.easeFactor < 2.0)
+      .slice(0, 20)
   } else if (reviewMode.value === 'random') {
     // 随机测试
     const shuffled = [...setCards]
-      .filter(c => c.type === 'flashcard')
-      .sort(() => Math.random() - 0.5);
-    queue = shuffled.slice(0, 10).map(c => c as FlashCard);
+      .filter((c) => c.type === 'flashcard')
+      .sort(() => Math.random() - 0.5)
+    queue = shuffled.slice(0, 10).map((c) => c as FlashCard)
   }
 
   if (queue.length === 0) {
-    alert('暂无可复习的卡片');
-    return;
+    alert('暂无可复习的卡片')
+    return
   }
 
-  emit('start-review', queue, reviewMode.value);
+  emit('start-review', queue, reviewMode.value)
 }
 
 // 加载数据
 onMounted(async () => {
   // 加载学习集
   if (learningSets.value.length === 0) {
-    await learningSetStore.fetchStudySets();
+    await learningSetStore.fetchStudySets()
   }
 
   // 加载卡片
   if (cards.value.length === 0) {
-    await cardStore.fetchCards();
+    await cardStore.fetchCards()
   }
 
   // 计算统计数据
-  const flashCards = cards.value.filter(c => c.type === 'flashcard') as FlashCard[];
-  const now = Date.now();
+  const flashCards = cards.value.filter((c) => c.type === 'flashcard') as FlashCard[]
+  const now = Date.now()
 
   stats.value = {
     totalCards: cards.value.length,
-    dueToday: flashCards.filter(c => c.srs?.nextReview && c.srs.nextReview <= now).length,
-    learnedCards: flashCards.filter(c => c.status === 'review' || c.status === 'learning').length,
+    dueToday: flashCards.filter((c) => c.srs?.nextReview && c.srs.nextReview <= now).length,
+    learnedCards: flashCards.filter((c) => c.status === 'review' || c.status === 'learning').length,
     streak: await reviewService.getStreak(cards.value),
-  };
+  }
 
   // 选择第一个学习集
   if (learningSets.value.length > 0) {
-    selectedSetId.value = learningSets.value[0].id;
+    selectedSetId.value = learningSets.value[0].id
   }
-});
+})
 </script>
 
 <style scoped lang="scss">

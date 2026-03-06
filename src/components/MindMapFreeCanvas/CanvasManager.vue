@@ -1,13 +1,173 @@
+<template>
+  <div class="canvas-manager">
+    <!-- 画布选择器 -->
+    <div
+      class="canvas-selector"
+      @click="showCanvasList = !showCanvasList"
+    >
+      <div class="canvas-selector-current">
+        <span class="canvas-icon">🎨</span>
+        <span class="canvas-name">
+          {{ activeCanvas?.name || '选择画布' }}
+        </span>
+        <span class="canvas-arrow">{{ showCanvasList ? '▲' : '▼' }}</span>
+      </div>
+
+      <!-- 画布列表下拉 -->
+      <transition name="slide">
+        <div
+          v-if="showCanvasList"
+          class="canvas-list-dropdown"
+        >
+          <div class="canvas-list-header">
+            <span>画布列表</span>
+            <button
+              class="btn-create"
+              @click.stop="showCreateDialog = true"
+            >
+              <span class="icon">+</span> 新建
+            </button>
+          </div>
+
+          <div
+            v-if="isLoading"
+            class="canvas-list-loading"
+          >
+            <span class="loading-spinner">⏳</span>
+            <span>加载中...</span>
+          </div>
+
+          <div
+            v-else-if="canvasList.length === 0"
+            class="canvas-list-empty"
+          >
+            <span class="empty-icon">📭</span>
+            <span>暂无画布</span>
+            <button
+              class="btn-create-empty"
+              @click.stop="showCreateDialog = true"
+            >
+              创建第一个画布
+            </button>
+          </div>
+
+          <div
+            v-else
+            class="canvas-list-items"
+          >
+            <div
+              v-for="item in canvasList"
+              :key="item.id"
+              class="canvas-list-item"
+              :class="{ active: item.isActive }"
+              @click="handleSwitchCanvas(item.id)"
+            >
+              <div class="canvas-item-info">
+                <span class="canvas-item-icon">🎨</span>
+                <div class="canvas-item-text">
+                  <span class="canvas-item-name">{{ item.name }}</span>
+                  <span class="canvas-item-meta">
+                    {{ item.nodeCount }} 个节点 · {{ formatTime(item.lastUpdatedAt) }}
+                  </span>
+                </div>
+              </div>
+              <div class="canvas-item-actions">
+                <button
+                  class="btn-icon btn-rename"
+                  title="重命名"
+                  @click.stop="handleRenameCanvas(item, $event)"
+                >
+                  ✏️
+                </button>
+                <button
+                  class="btn-icon btn-delete"
+                  title="删除"
+                  @click.stop="handleDeleteCanvas(item.id, $event)"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <!-- 错误提示 -->
+    <div
+      v-if="errorMessage"
+      class="error-message"
+    >
+      <span class="error-icon">⚠️</span>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- 新建画布对话框 -->
+    <transition name="fade">
+      <div
+        v-if="showCreateDialog"
+        class="dialog-overlay"
+        @click="showCreateDialog = false"
+      >
+        <div
+          class="dialog-content"
+          @click.stop
+        >
+          <div class="dialog-header">
+            <h3>新建画布</h3>
+            <button
+              class="btn-close"
+              @click="showCreateDialog = false"
+            >
+              ×
+            </button>
+          </div>
+          <div class="dialog-body">
+            <label class="form-label">画布名称</label>
+            <input
+              v-model="newCanvasName"
+              type="text"
+              class="form-input"
+              placeholder="请输入画布名称"
+              autofocus
+              @keyup.enter="handleCreateCanvas"
+            />
+          </div>
+          <div class="dialog-footer">
+            <button
+              class="btn btn-cancel"
+              @click="showCreateDialog = false"
+            >
+              取消
+            </button>
+            <button
+              class="btn btn-primary"
+              :disabled="!newCanvasName.trim()"
+              @click="handleCreateCanvas"
+            >
+              创建
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * 画布管理器组件
  * 提供画布列表、创建、删除、切换等功能
  */
 
-import { ref, computed, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useCanvasStore } from '@/stores/canvasStore'
 import type { CanvasListItem } from '@/types/canvas'
+import { storeToRefs } from 'pinia'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
+import { useCanvasStore } from '@/stores/canvasStore'
 
 interface Props {
   /** 学习集 ID */
@@ -23,13 +183,18 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  currentCanvasId: ''
+  currentCanvasId: '',
 })
 
 const emit = defineEmits<Emits>()
 
 const canvasStore = useCanvasStore()
-const { canvasList, activeCanvasId, isLoading, errorMessage } = storeToRefs(canvasStore)
+const {
+  canvasList,
+  activeCanvasId,
+  isLoading,
+  errorMessage,
+} = storeToRefs(canvasStore)
 
 /** 是否显示新建画布对话框 */
 const showCreateDialog = ref(false)
@@ -42,7 +207,7 @@ const showCanvasList = ref(false)
 
 // 计算当前激活的画布
 const activeCanvas = computed(() => {
-  return canvasList.value.find(c => c.id === activeCanvasId.value)
+  return canvasList.value.find((c) => c.id === activeCanvasId.value)
 })
 
 // 格式化时间
@@ -53,7 +218,10 @@ function formatTime(timestamp: number): string {
 
   // 今天
   if (diff < 24 * 60 * 60 * 1000) {
-    return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   // 本周
@@ -63,7 +231,10 @@ function formatTime(timestamp: number): string {
   }
 
   // 其他
-  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString('zh-CN', {
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 // 初始化
@@ -79,7 +250,7 @@ async function handleCreateCanvas() {
 
   const canvas = await canvasStore.createCanvas({
     name: newCanvasName.value.trim(),
-    studySetId: props.studySetId
+    studySetId: props.studySetId,
   })
 
   if (canvas) {
@@ -89,7 +260,7 @@ async function handleCreateCanvas() {
       studySetId: canvas.studySetId,
       nodeCount: 0,
       lastUpdatedAt: canvas.updatedAt,
-      isActive: true
+      isActive: true,
     })
     showCreateDialog.value = false
     newCanvasName.value = ''
@@ -125,122 +296,11 @@ async function handleRenameCanvas(canvas: CanvasListItem, event: Event) {
   if (newName && newName.trim() && newName !== canvas.name) {
     await canvasStore.updateCanvas({
       id: canvas.id,
-      name: newName.trim()
+      name: newName.trim(),
     })
   }
 }
 </script>
-
-<template>
-  <div class="canvas-manager">
-    <!-- 画布选择器 -->
-    <div class="canvas-selector" @click="showCanvasList = !showCanvasList">
-      <div class="canvas-selector-current">
-        <span class="canvas-icon">🎨</span>
-        <span class="canvas-name">
-          {{ activeCanvas?.name || '选择画布' }}
-        </span>
-        <span class="canvas-arrow">{{ showCanvasList ? '▲' : '▼' }}</span>
-      </div>
-
-      <!-- 画布列表下拉 -->
-      <transition name="slide">
-        <div v-if="showCanvasList" class="canvas-list-dropdown">
-          <div class="canvas-list-header">
-            <span>画布列表</span>
-            <button class="btn-create" @click.stop="showCreateDialog = true">
-              <span class="icon">+</span> 新建
-            </button>
-          </div>
-
-          <div v-if="isLoading" class="canvas-list-loading">
-            <span class="loading-spinner">⏳</span>
-            <span>加载中...</span>
-          </div>
-
-          <div v-else-if="canvasList.length === 0" class="canvas-list-empty">
-            <span class="empty-icon">📭</span>
-            <span>暂无画布</span>
-            <button class="btn-create-empty" @click.stop="showCreateDialog = true">
-              创建第一个画布
-            </button>
-          </div>
-
-          <div v-else class="canvas-list-items">
-            <div
-              v-for="item in canvasList"
-              :key="item.id"
-              class="canvas-list-item"
-              :class="{ active: item.isActive }"
-              @click="handleSwitchCanvas(item.id)"
-            >
-              <div class="canvas-item-info">
-                <span class="canvas-item-icon">🎨</span>
-                <div class="canvas-item-text">
-                  <span class="canvas-item-name">{{ item.name }}</span>
-                  <span class="canvas-item-meta">
-                    {{ item.nodeCount }} 个节点 · {{ formatTime(item.lastUpdatedAt) }}
-                  </span>
-                </div>
-              </div>
-              <div class="canvas-item-actions">
-                <button
-                  class="btn-icon btn-rename"
-                  @click.stop="handleRenameCanvas(item, $event)"
-                  title="重命名"
-                >
-                  ✏️
-                </button>
-                <button
-                  class="btn-icon btn-delete"
-                  @click.stop="handleDeleteCanvas(item.id, $event)"
-                  title="删除"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
-    </div>
-
-    <!-- 错误提示 -->
-    <div v-if="errorMessage" class="error-message">
-      <span class="error-icon">⚠️</span>
-      <span>{{ errorMessage }}</span>
-    </div>
-
-    <!-- 新建画布对话框 -->
-    <transition name="fade">
-      <div v-if="showCreateDialog" class="dialog-overlay" @click="showCreateDialog = false">
-        <div class="dialog-content" @click.stop>
-          <div class="dialog-header">
-            <h3>新建画布</h3>
-            <button class="btn-close" @click="showCreateDialog = false">×</button>
-          </div>
-          <div class="dialog-body">
-            <label class="form-label">画布名称</label>
-            <input
-              v-model="newCanvasName"
-              type="text"
-              class="form-input"
-              placeholder="请输入画布名称"
-              @keyup.enter="handleCreateCanvas"
-              autofocus
-            />
-          </div>
-          <div class="dialog-footer">
-            <button class="btn btn-cancel" @click="showCreateDialog = false">取消</button>
-            <button class="btn btn-primary" @click="handleCreateCanvas" :disabled="!newCanvasName.trim()">
-              创建
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-  </div>
-</template>
 
 <style scoped>
 .canvas-manager {

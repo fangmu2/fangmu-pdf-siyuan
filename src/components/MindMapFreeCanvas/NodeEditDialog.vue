@@ -1,127 +1,3 @@
-<script setup lang="ts">
-/**
- * 节点编辑对话框组件
- * 用于编辑思维导图节点的标题、内容、样式等
- */
-
-import { ref, computed, watch, toRefs } from 'vue'
-import type { FreeMindMapNodeData, FreeMindMapNodeType } from '@/types/mindmapFree'
-
-interface Props {
-  /** 是否显示对话框 */
-  modelValue: boolean
-  /** 节点类型 */
-  nodeType: FreeMindMapNodeType
-  /** 节点数据 */
-  nodeData: FreeMindMapNodeData | null
-  /** 是否只读模式 */
-  readOnly?: boolean
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'save', data: Partial<FreeMindMapNodeData>): void
-  (e: 'delete', nodeId: string): void
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  readOnly: false,
-  nodeData: null
-})
-
-const emit = defineEmits<Emits>()
-
-const { modelValue, nodeData, nodeType } = toRefs(props)
-
-// 表单数据
-const formData = ref<Partial<FreeMindMapNodeData>>({
-  title: '',
-  content: '',
-  color: '',
-  customStyle: {}
-})
-
-// 颜色选项
-const colorOptions = [
-  { value: '', label: '默认', color: 'transparent' },
-  { value: '#fef0f0', label: '红色', color: '#fef0f0' },
-  { value: '#fdf6ec', label: '橙色', color: '#fdf6ec' },
-  { value: '#fdf5e6', label: '黄色', color: '#fdf5e6' },
-  { value: '#f0f9ff', label: '蓝色', color: '#f0f9ff' },
-  { value: '#f0fff4', label: '绿色', color: '#f0fff4' },
-  { value: '#fcf5f5', label: '紫色', color: '#fcf5f5' }
-]
-
-// 深色主题颜色选项
-const darkColorOptions = [
-  { value: '', label: '默认', color: 'transparent' },
-  { value: '#4a1c1c', label: '红色', color: '#4a1c1c' },
-  { value: '#4a361c', label: '橙色', color: '#4a361c' },
-  { value: '#4a441c', label: '黄色', color: '#4a441c' },
-  { value: '#1c3a4a', label: '蓝色', color: '#1c3a4a' },
-  { value: '#1c4a2a', label: '绿色', color: '#1c4a2a' },
-  { value: '#3a1c4a', label: '紫色', color: '#3a1c4a' }
-]
-
-// 是否深色主题
-const isDarkTheme = ref(false)
-
-// 检测主题
-watch(
-  () => modelValue.value,
-  (val) => {
-    if (val) {
-      isDarkTheme.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-    }
-  }
-)
-
-// 监听节点数据变化
-watch(
-  nodeData,
-  (newData) => {
-    if (newData) {
-      formData.value = {
-        title: newData.title || '',
-        content: newData.content || '',
-        color: newData.color || '',
-        customStyle: { ...newData.customStyle }
-      }
-    }
-  },
-  { immediate: true }
-)
-
-// 计算当前颜色选项
-const currentColorOptions = computed(() => {
-  return isDarkTheme.value ? darkColorOptions : colorOptions
-})
-
-// 保存
-const handleSave = () => {
-  emit('save', { ...formData.value })
-  emit('update:modelValue', false)
-}
-
-// 取消
-const handleCancel = () => {
-  emit('update:modelValue', false)
-}
-
-// 删除
-const handleDelete = () => {
-  if (nodeData.value?.annotationId) {
-    emit('delete', nodeData.value.annotationId)
-  }
-  emit('update:modelValue', false)
-}
-
-// 选择颜色
-const selectColor = (color: string) => {
-  formData.value.color = color
-}
-</script>
-
 <template>
   <Teleport to="body">
     <Transition name="dialog-fade">
@@ -187,10 +63,10 @@ const selectColor = (color: string) => {
                   :class="{ active: formData.color === option.value }"
                   :style="{
                     backgroundColor: option.color,
-                    border: formData.color === option.value ? '2px solid var(--siyuan-primary)' : '1px solid var(--siyuan-border)'
+                    border: formData.color === option.value ? '2px solid var(--siyuan-primary)' : '1px solid var(--siyuan-border)',
                   }"
-                  @click="selectColor(option.value)"
                   :title="option.label"
+                  @click="selectColor(option.value)"
                 >
                   <span v-if="formData.color === option.value">✓</span>
                 </button>
@@ -236,6 +112,198 @@ const selectColor = (color: string) => {
     </Transition>
   </Teleport>
 </template>
+
+<script setup lang="ts">
+/**
+ * 节点编辑对话框组件
+ * 用于编辑思维导图节点的标题、内容、样式等
+ */
+
+import type {
+  FreeMindMapNodeData,
+  FreeMindMapNodeType,
+} from '@/types/mindmapFree'
+import {
+  computed,
+  ref,
+  toRefs,
+  watch,
+} from 'vue'
+
+interface Props {
+  /** 是否显示对话框 */
+  modelValue: boolean
+  /** 节点类型 */
+  nodeType: FreeMindMapNodeType
+  /** 节点数据 */
+  nodeData: FreeMindMapNodeData | null
+  /** 是否只读模式 */
+  readOnly?: boolean
+}
+
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'save', data: Partial<FreeMindMapNodeData>): void
+  (e: 'delete', nodeId: string): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  readOnly: false,
+  nodeData: null,
+})
+
+const emit = defineEmits<Emits>()
+
+const {
+  modelValue,
+  nodeData,
+  nodeType,
+} = toRefs(props)
+
+// 表单数据
+const formData = ref<Partial<FreeMindMapNodeData>>({
+  title: '',
+  content: '',
+  color: '',
+  customStyle: {},
+})
+
+// 颜色选项
+const colorOptions = [
+  {
+    value: '',
+    label: '默认',
+    color: 'transparent',
+  },
+  {
+    value: '#fef0f0',
+    label: '红色',
+    color: '#fef0f0',
+  },
+  {
+    value: '#fdf6ec',
+    label: '橙色',
+    color: '#fdf6ec',
+  },
+  {
+    value: '#fdf5e6',
+    label: '黄色',
+    color: '#fdf5e6',
+  },
+  {
+    value: '#f0f9ff',
+    label: '蓝色',
+    color: '#f0f9ff',
+  },
+  {
+    value: '#f0fff4',
+    label: '绿色',
+    color: '#f0fff4',
+  },
+  {
+    value: '#fcf5f5',
+    label: '紫色',
+    color: '#fcf5f5',
+  },
+]
+
+// 深色主题颜色选项
+const darkColorOptions = [
+  {
+    value: '',
+    label: '默认',
+    color: 'transparent',
+  },
+  {
+    value: '#4a1c1c',
+    label: '红色',
+    color: '#4a1c1c',
+  },
+  {
+    value: '#4a361c',
+    label: '橙色',
+    color: '#4a361c',
+  },
+  {
+    value: '#4a441c',
+    label: '黄色',
+    color: '#4a441c',
+  },
+  {
+    value: '#1c3a4a',
+    label: '蓝色',
+    color: '#1c3a4a',
+  },
+  {
+    value: '#1c4a2a',
+    label: '绿色',
+    color: '#1c4a2a',
+  },
+  {
+    value: '#3a1c4a',
+    label: '紫色',
+    color: '#3a1c4a',
+  },
+]
+
+// 是否深色主题
+const isDarkTheme = ref(false)
+
+// 检测主题
+watch(
+  () => modelValue.value,
+  (val) => {
+    if (val) {
+      isDarkTheme.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+  },
+)
+
+// 监听节点数据变化
+watch(
+  nodeData,
+  (newData) => {
+    if (newData) {
+      formData.value = {
+        title: newData.title || '',
+        content: newData.content || '',
+        color: newData.color || '',
+        customStyle: { ...newData.customStyle },
+      }
+    }
+  },
+  { immediate: true },
+)
+
+// 计算当前颜色选项
+const currentColorOptions = computed(() => {
+  return isDarkTheme.value ? darkColorOptions : colorOptions
+})
+
+// 保存
+const handleSave = () => {
+  emit('save', { ...formData.value })
+  emit('update:modelValue', false)
+}
+
+// 取消
+const handleCancel = () => {
+  emit('update:modelValue', false)
+}
+
+// 删除
+const handleDelete = () => {
+  if (nodeData.value?.annotationId) {
+    emit('delete', nodeData.value.annotationId)
+  }
+  emit('update:modelValue', false)
+}
+
+// 选择颜色
+const selectColor = (color: string) => {
+  formData.value.color = color
+}
+</script>
 
 <style scoped>
 .dialog-fade-enter-active,

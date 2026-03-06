@@ -1,5 +1,5 @@
-import { createApp } from 'vue';
-import { createPinia } from 'pinia';
+import { createPinia } from 'pinia'
+import { createApp } from 'vue'
 
 /**
  * 根据 Vue 组件创建 DOM 元素
@@ -7,12 +7,12 @@ import { createPinia } from 'pinia';
  * @returns 挂载后的 DOM 元素
  */
 export function getDomByVueComponent(component: any): HTMLElement {
-  const div = document.createElement('div');
-  const pinia = createPinia();
-  const app = createApp(component);
-  app.use(pinia);
-  app.mount(div);
-  return div;
+  const div = document.createElement('div')
+  const pinia = createPinia()
+  const app = createApp(component)
+  app.use(pinia)
+  app.mount(div)
+  return div
 }
 
 /**
@@ -21,73 +21,73 @@ export function getDomByVueComponent(component: any): HTMLElement {
  * @returns 格式化后的时间字符串
  */
 export function formatTimestamp(timestamp: number): string {
-  const date = new Date(timestamp);
+  const date = new Date(timestamp)
 
   // 今天
   if (isToday(timestamp)) {
-    return `今天 ${formatTime(date)}`;
+    return `今天 ${formatTime(date)}`
   }
 
   // 昨天
   if (isYesterday(timestamp)) {
-    return `昨天 ${formatTime(date)}`;
+    return `昨天 ${formatTime(date)}`
   }
 
   // 本周
   if (isThisWeek(timestamp)) {
-    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    return `${weekdays[date.getDay()]} ${formatTime(date)}`;
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    return `${weekdays[date.getDay()]} ${formatTime(date)}`
   }
 
   // 其他日期
-  return formatDate(date);
+  return formatDate(date)
 }
 
 /**
  * 格式化时间为 HH:mm
  */
 function formatTime(date: Date): string {
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
 /**
  * 格式化日期为 YYYY-MM-DD
  */
 function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 /**
  * 判断是否是今天
  */
 function isToday(timestamp: number): boolean {
-  const date = new Date(timestamp);
-  const now = new Date();
-  return date.toDateString() === now.toDateString();
+  const date = new Date(timestamp)
+  const now = new Date()
+  return date.toDateString() === now.toDateString()
 }
 
 /**
  * 判断是否是昨天
  */
 function isYesterday(timestamp: number): boolean {
-  const date = new Date(timestamp);
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  return date.toDateString() === yesterday.toDateString();
+  const date = new Date(timestamp)
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  return date.toDateString() === yesterday.toDateString()
 }
 
 /**
  * 判断是否是本周
  */
 function isThisWeek(timestamp: number): boolean {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  return date >= startOfWeek;
+  const date = new Date(timestamp)
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay())
+  startOfWeek.setHours(0, 0, 0, 0)
+  return date >= startOfWeek
 }
 
 /**
@@ -96,7 +96,7 @@ function isThisWeek(timestamp: number): boolean {
  * @returns 唯一 ID
  */
 export function generateId(prefix: string = ''): string {
-  return `${prefix}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `${prefix}${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 /**
@@ -104,11 +104,11 @@ export function generateId(prefix: string = ''): string {
  * @returns UUID 字符串
  */
 export function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
 }
 
 /**
@@ -119,15 +119,15 @@ export function generateUUID(): string {
  */
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
-  delay: number = 300
+  delay: number = 300,
 ): (...args: Parameters<T>) => void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null
   return function (this: any, ...args: Parameters<T>) {
-    if (timer) clearTimeout(timer);
+    if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
-      fn.apply(this, args);
-    }, delay);
-  };
+      fn.apply(this, args)
+    }, delay)
+  }
 }
 
 /**
@@ -138,16 +138,16 @@ export function debounce<T extends (...args: any[]) => any>(
  */
 export function throttle<T extends (...args: any[]) => any>(
   fn: T,
-  limit: number = 300
+  limit: number = 300,
 ): (...args: Parameters<T>) => void {
-  let inThrottle: boolean = false;
+  let inThrottle: boolean = false
   return function (this: any, ...args: Parameters<T>) {
     if (!inThrottle) {
-      fn.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
+      fn.apply(this, args)
+      inThrottle = true
+      setTimeout(() => (inThrottle = false), limit)
     }
-  };
+  }
 }
 
 /**
@@ -157,20 +157,20 @@ export function throttle<T extends (...args: any[]) => any>(
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
-    return obj;
+    return obj
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => deepClone(item)) as T;
+    return obj.map((item) => deepClone(item)) as T
   }
 
-  const cloned = {} as T;
+  const cloned = {} as T
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      cloned[key] = deepClone(obj[key]);
+      cloned[key] = deepClone(obj[key])
     }
   }
-  return cloned;
+  return cloned
 }
 
 /**
@@ -179,7 +179,7 @@ export function deepClone<T>(obj: T): T {
  * @returns Promise
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -189,18 +189,18 @@ export function sleep(ms: number): Promise<void> {
  */
 export function isEmpty(value: any): boolean {
   if (value === null || value === undefined) {
-    return true;
+    return true
   }
   if (typeof value === 'string') {
-    return value.trim() === '';
+    return value.trim() === ''
   }
   if (Array.isArray(value)) {
-    return value.length === 0;
+    return value.length === 0
   }
   if (typeof value === 'object') {
-    return Object.keys(value).length === 0;
+    return Object.keys(value).length === 0
   }
-  return false;
+  return false
 }
 
 /**
@@ -212,9 +212,9 @@ export function isEmpty(value: any): boolean {
  */
 export function truncateText(text: string, maxLength: number, suffix: string = '...'): string {
   if (text.length <= maxLength) {
-    return text;
+    return text
   }
-  return text.slice(0, maxLength) + suffix;
+  return text.slice(0, maxLength) + suffix
 }
 
 /**
@@ -225,42 +225,42 @@ export function truncateText(text: string, maxLength: number, suffix: string = '
 export function extractPlainText(markdown: string): string {
   return markdown
     .replace(/!\[.*?\]\(.*?\)/g, '') // 移除图片
-    .replace(/\[([^\]]*?)\]\(.*?\)/g, '$1') // 移除链接，保留文本
+    .replace(/\[([^\]]*)\]\(.*?\)/g, '$1') // 移除链接，保留文本
     .replace(/^[#*>\-\d.]+/gm, '') // 移除标题、列表等标记
     .replace(/`{1,3}[\s\S]*?`{1,3}/g, '') // 移除代码块
     .replace(/\*\*([^*]+)\*\*/g, '$1') // 移除粗体标记
     .replace(/\*([^*]+)\*/g, '$1') // 移除斜体标记
     .replace(/~~([^~]+)~~/g, '$1') // 移除删除线标记
-    .trim();
+    .trim()
 }
-
-// 导出 VueUse 工具函数
-export * from './vueUseHelpers';
-
-// 导出数据迁移工具
-export * from './migration';
 
 // 导出错误处理工具
 export {
+  configureErrorHandler,
+  createAsyncHandler,
   ErrorType,
+  getErrorTypeByStatus,
+  getFriendlyMessage,
   handleError,
   handleErrorWithRetry,
-  getFriendlyMessage,
-  toAppError,
-  getErrorTypeByStatus,
-  showErrorToast,
-  configureErrorHandler,
   registerGlobalHandlers,
-  createAsyncHandler,
-} from './errorHandler';
+  showErrorToast,
+  toAppError,
+} from './errorHandler'
+
+// 导出数据迁移工具
+export * from './migration'
 
 // 导出性能优化工具
 export {
-  useVirtualScroll,
-  useLazyLoad,
-  useLazyImage,
-  usePagination,
-  createWeakCache,
-  createLruCache,
   createBatchProcessor,
-} from './performance';
+  createLruCache,
+  createWeakCache,
+  useLazyImage,
+  useLazyLoad,
+  usePagination,
+  useVirtualScroll,
+} from './performance'
+
+// 导出 VueUse 工具函数
+export * from './vueUseHelpers'

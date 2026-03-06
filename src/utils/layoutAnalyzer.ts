@@ -4,7 +4,10 @@
  * @fileoverview 提供图结构分析和布局评分系统
  */
 
-import type { FreeMindMapNode, FreeMindMapEdge } from '@/types/mindmapFree'
+import type {
+  FreeMindMapEdge,
+  FreeMindMapNode,
+} from '@/types/mindmapFree'
 
 /**
  * 布局分析结果
@@ -46,7 +49,7 @@ export interface LayoutRecommendation {
  */
 export function analyzeGraph(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
+  edges: FreeMindMapEdge[],
 ): LayoutAnalysis {
   // 1. 节点数量
   const nodeCount = nodes.length
@@ -58,7 +61,7 @@ export function analyzeGraph(
       avgConnections: 0,
       hasTimestamps: false,
       isHierarchical: false,
-      clusterCount: 0
+      clusterCount: 0,
     }
   }
 
@@ -70,7 +73,7 @@ export function analyzeGraph(
   const avgConnections = nodeCount > 0 ? totalConnections / nodeCount : 0
 
   // 4. 检查是否有时间戳
-  const hasTimestamps = nodes.some(n => n.data.timestamp)
+  const hasTimestamps = nodes.some((n) => n.data.timestamp)
 
   // 5. 判断是否层级结构
   const isHierarchical = maxDepth > 2 && avgConnections < 2
@@ -84,7 +87,7 @@ export function analyzeGraph(
     avgConnections,
     hasTimestamps,
     isHierarchical,
-    clusterCount
+    clusterCount,
   }
 }
 
@@ -104,7 +107,7 @@ export function recommendLayout(analysis: LayoutAnalysis): LayoutRecommendation[
         layoutType: 'tree',
         confidence: score / 100,
         reason: `层级结构明显（${analysis.maxDepth}层），适合树状布局`,
-        score
+        score,
       })
     }
   }
@@ -119,7 +122,7 @@ export function recommendLayout(analysis: LayoutAnalysis): LayoutRecommendation[
         reason: analysis.maxDepth === 2
           ? '两级结构，适合鱼骨图分析'
           : `层级较浅（${analysis.maxDepth}层），适合鱼骨图`,
-        score
+        score,
       })
     }
   }
@@ -131,7 +134,7 @@ export function recommendLayout(analysis: LayoutAnalysis): LayoutRecommendation[
       layoutType: 'timeline',
       confidence: score / 100,
       reason: `节点包含时间信息，适合时间轴展示`,
-      score
+      score,
     })
   }
 
@@ -147,7 +150,7 @@ export function recommendLayout(analysis: LayoutAnalysis): LayoutRecommendation[
           : analysis.avgConnections > 2
             ? `高连接度（${analysis.avgConnections.toFixed(1)}），适合概念图`
             : '非层级结构，适合概念图',
-        score
+        score,
       })
     }
   }
@@ -158,7 +161,7 @@ export function recommendLayout(analysis: LayoutAnalysis): LayoutRecommendation[
       layoutType: 'tree',
       confidence: 0.5,
       reason: '默认树状布局',
-      score: 50
+      score: 50,
     })
   }
 
@@ -280,13 +283,13 @@ function calculateConceptScore(analysis: LayoutAnalysis): number {
  */
 function calculateMaxDepth(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
+  edges: FreeMindMapEdge[],
 ): number {
   if (nodes.length === 0) return 0
 
   // 找到根节点（没有父节点的节点）
-  const parentIds = new Set(edges.map(e => e.target))
-  const rootNodes = nodes.filter(n => !parentIds.has(n.id))
+  const parentIds = new Set(edges.map((e) => e.target))
+  const rootNodes = nodes.filter((n) => !parentIds.has(n.id))
 
   if (rootNodes.length === 0) {
     // 如果没有明确的根节点，使用第一个节点
@@ -295,7 +298,7 @@ function calculateMaxDepth(
 
   // 构建邻接表
   const adjacencyMap = new Map<string, string[]>()
-  edges.forEach(edge => {
+  edges.forEach((edge) => {
     if (!adjacencyMap.has(edge.source)) {
       adjacencyMap.set(edge.source, [])
     }
@@ -304,23 +307,29 @@ function calculateMaxDepth(
 
   // 从根节点开始 BFS
   let maxDepth = 0
-  const queue: Array<{ id: string; level: number }> = rootNodes.map(n => ({
+  const queue: Array<{ id: string, level: number }> = rootNodes.map((n) => ({
     id: n.id,
-    level: 1
+    level: 1,
   }))
   const visited = new Set<string>()
 
   while (queue.length > 0) {
-    const { id, level } = queue.shift()!
+    const {
+      id,
+      level,
+    } = queue.shift()!
     if (visited.has(id)) continue
     visited.add(id)
 
     maxDepth = Math.max(maxDepth, level)
 
     const children = adjacencyMap.get(id) || []
-    children.forEach(childId => {
+    children.forEach((childId) => {
       if (!visited.has(childId)) {
-        queue.push({ id: childId, level: level + 1 })
+        queue.push({
+          id: childId,
+          level: level + 1,
+        })
       }
     })
   }
@@ -333,7 +342,7 @@ function calculateMaxDepth(
  */
 function detectClusters(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
+  edges: FreeMindMapEdge[],
 ): Set<string> {
   if (nodes.length === 0) return new Set()
 
@@ -342,7 +351,7 @@ function detectClusters(
   const rank = new Map<string, number>()
 
   // 初始化
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     parent.set(node.id, node.id)
     rank.set(node.id, 0)
   })
@@ -376,13 +385,13 @@ function detectClusters(
   }
 
   // 合并所有连接的节点
-  edges.forEach(edge => {
+  edges.forEach((edge) => {
     union(edge.source, edge.target)
   })
 
   // 统计聚类数量
   const clusters = new Set<string>()
-  nodes.forEach(node => {
+  nodes.forEach((node) => {
     clusters.add(find(node.id))
   })
 
@@ -397,7 +406,7 @@ export function getLayoutName(layoutType: string): string {
     tree: '树状布局',
     fishbone: '鱼骨图',
     timeline: '时间轴',
-    concept: '概念图'
+    concept: '概念图',
   }
   return names[layoutType] || layoutType
 }
@@ -410,7 +419,7 @@ export function getLayoutIcon(layoutType: string): string {
     tree: '🌳',
     fishbone: '🐟',
     timeline: '📅',
-    concept: '💡'
+    concept: '💡',
   }
   return icons[layoutType] || '📊'
 }

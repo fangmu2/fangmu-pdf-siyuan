@@ -2,20 +2,25 @@
  * 复习服务测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { reviewService } from '../../services/reviewService';
-import { ReviewMode } from '../../types/review';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import { reviewService } from '../../services/reviewService'
 
 // Mock fetch
-global.fetch = vi.fn();
+global.fetch = vi.fn()
 
-const mockFetch = global.fetch as any;
+const mockFetch = global.fetch as any
 
 describe('reviewService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockFetch.mockReset();
-  });
+    vi.clearAllMocks()
+    mockFetch.mockReset()
+  })
 
   const mockReviewCard = {
     id: 'test-card-id',
@@ -33,14 +38,14 @@ describe('reviewService', () => {
     },
     status: 'learning',
     difficulty: 3,
-  };
+  }
 
   const mockReviewResult = {
     cardId: 'test-card-id',
     quality: 4,
     responseTime: 5000,
     reviewedAt: Date.now(),
-  };
+  }
 
   describe('startReviewSession', () => {
     it('should start a review session successfully', async () => {
@@ -56,17 +61,20 @@ describe('reviewService', () => {
             totalCards: 10,
           },
         }),
-      });
+      })
 
       const result = await reviewService.startReviewSession(
         'test-study-set-id',
         'normal',
-        { newCardsLimit: 20, reviewLimit: 200 }
-      );
+        {
+          newCardsLimit: 20,
+          reviewLimit: 200,
+        },
+      )
 
-      expect(result.sessionId).toBe('test-session-id');
-      expect(result.mode).toBe('normal');
-    });
+      expect(result.sessionId).toBe('test-session-id')
+      expect(result.mode).toBe('normal')
+    })
 
     it('should start a new cards session', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -79,15 +87,15 @@ describe('reviewService', () => {
             cards: [mockReviewCard],
           },
         }),
-      });
+      })
 
       const result = await reviewService.startReviewSession(
         'test-study-set-id',
-        'new'
-      );
+        'new',
+      )
 
-      expect(result.mode).toBe('new');
-    });
+      expect(result.mode).toBe('new')
+    })
 
     it('should start a wrong cards session', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -100,15 +108,15 @@ describe('reviewService', () => {
             cards: [mockReviewCard],
           },
         }),
-      });
+      })
 
       const result = await reviewService.startReviewSession(
         'test-study-set-id',
-        'wrong'
-      );
+        'wrong',
+      )
 
-      expect(result.mode).toBe('wrong');
-    });
+      expect(result.mode).toBe('wrong')
+    })
 
     it('should start a random test session', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -121,16 +129,16 @@ describe('reviewService', () => {
             cards: [mockReviewCard],
           },
         }),
-      });
+      })
 
       const result = await reviewService.startReviewSession(
         'test-study-set-id',
-        'random'
-      );
+        'random',
+      )
 
-      expect(result.mode).toBe('random');
-    });
-  });
+      expect(result.mode).toBe('random')
+    })
+  })
 
   describe('getNextCard', () => {
     it('should get next card from session', async () => {
@@ -140,12 +148,12 @@ describe('reviewService', () => {
           code: 0,
           data: mockReviewCard,
         }),
-      });
+      })
 
-      const result = await reviewService.getNextCard('test-session-id');
+      const result = await reviewService.getNextCard('test-session-id')
 
-      expect(result).toEqual(mockReviewCard);
-    });
+      expect(result).toEqual(mockReviewCard)
+    })
 
     it('should return null when no more cards', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -154,13 +162,13 @@ describe('reviewService', () => {
           code: 0,
           data: null,
         }),
-      });
+      })
 
-      const result = await reviewService.getNextCard('test-session-id');
+      const result = await reviewService.getNextCard('test-session-id')
 
-      expect(result).toBeNull();
-    });
-  });
+      expect(result).toBeNull()
+    })
+  })
 
   describe('submitReview', () => {
     it('should submit a review result', async () => {
@@ -174,16 +182,16 @@ describe('reviewService', () => {
             easeFactor: 2.5,
           },
         }),
-      });
+      })
 
       const result = await reviewService.submitReview(
         'test-session-id',
-        mockReviewResult
-      );
+        mockReviewResult,
+      )
 
-      expect(result.nextReview).toBeDefined();
-      expect(result.interval).toBe(1);
-    });
+      expect(result.nextReview).toBeDefined()
+      expect(result.interval).toBe(1)
+    })
 
     it('should handle different quality scores', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -196,16 +204,16 @@ describe('reviewService', () => {
             easeFactor: 2.6,
           },
         }),
-      });
+      })
 
       const result = await reviewService.submitReview('test-session-id', {
         ...mockReviewResult,
         quality: 5,
-      });
+      })
 
-      expect(result.interval).toBeGreaterThan(1);
-    });
-  });
+      expect(result.interval).toBeGreaterThan(1)
+    })
+  })
 
   describe('endReviewSession', () => {
     it('should end a review session', async () => {
@@ -220,14 +228,14 @@ describe('reviewService', () => {
             averageResponseTime: 4500,
           },
         }),
-      });
+      })
 
-      const result = await reviewService.endReviewSession('test-session-id');
+      const result = await reviewService.endReviewSession('test-session-id')
 
-      expect(result.reviewedCount).toBe(10);
-      expect(result.correctCount).toBe(8);
-    });
-  });
+      expect(result.reviewedCount).toBe(10)
+      expect(result.correctCount).toBe(8)
+    })
+  })
 
   describe('getSessionStats', () => {
     it('should get session statistics', async () => {
@@ -244,14 +252,14 @@ describe('reviewService', () => {
             averageResponseTime: 4500,
           },
         }),
-      });
+      })
 
-      const stats = await reviewService.getSessionStats('test-session-id');
+      const stats = await reviewService.getSessionStats('test-session-id')
 
-      expect(stats.totalCards).toBe(20);
-      expect(stats.accuracy).toBe(0.8);
-    });
-  });
+      expect(stats.totalCards).toBe(20)
+      expect(stats.accuracy).toBe(0.8)
+    })
+  })
 
   describe('getDueCards', () => {
     it('should get due cards for study set', async () => {
@@ -265,13 +273,13 @@ describe('reviewService', () => {
             newCards: 5,
           },
         }),
-      });
+      })
 
-      const result = await reviewService.getDueCards('test-study-set-id');
+      const result = await reviewService.getDueCards('test-study-set-id')
 
-      expect(result.dueCards).toHaveLength(1);
-      expect(result.totalDue).toBe(15);
-    });
+      expect(result.dueCards).toHaveLength(1)
+      expect(result.totalDue).toBe(15)
+    })
 
     it('should limit the number of due cards', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -284,15 +292,15 @@ describe('reviewService', () => {
             newCards: 10,
           },
         }),
-      });
+      })
 
       const result = await reviewService.getDueCards('test-study-set-id', {
         limit: 20,
-      });
+      })
 
-      expect(result.dueCards.length).toBeLessThanOrEqual(20);
-    });
-  });
+      expect(result.dueCards.length).toBeLessThanOrEqual(20)
+    })
+  })
 
   describe('getNewCards', () => {
     it('should get new cards for study set', async () => {
@@ -302,13 +310,13 @@ describe('reviewService', () => {
           code: 0,
           data: [mockReviewCard],
         }),
-      });
+      })
 
-      const result = await reviewService.getNewCards('test-study-set-id', 10);
+      const result = await reviewService.getNewCards('test-study-set-id', 10)
 
-      expect(result).toHaveLength(1);
-    });
-  });
+      expect(result).toHaveLength(1)
+    })
+  })
 
   describe('getWrongCards', () => {
     it('should get wrong cards for study set', async () => {
@@ -318,13 +326,13 @@ describe('reviewService', () => {
           code: 0,
           data: [mockReviewCard],
         }),
-      });
+      })
 
-      const result = await reviewService.getWrongCards('test-study-set-id');
+      const result = await reviewService.getWrongCards('test-study-set-id')
 
-      expect(result).toHaveLength(1);
-    });
-  });
+      expect(result).toHaveLength(1)
+    })
+  })
 
   describe('getReviewHistory', () => {
     it('should get review history', async () => {
@@ -348,13 +356,13 @@ describe('reviewService', () => {
             totalReviews: 100,
           },
         }),
-      });
+      })
 
-      const result = await reviewService.getReviewHistory('test-study-set-id');
+      const result = await reviewService.getReviewHistory('test-study-set-id')
 
-      expect(result.history).toHaveLength(2);
-      expect(result.totalReviews).toBe(100);
-    });
+      expect(result.history).toHaveLength(2)
+      expect(result.totalReviews).toBe(100)
+    })
 
     it('should filter history by date range', async () => {
       mockFetch.mockResolvedValueOnce({
@@ -366,19 +374,19 @@ describe('reviewService', () => {
             totalReviews: 10,
           },
         }),
-      });
+      })
 
-      const now = Date.now();
-      const weekAgo = now - 7 * 86400000;
+      const now = Date.now()
+      const weekAgo = now - 7 * 86400000
 
       await reviewService.getReviewHistory('test-study-set-id', {
         startDate: weekAgo,
         endDate: now,
-      });
+      })
 
-      expect(mockFetch).toHaveBeenCalled();
-    });
-  });
+      expect(mockFetch).toHaveBeenCalled()
+    })
+  })
 
   describe('getReviewStats', () => {
     it('should get review statistics', async () => {
@@ -395,15 +403,15 @@ describe('reviewService', () => {
             lastReviewDate: Date.now(),
           },
         }),
-      });
+      })
 
-      const stats = await reviewService.getReviewStats('test-study-set-id');
+      const stats = await reviewService.getReviewStats('test-study-set-id')
 
-      expect(stats.totalReviews).toBe(500);
-      expect(stats.accuracy).toBe(0.8);
-      expect(stats.streakDays).toBe(7);
-    });
-  });
+      expect(stats.totalReviews).toBe(500)
+      expect(stats.accuracy).toBe(0.8)
+      expect(stats.streakDays).toBe(7)
+    })
+  })
 
   describe('cancelSession', () => {
     it('should cancel a review session', async () => {
@@ -413,18 +421,18 @@ describe('reviewService', () => {
           code: 0,
           data: null,
         }),
-      });
+      })
 
-      await reviewService.cancelSession('test-session-id');
+      await reviewService.cancelSession('test-session-id')
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/review/cancelSession',
         expect.objectContaining({
           method: 'POST',
-        })
-      );
-    });
-  });
+        }),
+      )
+    })
+  })
 
   describe('skipCard', () => {
     it('should skip a card in session', async () => {
@@ -434,11 +442,11 @@ describe('reviewService', () => {
           code: 0,
           data: null,
         }),
-      });
+      })
 
-      await reviewService.skipCard('test-session-id', 'card-id');
+      await reviewService.skipCard('test-session-id', 'card-id')
 
-      expect(mockFetch).toHaveBeenCalled();
-    });
-  });
-});
+      expect(mockFetch).toHaveBeenCalled()
+    })
+  })
+})

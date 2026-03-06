@@ -19,21 +19,42 @@
           ></div>
         </div>
       </div>
-      <button @click="endSession" class="close-btn" title="结束会话">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      <button
+        class="close-btn"
+        title="结束会话"
+        @click="endSession"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="currentColor"
+        >
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
         </svg>
       </button>
     </div>
 
     <!-- 空状态 -->
-    <div v-if="currentCard === null" class="empty-state">
-      <svg viewBox="0 0 24 24" width="80" height="80" fill="currentColor" class="empty-icon">
-        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    <div
+      v-if="currentCard === null"
+      class="empty-state"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="80"
+        height="80"
+        fill="currentColor"
+        class="empty-icon"
+      >
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
       </svg>
       <h4>🎉 复习完成！</h4>
       <p>你已经完成了今天的所有复习任务</p>
-      <div class="session-summary" v-if="session.reviewedCards.length > 0">
+      <div
+        v-if="session.reviewedCards.length > 0"
+        class="session-summary"
+      >
         <div class="summary-item">
           <span class="summary-label">复习卡片</span>
           <span class="summary-value">{{ session.reviewedCards.length }}</span>
@@ -43,36 +64,65 @@
           <span class="summary-value">{{ averageRating }}</span>
         </div>
       </div>
-      <sy-button @click="endSession" type="primary">完成</sy-button>
+      <SyButton
+        type="primary"
+        @click="endSession"
+      >
+        完成
+      </SyButton>
     </div>
 
     <!-- 复习卡片 -->
-    <div v-else class="card-container">
+    <div
+      v-else
+      class="card-container"
+    >
       <!-- 卡片正面 -->
-      <div class="card-face card-front" v-if="!showAnswer">
+      <div
+        v-if="!showAnswer"
+        class="card-face card-front"
+      >
         <div class="card-content">
-          <div class="card-front-content" v-html="renderMarkdown(currentCard.front || currentCard.content)"></div>
+          <div
+            class="card-front-content"
+            v-html="renderMarkdown(currentCard.front || currentCard.content)"
+          ></div>
         </div>
         <div class="card-actions">
-          <sy-button @click="showAnswer = true" type="primary" size="large">
+          <SyButton
+            type="primary"
+            size="large"
+            @click="showAnswer = true"
+          >
             显示答案
-          </sy-button>
+          </SyButton>
         </div>
       </div>
 
       <!-- 卡片反面 -->
-      <div class="card-face card-back" v-else>
+      <div
+        v-else
+        class="card-face card-back"
+      >
         <div class="card-content">
-          <div class="card-question" v-html="renderMarkdown(currentCard.front || currentCard.content)"></div>
-          <div class="card-answer" v-html="renderMarkdown(currentCard.back || '')"></div>
+          <div
+            class="card-question"
+            v-html="renderMarkdown(currentCard.front || currentCard.content)"
+          ></div>
+          <div
+            class="card-answer"
+            v-html="renderMarkdown(currentCard.back || '')"
+          ></div>
         </div>
         <div class="card-rating">
-          <p class="rating-label">请评分：</p>
+          <p class="rating-label">
+            请评分：
+          </p>
           <div class="rating-buttons">
             <button
-              @click="rateCard(0)"
               class="rating-btn again"
               :style="{ borderColor: ratingColors[0] }"
+              @click="rateCard(0)"
             >
               <span class="rating-shortcut">1</span>
               <span class="rating-label-text">忘记</span>
@@ -81,9 +131,9 @@
               </span>
             </button>
             <button
-              @click="rateCard(1)"
               class="rating-btn hard"
               :style="{ borderColor: ratingColors[1] }"
+              @click="rateCard(1)"
             >
               <span class="rating-shortcut">2</span>
               <span class="rating-label-text">困难</span>
@@ -92,9 +142,9 @@
               </span>
             </button>
             <button
-              @click="rateCard(2)"
               class="rating-btn good"
               :style="{ borderColor: ratingColors[2] }"
+              @click="rateCard(2)"
             >
               <span class="rating-shortcut">3</span>
               <span class="rating-label-text">良好</span>
@@ -103,9 +153,9 @@
               </span>
             </button>
             <button
-              @click="rateCard(3)"
               class="rating-btn easy"
               :style="{ borderColor: ratingColors[3] }"
+              @click="rateCard(3)"
             >
               <span class="rating-shortcut">4</span>
               <span class="rating-label-text">简单</span>
@@ -120,12 +170,17 @@
       <!-- 卡片导航 -->
       <div class="card-nav">
         <button
-          @click="previousCard"
           class="nav-btn"
           :disabled="session.currentIndex === 0"
+          @click="previousCard"
         >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="currentColor"
+          >
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
           </svg>
           上一个
         </button>
@@ -133,28 +188,66 @@
           {{ session.currentIndex + 1 }} / {{ totalCards }}
         </span>
         <button
-          @click="nextCard"
           class="nav-btn"
           :disabled="session.currentIndex >= totalCards - 1"
+          @click="nextCard"
         >
           下一个
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="currentColor"
+          >
+            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
           </svg>
         </button>
       </div>
     </div>
 
     <!-- 记忆曲线预览 -->
-    <div class="memory-curve-preview" v-if="currentCard && showAnswer">
-      <div class="curve-title">记忆保持率预测</div>
+    <div
+      v-if="currentCard && showAnswer"
+      class="memory-curve-preview"
+    >
+      <div class="curve-title">
+        记忆保持率预测
+      </div>
       <div class="curve-chart">
-        <svg viewBox="0 0 200 60" class="curve-svg">
-          <path :d="memoryCurvePath" class="curve-path" fill="none" stroke="var(--b3-theme-primary)" stroke-width="2"/>
-          <line x1="0" y1="55" x2="200" y2="55" class="curve-axis" stroke="var(--b3-border-color)"/>
-          <text x="10" y="15" class="curve-label">100%</text>
-          <text x="10" y="50" class="curve-label">0%</text>
-          <text x="180" y="55" class="curve-label">30 天</text>
+        <svg
+          viewBox="0 0 200 60"
+          class="curve-svg"
+        >
+          <path
+            :d="memoryCurvePath"
+            class="curve-path"
+            fill="none"
+            stroke="var(--b3-theme-primary)"
+            stroke-width="2"
+          />
+          <line
+            x1="0"
+            y1="55"
+            x2="200"
+            y2="55"
+            class="curve-axis"
+            stroke="var(--b3-border-color)"
+          />
+          <text
+            x="10"
+            y="15"
+            class="curve-label"
+          >100%</text>
+          <text
+            x="10"
+            y="50"
+            class="curve-label"
+          >0%</text>
+          <text
+            x="180"
+            y="55"
+            class="curve-label"
+          >30 天</text>
         </svg>
       </div>
       <div class="curve-stats">
@@ -166,52 +259,71 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import SyButton from './SiyuanTheme/SyButton.vue';
-import { fsrsReviewService, type FSRSReviewCard, type ReviewSession } from '../services/fsrsReviewService';
-import { fsrsService, type Rating } from '../review/fsrs';
-import { marked } from 'marked';
+import type { Rating } from '../review/fsrs'
+import type {
+  FSRSReviewCard,
+  ReviewSession,
+} from '../services/fsrsReviewService'
+import { marked } from 'marked'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import { fsrsService } from '../review/fsrs'
+import {
+
+  fsrsReviewService,
+
+} from '../services/fsrsReviewService'
+import SyButton from './SiyuanTheme/SyButton.vue'
 
 const props = defineProps<{
-  studySetId: string;
-}>();
+  studySetId: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'complete', session: ReviewSession): void;
-  (e: 'close'): void;
-}>();
+  (e: 'complete', session: ReviewSession): void
+  (e: 'close'): void
+}>()
 
 // 会话状态
 const session = ref<ReviewSession>({
   sessionId: `session-${Date.now()}`,
   studySetId: props.studySetId,
-  queue: { dueCards: [], newCards: [], learningCards: [], totalCards: 0 },
+  queue: {
+    dueCards: [],
+    newCards: [],
+    learningCards: [],
+    totalCards: 0,
+  },
   currentIndex: 0,
   reviewedCards: [],
-  startTime: Date.now()
-});
+  startTime: Date.now(),
+})
 
 // 卡片状态
-const currentCard = ref<FSRSReviewCard | null>(null);
-const showAnswer = ref(false);
+const currentCard = ref<FSRSReviewCard | null>(null)
+const showAnswer = ref(false)
 
 // 评分颜色
-const ratingColors = ['#F44336', '#FF9800', '#4CAF50', '#2196F3'];
+const ratingColors = ['#F44336', '#FF9800', '#4CAF50', '#2196F3']
 
 // 加载复习会话
 onMounted(async () => {
-  await loadSession();
-  setupKeyboardShortcuts();
-});
+  await loadSession()
+  setupKeyboardShortcuts()
+})
 
 onUnmounted(() => {
-  removeKeyboardShortcuts();
-});
+  removeKeyboardShortcuts()
+})
 
 // 加载会话
 async function loadSession() {
-  session.value = await fsrsReviewService.createReviewSession(props.studySetId);
-  updateCurrentCard();
+  session.value = await fsrsReviewService.createReviewSession(props.studySetId)
+  updateCurrentCard()
 }
 
 // 更新当前卡片
@@ -219,146 +331,146 @@ function updateCurrentCard() {
   const allCards = [
     ...session.value.queue.dueCards,
     ...session.value.queue.newCards,
-    ...session.value.queue.learningCards
-  ];
+    ...session.value.queue.learningCards,
+  ]
 
   if (session.value.currentIndex < allCards.length) {
-    currentCard.value = allCards[session.value.currentIndex];
-    showAnswer.value = false;
+    currentCard.value = allCards[session.value.currentIndex]
+    showAnswer.value = false
   } else {
-    currentCard.value = null;
+    currentCard.value = null
   }
 }
 
 // 总卡片数
 const totalCards = computed(() => {
-  return session.value.queue.dueCards.length +
-         session.value.queue.newCards.length +
-         session.value.queue.learningCards.length;
-});
+  return session.value.queue.dueCards.length
+    + session.value.queue.newCards.length
+    + session.value.queue.learningCards.length
+})
 
 // 进度百分比
 const progressPercent = computed(() => {
-  if (totalCards.value === 0) return 0;
-  return Math.round((session.value.reviewedCards.length / totalCards.value) * 100);
-});
+  if (totalCards.value === 0) return 0
+  return Math.round((session.value.reviewedCards.length / totalCards.value) * 100)
+})
 
 // 平均评分
 const averageRating = computed(() => {
-  if (session.value.reviewedCards.length === 0) return '-';
-  const sum = session.value.reviewedCards.reduce((acc, r) => acc + r.rating, 0);
-  return (sum / session.value.reviewedCards.length).toFixed(1);
-});
+  if (session.value.reviewedCards.length === 0) return '-'
+  const sum = session.value.reviewedCards.reduce((acc, r) => acc + r.rating, 0)
+  return (sum / session.value.reviewedCards.length).toFixed(1)
+})
 
 // 记忆曲线路径
 const memoryCurvePath = computed(() => {
-  if (!currentCard.value) return '';
+  if (!currentCard.value) return ''
 
-  const stability = currentCard.value.fsrsState.stability;
-  const points: string[] = [];
+  const stability = currentCard.value.fsrsState.stability
+  const points: string[] = []
 
   for (let i = 0; i <= 30; i++) {
-    const retrievability = fsrsService.predictRetrievability(stability, i);
-    const x = (i / 30) * 200;
-    const y = 55 - (retrievability * 45);
-    points.push(`${i === 0 ? 'M' : 'L'} ${x} ${y}`);
+    const retrievability = fsrsService.predictRetrievability(stability, i)
+    const x = (i / 30) * 200
+    const y = 55 - (retrievability * 45)
+    points.push(`${i === 0 ? 'M' : 'L'} ${x} ${y}`)
   }
 
-  return points.join(' ');
-});
+  return points.join(' ')
+})
 
 // 渲染 Markdown
 function renderMarkdown(text: string): string {
   try {
-    return marked(text || '');
+    return marked(text || '')
   } catch {
-    return text || '';
+    return text || ''
   }
 }
 
 // 获取下次复习时间
 function getNextReviewTime(rating: Rating): string {
-  if (!currentCard.value) return '';
+  if (!currentCard.value) return ''
 
-  const result = fsrsService.processReview(currentCard.value.fsrsState, rating);
-  const days = result.state.interval;
+  const result = fsrsService.processReview(currentCard.value.fsrsState, rating)
+  const days = result.state.interval
 
-  if (days === 0) return '现在';
-  if (days === 1) return '明天';
-  if (days < 30) return `${days}天后`;
-  if (days < 365) return `${Math.round(days / 30)}个月后`;
-  return `${Math.round(days / 365)}年后`;
+  if (days === 0) return '现在'
+  if (days === 1) return '明天'
+  if (days < 30) return `${days}天后`
+  if (days < 365) return `${Math.round(days / 30)}个月后`
+  return `${Math.round(days / 365)}年后`
 }
 
 // 评分卡片
 async function rateCard(rating: Rating) {
-  if (!currentCard.value) return;
+  if (!currentCard.value) return
 
   try {
     await fsrsReviewService.processCardReview(
       currentCard.value.id,
       rating,
-      currentCard.value.fsrsState
-    );
+      currentCard.value.fsrsState,
+    )
 
     // 记录复习
     session.value.reviewedCards.push({
       cardId: currentCard.value.id,
       rating,
-      timestamp: Date.now()
-    });
+      timestamp: Date.now(),
+    })
 
     // 移动到下一张
-    session.value.currentIndex++;
-    updateCurrentCard();
+    session.value.currentIndex++
+    updateCurrentCard()
   } catch (error) {
-    console.error('[rateCard] 评分失败:', error);
+    console.error('[rateCard] 评分失败:', error)
   }
 }
 
 // 上一张卡片
 function previousCard() {
   if (session.value.currentIndex > 0) {
-    session.value.currentIndex--;
-    updateCurrentCard();
+    session.value.currentIndex--
+    updateCurrentCard()
   }
 }
 
 // 下一张卡片
 function nextCard() {
   if (session.value.currentIndex < totalCards.value - 1) {
-    session.value.currentIndex++;
-    updateCurrentCard();
+    session.value.currentIndex++
+    updateCurrentCard()
   }
 }
 
 // 结束会话
 function endSession() {
-  session.value.endTime = Date.now();
-  emit('complete', session.value);
+  session.value.endTime = Date.now()
+  emit('complete', session.value)
 }
 
 // 键盘快捷键
 function setupKeyboardShortcuts() {
-  document.addEventListener('keydown', handleKeydown);
+  document.addEventListener('keydown', handleKeydown)
 }
 
 function removeKeyboardShortcuts() {
-  document.removeEventListener('keydown', handleKeydown);
+  document.removeEventListener('keydown', handleKeydown)
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (currentCard.value === null) return;
+  if (currentCard.value === null) return
 
   if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault();
+    e.preventDefault()
     if (!showAnswer.value) {
-      showAnswer.value = true;
+      showAnswer.value = true
     }
   } else if (showAnswer.value && ['1', '2', '3', '4'].includes(e.key)) {
-    e.preventDefault();
-    const rating = (parseInt(e.key) - 1) as Rating;
-    rateCard(rating);
+    e.preventDefault()
+    const rating = (Number.parseInt(e.key) - 1) as Rating
+    rateCard(rating)
   }
 }
 </script>

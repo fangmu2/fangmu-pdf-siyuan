@@ -6,191 +6,191 @@
 /** PDF 坐标矩形 */
 export interface PdfRect {
   /** 左上角 X 坐标（PDF 单位） */
-  x1: number;
+  x1: number
   /** 左上角 Y 坐标（PDF 单位） */
-  y1: number;
+  y1: number
   /** 右下角 X 坐标（PDF 单位） */
-  x2: number;
+  x2: number
   /** 右下角 Y 坐标（PDF 单位） */
-  y2: number;
+  y2: number
 }
 
 /** PDF 摘录坐标信息 */
 export interface PdfExcerptCoordinates {
   /** 页码（从 1 开始） */
-  page: number;
+  page: number
   /** 区域坐标（PDF 单位） */
-  rect: PdfRect;
+  rect: PdfRect
   /** 文本选择起始偏移 */
   textOffset?: {
-    start: number;
-    end: number;
-  };
+    start: number
+    end: number
+  }
   /** 缩放级别（用于精确还原视图） */
-  scale?: number;
+  scale?: number
   /** 旋转角度 */
-  rotation?: number;
+  rotation?: number
 }
 
 /** PDF 摘录上下文信息 */
 export interface PdfExcerptContext {
   /** 摘录类型 */
-  type: 'text' | 'image' | 'handwriting';
+  type: 'text' | 'image' | 'handwriting'
   /** 坐标信息 */
-  coordinates: PdfExcerptCoordinates;
+  coordinates: PdfExcerptCoordinates
   /** 摘录文本内容 */
-  text?: string;
+  text?: string
   /** 图片数据（base64） */
-  imageData?: string;
+  imageData?: string
   /** 上下文文本（前后各 100 字，用于模糊定位） */
   contextText?: {
-    before: string;
-    after: string;
-  };
+    before: string
+    after: string
+  }
 }
 
 /** PDF 文档信息 */
 export interface PdfDocumentInfo {
   /** PDF 文件路径 */
-  pdfPath: string;
+  pdfPath: string
   /** PDF 文件名 */
-  fileName: string;
+  fileName: string
   /** 总页数 */
-  totalPages: number;
+  totalPages: number
   /** 文件大小（字节） */
-  fileSize?: number;
+  fileSize?: number
   /** 最后修改时间 */
-  lastModified?: number;
+  lastModified?: number
   /** PDF 标题（元数据） */
-  title?: string;
+  title?: string
   /** PDF 作者（元数据） */
-  author?: string;
+  author?: string
 }
 
 /** PDF 阅读进度 */
 export interface PdfReadingProgress {
   /** PDF 路径 */
-  pdfPath: string;
+  pdfPath: string
   /** 当前页码 */
-  currentPage: number;
+  currentPage: number
   /** 最后阅读时间 */
-  lastReadAt: number;
+  lastReadAt: number
   /** 阅读时长（秒） */
-  readDuration: number;
+  readDuration: number
   /** 已标注数量 */
-  annotationCount: number;
+  annotationCount: number
 }
 
 /** PDF 标注高亮颜色 */
-export type PdfHighlightColor = 'yellow' | 'green' | 'blue' | 'red' | 'purple' | 'orange';
+export type PdfHighlightColor = 'yellow' | 'green' | 'blue' | 'red' | 'purple' | 'orange'
 
 /** PDF 标注级别 */
-export type PdfAnnotationLevel = 'title' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'text';
+export type PdfAnnotationLevel = 'title' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'text'
 
 /** PDF 标注数据 */
 export interface PdfAnnotation {
   /** 标注 ID */
-  id: string;
+  id: string
   /** PDF 路径 */
-  pdfPath: string;
+  pdfPath: string
   /** 页码 */
-  page: number;
+  page: number
   /** 区域坐标 */
-  rect: [number, number, number, number];
+  rect: [number, number, number, number]
   /** 标注类型 */
-  type: 'highlight' | 'underline' | 'strike' | 'image' | 'handwriting';
+  type: 'highlight' | 'underline' | 'strike' | 'image' | 'handwriting'
   /** 高亮颜色 */
-  color: PdfHighlightColor;
+  color: PdfHighlightColor
   /** 标注级别 */
-  level?: PdfAnnotationLevel;
+  level?: PdfAnnotationLevel
   /** 关联的卡片 ID */
-  cardId?: string;
+  cardId?: string
   /** 批注内容 */
-  note?: string;
+  note?: string
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
   /** 更新时间 */
-  updatedAt: number;
+  updatedAt: number
   /** 是否是图片摘录 */
-  isImage?: boolean;
+  isImage?: boolean
 }
 
 /** PDF 跳转目标 */
 export interface PdfNavigationTarget {
   /** PDF 路径 */
-  pdfPath: string;
+  pdfPath: string
   /** 目标页码 */
-  page: number;
+  page: number
   /** 目标坐标（可选，用于精确定位） */
-  rect?: PdfRect;
+  rect?: PdfRect
   /** 缩放级别（可选） */
-  scale?: number;
+  scale?: number
   /** 高亮显示（可选） */
-  highlight?: boolean;
+  highlight?: boolean
   /** 高亮颜色（可选） */
-  highlightColor?: PdfHighlightColor;
+  highlightColor?: PdfHighlightColor
 }
 
 /** PDF 书签数据 */
 export interface PdfBookmark {
   /** 书签 ID */
-  id: string;
+  id: string
   /** PDF 路径 */
-  pdfPath: string;
+  pdfPath: string
   /** 页码 */
-  pageNumber: number;
+  pageNumber: number
   /** 书签标题 */
-  title: string;
+  title: string
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
   /** 父级书签 ID（用于层级结构） */
-  parentId?: string;
+  parentId?: string
 }
 
 /** PDF 目录项 */
 export interface PdfOutlineItem {
   /** 标题 */
-  title: string;
+  title: string
   /** 目标页码 */
-  page?: number;
+  page?: number
   /** 目标引用（PDF 内部引用） */
-  dest?: any;
+  dest?: any
   /** 子项目 */
-  items?: PdfOutlineItem[];
+  items?: PdfOutlineItem[]
   /** 层级 */
-  level: number;
+  level: number
 }
 
 /** PDF 视图状态 */
 export interface PdfViewState {
   /** PDF 路径 */
-  pdfPath: string;
+  pdfPath: string
   /** 当前页码 */
-  page: number;
+  page: number
   /** 缩放级别 */
-  scale: number;
+  scale: number
   /** 旋转角度 */
-  rotation: number;
+  rotation: number
   /** 阅读模式 */
-  viewMode: 'single' | 'double' | 'continuous';
+  viewMode: 'single' | 'double' | 'continuous'
   /** 深色模式 */
-  darkMode: boolean;
+  darkMode: boolean
   /** 侧边栏状态 */
-  sidebarOpen: boolean;
+  sidebarOpen: boolean
   /** 侧边栏类型 */
-  sidebarType: 'outline' | 'thumbnails' | 'bookmarks' | null;
+  sidebarType: 'outline' | 'thumbnails' | 'bookmarks' | null
 }
 
 /** PDF 摘录服务接口 */
 export interface PdfExcerptService {
   /** 保存摘录坐标 */
-  saveCoordinates(cardId: string, coordinates: PdfExcerptCoordinates): Promise<void>;
+  saveCoordinates: (cardId: string, coordinates: PdfExcerptCoordinates) => Promise<void>
   /** 获取摘录坐标 */
-  getCoordinates(cardId: string): Promise<PdfExcerptCoordinates | null>;
+  getCoordinates: (cardId: string) => Promise<PdfExcerptCoordinates | null>
   /** 删除摘录坐标 */
-  deleteCoordinates(cardId: string): Promise<void>;
+  deleteCoordinates: (cardId: string) => Promise<void>
   /** 跳转到 PDF 位置 */
-  navigateToPdf(cardId: string): Promise<void>;
+  navigateToPdf: (cardId: string) => Promise<void>
   /** 高亮显示 PDF 区域 */
-  highlightPdfRect(cardId: string, duration?: number): Promise<void>;
+  highlightPdfRect: (cardId: string, duration?: number) => Promise<void>
 }

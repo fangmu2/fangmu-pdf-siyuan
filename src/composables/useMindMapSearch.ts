@@ -3,18 +3,21 @@
  * MarginNote 4 风格升级 - 第 7 期
  */
 
-import { ref, computed, watch } from 'vue'
 import type { Ref } from 'vue'
-import { mindMapSearchService } from '@/services/mindMapSearchService'
+import type { FreeMindMapNode } from '@/types/mindmapFree'
 import type {
-  MindMapSearchResult,
-  MindMapSearchOptions,
   MindMapFilter,
   MindMapFilterResult,
-  SearchHistoryItem,
-  QuickFilterPreset
+  MindMapSearchOptions,
+  MindMapSearchResult,
+  QuickFilterPreset,
 } from '@/types/mindMapSearch'
-import type { FreeMindMapNode } from '@/types/mindmapFree'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
+import { mindMapSearchService } from '@/services/mindMapSearchService'
 
 interface UseMindMapSearchOptions {
   /** 初始搜索关键词 */
@@ -32,13 +35,13 @@ interface UseMindMapSearchOptions {
  */
 export function useMindMapSearch(
   nodes: Ref<FreeMindMapNode[]>,
-  options: UseMindMapSearchOptions = {}
+  options: UseMindMapSearchOptions = {},
 ) {
   const {
     initialQuery = '',
     initialFilters = [],
     autoSearch = true,
-    searchDebounce = 300
+    searchDebounce = 300,
   } = options
 
   // ==================== 状态 ====================
@@ -50,7 +53,7 @@ export function useMindMapSearch(
     wholeWord: false,
     useRegex: false,
     searchFields: ['title', 'content', 'note', 'tag'],
-    maxResults: 100
+    maxResults: 100,
   })
   const searchResult = ref<MindMapSearchResult | null>(null)
   const isSearching = ref(false)
@@ -92,8 +95,8 @@ export function useMindMapSearch(
    */
   const filteredNodes = computed(() => {
     if (!filterResult.value) return nodes.value
-    return nodes.value.filter(node =>
-      filterResult.value!.filteredNodeIds.includes(node.id)
+    return nodes.value.filter((node) =>
+      filterResult.value!.filteredNodeIds.includes(node.id),
     )
   })
 
@@ -102,8 +105,8 @@ export function useMindMapSearch(
    */
   const matchedNodes = computed(() => {
     if (!searchResult.value) return []
-    return nodes.value.filter(node =>
-      searchResult.value!.matchedNodeIds.includes(node.id)
+    return nodes.value.filter((node) =>
+      searchResult.value!.matchedNodeIds.includes(node.id),
     )
   })
 
@@ -113,7 +116,7 @@ export function useMindMapSearch(
   const currentMatchNode = computed(() => {
     if (currentMatchIndex.value < 0 || !searchResult.value) return null
     const nodeId = searchResult.value.matchedNodeIds[currentMatchIndex.value]
-    return nodes.value.find(n => n.id === nodeId) || null
+    return nodes.value.find((n) => n.id === nodeId) || null
   })
 
   /**
@@ -124,7 +127,7 @@ export function useMindMapSearch(
     return {
       totalMatches: searchResult.value.totalMatches,
       uniqueNodes: searchResult.value.matchedNodeIds.length,
-      searchTime: searchResult.value.searchTime
+      searchTime: searchResult.value.searchTime,
     }
   })
 
@@ -136,7 +139,7 @@ export function useMindMapSearch(
     return {
       filteredNodes: filterResult.value.filteredNodes,
       hiddenNodes: filterResult.value.hiddenNodeIds.length,
-      totalNodes: filterResult.value.totalNodes
+      totalNodes: filterResult.value.totalNodes,
     }
   })
 
@@ -171,7 +174,7 @@ export function useMindMapSearch(
       const result = mindMapSearchService.search(
         nodes.value,
         query,
-        searchOptions.value
+        searchOptions.value,
       )
       searchResult.value = result
       highlightedNodes.value = new Set(result.matchedNodeIds)
@@ -297,7 +300,7 @@ export function useMindMapSearch(
         type: 'mindmap-focus-node',
         nodeId,
         highlight: true,
-        color: highlightColor.value
+        color: highlightColor.value,
       }, '*')
     }
   }
@@ -313,7 +316,7 @@ export function useMindMapSearch(
       type: 'mindmap-highlight-node',
       nodeId,
       color,
-      highlight: true
+      highlight: true,
     }, '*')
   }
 
@@ -325,7 +328,7 @@ export function useMindMapSearch(
     highlightedNodes.value.clear()
 
     window.postMessage({
-      type: 'mindmap-clear-highlights'
+      type: 'mindmap-clear-highlights',
     }, '*')
   }
 
@@ -454,7 +457,7 @@ export function useMindMapSearch(
     toggleFilterPanel,
 
     // 生命周期
-    dispose
+    dispose,
   }
 }
 

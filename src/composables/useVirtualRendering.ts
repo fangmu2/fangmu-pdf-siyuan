@@ -4,8 +4,17 @@
  * @fileoverview 仅渲染可见区域内的节点，提升性能
  */
 
-import { ref, computed, type Ref, type ComputedRef } from 'vue'
+import type {
+  ComputedRef,
+  Ref,
+} from 'vue'
 import type { FreeMindMapNode } from '@/types/mindmapFree'
+import {
+  computed,
+
+  ref,
+
+} from 'vue'
 
 /**
  * 视口接口
@@ -36,11 +45,11 @@ export interface UseVirtualRenderingReturn {
   // 状态
   viewport: Ref<Viewport>
   enabled: Ref<boolean>
-  
+
   // 计算属性
   visibleNodes: ComputedRef<FreeMindMapNode[]>
   visibleNodeIds: ComputedRef<Set<string>>
-  
+
   // 方法
   updateViewport: (newViewport: Viewport) => void
   updateViewportSize: (width: number, height: number) => void
@@ -56,12 +65,12 @@ export interface UseVirtualRenderingReturn {
  */
 export function useVirtualRendering(
   nodesRef: Ref<FreeMindMapNode[]>,
-  config: VirtualRenderingConfig = {}
+  config: VirtualRenderingConfig = {},
 ): UseVirtualRenderingReturn {
   const {
-    bufferSize = 100,  // 渲染缓冲区
+    bufferSize = 100, // 渲染缓冲区
     enabled = true,
-    minNodeThreshold = 50  // 少于 50 个节点时不启用虚拟渲染
+    minNodeThreshold = 50, // 少于 50 个节点时不启用虚拟渲染
   } = config
 
   /** 视口状态 */
@@ -69,7 +78,7 @@ export function useVirtualRendering(
     x: 0,
     y: 0,
     width: 800,
-    height: 600
+    height: 600,
   })
 
   /** 是否启用虚拟渲染 */
@@ -80,24 +89,24 @@ export function useVirtualRendering(
    */
   const visibleNodes = computed(() => {
     const allNodes = nodesRef.value
-    
+
     // 节点数量少于阈值时，返回所有节点
     if (!enabledRef.value || allNodes.length < minNodeThreshold) {
       return allNodes
     }
 
     const padding = bufferSize
-    
-    return allNodes.filter(node => {
-      const nodeWidth = node.style?.width ? parseFloat(node.style.width as string) : 200
-      const nodeHeight = node.style?.height ? parseFloat(node.style.height as string) : 60
-      
+
+    return allNodes.filter((node) => {
+      const nodeWidth = node.style?.width ? Number.parseFloat(node.style.width as string) : 200
+      const nodeHeight = node.style?.height ? Number.parseFloat(node.style.height as string) : 60
+
       // 判断节点是否在视口内（带缓冲）
       return (
-        node.position.x + nodeWidth > viewport.value.x - padding &&
-        node.position.x < viewport.value.x + viewport.value.width + padding &&
-        node.position.y + nodeHeight > viewport.value.y - padding &&
-        node.position.y < viewport.value.y + viewport.value.height + padding
+        node.position.x + nodeWidth > viewport.value.x - padding
+        && node.position.x < viewport.value.x + viewport.value.width + padding
+        && node.position.y + nodeHeight > viewport.value.y - padding
+        && node.position.y < viewport.value.y + viewport.value.height + padding
       )
     })
   })
@@ -107,7 +116,7 @@ export function useVirtualRendering(
    */
   const visibleNodeIds = computed(() => {
     const ids = new Set<string>()
-    visibleNodes.value.forEach(node => {
+    visibleNodes.value.forEach((node) => {
       ids.add(node.id)
     })
     return ids
@@ -132,16 +141,16 @@ export function useVirtualRendering(
    * 判断节点是否可见
    */
   function isNodeVisible(node: FreeMindMapNode): boolean {
-    const nodeWidth = node.style?.width ? parseFloat(node.style.width as string) : 200
-    const nodeHeight = node.style?.height ? parseFloat(node.style.height as string) : 60
-    
+    const nodeWidth = node.style?.width ? Number.parseFloat(node.style.width as string) : 200
+    const nodeHeight = node.style?.height ? Number.parseFloat(node.style.height as string) : 60
+
     const padding = bufferSize
-    
+
     return (
-      node.position.x + nodeWidth > viewport.value.x - padding &&
-      node.position.x < viewport.value.x + viewport.value.width + padding &&
-      node.position.y + nodeHeight > viewport.value.y - padding &&
-      node.position.y < viewport.value.y + viewport.value.height + padding
+      node.position.x + nodeWidth > viewport.value.x - padding
+      && node.position.x < viewport.value.x + viewport.value.width + padding
+      && node.position.y + nodeHeight > viewport.value.y - padding
+      && node.position.y < viewport.value.y + viewport.value.height + padding
     )
   }
 
@@ -156,7 +165,7 @@ export function useVirtualRendering(
    * 获取节点的缓冲区（用于预加载）
    */
   function getNodeBuffer(nodeId: string): FreeMindMapNode | null {
-    const node = nodesRef.value.find(n => n.id === nodeId) || null
+    const node = nodesRef.value.find((n) => n.id === nodeId) || null
     return node
   }
 
@@ -164,16 +173,16 @@ export function useVirtualRendering(
     // 状态
     viewport,
     enabled: enabledRef,
-    
+
     // 计算属性
     visibleNodes,
     visibleNodeIds,
-    
+
     // 方法
     updateViewport,
     updateViewportSize,
     isNodeVisible,
     setEnabled,
-    getNodeBuffer
+    getNodeBuffer,
   }
 }

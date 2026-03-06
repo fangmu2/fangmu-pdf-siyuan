@@ -146,9 +146,9 @@ export interface SubMindMap {
 export interface NodeRelation {
   id: string
   targetNodeId: string
-  type: 'dashed' | 'solid'  // 虚线/实线
-  label?: string            // 关联标签
-  color?: string            // 关联颜色
+  type: 'dashed' | 'solid' // 虚线/实线
+  label?: string // 关联标签
+  color?: string // 关联颜色
 }
 
 /**
@@ -342,7 +342,7 @@ export interface CreateNodeParams {
   /** 节点内容 */
   content?: string
   /** 初始位置 */
-  position: { x: number; y: number }
+  position: { x: number, y: number }
   /** 关联的标注 ID */
   annotationId?: string
   /** 关联的卡片 ID */
@@ -362,7 +362,7 @@ export interface UpdateNodeParams {
   /** 新内容 */
   content?: string
   /** 新位置 */
-  position?: { x: number; y: number }
+  position?: { x: number, y: number }
   /** 新样式 */
   style?: Record<string, unknown>
   /** 是否折叠 */

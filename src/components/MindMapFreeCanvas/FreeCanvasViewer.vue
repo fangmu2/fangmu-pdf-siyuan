@@ -1,3 +1,414 @@
+<template>
+  <div
+    ref="containerRef"
+    class="freemind-canvas-container"
+    :class="{ 'dark-mode': isDarkMode }"
+  >
+    <!-- 加载状态 -->
+    <div
+      v-if="isLoading"
+      class="freemind-loading"
+    >
+      <span class="freemind-loading-icon">🔄</span>
+      <span class="freemind-loading-text">加载思维导图中...</span>
+    </div>
+
+    <!-- 错误状态 -->
+    <div
+      v-else-if="errorMessage && nodes?.length === 0"
+      class="freemind-error"
+    >
+      <span class="freemind-error-icon">⚠️</span>
+      <span class="freemind-error-text">{{ errorMessage }}</span>
+    </div>
+
+    <!-- 工具栏 -->
+    <CanvasToolbar
+      v-if="showToolbar"
+      :layout="layout"
+      :zoom="viewport.zoom"
+      :show-grid="showGrid"
+      :read-only="readOnly"
+      :is-fullscreen="isFullscreen"
+      :has-active-search="hasActiveSearch"
+      :has-active-filter="hasActiveFilter"
+      @add-node="handleToolbarAddNode"
+      @add-group="handleToolbarAddGroup"
+      @auto-layout="handleToolbarAutoLayout"
+      @smart-recommend="handleSmartRecommend"
+      @knowledge-association="handleKnowledgeAssociation"
+      @zoom-in="zoomIn"
+      @zoom-out="zoomOut"
+      @zoom-reset="() => setTransform({
+        x: 0, y: 0, zoom: 1,
+      })"
+      @fit-view="handleContextMenuZoomToFit"
+      @toggle-grid="handleToolbarToggleGrid"
+      @toggle-fullscreen="handleToolbarToggleFullscreen"
+      @toggle-search="handleToolbarToggleSearch"
+      @toggle-filter="handleToolbarToggleFilter"
+      @toggle-navigator="handleToolbarToggleNavigator"
+      @save="handleToolbarSave"
+      @export="handleToolbarExport"
+    />
+
+    <!-- 空状态提示 - 当没有节点且不在加载中时显示 -->
+    <div
+      v-if="!isLoading && (!nodes || nodes.length === 0)"
+      class="freemind-empty-state"
+    >
+      <div class="empty-illustration">
+        <svg
+          viewBox="0 0 120 80"
+          class="mindmap-icon"
+        >
+          <rect
+            x="10"
+            y="30"
+            width="40"
+            height="25"
+            rx="4"
+            fill="#e3f2fd"
+            stroke="#2196f3"
+            stroke-width="2"
+          />
+          <rect
+            x="70"
+            y="10"
+            width="40"
+            height="25"
+            rx="4"
+            fill="#fff3e0"
+            stroke="#ff9800"
+            stroke-width="2"
+          />
+          <rect
+            x="70"
+            y="45"
+            width="40"
+            height="25"
+            rx="4"
+            fill="#e8f5e9"
+            stroke="#4caf50"
+            stroke-width="2"
+          />
+          <line
+            x1="50"
+            y1="42"
+            x2="70"
+            y2="22"
+            stroke="#90a4ae"
+            stroke-width="2"
+            stroke-dasharray="4"
+          />
+          <line
+            x1="50"
+            y1="42"
+            x2="70"
+            y2="57"
+            stroke="#90a4ae"
+            stroke-width="2"
+            stroke-dasharray="4"
+          />
+        </svg>
+      </div>
+      <h3 class="empty-title">
+        开始创建思维导图
+      </h3>
+      <p class="empty-desc">
+        在左侧 PDF 中选择文本并创建标注
+      </p>
+      <p class="empty-desc">
+        卡片将自动显示在这里
+      </p>
+      <button
+        class="add-demo-btn"
+        @click="handleToolbarAddNode('textCard')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="btn-icon"
+        >
+          <path
+            d="M12 4v16m8-8H4"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+        添加示例卡片
+      </button>
+    </div>
+
+    <!-- Vue Flow 画布 -->
+    <VueFlow
+      v-if="visibleNodes && visibleNodes.length > 0"
+      ref="containerRef"
+      :nodes="visibleNodes"
+      :edges="allEdges"
+      :node-types="nodeTypes"
+      :default-zoom="1"
+      :min-zoom="0.1"
+      :max-zoom="4"
+      :fit-view-on-init="true"
+      :pan-on-scroll="true"
+      :zoom-on-scroll="true"
+      :zoom-on-pinch="true"
+      :select-nodes-on-drag="false"
+      :select-edges-on-drag="false"
+      :connection-line-options="{
+        style: {
+          stroke: '#409eff', strokeWidth: 2,
+        },
+      }"
+      :delete-key-code="['Backspace', 'Delete']"
+      :multi-selection-key-code="['Shift', 'Meta', 'Control']"
+      :selection-key-code="['Shift']"
+      :snap-to-grid="false"
+      :snap-grid="[15, 15]"
+      :nodes-draggable="!readOnly"
+      :nodes-connectable="!readOnly"
+      :elements-selectable="true"
+      :prevent-scrolling="false"
+      :auto-connect="true"
+      :elevate-nodes-on-select="true"
+      :only-render-visible-elements="true"
+      :connection-radius="30"
+      :select-nodes-on-connect="false"
+      @connect="onConnect"
+      @node-click="onNodeClick"
+      @node-double-click="onNodeDoubleClick"
+      @edge-click="onEdgeClick"
+      @edge-contextmenu="onEdgeContextMenu"
+      @node-mouse-enter="onNodeMouseEnter"
+      @node-mouse-leave="onNodeMouseLeave"
+      @edge-mouse-enter="onEdgeMouseEnter"
+      @edge-mouse-leave="onEdgeMouseLeave"
+      @node-drag-start="onNodeDragStart"
+      @node-drag="onNodeDrag"
+      @node-drag-stop="onNodeDragStop"
+      @pane-click="onPaneClick"
+      @pane-mousedown="onPaneMouseDown"
+      @contextmenu="onContextMenu"
+    >
+      <!-- 控制工具栏 -->
+      <Controls
+        v-if="showControls"
+        class="freemind-controls"
+        :show-interactive="false"
+      />
+
+      <!-- 框选区域 -->
+      <div
+        v-if="selectionBox.visible"
+        class="selection-box"
+        :style="{
+          left: `${selectionBox.startX}px`,
+          top: `${selectionBox.startY}px`,
+          width: `${selectionBox.width}px`,
+          height: `${selectionBox.height}px`,
+        }"
+      />
+    </VueFlow>
+
+    <!-- 自定义 SVG 网格层 -->
+    <svg
+      v-if="showGrid && visibleNodes && visibleNodes.length > 0"
+      class="grid-layer"
+      :width="containerRef?.clientWidth || '100%'"
+      :height="containerRef?.clientHeight || '100%'"
+    >
+      <defs>
+        <pattern
+          id="grid"
+          :width="gridSize"
+          :height="gridSize"
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            :d="`M ${gridSize} 0 L 0 0 0 ${gridSize}`"
+            fill="none"
+            stroke="var(--b3-border-color, #ccc)"
+            stroke-width="0.5"
+            stroke-opacity="0.3"
+          />
+        </pattern>
+      </defs>
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#grid)"
+      />
+    </svg>
+
+    <!-- 搜索面板 -->
+    <MindMapSearch
+      v-if="showSearchUI"
+      :nodes="nodes"
+      :show-panel="showSearchPanel"
+      @update:show-panel="showSearchUI = $event"
+      @focus-node="focusNode"
+    />
+
+    <!-- 过滤面板 -->
+    <NodeFilterPanel
+      v-if="showFilterUI"
+      :nodes="nodes"
+      :show-panel="showFilterPanel"
+      @update:show-panel="showFilterUI = $event"
+      @filter-change="applyFilter"
+    />
+
+    <!-- 节点数量统计 -->
+    <div class="freemind-stats">
+      <span>节点：{{ nodes?.length || 0 }}</span>
+      <span class="freemind-stats-divider">|</span>
+      <span>连线：{{ allEdges?.length || 0 }}</span>
+      <span
+        v-if="store.crossBranchLinks.length > 0"
+        class="freemind-stats-crosslink"
+      >
+        | 关联：{{ store.crossBranchLinks.length }}
+      </span>
+      <span
+        v-if="hasActiveSearch"
+        class="freemind-stats-search"
+      >
+        | 搜索：{{ searchResult?.matchedNodeIds?.length || 0 }}
+      </span>
+      <span
+        v-if="hasActiveFilter"
+        class="freemind-stats-filter"
+      >
+        | 过滤：{{ filteredNodes?.length || 0 }}
+      </span>
+    </div>
+
+    <!-- 画布导航器 -->
+    <CanvasNavigator
+      ref="canvasNavigatorRef"
+      :visible="showNavigator"
+      :viewport="currentViewport"
+      :container-size="containerSize"
+      @navigate="handleNavigatorNavigate"
+    />
+
+    <!-- 编辑对话框 -->
+    <NodeEditDialog
+      v-model="editDialogVisible"
+      :node-type="editingNodeType"
+      :node-data="editingNodeData"
+      :read-only="readOnly"
+      @save="handleSaveNode"
+      @delete="handleDeleteNode"
+    />
+
+    <!-- 右键菜单 -->
+    <NodeContextMenu
+      v-model="contextMenuVisible"
+      :x="contextMenuPosition.x"
+      :y="contextMenuPosition.y"
+      :selected-nodes="selectedNodesForMenu"
+      :menu-target="contextMenuTarget"
+      :read-only="readOnly"
+      @edit="handleContextMenuEdit"
+      @delete="handleContextMenuDelete"
+      @duplicate="handleContextMenuDuplicate"
+      @create-clone="handleContextMenuCreateClone"
+      @create-reference="handleContextMenuCreateReference"
+      @color="handleContextMenuColor"
+      @level="handleContextMenuLevel"
+      @add-group="handleContextMenuAddGroup"
+      @create-connection="handleContextMenuCreateConnection"
+      @zoom-to-fit="handleContextMenuZoomToFit"
+      @center-view="handleContextMenuCenterView"
+      @merge-to-parent="handleContextMenuMergeToParent"
+      @split-from-parent="handleContextMenuSplitFromParent"
+      @merge-selected="handleContextMenuMergeSelected"
+      @extract-children="handleContextMenuExtractChildren"
+      @delete-cross-link="handleContextMenuDeleteCrossLink"
+      @copy="handleContextMenuCopy"
+      @cut="handleContextMenuCut"
+      @paste="handleContextMenuPaste"
+      @edit-tags="handleEditTags"
+      @edit-annotations="handleEditAnnotations"
+      @edit-background="handleEditBackground"
+    />
+
+    <!-- 背景图片编辑器 -->
+    <NodeBackgroundEditor
+      v-model="backgroundEditorVisible"
+      :x="backgroundEditorPosition.x"
+      :y="backgroundEditorPosition.y"
+      :background="backgroundEditorNodeId ? nodes.find(n => n.id === backgroundEditorNodeId)?.data.backgroundImage : undefined"
+      @update:background="handleUpdateBackground"
+    />
+
+    <!-- 标签编辑器 -->
+    <NodeTagEditor
+      v-model="tagEditorVisible"
+      :x="tagEditorPosition.x"
+      :y="tagEditorPosition.y"
+      :node-id="tagEditorNodeId"
+      :existing-tags="tagEditorNodeId ? (nodes.find(n => n.id === tagEditorNodeId)?.data.tags || []) : []"
+      @add-tag="handleAddTag"
+      @remove-tag="handleRemoveTag"
+    />
+
+    <!-- 关联线编辑对话框 -->
+    <EdgeEditDialog
+      v-model="edgeEditDialogVisible"
+      :edge="editingEdge"
+      :source-node-title="editingEdge ? getNodeTitle(editingEdge.sourceNodeId) : ''"
+      :target-node-title="editingEdge ? getNodeTitle(editingEdge.targetNodeId) : ''"
+      :read-only="readOnly"
+      @save="handleSaveEdge"
+      @delete="handleDeleteEdge"
+    />
+
+    <!-- 关联线右键菜单 -->
+    <EdgeContextMenu
+      v-model="edgeContextMenuVisible"
+      :x="edgeContextMenuPosition.x"
+      :y="edgeContextMenuPosition.y"
+      :edge="edgeContextMenuVisible ? store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId) || null : null"
+      :source-node-title="selectedCrossLinkId ? getNodeTitle(store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId)?.sourceNodeId || '') : ''"
+      :target-node-title="selectedCrossLinkId ? getNodeTitle(store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId)?.targetNodeId || '') : ''"
+      :read-only="readOnly"
+      @edit="handleEdgeEditFromMenu"
+      @delete="handleDeleteEdgeFromMenu"
+      @color="handleEdgeColor"
+      @style="handleEdgeStyle"
+      @width="handleEdgeWidth"
+      @label="handleEdgeLabel"
+      @toggle-arrow="handleToggleArrow"
+    />
+
+    <!-- 智能推荐面板 -->
+    <LayoutRecommendationPanel
+      v-model:visible="showRecommendPanel"
+      :nodes="nodes"
+      :edges="edges"
+      @apply-layout="handleApplyRecommendLayout"
+    />
+
+    <!-- 知识关联推荐面板 -->
+    <AssociationRecommendationPanel
+      v-model:visible="showAssociationPanel"
+      :nodes="nodes"
+      @create-association="handleCreateAssociation"
+      @ignore-recommendation="handleIgnoreAssociation"
+    />
+
+    <!-- 节点过滤面板 -->
+    <NodeFilterPanel
+      v-model:show-panel="showFilterUI"
+      :nodes="nodes"
+      @filter-change="handleFilterChange"
+    />
+  </div>
+</template>
+
 <script setup lang="ts">
 /**
  * MarginNote 风格自由画布思维导图查看器
@@ -5,70 +416,126 @@
  * 第 7 期升级：集成搜索和过滤功能
  */
 
-import { ref, computed, onMounted, onUnmounted, watch, provide, nextTick } from 'vue'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
-import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
 import type {
   Connection,
-  Edge as VueFlowEdge,
-  Node as VueFlowNode,
-  NodeDragEvent,
-  NodeClickEvent,
-  PaneClickEvent,
-  NodeMouseEvent,
   EdgeMouseEvent,
-  ViewportTransform
+  NodeClickEvent,
+  NodeDragEvent,
+  NodeMouseEvent,
+  PaneClickEvent,
 } from '@vue-flow/core'
-import { storeToRefs } from 'pinia'
-import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
-import { useSnapToGrid } from '@/composables/useSnapToGrid'
-import { useVirtualRendering } from '@/composables/useVirtualRendering'
-import { calculateGridRange, drawGridOnCanvas } from '@/utils/gridRenderer'
-import TextCardNode from './TextCardNode.vue'
-import ImageCardNode from './ImageCardNode.vue'
-import GroupNode from './GroupNode.vue'
-import NodeEditDialog from './NodeEditDialog.vue'
-import NodeContextMenu from './NodeContextMenu.vue'
-import EdgeEditDialog from './EdgeEditDialog.vue'
-import EdgeContextMenu from './EdgeContextMenu.vue'
-import CanvasToolbar from './CanvasToolbar.vue'
-import MindMapSearch from './MindMapSearch.vue'
-import NodeFilterPanel from './NodeFilterPanel.vue'
-import CanvasNavigator from './CanvasNavigator.vue'
-import LayoutRecommendationPanel from './LayoutRecommendationPanel.vue'
-import { useMindMapSearch } from '@/composables/useMindMapSearch'
 import type {
-  FreeMindMapNode,
+  CrossBranchLink,
   FreeMindMapEdge,
+  FreeMindMapNode,
   FreeMindMapNodeData,
   FreeMindMapNodeType,
-  FreeMindMapLayout,
-  CrossBranchLink
 } from '@/types/mindmapFree'
 import type { MindMapFilter } from '@/types/mindMapSearch'
-// 拖拽工具函数
+// 时间轴布局
+
+
+import { Controls } from '@vue-flow/controls'
 import {
-  findDropTarget,
-  calculateDropTargetType,
-  isValidDropTarget,
-  DropTargetType
-} from '@/utils/mindmapDragUtils'
+  useVueFlow,
+  VueFlow,
+} from '@vue-flow/core'
+import { storeToRefs } from 'pinia'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  provide,
+  ref,
+  watch,
+} from 'vue'
+import { useMindMapSearch } from '@/composables/useMindMapSearch'
+import { useSnapToGrid } from '@/composables/useSnapToGrid'
+import { useVirtualRendering } from '@/composables/useVirtualRendering'
+// 概念图布局已通过 store.applyConceptMap() 集成，无需直接导入
+// 克隆和引用节点功能
+import {
+  createCloneNode,
+  createReferenceNode,
+} from '@/services/freeMindMapService'
+import { mindMapSearchService } from '@/services/mindMapSearchService'
+import { ShortcutManager } from '@/services/shortcutManager'
+// 撤销/重做和快捷键管理
+import {
+  globalUndoManager,
+  OperationType,
+} from '@/services/undoManager'
+import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
 // 拖拽状态管理
 import { useMindMapDragStore } from '@/stores/mindMapDragStore'
-// 撤销/重做和快捷键管理
-import { globalUndoManager, OperationType } from '@/services/undoManager'
-import { ShortcutManager } from '@/services/shortcutManager'
+// 鱼骨图布局
+import { applyFishboneLayoutToNodes } from '@/utils/fishboneLayout'
+
+
+// 拖拽工具函数
+import {
+  DropTargetType,
+  findDropTarget,
+  isValidDropTarget,
+} from '@/utils/mindmapDragUtils'
+import { applyTimelineLayoutToNodes } from '@/utils/timelineLayout'
 // 树状布局
 import { applyTreeLayout } from '@/utils/treeLayout'
-// 克隆和引用节点功能
-import { createCloneNode, createReferenceNode } from '@/services/freeMindMapService'
+import AssociationRecommendationPanel from './AssociationRecommendationPanel.vue'
+import CanvasNavigator from './CanvasNavigator.vue'
+import CanvasToolbar from './CanvasToolbar.vue'
+import EdgeContextMenu from './EdgeContextMenu.vue'
+import EdgeEditDialog from './EdgeEditDialog.vue'
+import GroupNode from './GroupNode.vue'
+import ImageCardNode from './ImageCardNode.vue'
+import LayoutRecommendationPanel from './LayoutRecommendationPanel.vue'
+import MindMapSearch from './MindMapSearch.vue'
+import NodeBackgroundEditor from './NodeBackgroundEditor.vue'
+import NodeContextMenu from './NodeContextMenu.vue'
+import NodeEditDialog from './NodeEditDialog.vue'
+import NodeFilterPanel from './NodeFilterPanel.vue'
+import NodeTagEditor from './NodeTagEditor.vue'
+import TextCardNode from './TextCardNode.vue'
+
+const props = withDefaults(defineProps<Props>(), {
+  studySetId: '',
+  readOnly: false,
+  showGrid: true,
+  showControls: true,
+  showMiniMap: false,
+  showToolbar: true,
+  showLinksPanel: false,
+  showPdfLinkagePanel: false,
+  pdfPath: '',
+  showSearch: false,
+  showFilter: false,
+})
+
+// Emit
+const emit = defineEmits<{
+  /** 节点点击事件 */
+  (e: 'nodeClick', node: FreeMindMapNode): void
+  /** 节点双击事件 */
+  (e: 'nodeDoubleClick', node: FreeMindMapNode): void
+  /** 边点击事件 */
+  (e: 'edgeClick', edge: FreeMindMapEdge): void
+  /** 数据变更事件 */
+  (e: 'change', data: { nodes: FreeMindMapNode[], edges: FreeMindMapEdge[] }): void
+  /** 节点创建事件（拖拽创建） */
+  (e: 'node-create', params: {
+    title: string
+    content: string
+    type: 'textCard' | 'imageCard'
+    position: { x: number, y: number }
+    annotationId?: string
+  }): void
+}>()
 
 // 自定义节点类型注册
 const nodeTypes = {
   textCard: TextCardNode,
   imageCard: ImageCardNode,
-  group: GroupNode
+  group: GroupNode,
 }
 
 // Props
@@ -99,45 +566,27 @@ interface Props {
   showFilter?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  studySetId: '',
-  readOnly: false,
-  showGrid: true,
-  showControls: true,
-  showMiniMap: false,
-  showToolbar: true,
-  showLinksPanel: false,
-  showPdfLinkagePanel: false,
-  pdfPath: '',
-  showSearch: false,
-  showFilter: false
-})
-
-// Emit
-const emit = defineEmits<{
-  /** 节点点击事件 */
-  (e: 'nodeClick', node: FreeMindMapNode): void
-  /** 节点双击事件 */
-  (e: 'nodeDoubleClick', node: FreeMindMapNode): void
-  /** 边点击事件 */
-  (e: 'edgeClick', edge: FreeMindMapEdge): void
-  /** 数据变更事件 */
-  (e: 'change', data: { nodes: FreeMindMapNode[]; edges: FreeMindMapEdge[] }): void
-  /** 节点创建事件（拖拽创建） */
-  (e: 'node-create', params: {
-    title: string
-    content: string
-    type: 'textCard' | 'imageCard'
-    position: { x: number; y: number }
-    annotationId?: string
-  }): void
-}>()
-
 // 编辑对话框状态
 const editDialogVisible = ref(false)
 const editingNode = ref<FreeMindMapNode | null>(null)
 const editingNodeType = ref<FreeMindMapNodeType>('textCard')
 const editingNodeData = ref<FreeMindMapNodeData | null>(null)
+
+// 背景编辑器状态
+const backgroundEditorVisible = ref(false)
+const backgroundEditorPosition = ref({
+  x: 0,
+  y: 0,
+})
+const backgroundEditorNodeId = ref<string | null>(null)
+
+// 标签编辑器状态
+const tagEditorVisible = ref(false)
+const tagEditorPosition = ref({
+  x: 0,
+  y: 0,
+})
+const tagEditorNodeId = ref<string>('')
 
 // 关联线编辑对话框状态
 const edgeEditDialogVisible = ref(false)
@@ -145,12 +594,18 @@ const editingEdge = ref<CrossBranchLink | null>(null)
 
 // 右键菜单状态
 const contextMenuVisible = ref(false)
-const contextMenuPosition = ref({ x: 0, y: 0 })
-const contextMenuTarget = ref<{ type: 'node' | 'pane' | 'edge'; nodeId?: string; edgeId?: string } | null>(null)
+const contextMenuPosition = ref({
+  x: 0,
+  y: 0,
+})
+const contextMenuTarget = ref<{ type: 'node' | 'pane' | 'edge', nodeId?: string, edgeId?: string } | null>(null)
 
 // 关联线右键菜单状态
 const edgeContextMenuVisible = ref(false)
-const edgeContextMenuPosition = ref({ x: 0, y: 0 })
+const edgeContextMenuPosition = ref({
+  x: 0,
+  y: 0,
+})
 
 // 跨分支关联选中状态
 const selectedCrossLinkId = ref<string | null>(null)
@@ -168,21 +623,27 @@ const showNavigator = ref(false)
 // 智能推荐面板状态
 const showRecommendPanel = ref(false)
 
+// 知识关联推荐面板状态
+const showAssociationPanel = ref(false)
+
 // 容器尺寸
-const containerSize = ref({ width: 800, height: 600 })
+const containerSize = ref({
+  width: 800,
+  height: 600,
+})
 
 // 当前视口状态（从 Vue Flow 同步）
 const currentViewport = ref({
   x: 0,
   y: 0,
-  zoom: 1
+  zoom: 1,
 })
 
 // 使用虚拟渲染组合式函数
 const virtualRendering = useVirtualRendering(visibleNodes, {
   bufferSize: 200,
   enabled: true,
-  minNodeThreshold: 50
+  minNodeThreshold: 50,
 })
 
 // Canvas Navigator 引用
@@ -198,7 +659,9 @@ const {
   layout,
   isLoaded,
   isLoading,
-  errorMessage
+  errorMessage,
+  hiddenNodeIds,
+  allTags,
 } = storeToRefs(store)
 
 // Vue Flow 内部状态
@@ -207,7 +670,7 @@ const {
   zoomIn,
   zoomOut,
   setTransform,
-  getViewport
+  getViewport,
 } = useVueFlow()
 
 /**
@@ -219,15 +682,15 @@ function syncViewport(): void {
     currentViewport.value = {
       x: vp.x,
       y: vp.y,
-      zoom: vp.zoom
+      zoom: vp.zoom,
     }
-    
+
     // 更新虚拟渲染视口
     virtualRendering.updateViewport({
       x: -vp.x / vp.zoom,
       y: -vp.y / vp.zoom,
       width: containerSize.value.width / vp.zoom,
-      height: containerSize.value.height / vp.zoom
+      height: containerSize.value.height / vp.zoom,
     })
   }
 }
@@ -245,11 +708,11 @@ const {
   enabled: snapEnabled,
   snapToGrid,
   toggleEnabled,
-  setGridSize
+  setGridSize,
 } = useSnapToGrid({
   gridSize: 20,
   snapThreshold: 10,
-  enabled: true
+  enabled: true,
 })
 
 // Shift 键状态（用于临时禁用吸附）
@@ -262,24 +725,24 @@ const selectionBox = ref({
   width: 0,
   height: 0,
   visible: false,
-  isSelecting: false
+  isSelecting: false,
 })
 
 // 从 Store 获取选中节点用于右键菜单
 const { selectedNodeIds } = storeToRefs(store)
 
-// 计算属性 - 获取可见节点（考虑展开/折叠状态）
+// 计算属性 - 获取可见节点（考虑展开/折叠状态和过滤）
 const visibleNodes = computed(() => {
-  const hiddenNodeIds = new Set<string>()
+  const hiddenNodeIdsSet = new Set<string>()
 
   // 收集所有被折叠节点的子节点 ID
-  nodes.value.forEach(node => {
+  nodes.value.forEach((node) => {
     if (node.data.collapsed || !node.data.isExpanded) {
       // 如果节点被折叠，收集它的所有子孙节点 ID
       const collectChildren = (parentId: string) => {
-        const children = nodes.value.filter(n => n.parentId === parentId)
-        children.forEach(child => {
-          hiddenNodeIds.add(child.id)
+        const children = nodes.value.filter((n) => n.parentId === parentId)
+        children.forEach((child) => {
+          hiddenNodeIdsSet.add(child.id)
           collectChildren(child.id)
         })
       }
@@ -287,14 +750,17 @@ const visibleNodes = computed(() => {
     }
   })
 
+  // 应用过滤器的隐藏节点（从 store 获取）
+  hiddenNodeIds.value.forEach((id) => hiddenNodeIdsSet.add(id))
+
   // 过滤掉隐藏的节点
-  return nodes.value.filter(n => !hiddenNodeIds.has(n.id))
+  return nodes.value.filter((n) => !hiddenNodeIdsSet.has(n.id))
 })
 
 // 计算属性 - 跨分支关联转换为 Vue Flow Edge
 const crossLinkEdges = computed(() => {
   const allCrossLinks = store.getAllCrossLinks()
-  
+
   return allCrossLinks.map((link: CrossBranchLink) => {
     const edge: FreeMindMapEdge = {
       id: link.id,
@@ -306,29 +772,29 @@ const crossLinkEdges = computed(() => {
         ...link.style,
         stroke: link.style.stroke || '#FF6B6B',
         strokeWidth: link.style.strokeWidth || 2,
-        strokeDasharray: link.style.strokeDasharray || '5,5' // 虚线样式
+        strokeDasharray: link.style.strokeDasharray || '5,5', // 虚线样式
       },
       selected: selectedCrossLinkId.value === link.id,
       selectable: true,
       data: {
         linkType: link.linkType,
         label: link.label,
-        isCrossLink: true
+        isCrossLink: true,
       },
       label: link.label || undefined,
       labelStyle: {
         fill: link.style.stroke || '#FF6B6B',
         fontSize: '12px',
-        fontWeight: '500'
+        fontWeight: '500',
       },
       labelBgStyle: {
         fill: isDarkMode.value ? '#2d2d2d' : '#ffffff',
-        fillOpacity: 0.8
+        fillOpacity: 0.8,
       },
       labelBgPadding: [6, 4] as [number, number],
-      labelBgBorderRadius: 4
+      labelBgBorderRadius: 4,
     }
-    
+
     return edge
   })
 })
@@ -336,7 +802,7 @@ const crossLinkEdges = computed(() => {
 // 合并所有边（父子关系边 + 跨分支关联边）
 const allEdges = computed(() => {
   // 过滤掉跨分支关联的边（避免重复）
-  const parentChildEdges = edges.value.filter(e => !e.data?.isCrossLink)
+  const parentChildEdges = edges.value.filter((e) => !e.data?.isCrossLink)
   return [...parentChildEdges, ...crossLinkEdges.value]
 })
 
@@ -362,15 +828,15 @@ const {
   clearFilter,
   highlightNode,
   clearHighlights,
-  dispose: disposeSearch
+  dispose: disposeSearch,
 } = useMindMapSearch(nodes, {
   autoSearch: true,
-  searchDebounce: 300
+  searchDebounce: 300,
 })
 
 // 选中的节点用于右键菜单
 const selectedNodesForMenu = computed(() => {
-  return nodes.value.filter(n => selectedNodeIds.value.includes(n.id))
+  return nodes.value.filter((n) => selectedNodeIds.value.includes(n.id))
 })
 
 // 计算属性
@@ -384,25 +850,25 @@ const backgroundColor = computed(() => {
 
 // 初始化加载
 onMounted(async () => {
-  console.log('[FreeCanvasViewer] onMounted, blockId:', props.blockId);
+  console.log('[FreeCanvasViewer] onMounted, blockId:', props.blockId)
 
   if (!props.blockId) {
-    console.warn('[FreeCanvasViewer] blockId 为空，显示空状态');
-    return;
+    console.warn('[FreeCanvasViewer] blockId 为空，显示空状态')
+    return
   }
 
-  isLoading.value = true;
-  console.log('[FreeCanvasViewer] 当前状态 - isLoading:', isLoading.value, 'nodes:', nodes.value?.length);
+  isLoading.value = true
+  console.log('[FreeCanvasViewer] 当前状态 - isLoading:', isLoading.value, 'nodes:', nodes.value?.length)
 
   try {
     await store.loadMindMap(props.blockId)
     isInitialized.value = true
-    console.log('[FreeCanvasViewer] 加载完成 - isLoaded:', isLoaded.value, 'nodes:', nodes.value?.length);
+    console.log('[FreeCanvasViewer] 加载完成 - isLoaded:', isLoaded.value, 'nodes:', nodes.value?.length)
   } catch (error) {
-    console.error('[FreeCanvasViewer] 加载失败:', error);
-    errorMessage.value = error instanceof Error ? error.message : '加载失败';
+    console.error('[FreeCanvasViewer] 加载失败:', error)
+    errorMessage.value = error instanceof Error ? error.message : '加载失败'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 
   // 启动自动保存
@@ -414,24 +880,24 @@ onMounted(async () => {
   // 监听 PDF 摘录创建事件
   window.addEventListener('annotation-created', handleAnnotationCreated as EventListener)
   console.log('[FreeCanvasViewer] 已注册 annotation-created 事件监听')
-  
+
   // 初始化快捷键管理器
   shortcutManager.value = new ShortcutManager(globalUndoManager, store)
   shortcutManager.value.listen()
   console.log('[FreeCanvasViewer] 快捷键管理器已启动（Ctrl+Z 撤销，Ctrl+Shift+Z 重做）')
-  
+
   // 添加键盘事件监听（用于 Shift 键临时禁用吸附）
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('keyup', handleKeyUp)
-  
+
   // 监听容器尺寸变化
   updateContainerSize()
   window.addEventListener('resize', updateContainerSize)
-  
+
   // 启动视口同步
   syncViewport()
   const viewportSyncInterval = setInterval(syncViewport, 100)
-  
+
   // 清理定时器
   onUnmounted(() => {
     clearInterval(viewportSyncInterval)
@@ -445,11 +911,11 @@ onUnmounted(() => {
   window.removeEventListener('message', handlePostMessage)
   window.removeEventListener('annotation-created', handleAnnotationCreated as EventListener)
   console.log('[FreeCanvasViewer] 已移除事件监听')
-  
+
   // 移除键盘事件监听
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keyup', handleKeyUp)
-  
+
   // 销毁快捷键管理器
   if (shortcutManager.value) {
     shortcutManager.value.destroy()
@@ -485,28 +951,28 @@ async function handleGenerateFromPdf(): Promise<void> {
     showMessage('请先设置 PDF 路径', 'info')
     return
   }
-  
+
   isLoading.value = true
   try {
     console.log('[FreeCanvasViewer] 开始从 PDF 标注生成脑图:', props.pdfPath)
-    
+
     // 导入生成服务
     const { generateMindMapFromPdfAnnotations } = await import('@/services/freeMindMapDataIntegrationService')
-    
+
     // 生成节点
     const nodes = await generateMindMapFromPdfAnnotations(props.pdfPath, blockId)
     console.log('[FreeCanvasViewer] 生成节点数量:', nodes.length)
-    
+
     if (nodes.length > 0) {
       // 加载到画布
       store.setNodes(nodes)
       store.setEdges([])
-      
+
       // 保存
       await saveMindMap()
-      
+
       showMessage(`已从 PDF 标注生成 ${nodes.length} 个节点`, 'success')
-      
+
       // 自动适应视图
       setTimeout(() => {
         handleContextMenuZoomToFit()
@@ -516,7 +982,7 @@ async function handleGenerateFromPdf(): Promise<void> {
     }
   } catch (error) {
     console.error('[FreeCanvasViewer] 生成脑图失败:', error)
-    showMessage('生成失败：' + (error as Error).message, 'error')
+    showMessage(`生成失败：${(error as Error).message}`, 'error')
   } finally {
     isLoading.value = false
   }
@@ -534,18 +1000,18 @@ watch(isFullscreen, (val) => {
 // 监听 blockId 变化，重新加载数据
 watch(() => props.blockId, async (newBlockId, oldBlockId) => {
   if (newBlockId && newBlockId !== oldBlockId) {
-    console.log('[FreeCanvasViewer] blockId 变化，重新加载:', newBlockId);
-    await store.loadMindMap(newBlockId);
+    console.log('[FreeCanvasViewer] blockId 变化，重新加载:', newBlockId)
+    await store.loadMindMap(newBlockId)
   }
 })
 
 // 监听 PDF 摘录创建事件
 const handleAnnotationCreated = (event: CustomEvent) => {
-  console.log('[FreeCanvasViewer] 收到 annotation-created 事件:', event.detail);
-  const { annotation } = event.detail || {};
+  console.log('[FreeCanvasViewer] 收到 annotation-created 事件:', event.detail)
+  const { annotation } = event.detail || {}
   if (!annotation) {
-    console.warn('[FreeCanvasViewer] 事件中没有 annotation 数据');
-    return;
+    console.warn('[FreeCanvasViewer] 事件中没有 annotation 数据')
+    return
   }
 
   // 创建新节点
@@ -553,18 +1019,21 @@ const handleAnnotationCreated = (event: CustomEvent) => {
     type: 'textCard',
     title: annotation.text?.slice(0, 50) + (annotation.text?.length > 50 ? '...' : '') || '新摘录',
     content: annotation.text || '',
-    position: { x: 100 + Math.random() * 200, y: 100 + Math.random() * 100 },
+    position: {
+      x: 100 + Math.random() * 200,
+      y: 100 + Math.random() * 100,
+    },
     annotationId: annotation.id,
     pdfPath: annotation.pdfPath,
     page: annotation.page,
-    rect: annotation.rect
-  });
+    rect: annotation.rect,
+  })
 
-  console.log('[FreeCanvasViewer] 从摘录创建节点:', newNode.id);
-  
+  console.log('[FreeCanvasViewer] 从摘录创建节点:', newNode.id)
+
   // 触发保存
   debouncedSave()
-};
+}
 
 // ==================== 事件处理 ====================
 
@@ -572,7 +1041,12 @@ const handleAnnotationCreated = (event: CustomEvent) => {
  * 处理 postMessage 事件（用于搜索高亮）
  */
 function handlePostMessage(event: MessageEvent): void {
-  const { type, nodeId, color, highlight } = event.data || {}
+  const {
+    type,
+    nodeId,
+    color,
+    highlight,
+  } = event.data || {}
 
   if (type === 'mindmap-focus-node' && nodeId) {
     focusNode(nodeId)
@@ -620,7 +1094,7 @@ function handleSaveNode(data: Partial<FreeMindMapNodeData>): void {
   if (editingNode.value) {
     store.updateNode({
       id: editingNode.value.id,
-      ...data
+      ...data,
     })
   }
   editingNode.value = null
@@ -647,7 +1121,7 @@ function onContextMenu(event: MouseEvent): void {
 
   contextMenuPosition.value = {
     x: event.clientX,
-    y: event.clientY
+    y: event.clientY,
   }
 
   // 判断点击的是节点、边还是画布
@@ -659,11 +1133,14 @@ function onContextMenu(event: MouseEvent): void {
     // 点击的是边
     const edgeId = edgeElement.getAttribute('data-id')
     if (edgeId) {
-      const edge = edges.value.find(e => e.id === edgeId) || crossLinkEdges.value.find(e => e.id === edgeId)
+      const edge = edges.value.find((e) => e.id === edgeId) || crossLinkEdges.value.find((e) => e.id === edgeId)
       if (edge?.data?.isCrossLink) {
         // 跨分支关联边
         selectedCrossLinkId.value = edgeId
-        contextMenuTarget.value = { type: 'edge', edgeId }
+        contextMenuTarget.value = {
+          type: 'edge',
+          edgeId,
+        }
       } else {
         contextMenuTarget.value = { type: 'pane' }
       }
@@ -673,13 +1150,16 @@ function onContextMenu(event: MouseEvent): void {
   } else if (nodeElement) {
     const nodeId = nodeElement.getAttribute('data-id')
     if (nodeId) {
-      const node = nodes.value.find(n => n.id === nodeId)
+      const node = nodes.value.find((n) => n.id === nodeId)
       if (node && !selectedNodeIds.value.includes(nodeId)) {
         // 如果点击的节点未被选中，则只选中该节点
         store.clearSelection()
         store.selectNode(nodeId, false)
       }
-      contextMenuTarget.value = { type: 'node', nodeId }
+      contextMenuTarget.value = {
+        type: 'node',
+        nodeId,
+      }
     } else {
       contextMenuTarget.value = { type: 'pane' }
     }
@@ -695,12 +1175,15 @@ function onContextMenu(event: MouseEvent): void {
  */
 function onEdgeClick(event: EdgeMouseEvent): void {
   const edge = event.edge as FreeMindMapEdge
-  
+
   // 检查是否是跨分支关联
   if (edge.data?.isCrossLink) {
     // 选中跨分支关联
     selectedCrossLinkId.value = edge.id
-    contextMenuTarget.value = { type: 'edge', edgeId: edge.id }
+    contextMenuTarget.value = {
+      type: 'edge',
+      edgeId: edge.id,
+    }
     emit('edgeClick', edge)
   } else {
     // 普通父子关系边
@@ -749,7 +1232,7 @@ function onEdgeContextMenu(event: EdgeMouseEvent): void {
   const edge = event.edge as FreeMindMapEdge
 
   // 查找对应的 CrossBranchLink
-  const crossLink = store.getAllCrossLinks().find(l => {
+  const crossLink = store.getAllCrossLinks().find((l) => {
     const vueFlowEdgeId = `cross-${l.sourceNodeId}-${l.targetNodeId}`
     return vueFlowEdgeId === edge.id || l.id === edge.id
   })
@@ -758,7 +1241,7 @@ function onEdgeContextMenu(event: EdgeMouseEvent): void {
     selectedCrossLinkId.value = crossLink.id
     edgeContextMenuPosition.value = {
       x: originalEvent.clientX,
-      y: originalEvent.clientY
+      y: originalEvent.clientY,
     }
     edgeContextMenuVisible.value = true
   }
@@ -773,7 +1256,7 @@ function onConnect(connection: Connection): void {
     store.createEdge({
       source: connection.source,
       target: connection.target,
-      type: 'default'
+      type: 'default',
     })
 
     // 建立父子关系（源节点为父节点，目标节点为子节点）
@@ -790,7 +1273,7 @@ function onNodeDragStart(event: NodeDragEvent): void {
   // 启动拖拽状态
   dragStore.startDrag([event.node.id])
   console.log('[思维导图] 开始拖拽节点:', event.node.id)
-  
+
   // 检查并扩展画布边界
   checkAndExpandCanvasBounds(event.node.position)
 }
@@ -800,7 +1283,7 @@ function onNodeDragStart(event: NodeDragEvent): void {
  */
 function onNodeDrag(event: NodeDragEvent): void {
   const draggedNode = event.node as FreeMindMapNode
-  
+
   // 按下 Shift 键时临时禁用吸附
   const shouldSnap = snapEnabled.value && !isShiftPressed.value
   if (shouldSnap) {
@@ -811,18 +1294,18 @@ function onNodeDrag(event: NodeDragEvent): void {
       draggedNode.position = snappedPosition
     }
   }
-  
+
   // 检查并扩展画布边界
   checkAndExpandCanvasBounds(draggedNode.position)
-  
+
   // 计算拖拽目标
   const mousePosition = {
     x: draggedNode.position.x + 100,
-    y: draggedNode.position.y + 30
+    y: draggedNode.position.y + 30,
   }
-  
+
   const target = findDropTarget(draggedNode.id, mousePosition, visibleNodes.value)
-  
+
   if (target && isValidDropTarget(draggedNode.id, target.nodeId, visibleNodes.value)) {
     // 更新拖拽目标状态
     dragStore.updateTarget(target.nodeId, target.type, target.rect)
@@ -837,53 +1320,53 @@ function onNodeDrag(event: NodeDragEvent): void {
  */
 function onNodeDragStop(event: NodeDragEvent): void {
   const draggedNode = event.node as FreeMindMapNode
-  
+
   // 检测是否有拖拽目标
   const mousePosition = {
     x: draggedNode.position.x + 100, // 节点中心 X
-    y: draggedNode.position.y + 30   // 节点中心 Y
+    y: draggedNode.position.y + 30, // 节点中心 Y
   }
-  
+
   const target = findDropTarget(draggedNode.id, mousePosition, visibleNodes.value)
-  
+
   if (target && isValidDropTarget(draggedNode.id, target.nodeId, visibleNodes.value)) {
-    const targetNode = visibleNodes.value.find(n => n.id === target.nodeId)
+    const targetNode = visibleNodes.value.find((n) => n.id === target.nodeId)
     if (targetNode) {
       // 保存操作前的状态（用于撤销）
       const oldParentId = draggedNode.parentId
       const oldPosition = { ...draggedNode.position }
-      
+
       // 建立父子关系
       store.setParent(draggedNode.id, target.nodeId)
-      
+
       // 记录操作历史
       globalUndoManager.record({
         type: OperationType.MOVE_NODE,
         timestamp: Date.now(),
         data: {
           nodeId: draggedNode.id,
-          newParentId: target.nodeId
+          newParentId: target.nodeId,
         },
         undoData: {
           oldParentId,
-          oldPosition
+          oldPosition,
         },
         redoData: {
-          newParentId: target.nodeId
+          newParentId: target.nodeId,
         },
-        description: `移动节点 "${draggedNode.data.title}"`
+        description: `移动节点 "${draggedNode.data.title}"`,
       })
-      
+
       // 显示提示消息
-      const actionText = target.type === DropTargetType.CHILD 
-        ? '成为子节点' 
-        : target.type === DropTargetType.BEFORE 
+      const actionText = target.type === DropTargetType.CHILD
+        ? '成为子节点'
+        : target.type === DropTargetType.BEFORE
           ? '成为兄弟节点（前）'
           : '成为兄弟节点（后）'
       console.log(`[思维导图] "${draggedNode.data.title}" ${actionText} "${targetNode.data.title}"`)
     }
   }
-  
+
   // 结束拖拽状态
   dragStore.endDrag()
   debouncedSave()
@@ -904,23 +1387,23 @@ function onPaneClick(_event: PaneClickEvent): void {
 function onPaneMouseDown(event: MouseEvent): void {
   // 检查是否按下 Shift 键
   if (!event.shiftKey) return
-  
+
   // 检查是否点击在空白区域（不是节点或边）
   const target = event.target as HTMLElement
   if (!target.classList.contains('vue-flow__pane')) return
-  
+
   const containerRect = containerRef.value?.getBoundingClientRect()
   if (!containerRect) return
-  
+
   selectionBox.value = {
     startX: event.clientX - containerRect.left,
     startY: event.clientY - containerRect.top,
     width: 0,
     height: 0,
     visible: true,
-    isSelecting: true
+    isSelecting: true,
   }
-  
+
   // 添加全局事件监听
   document.addEventListener('mousemove', onPaneMouseMove)
   document.addEventListener('mouseup', onPaneMouseUp)
@@ -931,23 +1414,23 @@ function onPaneMouseDown(event: MouseEvent): void {
  */
 function onPaneMouseMove(event: MouseEvent): void {
   if (!selectionBox.value.isSelecting || !containerRef.value) return
-  
+
   const containerRect = containerRef.value.getBoundingClientRect()
   const currentX = event.clientX - containerRect.left
   const currentY = event.clientY - containerRect.top
-  
+
   // 计算框选区域
   const startX = Math.min(selectionBox.value.startX, currentX)
   const startY = Math.min(selectionBox.value.startY, currentY)
   const width = Math.abs(currentX - selectionBox.value.startX)
   const height = Math.abs(currentY - selectionBox.value.startY)
-  
+
   selectionBox.value = {
     ...selectionBox.value,
     startX,
     startY,
     width,
-    height
+    height,
   }
 }
 
@@ -956,21 +1439,21 @@ function onPaneMouseMove(event: MouseEvent): void {
  */
 function onPaneMouseUp(event: MouseEvent): void {
   if (!selectionBox.value.isSelecting) return
-  
+
   // 移除全局事件监听
   document.removeEventListener('mousemove', onPaneMouseMove)
   document.removeEventListener('mouseup', onPaneMouseUp)
-  
+
   // 执行框选检测
   if (selectionBox.value.width > 5 && selectionBox.value.height > 5) {
     selectNodesInBox()
   }
-  
+
   // 隐藏框选框
   selectionBox.value = {
     ...selectionBox.value,
     visible: false,
-    isSelecting: false
+    isSelecting: false,
   }
 }
 
@@ -979,31 +1462,31 @@ function onPaneMouseUp(event: MouseEvent): void {
  */
 function selectNodesInBox(): void {
   const box = selectionBox.value
-  
+
   // 获取框选区域的边界
   const boxBounds = {
     left: box.startX,
     top: box.startY,
     right: box.startX + box.width,
-    bottom: box.startY + box.height
+    bottom: box.startY + box.height,
   }
-  
+
   // 查找所有在框选区域内的节点
-  const nodesInBox = visibleNodes.value.filter(node => {
+  const nodesInBox = visibleNodes.value.filter((node) => {
     const nodeBounds = getNodeBounds(node)
-    
+
     // 简单的矩形碰撞检测
     return !(
-      nodeBounds.right < boxBounds.left ||
-      nodeBounds.left > boxBounds.right ||
-      nodeBounds.bottom < boxBounds.top ||
-      nodeBounds.top > boxBounds.bottom
+      nodeBounds.right < boxBounds.left
+      || nodeBounds.left > boxBounds.right
+      || nodeBounds.bottom < boxBounds.top
+      || nodeBounds.top > boxBounds.bottom
     )
   })
-  
+
   // 批量选择节点
   if (nodesInBox.length > 0) {
-    nodesInBox.forEach(node => {
+    nodesInBox.forEach((node) => {
       store.selectNode(node.id, true) // true = 多选模式
     })
     console.log(`[FreeCanvasViewer] 框选选中 ${nodesInBox.length} 个节点`)
@@ -1019,14 +1502,14 @@ function getNodeBounds(node: FreeMindMapNode): {
   right: number
   bottom: number
 } {
-  const width = node.style?.width ? parseFloat(node.style.width as string) : 200
-  const height = node.style?.height ? parseFloat(node.style.height as string) : 60
-  
+  const width = node.style?.width ? Number.parseFloat(node.style.width as string) : 200
+  const height = node.style?.height ? Number.parseFloat(node.style.height as string) : 60
+
   return {
     left: node.position.x,
     top: node.position.y,
     right: node.position.x + width,
-    bottom: node.position.y + height
+    bottom: node.position.y + height,
   }
 }
 
@@ -1043,7 +1526,7 @@ onUnmounted(() => {
  */
 function handleContextMenuEdit(): void {
   if (selectedNodeIds.value.length === 1) {
-    const node = nodes.value.find(n => n.id === selectedNodeIds.value[0])
+    const node = nodes.value.find((n) => n.id === selectedNodeIds.value[0])
     if (node) {
       openEditDialog(node)
     }
@@ -1064,18 +1547,18 @@ function handleContextMenuDelete(): void {
  */
 function handleContextMenuDuplicate(): void {
   if (selectedNodeIds.value.length === 1) {
-    const sourceNode = nodes.value.find(n => n.id === selectedNodeIds.value[0])
+    const sourceNode = nodes.value.find((n) => n.id === selectedNodeIds.value[0])
     if (sourceNode) {
       store.createNode({
         type: sourceNode.type as FreeMindMapNodeType,
-        title: sourceNode.data.title + ' (副本)',
+        title: `${sourceNode.data.title} (副本)`,
         content: sourceNode.data.content,
         position: {
           x: sourceNode.position.x + 30,
-          y: sourceNode.position.y + 30
+          y: sourceNode.position.y + 30,
         },
         annotationId: sourceNode.data.annotationId,
-        cardId: sourceNode.data.cardId
+        cardId: sourceNode.data.cardId,
       })
     }
   }
@@ -1086,15 +1569,15 @@ function handleContextMenuDuplicate(): void {
  */
 function handleContextMenuColor(color: string): void {
   if (selectedNodeIds.value.length > 0) {
-    selectedNodeIds.value.forEach(id => {
-      const node = nodes.value.find(n => n.id === id)
+    selectedNodeIds.value.forEach((id) => {
+      const node = nodes.value.find((n) => n.id === id)
       if (node) {
         store.updateNode({
           id,
           style: {
             ...node.style,
-            backgroundColor: color
-          }
+            backgroundColor: color,
+          },
         })
       }
     })
@@ -1106,7 +1589,7 @@ function handleContextMenuColor(color: string): void {
  */
 function handleContextMenuLevel(level: string): void {
   if (selectedNodeIds.value.length === 1) {
-    const node = nodes.value.find(n => n.id === selectedNodeIds.value[0])
+    const node = nodes.value.find((n) => n.id === selectedNodeIds.value[0])
     if (node) {
       store.updateNode({
         id: node.id,
@@ -1115,8 +1598,8 @@ function handleContextMenuLevel(level: string): void {
         position: node.position,
         style: {
           ...node.style,
-          backgroundColor: level === 'title' ? '#e6a23c' : undefined
-        }
+          backgroundColor: level === 'title' ? '#e6a23c' : undefined,
+        },
       })
     }
   }
@@ -1129,9 +1612,9 @@ function handleContextMenuAddGroup(): void {
   if (selectedNodeIds.value.length > 0) {
     // 计算选中节点的中心位置
     const positions = selectedNodeIds.value
-      .map(id => nodes.value.find(n => n.id === id))
+      .map((id) => nodes.value.find((n) => n.id === id))
       .filter(Boolean)
-      .map(n => n!.position)
+      .map((n) => n!.position)
 
     const centerX = positions.reduce((sum, p) => sum + p.x, 0) / positions.length
     const centerY = positions.reduce((sum, p) => sum + p.y, 0) / positions.length
@@ -1139,13 +1622,19 @@ function handleContextMenuAddGroup(): void {
     store.createNode({
       type: 'group',
       title: '新分组',
-      position: { x: centerX - 100, y: centerY - 50 }
+      position: {
+        x: centerX - 100,
+        y: centerY - 50,
+      },
     })
   } else {
     store.createNode({
       type: 'group',
       title: '新分组',
-      position: { x: 200, y: 200 }
+      position: {
+        x: 200,
+        y: 200,
+      },
     })
   }
 }
@@ -1159,7 +1648,7 @@ function handleContextMenuCreateConnection(): void {
     store.createEdge({
       source: selectedNodeIds.value[0],
       target: selectedNodeIds.value[1],
-      type: 'default'
+      type: 'default',
     })
   }
 }
@@ -1175,7 +1664,11 @@ function handleContextMenuZoomToFit(): void {
  * 居中视图
  */
 function handleContextMenuCenterView(): void {
-  setTransform({ x: 0, y: 0, zoom: 1 })
+  setTransform({
+    x: 0,
+    y: 0,
+    zoom: 1,
+  })
 }
 
 /**
@@ -1184,16 +1677,16 @@ function handleContextMenuCenterView(): void {
 function handleContextMenuMergeToParent(): void {
   if (selectedNodeIds.value.length === 1) {
     const nodeId = selectedNodeIds.value[0]
-    const node = nodes.value.find(n => n.id === nodeId)
-    const parent = node?.parentId ? nodes.value.find(n => n.id === node.parentId) : null
+    const node = nodes.value.find((n) => n.id === nodeId)
+    const parent = node?.parentId ? nodes.value.find((n) => n.id === node.parentId) : null
 
     if (node && parent) {
       // 将当前节点内容合并到父节点
-      const newContent = parent.data.title + '\n\n' + node.data.content
+      const newContent = `${parent.data.title}\n\n${node.data.content}`
       store.updateNode({
         id: parent.id,
         title: parent.data.title,
-        content: newContent
+        content: newContent,
       })
 
       // 删除当前节点
@@ -1209,7 +1702,7 @@ function handleContextMenuMergeToParent(): void {
 function handleContextMenuSplitFromParent(): void {
   if (selectedNodeIds.value.length === 1) {
     const nodeId = selectedNodeIds.value[0]
-    const node = nodes.value.find(n => n.id === nodeId)
+    const node = nodes.value.find((n) => n.id === nodeId)
 
     if (node && node.parentId) {
       // 创建新的独立节点
@@ -1219,17 +1712,17 @@ function handleContextMenuSplitFromParent(): void {
         content: node.data.content,
         position: {
           x: node.position.x + 50,
-          y: node.position.y + 50
+          y: node.position.y + 50,
         },
         annotationId: node.data.annotationId,
-        cardId: node.data.cardId
+        cardId: node.data.cardId,
       })
 
       // 清空原节点内容
       store.updateNode({
         id: nodeId,
         title: '',
-        content: ''
+        content: '',
       })
       debouncedSave()
     }
@@ -1245,8 +1738,8 @@ function handleContextMenuMergeSelected(): void {
     const contents: string[] = []
     let firstNode: FreeMindMapNode | undefined
 
-    selectedNodeIds.value.forEach(id => {
-      const node = nodes.value.find(n => n.id === id)
+    selectedNodeIds.value.forEach((id) => {
+      const node = nodes.value.find((n) => n.id === id)
       if (node) {
         if (!firstNode) firstNode = node
         contents.push(`${node.data.title}: ${node.data.content || ''}`)
@@ -1258,11 +1751,11 @@ function handleContextMenuMergeSelected(): void {
       store.updateNode({
         id: firstNode.id,
         title: '合并的节点',
-        content: contents.join('\n\n---\n\n')
+        content: contents.join('\n\n---\n\n'),
       })
 
       // 删除其他节点
-      selectedNodeIds.value.slice(1).forEach(id => {
+      selectedNodeIds.value.slice(1).forEach((id) => {
         store.removeNode(id)
       })
 
@@ -1277,23 +1770,23 @@ function handleContextMenuMergeSelected(): void {
 function handleContextMenuExtractChildren(): void {
   if (selectedNodeIds.value.length === 1) {
     const nodeId = selectedNodeIds.value[0]
-    const node = nodes.value.find(n => n.id === nodeId)
+    const node = nodes.value.find((n) => n.id === nodeId)
 
     if (node) {
-      const children = nodes.value.filter(n => n.parentId === nodeId)
+      const children = nodes.value.filter((n) => n.parentId === nodeId)
 
       if (children.length > 0) {
         // 将子节点内容合并到当前节点
-        const contents = children.map(c => `${c.data.title}: ${c.data.content || ''}`).join('\n\n---\n\n')
+        const contents = children.map((c) => `${c.data.title}: ${c.data.content || ''}`).join('\n\n---\n\n')
         const currentContent = node.data.content || ''
         store.updateNode({
           id: nodeId,
           title: node.data.title,
-          content: currentContent + '\n\n' + contents
+          content: `${currentContent}\n\n${contents}`,
         })
 
         // 删除子节点
-        children.forEach(child => {
+        children.forEach((child) => {
           store.removeNode(child.id)
         })
 
@@ -1344,16 +1837,105 @@ function handleContextMenuCut(): void {
  * 粘贴节点
  */
 function handleContextMenuPaste(): void {
-  if (!store.hasClipboardData()) {
-    console.log('[FreeCanvasViewer] 剪贴板为空')
-    return
+  const newPosition = {
+    x: contextMenuPosition.value.x,
+    y: contextMenuPosition.value.y,
   }
-
-  const newNodeIds = store.pasteNodes()
+  const newNodeIds = store.pasteNodes(newPosition)
   if (newNodeIds.length > 0) {
-    console.log(`[FreeCanvasViewer] 已粘贴 ${newNodeIds.length} 个节点`)
     debouncedSave()
   }
+}
+
+/**
+ * 编辑标签
+ */
+function handleEditTags(): void {
+  if (selectedNodeIds.value.length !== 1) return
+
+  const nodeId = selectedNodeIds.value[0]
+  tagEditorNodeId.value = nodeId
+  tagEditorPosition.value = {
+    x: contextMenuPosition.value.x,
+    y: contextMenuPosition.value.y,
+  }
+  tagEditorVisible.value = true
+}
+
+/**
+ * 添加标签
+ */
+function handleAddTag(tag: string): void {
+  if (!tagEditorNodeId.value) return
+  store.addNodeTag(tagEditorNodeId.value, tag)
+  debouncedSave()
+}
+
+/**
+ * 删除标签
+ */
+function handleRemoveTag(tag: string): void {
+  if (!tagEditorNodeId.value) return
+  store.removeNodeTag(tagEditorNodeId.value, tag)
+  debouncedSave()
+}
+
+/**
+ * 编辑批注
+ */
+function handleEditAnnotations(): void {
+  if (selectedNodeIds.value.length !== 1) return
+
+  const nodeId = selectedNodeIds.value[0]
+  const node = nodes.value.find((n) => n.id === nodeId)
+  if (!node || !node.data) return
+
+  // 打开节点编辑对话框，切换到批注标签页
+  editingNode.value = node
+  editingNodeType.value = node.data.imageCardType || 'textCard'
+  editingNodeData.value = node.data
+  editDialogVisible.value = true
+}
+
+/**
+ * 编辑背景图片
+ */
+function handleEditBackground(): void {
+  if (selectedNodeIds.value.length !== 1) return
+
+  const nodeId = selectedNodeIds.value[0]
+  const node = nodes.value.find((n) => n.id === nodeId)
+  if (!node) return
+
+  backgroundEditorNodeId.value = nodeId
+  backgroundEditorPosition.value = {
+    x: contextMenuPosition.value.x,
+    y: contextMenuPosition.value.y,
+  }
+  backgroundEditorVisible.value = true
+}
+
+/**
+ * 更新背景图片
+ */
+function handleUpdateBackground(background: {
+  url: string
+  mode: 'cover' | 'contain' | 'tile'
+  opacity: number
+  position?: {
+    x: number
+    y: number
+  }
+} | undefined): void {
+  if (!backgroundEditorNodeId.value) return
+
+  const nodeId = backgroundEditorNodeId.value
+  if (background) {
+    store.updateNodeBackground(nodeId, background)
+  } else {
+    store.removeNodeBackground(nodeId)
+  }
+  debouncedSave()
 }
 
 // ==================== 工具栏操作 ====================
@@ -1366,7 +1948,10 @@ function handleToolbarAddNode(type: 'textCard' | 'imageCard'): void {
     type,
     title: type === 'textCard' ? '新卡片' : '图片卡片',
     content: '',
-    position: { x: 100, y: 100 }
+    position: {
+      x: 100,
+      y: 100,
+    },
   })
 }
 
@@ -1377,7 +1962,10 @@ function handleToolbarAddGroup(): void {
   store.createNode({
     type: 'group',
     title: '新分组',
-    position: { x: 150, y: 150 }
+    position: {
+      x: 150,
+      y: 150,
+    },
   })
 }
 
@@ -1440,6 +2028,15 @@ function handleToolbarToggleFilter(): void {
 }
 
 /**
+ * 处理过滤变化
+ */
+function handleFilterChange(filters: MindMapFilter[]): void {
+  // 应用过滤
+  const result = mindMapSearchService.filter(nodes.value, filters)
+  store.setHiddenNodeIds(result.hiddenNodeIds)
+}
+
+/**
  * 切换导航器
  */
 function handleToolbarToggleNavigator(): void {
@@ -1457,8 +2054,29 @@ function handleToolbarSave(): void {
  * 导出
  */
 function handleToolbarExport(): void {
-  // TODO: 实现导出功能
-  console.log('导出思维导图')
+  // TODO: 实现导出功能（需要添加下载对话框和格式选择）
+  // 简化版：导出为 SVG
+  try {
+    const svgElement = document.querySelector('#mindmap-svg') as SVGSVGElement
+    if (!svgElement) {
+      showMessage('导出失败：未找到思维导图', 'error')
+      return
+    }
+
+    // 导出 SVG 字符串
+    const svgString = new XMLSerializer().serializeToString(svgElement)
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `mindmap_${Date.now()}.svg`
+    a.click()
+    URL.revokeObjectURL(url)
+    showMessage('导出成功', 'success')
+  } catch (error) {
+    console.error('[FreeCanvasViewer] 导出失败:', error)
+    showMessage('导出失败', 'error')
+  }
 }
 
 /**
@@ -1466,6 +2084,38 @@ function handleToolbarExport(): void {
  */
 function handleSmartRecommend(): void {
   showRecommendPanel.value = true
+}
+
+/**
+ * 知识关联推荐
+ */
+function handleKnowledgeAssociation(): void {
+  showAssociationPanel.value = true
+}
+
+/**
+ * 创建关联
+ */
+function handleCreateAssociation(rec: {
+  sourceNodeId: string
+  targetNodeId: string
+  associationType?: string
+  reason?: string
+}): void {
+  store.createAssociationFromRecommendation(
+    rec.sourceNodeId,
+    rec.targetNodeId,
+    rec.associationType,
+    rec.reason,
+  )
+}
+
+/**
+ * 忽略推荐
+ */
+function handleIgnoreAssociation(): void {
+  // 暂时不做特殊处理，由面板自行管理
+  console.log('[FreeCanvasViewer] 忽略关联推荐')
 }
 
 /**
@@ -1480,19 +2130,40 @@ function handleApplyRecommendLayout(layoutType: string): void {
       nodes.value,
       (nodeId, position) => {
         store.updateNodePosition(nodeId, position.x, position.y)
-      }
+      },
     )
   } else if (layoutType === 'fishbone') {
-    // TODO: 实现鱼骨图布局
-    console.log('应用鱼骨图布局')
+    // 应用鱼骨图布局
+    store.setLayout('free')
+    applyFishboneLayoutToNodes(
+      nodes.value,
+      (nodeId, position) => {
+        store.updateNodePosition(nodeId, position.x, position.y)
+      },
+    )
   } else if (layoutType === 'timeline') {
-    // TODO: 实现时间轴布局
-    console.log('应用时间轴布局')
+    // 应用时间轴布局
+    store.setLayout('free')
+    applyTimelineLayoutToNodes(
+      nodes.value,
+      (nodeId, position) => {
+        store.updateNodePosition(nodeId, position.x, position.y)
+      },
+      {
+        orientation: 'horizontal',
+        nodeSpacing: 150,
+        showTimeLabels: true,
+        timeScale: 'auto',
+        canvasWidth: 3000,
+        centerPosition: 400,
+      },
+    )
   } else if (layoutType === 'concept') {
-    // TODO: 实现概念图布局
-    console.log('应用概念图布局')
+    // 应用概念图布局（力导向布局）
+    store.setLayout('free')
+    store.applyConceptMap()
   }
-  
+
   // 保存更改
   debouncedSave()
 }
@@ -1535,7 +2206,10 @@ function handleDeleteEdge(): void {
 function handleEdgeColor(color: string): void {
   if (selectedCrossLinkId.value) {
     store.updateCrossBranchLink(selectedCrossLinkId.value, {
-      style: { stroke: color, arrowColor: color }
+      style: {
+        stroke: color,
+        arrowColor: color,
+      },
     })
     debouncedSave()
   }
@@ -1547,7 +2221,7 @@ function handleEdgeColor(color: string): void {
 function handleEdgeStyle(style: string): void {
   if (selectedCrossLinkId.value) {
     store.updateCrossBranchLink(selectedCrossLinkId.value, {
-      style: { strokeDasharray: style }
+      style: { strokeDasharray: style },
     })
     debouncedSave()
   }
@@ -1559,7 +2233,7 @@ function handleEdgeStyle(style: string): void {
 function handleEdgeWidth(width: number): void {
   if (selectedCrossLinkId.value) {
     store.updateCrossBranchLink(selectedCrossLinkId.value, {
-      style: { strokeWidth: width }
+      style: { strokeWidth: width },
     })
     debouncedSave()
   }
@@ -1580,10 +2254,10 @@ function handleEdgeLabel(label: string): void {
  */
 function handleToggleArrow(): void {
   if (selectedCrossLinkId.value) {
-    const edge = store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId.value)
+    const edge = store.getAllCrossLinks().find((l) => l.id === selectedCrossLinkId.value)
     if (edge) {
       store.updateCrossBranchLink(selectedCrossLinkId.value, {
-        style: { hasArrow: !edge.style.hasArrow }
+        style: { hasArrow: !edge.style.hasArrow },
       })
       debouncedSave()
     }
@@ -1595,7 +2269,7 @@ function handleToggleArrow(): void {
  */
 function handleEdgeEditFromMenu(): void {
   if (selectedCrossLinkId.value) {
-    const edge = store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId.value)
+    const edge = store.getAllCrossLinks().find((l) => l.id === selectedCrossLinkId.value)
     if (edge) {
       openEdgeEditDialog(edge)
     }
@@ -1617,7 +2291,7 @@ function handleDeleteEdgeFromMenu(): void {
  * 获取节点标题
  */
 function getNodeTitle(nodeId: string): string {
-  const node = nodes.value.find(n => n.id === nodeId)
+  const node = nodes.value.find((n) => n.id === nodeId)
   return node?.data.title || ''
 }
 
@@ -1682,7 +2356,7 @@ function handleFitView(): void {
  */
 function handleApplyTreeLayout(): void {
   applyTreeLayout(nodes.value, (nodeId, position) => {
-    const node = nodes.value.find(n => n.id === nodeId)
+    const node = nodes.value.find((n) => n.id === nodeId)
     if (node) {
       node.position = position
     }
@@ -1695,14 +2369,17 @@ function handleApplyTreeLayout(): void {
  * 聚焦节点（用于搜索）
  */
 function focusNode(nodeId: string): void {
-  const node = nodes.value.find(n => n.id === nodeId)
+  const node = nodes.value.find((n) => n.id === nodeId)
   if (node) {
     // 选中节点
     store.selectNode(nodeId, false)
     // 居中显示 - 这里可以通过 Vue Flow 的 fitView 方法实现
     // 但由于 fitView 是针对所有可见节点，我们需要自定义实现
     // 简单做法是设置视图变换使节点居中
-    const { x, y } = node.position
+    const {
+      x,
+      y,
+    } = node.position
     // 获取容器尺寸
     const container = containerRef.value
     if (container) {
@@ -1713,7 +2390,7 @@ function focusNode(nodeId: string): void {
       setTransform({
         x: centerX - x * viewport.zoom,
         y: centerY - y * viewport.zoom,
-        zoom: viewport.zoom
+        zoom: viewport.zoom,
       })
     }
   }
@@ -1726,18 +2403,18 @@ function addNodeAtPosition(
   title: string,
   content: string,
   type: 'textCard' | 'imageCard',
-  position: { x: number; y: number }
+  position: { x: number, y: number },
 ): void {
   const newNode = store.createNode({
     type,
     title,
     content,
-    position
+    position,
   })
-  
+
   // 检查并扩展画布边界
   checkAndExpandCanvasBounds(position)
-  
+
   console.log('[FreeCanvasViewer] 创建新节点:', newNode.id, '位置:', position)
 }
 
@@ -1758,7 +2435,7 @@ defineExpose({
   showSearchUI,
   showFilterUI,
   handleToolbarToggleSearch,
-  handleToolbarToggleFilter
+  handleToolbarToggleFilter,
 })
 
 // 提供事件处理函数给子节点组件
@@ -1793,7 +2470,7 @@ function handleKeyDown(event: KeyboardEvent): void {
   if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
     return
   }
-  
+
   if (event.key === 'Shift') {
     isShiftPressed.value = true
     console.log('[FreeCanvasViewer] Shift 键按下，临时禁用网格吸附')
@@ -1817,7 +2494,7 @@ function updateContainerSize(): void {
   if (containerRef.value) {
     containerSize.value = {
       width: containerRef.value.clientWidth,
-      height: containerRef.value.clientHeight
+      height: containerRef.value.clientHeight,
     }
   }
 }
@@ -1825,7 +2502,7 @@ function updateContainerSize(): void {
 /**
  * 检查并扩展画布边界（节点拖拽时）
  */
-function checkAndExpandCanvasBounds(position: { x: number; y: number }): void {
+function checkAndExpandCanvasBounds(position: { x: number, y: number }): void {
   if (store.checkAndExpandBounds(position)) {
     // 边界已扩展，刷新导航器
     canvasNavigatorRef.value?.refresh()
@@ -1835,16 +2512,16 @@ function checkAndExpandCanvasBounds(position: { x: number; y: number }): void {
 /**
  * 处理导航器定位
  */
-function handleNavigatorNavigate(position: { x: number; y: number }): void {
+function handleNavigatorNavigate(position: { x: number, y: number }): void {
   // 将视图中心定位到点击位置
   const zoom = currentViewport.value.zoom
   const centerX = containerSize.value.width / 2
   const centerY = containerSize.value.height / 2
-  
+
   setTransform({
     x: centerX - position.x * zoom,
     y: centerY - position.y * zoom,
-    zoom: zoom
+    zoom,
   })
 }
 
@@ -1866,7 +2543,7 @@ function handleContextMenuCreateClone(): void {
   }
 
   try {
-    const targetNode = nodes.value.find(n => n.id === selectedNode)
+    const targetNode = nodes.value.find((n) => n.id === selectedNode)
     if (!targetNode) {
       showMessage('节点不存在', 'error')
       return
@@ -1875,7 +2552,7 @@ function handleContextMenuCreateClone(): void {
     // 创建克隆节点（偏移一点位置）
     const cloneNode = createCloneNode(targetNode, {
       x: targetNode.position.x + 30,
-      y: targetNode.position.y + 30
+      y: targetNode.position.y + 30,
     })
 
     // 添加到画布
@@ -1898,7 +2575,7 @@ function handleContextMenuCreateReference(): void {
   }
 
   try {
-    const targetNode = nodes.value.find(n => n.id === selectedNode)
+    const targetNode = nodes.value.find((n) => n.id === selectedNode)
     if (!targetNode) {
       showMessage('节点不存在', 'error')
       return
@@ -1907,7 +2584,7 @@ function handleContextMenuCreateReference(): void {
     // 创建引用节点（偏移一点位置）
     const refNode = createReferenceNode(targetNode, {
       x: targetNode.position.x + 30,
-      y: targetNode.position.y + 30
+      y: targetNode.position.y + 30,
     })
 
     // 添加到画布
@@ -1920,299 +2597,6 @@ function handleContextMenuCreateReference(): void {
   }
 }
 </script>
-
-<template>
-  <div
-    ref="containerRef"
-    class="freemind-canvas-container"
-    :class="{ 'dark-mode': isDarkMode }"
-  >
-    <!-- 加载状态 -->
-    <div
-      v-if="isLoading"
-      class="freemind-loading"
-    >
-      <span class="freemind-loading-icon">🔄</span>
-      <span class="freemind-loading-text">加载思维导图中...</span>
-    </div>
-
-    <!-- 错误状态 -->
-    <div
-      v-else-if="errorMessage && nodes?.length === 0"
-      class="freemind-error"
-    >
-      <span class="freemind-error-icon">⚠️</span>
-      <span class="freemind-error-text">{{ errorMessage }}</span>
-    </div>
-
-    <!-- 工具栏 -->
-    <CanvasToolbar
-      v-if="showToolbar"
-      :layout="layout"
-      :zoom="viewport.zoom"
-      :show-grid="showGrid"
-      :read-only="readOnly"
-      :is-fullscreen="isFullscreen"
-      :has-active-search="hasActiveSearch"
-      :has-active-filter="hasActiveFilter"
-      @add-node="handleToolbarAddNode"
-      @add-group="handleToolbarAddGroup"
-      @auto-layout="handleToolbarAutoLayout"
-      @smart-recommend="handleSmartRecommend"
-      @zoom-in="zoomIn"
-      @zoom-out="zoomOut"
-      @zoom-reset="() => setTransform({ x: 0, y: 0, zoom: 1 })"
-      @fit-view="handleContextMenuZoomToFit"
-      @toggle-grid="handleToolbarToggleGrid"
-      @toggle-fullscreen="handleToolbarToggleFullscreen"
-      @toggle-search="handleToolbarToggleSearch"
-      @toggle-filter="handleToolbarToggleFilter"
-      @toggle-navigator="handleToolbarToggleNavigator"
-      @save="handleToolbarSave"
-      @export="handleToolbarExport"
-    />
-
-    <!-- 空状态提示 - 当没有节点且不在加载中时显示 -->
-    <div
-      v-if="!isLoading && (!nodes || nodes.length === 0)"
-      class="freemind-empty-state"
-    >
-      <div class="empty-illustration">
-        <svg viewBox="0 0 120 80" class="mindmap-icon">
-          <rect x="10" y="30" width="40" height="25" rx="4" fill="#e3f2fd" stroke="#2196f3" stroke-width="2"/>
-          <rect x="70" y="10" width="40" height="25" rx="4" fill="#fff3e0" stroke="#ff9800" stroke-width="2"/>
-          <rect x="70" y="45" width="40" height="25" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="2"/>
-          <line x1="50" y1="42" x2="70" y2="22" stroke="#90a4ae" stroke-width="2" stroke-dasharray="4"/>
-          <line x1="50" y1="42" x2="70" y2="57" stroke="#90a4ae" stroke-width="2" stroke-dasharray="4"/>
-        </svg>
-      </div>
-      <h3 class="empty-title">开始创建思维导图</h3>
-      <p class="empty-desc">在左侧 PDF 中选择文本并创建标注</p>
-      <p class="empty-desc">卡片将自动显示在这里</p>
-      <button
-        class="add-demo-btn"
-        @click="handleToolbarAddNode('textCard')"
-      >
-        <svg viewBox="0 0 24 24" class="btn-icon">
-          <path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        添加示例卡片
-      </button>
-    </div>
-
-    <!-- Vue Flow 画布 -->
-    <VueFlow
-      v-if="visibleNodes && visibleNodes.length > 0"
-      ref="containerRef"
-      :nodes="visibleNodes"
-      :edges="allEdges"
-      :node-types="nodeTypes"
-      :default-zoom="1"
-      :min-zoom="0.1"
-      :max-zoom="4"
-      :fit-view-on-init="true"
-      :pan-on-scroll="true"
-      :zoom-on-scroll="true"
-      :zoom-on-pinch="true"
-      :select-nodes-on-drag="false"
-      :select-edges-on-drag="false"
-      :connection-line-options="{ style: { stroke: '#409eff', strokeWidth: 2 } }"
-      :delete-key-code="['Backspace', 'Delete']"
-      :multi-selection-key-code="['Shift', 'Meta', 'Control']"
-      :selection-key-code="['Shift']"
-      :snap-to-grid="false"
-      :snap-grid="[15, 15]"
-      :nodes-draggable="!readOnly"
-      :nodes-connectable="!readOnly"
-      :elements-selectable="true"
-      :prevent-scrolling="false"
-      :auto-connect="true"
-      :elevate-nodes-on-select="true"
-      :only-render-visible-elements="true"
-      :connection-radius="30"
-      :select-nodes-on-connect="false"
-      @connect="onConnect"
-      @node-click="onNodeClick"
-      @node-double-click="onNodeDoubleClick"
-      @edge-click="onEdgeClick"
-      @edge-contextmenu="onEdgeContextMenu"
-      @node-mouse-enter="onNodeMouseEnter"
-      @node-mouse-leave="onNodeMouseLeave"
-      @edge-mouse-enter="onEdgeMouseEnter"
-      @edge-mouse-leave="onEdgeMouseLeave"
-      @node-drag-start="onNodeDragStart"
-      @node-drag="onNodeDrag"
-      @node-drag-stop="onNodeDragStop"
-      @pane-click="onPaneClick"
-      @pane-mousedown="onPaneMouseDown"
-      @contextmenu="onContextMenu"
-    >
-      <!-- 控制工具栏 -->
-      <Controls
-        v-if="showControls"
-        class="freemind-controls"
-        :show-interactive="false"
-      />
-
-      <!-- 框选区域 -->
-      <div
-        v-if="selectionBox.visible"
-        class="selection-box"
-        :style="{
-          left: selectionBox.startX + 'px',
-          top: selectionBox.startY + 'px',
-          width: selectionBox.width + 'px',
-          height: selectionBox.height + 'px'
-        }"
-      />
-    </VueFlow>
-
-    <!-- 自定义 SVG 网格层 -->
-    <svg
-      v-if="showGrid && visibleNodes && visibleNodes.length > 0"
-      class="grid-layer"
-      :width="containerRef?.clientWidth || '100%'"
-      :height="containerRef?.clientHeight || '100%'"
-    >
-      <defs>
-        <pattern
-          id="grid"
-          :width="gridSize"
-          :height="gridSize"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            :d="`M ${gridSize} 0 L 0 0 0 ${gridSize}`"
-            fill="none"
-            stroke="var(--b3-border-color, #ccc)"
-            stroke-width="0.5"
-            stroke-opacity="0.3"
-          />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
-    </svg>
-
-    <!-- 搜索面板 -->
-    <MindMapSearch
-      v-if="showSearchUI"
-      :nodes="nodes"
-      :show-panel="showSearchPanel"
-      @update:show-panel="showSearchUI = $event"
-      @focus-node="focusNode"
-    />
-
-    <!-- 过滤面板 -->
-    <NodeFilterPanel
-      v-if="showFilterUI"
-      :nodes="nodes"
-      :show-panel="showFilterPanel"
-      @update:show-panel="showFilterUI = $event"
-      @filter-change="applyFilter"
-    />
-
-    <!-- 节点数量统计 -->
-    <div class="freemind-stats">
-      <span>节点：{{ nodes?.length || 0 }}</span>
-      <span class="freemind-stats-divider">|</span>
-      <span>连线：{{ allEdges?.length || 0 }}</span>
-      <span v-if="store.crossBranchLinks.length > 0" class="freemind-stats-crosslink">
-        | 关联：{{ store.crossBranchLinks.length }}
-      </span>
-      <span v-if="hasActiveSearch" class="freemind-stats-search">
-        | 搜索：{{ searchResult?.matchedNodeIds?.length || 0 }}
-      </span>
-      <span v-if="hasActiveFilter" class="freemind-stats-filter">
-        | 过滤：{{ filteredNodes?.length || 0 }}
-      </span>
-    </div>
-
-    <!-- 画布导航器 -->
-    <CanvasNavigator
-      ref="canvasNavigatorRef"
-      :visible="showNavigator"
-      :viewport="currentViewport"
-      :container-size="containerSize"
-      @navigate="handleNavigatorNavigate"
-    />
-
-    <!-- 编辑对话框 -->
-    <NodeEditDialog
-      v-model="editDialogVisible"
-      :node-type="editingNodeType"
-      :node-data="editingNodeData"
-      :read-only="readOnly"
-      @save="handleSaveNode"
-      @delete="handleDeleteNode"
-    />
-
-    <!-- 右键菜单 -->
-    <NodeContextMenu
-      v-model="contextMenuVisible"
-      :x="contextMenuPosition.x"
-      :y="contextMenuPosition.y"
-      :selected-nodes="selectedNodesForMenu"
-      :menu-target="contextMenuTarget"
-      :read-only="readOnly"
-      @edit="handleContextMenuEdit"
-      @delete="handleContextMenuDelete"
-      @duplicate="handleContextMenuDuplicate"
-      @create-clone="handleContextMenuCreateClone"
-      @create-reference="handleContextMenuCreateReference"
-      @color="handleContextMenuColor"
-      @level="handleContextMenuLevel"
-      @add-group="handleContextMenuAddGroup"
-      @create-connection="handleContextMenuCreateConnection"
-      @zoom-to-fit="handleContextMenuZoomToFit"
-      @center-view="handleContextMenuCenterView"
-      @merge-to-parent="handleContextMenuMergeToParent"
-      @split-from-parent="handleContextMenuSplitFromParent"
-      @merge-selected="handleContextMenuMergeSelected"
-      @extract-children="handleContextMenuExtractChildren"
-      @delete-cross-link="handleContextMenuDeleteCrossLink"
-      @copy="handleContextMenuCopy"
-      @cut="handleContextMenuCut"
-      @paste="handleContextMenuPaste"
-    />
-
-    <!-- 关联线编辑对话框 -->
-    <EdgeEditDialog
-      v-model="edgeEditDialogVisible"
-      :edge="editingEdge"
-      :source-node-title="editingEdge ? getNodeTitle(editingEdge.sourceNodeId) : ''"
-      :target-node-title="editingEdge ? getNodeTitle(editingEdge.targetNodeId) : ''"
-      :read-only="readOnly"
-      @save="handleSaveEdge"
-      @delete="handleDeleteEdge"
-    />
-
-    <!-- 关联线右键菜单 -->
-    <EdgeContextMenu
-      v-model="edgeContextMenuVisible"
-      :x="edgeContextMenuPosition.x"
-      :y="edgeContextMenuPosition.y"
-      :edge="edgeContextMenuVisible ? store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId) || null : null"
-      :source-node-title="selectedCrossLinkId ? getNodeTitle(store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId)?.sourceNodeId || '') : ''"
-      :target-node-title="selectedCrossLinkId ? getNodeTitle(store.getAllCrossLinks().find(l => l.id === selectedCrossLinkId)?.targetNodeId || '') : ''"
-      :read-only="readOnly"
-      @edit="handleEdgeEditFromMenu"
-      @delete="handleDeleteEdgeFromMenu"
-      @color="handleEdgeColor"
-      @style="handleEdgeStyle"
-      @width="handleEdgeWidth"
-      @label="handleEdgeLabel"
-      @toggle-arrow="handleToggleArrow"
-    />
-
-    <!-- 智能推荐面板 -->
-    <LayoutRecommendationPanel
-      v-model:visible="showRecommendPanel"
-      :nodes="nodes"
-      :edges="edges"
-      @apply-layout="handleApplyRecommendLayout"
-    />
-  </div>
-</template>
 
 <style>
 /* 需要全局的样式 */

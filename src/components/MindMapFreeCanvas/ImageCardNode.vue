@@ -1,72 +1,3 @@
-<script setup lang="ts">
-/**
- * 图片卡片节点组件
- * MarginNote 风格的图片/PDF 摘录卡片节点 - 优化版
- */
-
-import { computed, toRefs, ref } from 'vue'
-import type { NodeProps } from '@vue-flow/core'
-import { Handle, Position } from '@vue-flow/core'
-import type { FreeMindMapNodeData } from '@/types/mindmapFree'
-
-interface Props extends NodeProps {
-  data: FreeMindMapNodeData
-}
-
-const props = defineProps<Props>()
-
-const { data } = toRefs(props)
-
-// 图片加载状态
-const imageLoaded = ref(false)
-const imageError = ref(false)
-
-// 计算节点颜色样式
-const nodeStyle = computed(() => {
-  const style: Record<string, string> = {}
-
-  if (data.value.color) {
-    style.borderLeftColor = data.value.color
-    style.borderLeftWidth = '4px'
-  }
-
-  if (data.value.customStyle) {
-    if (data.value.customStyle.backgroundColor) {
-      style.backgroundColor = data.value.customStyle.backgroundColor
-    }
-    if (data.value.customStyle.borderColor) {
-      style.borderColor = data.value.customStyle.borderColor
-    }
-  }
-
-  return style
-})
-
-// 计算页码显示
-const showPage = computed(() => {
-  return data.value.page !== undefined && data.value.page !== null
-})
-
-// 计算卡片头部渐变色
-const headerGradient = computed(() => {
-  const color = data.value.color
-  if (color) {
-    return `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`
-  }
-  return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-})
-
-// 图片加载完成
-function onImageLoad(): void {
-  imageLoaded.value = true
-}
-
-// 图片加载失败
-function onImageError(): void {
-  imageError.value = true
-}
-</script>
-
 <template>
   <div
     class="marginnote-image-card"
@@ -80,7 +11,10 @@ function onImageError(): void {
     />
 
     <!-- 卡片头部 -->
-    <div class="marginnote-card-header" :style="{ background: headerGradient }">
+    <div
+      class="marginnote-card-header"
+      :style="{ background: headerGradient }"
+    >
       <span class="marginnote-card-icon">🖼️</span>
       <span class="marginnote-card-title">{{ data.title }}</span>
       <span
@@ -139,6 +73,82 @@ function onImageError(): void {
     />
   </div>
 </template>
+
+<script setup lang="ts">
+/**
+ * 图片卡片节点组件
+ * MarginNote 风格的图片/PDF 摘录卡片节点 - 优化版
+ */
+
+import type { NodeProps } from '@vue-flow/core'
+import type { FreeMindMapNodeData } from '@/types/mindmapFree'
+import {
+  Handle,
+  Position,
+} from '@vue-flow/core'
+import {
+  computed,
+  ref,
+  toRefs,
+} from 'vue'
+
+interface Props extends NodeProps {
+  data: FreeMindMapNodeData
+}
+
+const props = defineProps<Props>()
+
+const { data } = toRefs(props)
+
+// 图片加载状态
+const imageLoaded = ref(false)
+const imageError = ref(false)
+
+// 计算节点颜色样式
+const nodeStyle = computed(() => {
+  const style: Record<string, string> = {}
+
+  if (data.value.color) {
+    style.borderLeftColor = data.value.color
+    style.borderLeftWidth = '4px'
+  }
+
+  if (data.value.customStyle) {
+    if (data.value.customStyle.backgroundColor) {
+      style.backgroundColor = data.value.customStyle.backgroundColor
+    }
+    if (data.value.customStyle.borderColor) {
+      style.borderColor = data.value.customStyle.borderColor
+    }
+  }
+
+  return style
+})
+
+// 计算页码显示
+const showPage = computed(() => {
+  return data.value.page !== undefined && data.value.page !== null
+})
+
+// 计算卡片头部渐变色
+const headerGradient = computed(() => {
+  const color = data.value.color
+  if (color) {
+    return `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`
+  }
+  return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+})
+
+// 图片加载完成
+function onImageLoad(): void {
+  imageLoaded.value = true
+}
+
+// 图片加载失败
+function onImageError(): void {
+  imageError.value = true
+}
+</script>
 
 <style scoped>
 /* MarginNote 风格图片卡片 - 优化版 */

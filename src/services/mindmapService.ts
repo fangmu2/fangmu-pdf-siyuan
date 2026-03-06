@@ -6,22 +6,26 @@
  * 参考：https://github.com/ebAobS/mymind
  */
 
-import type { MindMap, MindMapNode, MindMapLayout, CreateMindMapOptions } from '../types/mindmap';
-import type { PDFAnnotation } from '../types/annotation';
+import type { PDFAnnotation } from '../types/annotation'
+import type {
+  CreateMindMapOptions,
+  MindMap,
+  MindMapNode,
+} from '../types/mindmap'
 
 /**
  * 脑图服务类
  */
 export class MindMapService {
-  private static instance: MindMapService | null = null;
+  private static instance: MindMapService | null = null
 
   private constructor() {}
 
   static getInstance(): MindMapService {
     if (!MindMapService.instance) {
-      MindMapService.instance = new MindMapService();
+      MindMapService.instance = new MindMapService()
     }
-    return MindMapService.instance;
+    return MindMapService.instance
   }
 
   /**
@@ -33,26 +37,29 @@ export class MindMapService {
    */
   createNodesFromAnnotations(
     annotations: PDFAnnotation[],
-    rootTitle: string = '思维导图'
+    rootTitle: string = '思维导图',
   ): MindMapNode {
     // 创建根节点
     const rootNode: MindMapNode = {
       id: `root-${Date.now()}`,
       cardId: '',
       title: rootTitle,
-      position: { x: 0, y: 0 },
+      position: {
+        x: 0,
+        y: 0,
+      },
       collapsed: false,
       children: [],
-    };
+    }
 
     // 按级别分组
-    const groupedByLevel = new Map<string, PDFAnnotation[]>();
+    const groupedByLevel = new Map<string, PDFAnnotation[]>()
     for (const ann of annotations) {
-      const level = ann.level || 'text';
+      const level = ann.level || 'text'
       if (!groupedByLevel.has(level)) {
-        groupedByLevel.set(level, []);
+        groupedByLevel.set(level, [])
       }
-      groupedByLevel.get(level)!.push(ann);
+      groupedByLevel.get(level)!.push(ann)
     }
 
     // 为每个级别创建分支
@@ -61,10 +68,13 @@ export class MindMapService {
         id: `level-${level}`,
         cardId: '',
         title: this.getLevelLabel(level),
-        position: { x: 0, y: 0 },
+        position: {
+          x: 0,
+          y: 0,
+        },
         collapsed: false,
         children: [],
-      };
+      }
 
       // 为该级别的每个标注创建子节点
       for (const ann of levelAnnotations) {
@@ -72,18 +82,21 @@ export class MindMapService {
           id: ann.id,
           cardId: ann.blockId,
           title: ann.text || (ann.isImage ? '[图片]' : ''),
-          position: { x: 0, y: 0 },
+          position: {
+            x: 0,
+            y: 0,
+          },
           collapsed: false,
           children: [],
-        };
+        }
 
-        levelNode.children.push(childNode);
+        levelNode.children.push(childNode)
       }
 
-      rootNode.children.push(levelNode);
+      rootNode.children.push(levelNode)
     }
 
-    return rootNode;
+    return rootNode
   }
 
   /**
@@ -93,7 +106,7 @@ export class MindMapService {
    * @returns 脑图对象
    */
   createMindMap(options: CreateMindMapOptions): MindMap {
-    const rootId = `mindmap-${Date.now()}`;
+    const rootId = `mindmap-${Date.now()}`
 
     return {
       id: rootId,
@@ -109,7 +122,7 @@ export class MindMapService {
       theme: options.theme || 'default',
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    };
+    }
   }
 
   /**
@@ -125,7 +138,7 @@ export class MindMapService {
     mindMap: MindMap,
     parentNodeId: string,
     nodeText: string,
-    position: 'before' | 'after' | 'child' = 'child'
+    position: 'before' | 'after' | 'child' = 'child',
   ): MindMap {
     const newNode: MindMapNode = {
       id: `node-${Date.now()}`,
@@ -133,7 +146,7 @@ export class MindMapService {
       children: [],
       layout: mindMap.layout,
       expanded: true,
-    };
+    }
 
     const updatedRoot = this.findAndModifyNode(
       mindMap.root,
@@ -141,20 +154,20 @@ export class MindMapService {
       (node, isTarget) => {
         if (isTarget) {
           if (position === 'child') {
-            node.children = [...node.children, newNode];
+            node.children = [...node.children, newNode]
           }
-          return node;
+          return node
         }
 
         // 查找子节点
         for (let i = 0; i < node.children.length; i++) {
           if (node.children[i].id === parentNodeId) {
             if (position === 'before') {
-              node.children = [...node.children.slice(0, i), newNode, ...node.children.slice(i)];
+              node.children = [...node.children.slice(0, i), newNode, ...node.children.slice(i)]
             } else if (position === 'after') {
-              node.children = [...node.children.slice(0, i + 1), newNode, ...node.children.slice(i + 1)];
+              node.children = [...node.children.slice(0, i + 1), newNode, ...node.children.slice(i + 1)]
             }
-            return node;
+            return node
           }
         }
 
@@ -163,68 +176,74 @@ export class MindMapService {
           const result = this.findAndModifyNode(child, parentNodeId, (n, isT) => {
             if (isT) {
               if (position === 'child') {
-                n.children = [...n.children, newNode];
+                n.children = [...n.children, newNode]
               }
-              return n;
+              return n
             }
-            return this.findAndModifyNodeInPlace(n, parentNodeId, newNode, position);
-          });
+            return this.findAndModifyNodeInPlace(n, parentNodeId, newNode, position)
+          })
           if (result !== child) {
-            return { ...node, children: node.children.map(c => c === child ? result : c) };
+            return {
+              ...node,
+              children: node.children.map((c) => c === child ? result : c),
+            }
           }
         }
 
-        return node;
-      }
-    );
+        return node
+      },
+    )
 
     return {
       ...mindMap,
       root: updatedRoot,
       updatedAt: Date.now(),
-    };
+    }
   }
 
   private findAndModifyNodeInPlace(
     node: MindMapNode,
     targetId: string,
     newNode: MindMapNode,
-    position: 'before' | 'after' | 'child'
+    position: 'before' | 'after' | 'child',
   ): MindMapNode {
     for (let i = 0; i < node.children.length; i++) {
       if (node.children[i].id === targetId) {
         if (position === 'child') {
-          node.children[i].children = [...node.children[i].children, newNode];
+          node.children[i].children = [...node.children[i].children, newNode]
         } else if (position === 'before') {
-          node.children = [...node.children.slice(0, i), newNode, ...node.children.slice(i)];
+          node.children = [...node.children.slice(0, i), newNode, ...node.children.slice(i)]
         } else if (position === 'after') {
-          node.children = [...node.children.slice(0, i + 1), newNode, ...node.children.slice(i + 1)];
+          node.children = [...node.children.slice(0, i + 1), newNode, ...node.children.slice(i + 1)]
         }
-        return node;
+        return node
       }
     }
 
     for (const child of node.children) {
-      this.findAndModifyNodeInPlace(child, targetId, newNode, position);
+      this.findAndModifyNodeInPlace(child, targetId, newNode, position)
     }
 
-    return node;
+    return node
   }
 
   private findAndModifyNode(
     node: MindMapNode,
     targetId: string,
-    modifier: (node: MindMapNode, isTarget: boolean) => MindMapNode
+    modifier: (node: MindMapNode, isTarget: boolean) => MindMapNode,
   ): MindMapNode {
     if (node.id === targetId) {
-      return modifier(node, true);
+      return modifier(node, true)
     }
 
-    const modifiedChildren = node.children.map(child =>
-      this.findAndModifyNode(child, targetId, modifier)
-    );
+    const modifiedChildren = node.children.map((child) =>
+      this.findAndModifyNode(child, targetId, modifier),
+    )
 
-    return modifier({ ...node, children: modifiedChildren }, false);
+    return modifier({
+      ...node,
+      children: modifiedChildren,
+    }, false)
   }
 
   /**
@@ -237,28 +256,31 @@ export class MindMapService {
   deleteNode(mindMap: MindMap, nodeId: string): MindMap {
     const deleteNodeFromTree = (node: MindMapNode): MindMapNode | null => {
       if (node.id === nodeId) {
-        return null;
+        return null
       }
 
       const filteredChildren = node.children
-        .map(child => deleteNodeFromTree(child))
-        .filter((child): child is MindMapNode => child !== null);
+        .map((child) => deleteNodeFromTree(child))
+        .filter((child): child is MindMapNode => child !== null)
 
-      return { ...node, children: filteredChildren };
-    };
+      return {
+        ...node,
+        children: filteredChildren,
+      }
+    }
 
-    const updatedRoot = deleteNodeFromTree(mindMap.root);
+    const updatedRoot = deleteNodeFromTree(mindMap.root)
 
     if (!updatedRoot) {
       // 不能删除根节点，返回原脑图
-      return mindMap;
+      return mindMap
     }
 
     return {
       ...mindMap,
       root: updatedRoot,
       updatedAt: Date.now(),
-    };
+    }
   }
 
   /**
@@ -273,14 +295,19 @@ export class MindMapService {
     const updatedRoot = this.findAndModifyNode(
       mindMap.root,
       nodeId,
-      (node, isTarget) => isTarget ? { ...node, text: newText } : node
-    );
+      (node, isTarget) => isTarget
+        ? {
+            ...node,
+            text: newText,
+          }
+        : node,
+    )
 
     return {
       ...mindMap,
       root: updatedRoot,
       updatedAt: Date.now(),
-    };
+    }
   }
 
   /**
@@ -294,14 +321,19 @@ export class MindMapService {
     const updatedRoot = this.findAndModifyNode(
       mindMap.root,
       nodeId,
-      (node, isTarget) => isTarget ? { ...node, expanded: !node.expanded } : node
-    );
+      (node, isTarget) => isTarget
+        ? {
+            ...node,
+            expanded: !node.expanded,
+          }
+        : node,
+    )
 
     return {
       ...mindMap,
       root: updatedRoot,
       updatedAt: Date.now(),
-    };
+    }
   }
 
   /**
@@ -314,17 +346,17 @@ export class MindMapService {
    */
   getNodePath(node: MindMapNode, targetId: string, path: MindMapNode[] = []): MindMapNode[] | null {
     if (node.id === targetId) {
-      return [...path, node];
+      return [...path, node]
     }
 
     for (const child of node.children) {
-      const result = this.getNodePath(child, targetId, [...path, node]);
+      const result = this.getNodePath(child, targetId, [...path, node])
       if (result) {
-        return result;
+        return result
       }
     }
 
-    return null;
+    return null
   }
 
   /**
@@ -334,11 +366,11 @@ export class MindMapService {
    * @returns 节点数量
    */
   countNodes(node: MindMapNode): number {
-    let count = 1;
+    let count = 1
     for (const child of node.children) {
-      count += this.countNodes(child);
+      count += this.countNodes(child)
     }
-    return count;
+    return count
   }
 
   /**
@@ -346,12 +378,12 @@ export class MindMapService {
    */
   private getLevelLabel(level: string): string {
     const labels: Record<string, string> = {
-      'title1': '📑 一级标题',
-      'title2': '📑 二级标题',
-      'title3': '📑 三级标题',
-      'text': '📝 正文标注',
-    };
-    return labels[level] || level;
+      title1: '📑 一级标题',
+      title2: '📑 二级标题',
+      title3: '📑 三级标题',
+      text: '📝 正文标注',
+    }
+    return labels[level] || level
   }
 
   /**
@@ -362,14 +394,14 @@ export class MindMapService {
    * @returns Markdown 字符串
    */
   exportToMarkdown(node: MindMapNode, indent = 0): string {
-    const prefix = '  '.repeat(indent);
-    let result = `${prefix}- ${node.text}\n`;
+    const prefix = '  '.repeat(indent)
+    let result = `${prefix}- ${node.text}\n`
 
     for (const child of node.children) {
-      result += this.exportToMarkdown(child, indent + 1);
+      result += this.exportToMarkdown(child, indent + 1)
     }
 
-    return result;
+    return result
   }
 
   /**
@@ -380,22 +412,22 @@ export class MindMapService {
    */
   exportToOpml(mindMap: MindMap): string {
     const nodeToOutline = (node: MindMapNode, indent = 0): string => {
-      const prefix = '  '.repeat(indent);
-      const nodeText = (node.title || node.text || '').replace(/"/g, '"');
-      let result = `${prefix}<outline text="${nodeText}"`;
+      const prefix = '  '.repeat(indent)
+      const nodeText = (node.title || node.text || '').replace(/"/g, '"')
+      let result = `${prefix}<outline text="${nodeText}"`
 
       if (node.children.length > 0) {
-        result += '>\n';
+        result += '>\n'
         for (const child of node.children) {
-          result += nodeToOutline(child, indent + 1);
+          result += nodeToOutline(child, indent + 1)
         }
-        result += `${prefix}</outline>\n`;
+        result += `${prefix}</outline>\n`
       } else {
-        result += '/>\n';
+        result += '/>\n'
       }
 
-      return result;
-    };
+      return result
+    }
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
@@ -404,9 +436,9 @@ export class MindMapService {
   </head>
   <body>
 ${nodeToOutline(mindMap.root, 2)}  </body>
-</opml>`;
+</opml>`
   }
 }
 
 // 导出单例
-export const mindMapService = MindMapService.getInstance();
+export const mindMapService = MindMapService.getInstance()

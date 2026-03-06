@@ -3,35 +3,38 @@
  * @fileoverview 使用 Pinia 管理画布、图层的全局状态
  */
 
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
 import type {
   CanvasConfig,
-  LayerConfig,
-  CanvasReference,
-  CrossCanvasNodeLink,
   CanvasListItem,
+  CanvasReference,
   CanvasStats,
   CreateCanvasParams,
+  CrossCanvasNodeLink,
+  LayerConfig,
   UpdateCanvasParams,
-  UpdateLayerParams
+  UpdateLayerParams,
 } from '@/types/canvas'
+import { defineStore } from 'pinia'
 import {
-  createCanvas as createCanvasApi,
-  getCanvas as getCanvasApi,
-  getAllCanvases as getAllCanvasesApi,
-  updateCanvas as updateCanvasApi,
-  deleteCanvas as deleteCanvasApi,
-  getCanvasLayers as getCanvasLayersApi,
-  updateLayer as updateLayerApi,
+  computed,
+  ref,
+} from 'vue'
+import {
   addLayer as addLayerApi,
-  deleteLayer as deleteLayerApi,
-  getCanvasStats as getCanvasStatsApi,
+  createCanvas as createCanvasApi,
   createCanvasReference as createCanvasReferenceApi,
-  getCanvasReferences as getCanvasReferencesApi,
   createCrossCanvasLink as createCrossCanvasLinkApi,
+  deleteCanvas as deleteCanvasApi,
+  deleteCrossCanvasLink as deleteCrossCanvasLinkApi,
+  deleteLayer as deleteLayerApi,
+  getAllCanvases as getAllCanvasesApi,
+  getCanvas as getCanvasApi,
+  getCanvasLayers as getCanvasLayersApi,
+  getCanvasReferences as getCanvasReferencesApi,
+  getCanvasStats as getCanvasStatsApi,
   getCrossCanvasLinks as getCrossCanvasLinksApi,
-  deleteCrossCanvasLink as deleteCrossCanvasLinkApi
+  updateCanvas as updateCanvasApi,
+  updateLayer as updateLayerApi,
 } from '@/services/canvasService'
 
 /**
@@ -74,37 +77,37 @@ export const useCanvasStore = defineStore('canvas', () => {
 
   /** 获取当前激活的画布 */
   const activeCanvas = computed(() => {
-    return canvasList.value.find(c => c.id === activeCanvasId.value) || null
+    return canvasList.value.find((c) => c.id === activeCanvasId.value) || null
   })
 
   /** 获取当前画布的节点层 */
   const nodesLayer = computed(() => {
-    return layers.value.find(l => l.type === 'nodes') || null
+    return layers.value.find((l) => l.type === 'nodes') || null
   })
 
   /** 获取当前画布的背景层 */
   const backgroundLayer = computed(() => {
-    return layers.value.find(l => l.type === 'background') || null
+    return layers.value.find((l) => l.type === 'background') || null
   })
 
   /** 获取当前画布的手绘层 */
   const handwritingLayer = computed(() => {
-    return layers.value.find(l => l.type === 'handwriting') || null
+    return layers.value.find((l) => l.type === 'handwriting') || null
   })
 
   /** 获取当前画布的标注层 */
   const annotationsLayer = computed(() => {
-    return layers.value.find(l => l.type === 'annotations') || null
+    return layers.value.find((l) => l.type === 'annotations') || null
   })
 
   /** 获取可见图层列表 */
   const visibleLayers = computed(() => {
-    return layers.value.filter(l => l.visible)
+    return layers.value.filter((l) => l.visible)
   })
 
   /** 获取锁定图层列表 */
   const lockedLayers = computed(() => {
-    return layers.value.filter(l => l.locked)
+    return layers.value.filter((l) => l.locked)
   })
 
   /** 获取当前画布是否可编辑 */
@@ -149,9 +152,9 @@ export const useCanvasStore = defineStore('canvas', () => {
       }
 
       // 更新激活状态
-      canvasList.value = canvasList.value.map(c => ({
+      canvasList.value = canvasList.value.map((c) => ({
         ...c,
-        isActive: c.id === activeCanvasId.value
+        isActive: c.id === activeCanvasId.value,
       }))
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : '加载画布列表失败'
@@ -218,9 +221,9 @@ export const useCanvasStore = defineStore('canvas', () => {
       await loadStats(canvasId)
 
       // 更新画布列表中的激活状态
-      canvasList.value = canvasList.value.map(c => ({
+      canvasList.value = canvasList.value.map((c) => ({
         ...c,
-        isActive: c.id === canvasId
+        isActive: c.id === canvasId,
       }))
 
       return true
@@ -261,7 +264,7 @@ export const useCanvasStore = defineStore('canvas', () => {
       const success = await deleteCanvasApi(canvasId)
       if (success) {
         // 从列表中移除
-        canvasList.value = canvasList.value.filter(c => c.id !== canvasId)
+        canvasList.value = canvasList.value.filter((c) => c.id !== canvasId)
 
         // 如果删除的是当前画布，切换到第一个画布
         if (canvasId === activeCanvasId.value) {
@@ -398,7 +401,7 @@ export const useCanvasStore = defineStore('canvas', () => {
   async function createCanvasRef(
     targetCanvasId: string,
     nodeIds: string[],
-    referenceType: 'node' | 'layer' | 'all' = 'node'
+    referenceType: 'node' | 'layer' | 'all' = 'node',
   ): Promise<CanvasReference | null> {
     if (!activeCanvasId.value) {
       errorMessage.value = '没有激活的画布'
@@ -410,7 +413,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         activeCanvasId.value,
         targetCanvasId,
         nodeIds,
-        referenceType
+        referenceType,
       )
       if (reference) {
         await loadReferences(activeCanvasId.value)
@@ -448,7 +451,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     targetCanvasId: string,
     targetNodeId: string,
     linkType: 'reference' | 'relation' | 'seeAlso' = 'relation',
-    description?: string
+    description?: string,
   ): Promise<CrossCanvasNodeLink | null> {
     if (!activeCanvasId.value) {
       errorMessage.value = '没有激活的画布'
@@ -462,7 +465,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         targetCanvasId,
         targetNodeId,
         linkType,
-        description
+        description,
       )
       if (link) {
         await loadCrossCanvasLinks(activeCanvasId.value)
@@ -512,7 +515,7 @@ export const useCanvasStore = defineStore('canvas', () => {
    */
   async function updateCanvasNodesAndEdges(
     nodes: CanvasConfig['nodes'],
-    edges: CanvasConfig['edges']
+    edges: CanvasConfig['edges'],
   ): Promise<boolean> {
     if (!activeCanvasId.value) {
       errorMessage.value = '没有激活的画布'
@@ -522,7 +525,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     return updateCanvas({
       id: activeCanvasId.value,
       nodes,
-      edges
+      edges,
     })
   }
 
@@ -582,6 +585,6 @@ export const useCanvasStore = defineStore('canvas', () => {
     removeCrossCanvasLink,
     loadStats,
     updateCanvasNodesAndEdges,
-    reset
+    reset,
   }
 })

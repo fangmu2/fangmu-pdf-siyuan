@@ -4,24 +4,43 @@
     <!-- 智能学习集列表 -->
     <div class="smart-study-set__list">
       <div class="smart-study-set__header">
-        <h3 class="smart-study-set__title">📚 智能学习集</h3>
-        <button class="smart-study-set__add-btn" @click="showCreateDialog = true" title="创建智能学习集">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        <h3 class="smart-study-set__title">
+          📚 智能学习集
+        </h3>
+        <button
+          class="smart-study-set__add-btn"
+          title="创建智能学习集"
+          @click="showCreateDialog = true"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
           </svg>
         </button>
       </div>
 
-      <div v-if="smartSets.length === 0" class="smart-study-set__empty">
+      <div
+        v-if="smartSets.length === 0"
+        class="smart-study-set__empty"
+      >
         <span class="smart-study-set__empty-icon">💡</span>
-        <p class="smart-study-set__empty-text">暂无智能学习集</p>
-        <p class="smart-study-set__empty-hint">创建基于筛选条件的智能学习集</p>
+        <p class="smart-study-set__empty-text">
+          暂无智能学习集
+        </p>
+        <p class="smart-study-set__empty-hint">
+          创建基于筛选条件的智能学习集
+        </p>
       </div>
 
       <div
         v-for="set in smartSets"
         :key="set.id"
-        :class="['smart-study-set__item', { active: selectedSetId === set.id }]"
+        class="smart-study-set__item"
+        :class="[{ active: selectedSetId === set.id }]"
         @click="selectSmartSet(set)"
       >
         <div class="smart-study-set__item-info">
@@ -31,20 +50,30 @@
         <div class="smart-study-set__item-actions">
           <button
             class="smart-study-set__item-btn"
-            @click.stop="editSmartSet(set)"
             title="编辑"
+            @click.stop="editSmartSet(set)"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="currentColor"
+            >
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
             </svg>
           </button>
           <button
             class="smart-study-set__item-btn"
-            @click.stop="deleteSmartSet(set)"
             title="删除"
+            @click.stop="deleteSmartSet(set)"
           >
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="currentColor"
+            >
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
             </svg>
           </button>
         </div>
@@ -52,31 +81,52 @@
     </div>
 
     <!-- 筛选条件预览 -->
-    <div v-if="selectedSet" class="smart-study-set__preview">
+    <div
+      v-if="selectedSet"
+      class="smart-study-set__preview"
+    >
       <div class="smart-study-set__preview-header">
-        <h4 class="smart-study-set__preview-title">筛选条件</h4>
-        <button class="smart-study-set__refresh-btn" @click="refreshPreview" title="刷新">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        <h4 class="smart-study-set__preview-title">
+          筛选条件
+        </h4>
+        <button
+          class="smart-study-set__refresh-btn"
+          title="刷新"
+          @click="refreshPreview"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
           </svg>
         </button>
       </div>
 
       <div class="smart-study-set__conditions">
-        <div v-if="selectedSet.filters.status?.length" class="condition-item">
+        <div
+          v-if="selectedSet.filters.status?.length"
+          class="condition-item"
+        >
           <span class="condition-item__label">状态：</span>
           <span class="condition-item__value">
             <span
               v-for="status in selectedSet.filters.status"
               :key="status"
-              :class="['condition-tag', `condition-tag--${status}`]"
+              class="condition-tag"
+              :class="[`condition-tag--${status}`]"
             >
               {{ getStatusLabel(status) }}
             </span>
           </span>
         </div>
 
-        <div v-if="selectedSet.filters.tags?.length" class="condition-item">
+        <div
+          v-if="selectedSet.filters.tags?.length"
+          class="condition-item"
+        >
           <span class="condition-item__label">标签：</span>
           <span class="condition-item__value">
             <span
@@ -89,14 +139,20 @@
           </span>
         </div>
 
-        <div v-if="selectedSet.filters.difficultyMin" class="condition-item">
+        <div
+          v-if="selectedSet.filters.difficultyMin"
+          class="condition-item"
+        >
           <span class="condition-item__label">难度：</span>
           <span class="condition-item__value">
             ≥ {{ selectedSet.filters.difficultyMin }} 星
           </span>
         </div>
 
-        <div v-if="selectedSet.filters.sourceDocId" class="condition-item">
+        <div
+          v-if="selectedSet.filters.sourceDocId"
+          class="condition-item"
+        >
           <span class="condition-item__label">来源：</span>
           <span class="condition-item__value">
             {{ getSourceName(selectedSet.filters.sourceDocId) }}
@@ -112,20 +168,40 @@
       </div>
 
       <div class="smart-study-set__preview-actions">
-        <button class="apply-filters-btn" @click="applyFilters">
+        <button
+          class="apply-filters-btn"
+          @click="applyFilters"
+        >
           应用筛选条件
         </button>
       </div>
     </div>
 
     <!-- 创建/编辑对话框 -->
-    <div v-if="showCreateDialog" class="dialog-overlay" @click="closeDialog">
-      <div class="dialog" @click.stop>
+    <div
+      v-if="showCreateDialog"
+      class="dialog-overlay"
+      @click="closeDialog"
+    >
+      <div
+        class="dialog"
+        @click.stop
+      >
         <div class="dialog__header">
-          <h3 class="dialog__title">{{ editingSet ? '编辑智能学习集' : '创建智能学习集' }}</h3>
-          <button class="dialog__close" @click="closeDialog">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          <h3 class="dialog__title">
+            {{ editingSet ? '编辑智能学习集' : '创建智能学习集' }}
+          </h3>
+          <button
+            class="dialog__close"
+            @click="closeDialog"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="currentColor"
+            >
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
           </button>
         </div>
@@ -162,9 +238,9 @@
                   class="checkbox-item"
                 >
                   <input
+                    v-model="formData.filters.status"
                     type="checkbox"
                     :value="status.value"
-                    v-model="formData.filters.status"
                   />
                   <span>{{ status.label }}</span>
                 </label>
@@ -173,8 +249,18 @@
 
             <div class="form-item">
               <label class="form-item__label">标签</label>
-              <select v-model="formData.filters.tags" multiple class="form-select">
-                <option v-for="tag in allTags" :key="tag" :value="tag">{{ tag }}</option>
+              <select
+                v-model="formData.filters.tags"
+                multiple
+                class="form-select"
+              >
+                <option
+                  v-for="tag in allTags"
+                  :key="tag"
+                  :value="tag"
+                >
+                  {{ tag }}
+                </option>
               </select>
               <span class="form-item__hint">按住 Ctrl/Cmd 多选</span>
             </div>
@@ -199,26 +285,54 @@
 
             <div class="form-item form-item--inline">
               <label class="form-item__label">排序方式</label>
-              <select v-model="formData.sortBy" class="form-select form-select--inline">
-                <option value="created">创建时间</option>
-                <option value="updated">更新时间</option>
-                <option value="nextReview">下次复习</option>
-                <option value="difficulty">难度</option>
-                <option value="alphabetical">字母顺序</option>
+              <select
+                v-model="formData.sortBy"
+                class="form-select form-select--inline"
+              >
+                <option value="created">
+                  创建时间
+                </option>
+                <option value="updated">
+                  更新时间
+                </option>
+                <option value="nextReview">
+                  下次复习
+                </option>
+                <option value="difficulty">
+                  难度
+                </option>
+                <option value="alphabetical">
+                  字母顺序
+                </option>
               </select>
 
               <label class="form-item__label form-item__label--margin">顺序</label>
-              <select v-model="formData.sortOrder" class="form-select form-select--inline">
-                <option value="asc">升序 ↑</option>
-                <option value="desc">降序 ↓</option>
+              <select
+                v-model="formData.sortOrder"
+                class="form-select form-select--inline"
+              >
+                <option value="asc">
+                  升序 ↑
+                </option>
+                <option value="desc">
+                  降序 ↓
+                </option>
               </select>
             </div>
           </div>
         </div>
 
         <div class="dialog__footer">
-          <button class="btn btn--secondary" @click="closeDialog">取消</button>
-          <button class="btn btn--primary" @click="saveSmartSet">
+          <button
+            class="btn btn--secondary"
+            @click="closeDialog"
+          >
+            取消
+          </button>
+          <button
+            class="btn btn--primary"
+            @click="saveSmartSet"
+          >
             {{ editingSet ? '保存' : '创建' }}
           </button>
         </div>
@@ -228,37 +342,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useCardStore } from '../stores/cardStore';
-import type { Card } from '../types/card';
+import type { Card } from '../types/card'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
+import { useCardStore } from '../stores/cardStore'
 
 // 智能学习集接口
 interface SmartStudySetItem {
-  id: string;
-  name: string;
-  description?: string;
+  id: string
+  name: string
+  description?: string
   filters: {
-    status?: string[];
-    tags?: string[];
-    difficultyMin?: number;
-    sourceDocId?: string;
-  };
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-  cardCount?: number;
+    status?: string[]
+    tags?: string[]
+    difficultyMin?: number
+    sourceDocId?: string
+  }
+  sortBy: string
+  sortOrder: 'asc' | 'desc'
+  cardCount?: number
 }
 
 const emit = defineEmits<{
-  (e: 'apply-filters', filters: SmartStudySetItem['filters'], sort: { by: string; order: string }): void;
-}>();
+  (e: 'apply-filters', filters: SmartStudySetItem['filters'], sort: { by: string, order: string }): void
+}>()
 
-const cardStore = useCardStore();
+const cardStore = useCardStore()
 
 // 状态
-const smartSets = ref<SmartStudySetItem[]>([]);
-const selectedSetId = ref<string>('');
-const showCreateDialog = ref(false);
-const editingSet = ref<SmartStudySetItem | null>(null);
+const smartSets = ref<SmartStudySetItem[]>([])
+const selectedSetId = ref<string>('')
+const showCreateDialog = ref(false)
+const editingSet = ref<SmartStudySetItem | null>(null)
 
 // 表单数据
 const formData = ref<SmartStudySetItem>({
@@ -272,28 +390,40 @@ const formData = ref<SmartStudySetItem>({
   },
   sortBy: 'updated',
   sortOrder: 'desc',
-});
+})
 
 // 状态选项
 const statusOptions = [
-  { value: 'new', label: '新卡片' },
-  { value: 'learning', label: '学习中' },
-  { value: 'review', label: '复习中' },
-  { value: 'suspended', label: '已暂停' },
-];
+  {
+    value: 'new',
+    label: '新卡片',
+  },
+  {
+    value: 'learning',
+    label: '学习中',
+  },
+  {
+    value: 'review',
+    label: '复习中',
+  },
+  {
+    value: 'suspended',
+    label: '已暂停',
+  },
+]
 
 // 计算属性
 const selectedSet = computed(() =>
-  smartSets.value.find(s => s.id === selectedSetId.value)
-);
+  smartSets.value.find((s) => s.id === selectedSetId.value),
+)
 
 const allTags = computed(() => {
-  const tagSet = new Set<string>();
-  cardStore.cards.forEach(card => {
-    card.tags?.forEach(tag => tagSet.add(tag));
-  });
-  return Array.from(tagSet).sort();
-});
+  const tagSet = new Set<string>()
+  cardStore.cards.forEach((card) => {
+    card.tags?.forEach((tag) => tagSet.add(tag))
+  })
+  return Array.from(tagSet).sort()
+})
 
 // 方法
 function getStatusLabel(status: string): string {
@@ -302,8 +432,8 @@ function getStatusLabel(status: string): string {
     learning: '学习中',
     review: '复习中',
     suspended: '已暂停',
-  };
-  return labels[status] || status;
+  }
+  return labels[status] || status
 }
 
 function getSortLabel(sortBy: string): string {
@@ -313,61 +443,61 @@ function getSortLabel(sortBy: string): string {
     nextReview: '下次复习',
     difficulty: '难度',
     alphabetical: '字母顺序',
-  };
-  return labels[sortBy] || sortBy;
+  }
+  return labels[sortBy] || sortBy
 }
 
 function getSourceName(docId: string): string {
   // TODO: 从文档列表中获取名称
-  return '文档';
+  return '文档'
 }
 
 function selectSmartSet(set: SmartStudySetItem) {
-  selectedSetId.value = set.id;
+  selectedSetId.value = set.id
 }
 
 function editSmartSet(set: SmartStudySetItem) {
-  editingSet.value = set;
-  formData.value = { ...set };
-  showCreateDialog.value = true;
+  editingSet.value = set
+  formData.value = { ...set }
+  showCreateDialog.value = true
 }
 
 function deleteSmartSet(set: SmartStudySetItem) {
   if (confirm(`确定要删除智能学习集"${set.name}"吗？`)) {
-    smartSets.value = smartSets.value.filter(s => s.id !== set.id);
+    smartSets.value = smartSets.value.filter((s) => s.id !== set.id)
     if (selectedSetId.value === set.id) {
-      selectedSetId.value = '';
+      selectedSetId.value = ''
     }
-    saveToStorage();
+    saveToStorage()
   }
 }
 
 function refreshPreview() {
   if (selectedSet.value) {
-    const cards = filterCards(selectedSet.value.filters);
-    selectedSet.value.cardCount = cards.length;
+    const cards = filterCards(selectedSet.value.filters)
+    selectedSet.value.cardCount = cards.length
   }
 }
 
 function filterCards(filters: SmartStudySetItem['filters']): Card[] {
-  let result = [...cardStore.cards];
+  let result = [...cardStore.cards]
 
   if (filters.status?.length) {
-    result = result.filter(c => filters.status!.includes(c.status));
+    result = result.filter((c) => filters.status!.includes(c.status))
   }
   if (filters.tags?.length) {
-    result = result.filter(c =>
-      c.tags?.some(tag => filters.tags!.includes(tag))
-    );
+    result = result.filter((c) =>
+      c.tags?.some((tag) => filters.tags!.includes(tag)),
+    )
   }
   if (filters.difficultyMin && filters.difficultyMin > 1) {
-    result = result.filter(c => c.difficulty >= filters.difficultyMin);
+    result = result.filter((c) => c.difficulty >= filters.difficultyMin)
   }
   if (filters.sourceDocId) {
-    result = result.filter(c => c.sourceId === filters.sourceDocId);
+    result = result.filter((c) => c.sourceId === filters.sourceDocId)
   }
 
-  return result;
+  return result
 }
 
 function applyFilters() {
@@ -375,54 +505,57 @@ function applyFilters() {
     emit('apply-filters', selectedSet.value.filters, {
       by: selectedSet.value.sortBy,
       order: selectedSet.value.sortOrder,
-    });
+    })
   }
 }
 
 function saveSmartSet() {
   if (!formData.value.name.trim()) {
-    alert('请输入名称');
-    return;
+    alert('请输入名称')
+    return
   }
 
   if (editingSet.value) {
     // 编辑模式
-    const index = smartSets.value.findIndex(s => s.id === editingSet.value!.id);
+    const index = smartSets.value.findIndex((s) => s.id === editingSet.value!.id)
     if (index !== -1) {
-      smartSets.value[index] = { ...formData.value, id: editingSet.value.id };
+      smartSets.value[index] = {
+        ...formData.value,
+        id: editingSet.value.id,
+      }
     }
   } else {
     // 创建模式
     const newSet: SmartStudySetItem = {
       ...formData.value,
       id: `smart_${Date.now()}`,
-    };
-    smartSets.value.push(newSet);
-    selectedSetId.value = newSet.id;
+    }
+    smartSets.value.push(newSet)
+    selectedSetId.value = newSet.id
   }
 
-  saveToStorage();
-  closeDialog();
+  saveToStorage()
+  closeDialog()
 }
 
 function saveToStorage() {
-  localStorage.setItem('smart-study-sets', JSON.stringify(smartSets.value));
+  localStorage.setItem('smart-study-sets', JSON.stringify(smartSets.value))
 }
 
 function loadFromStorage() {
-  const stored = localStorage.getItem('smart-study-sets');
+  const stored = localStorage.getItem('smart-study-sets')
   if (stored) {
     try {
-      smartSets.value = JSON.parse(stored);
+      smartSets.value = JSON.parse(stored)
     } catch (e) {
-      console.error('加载智能学习集失败:', e);
+      console.error('加载智能学习集失败:', e)
     }
   }
 }
 
 function closeDialog() {
-  showCreateDialog.value = false;
-  editingSet.value = null;
+  showCreateDialog.value = false
+  editingSet.value = null
   formData.value = {
     id: '',
     name: '',
@@ -434,16 +567,16 @@ function closeDialog() {
     },
     sortBy: 'updated',
     sortOrder: 'desc',
-  };
+  }
 }
 
 // 生命周期
 onMounted(() => {
-  loadFromStorage();
+  loadFromStorage()
   if (cardStore.cards.length === 0) {
-    cardStore.fetchCards();
+    cardStore.fetchCards()
   }
-});
+})
 </script>
 
 <style scoped lang="scss">

@@ -1,6 +1,16 @@
 <template>
-  <div v-if="modelValue" class="card-editor-dialog-overlay" @click="handleClose">
-    <div class="card-editor-dialog" @click.stop :style="{ width: dialogWidth, height: dialogHeight }">
+  <div
+    v-if="modelValue"
+    class="card-editor-dialog-overlay"
+    @click="handleClose"
+  >
+    <div
+      class="card-editor-dialog"
+      :style="{
+        width: dialogWidth, height: dialogHeight,
+      }"
+      @click.stop
+    >
       <!-- 标题栏 -->
       <div class="card-editor-dialog__header">
         <div class="card-editor-dialog__title">
@@ -8,11 +18,19 @@
           <span>{{ isEditMode ? '编辑卡片' : '创建卡片' }}</span>
         </div>
         <div class="card-editor-dialog__actions">
-          <button class="card-editor-dialog__btn-icon" @click="toggleSize" title="切换大小">
+          <button
+            class="card-editor-dialog__btn-icon"
+            title="切换大小"
+            @click="toggleSize"
+          >
             <span v-if="isExpanded">🗗</span>
             <span v-else>🗖</span>
           </button>
-          <button class="card-editor-dialog__btn-icon" @click="handleClose" title="关闭">
+          <button
+            class="card-editor-dialog__btn-icon"
+            title="关闭"
+            @click="handleClose"
+          >
             ✕
           </button>
         </div>
@@ -22,7 +40,9 @@
       <div class="card-editor-dialog__body">
         <!-- 来源信息 -->
         <div class="card-editor-dialog__source">
-          <div class="source-label">📍 来源</div>
+          <div class="source-label">
+            📍 来源
+          </div>
           <div class="source-info">
             <span>{{ getFileName(pdfPath) }}</span>
             <span class="source-divider">•</span>
@@ -31,29 +51,41 @@
         </div>
 
         <!-- 摘录内容预览 -->
-        <div v-if="excerptText" class="card-editor-dialog__excerpt">
-          <div class="excerpt-label">📄 摘录内容</div>
-          <div class="excerpt-content">{{ excerptText }}</div>
+        <div
+          v-if="excerptText"
+          class="card-editor-dialog__excerpt"
+        >
+          <div class="excerpt-label">
+            📄 摘录内容
+          </div>
+          <div class="excerpt-content">
+            {{ excerptText }}
+          </div>
         </div>
 
         <!-- 卡片类型选择 -->
         <div class="card-editor-dialog__section">
-          <div class="section-title">卡片类型</div>
+          <div class="section-title">
+            卡片类型
+          </div>
           <div class="card-type-selector">
             <button
-              :class="['card-type-btn', { active: cardType === 'card' }]"
+              class="card-type-btn"
+              :class="[{ active: cardType === 'card' }]"
               @click="cardType = 'card'"
             >
               📝 普通卡片
             </button>
             <button
-              :class="['card-type-btn', { active: cardType === 'flashcard' }]"
+              class="card-type-btn"
+              :class="[{ active: cardType === 'flashcard' }]"
               @click="cardType = 'flashcard'"
             >
               🎴 闪卡
             </button>
             <button
-              :class="['card-type-btn', { active: cardType === 'excerpt' }]"
+              class="card-type-btn"
+              :class="[{ active: cardType === 'excerpt' }]"
               @click="cardType = 'excerpt'"
             >
               📌 摘录卡片
@@ -65,13 +97,26 @@
         <div class="card-editor-dialog__section">
           <div class="section-title">
             <span>学习集</span>
-            <button class="create-set-btn" @click="showCreateSetDialog = true" title="创建新学习集">
+            <button
+              class="create-set-btn"
+              title="创建新学习集"
+              @click="showCreateSetDialog = true"
+            >
               + 新建
             </button>
           </div>
-          <select v-model="selectedStudySetId" class="study-set-select">
-            <option value="">选择学习集...</option>
-            <option v-for="set in learningSets" :key="set.id" :value="set.id">
+          <select
+            v-model="selectedStudySetId"
+            class="study-set-select"
+          >
+            <option value="">
+              选择学习集...
+            </option>
+            <option
+              v-for="set in learningSets"
+              :key="set.id"
+              :value="set.id"
+            >
               {{ set.name }}
             </option>
           </select>
@@ -79,7 +124,9 @@
 
         <!-- 标签输入 -->
         <div class="card-editor-dialog__section">
-          <div class="section-title">标签</div>
+          <div class="section-title">
+            标签
+          </div>
           <div class="tag-input-container">
             <div class="tag-list">
               <span
@@ -88,7 +135,10 @@
                 class="tag-item"
               >
                 {{ tag }}
-                <button class="tag-remove" @click="removeTag(index)">×</button>
+                <button
+                  class="tag-remove"
+                  @click="removeTag(index)"
+                >×</button>
               </span>
             </div>
             <input
@@ -99,12 +149,16 @@
             />
           </div>
           <!-- 常用标签建议 -->
-          <div v-if="suggestedTags.length > 0" class="suggested-tags">
+          <div
+            v-if="suggestedTags.length > 0"
+            class="suggested-tags"
+          >
             <span class="suggested-label">建议：</span>
             <button
               v-for="(tag, index) in suggestedTags"
               :key="index"
-              :class="['suggested-tag', { selected: tags.includes(tag) }]"
+              class="suggested-tag"
+              :class="[{ selected: tags.includes(tag) }]"
               @click="toggleSuggestedTag(tag)"
             >
               {{ tag }}
@@ -113,8 +167,13 @@
         </div>
 
         <!-- 闪卡编辑 -->
-        <div v-if="cardType === 'flashcard'" class="card-editor-dialog__section">
-          <div class="section-title">闪卡内容</div>
+        <div
+          v-if="cardType === 'flashcard'"
+          class="card-editor-dialog__section"
+        >
+          <div class="section-title">
+            闪卡内容
+          </div>
           <div class="flashcard-editor">
             <div class="flashcard-field">
               <label class="field-label">正面（问题）</label>
@@ -139,7 +198,9 @@
 
         <!-- 笔记/备注 -->
         <div class="card-editor-dialog__section">
-          <div class="section-title">笔记/备注</div>
+          <div class="section-title">
+            笔记/备注
+          </div>
           <textarea
             v-model="note"
             class="note-textarea"
@@ -156,7 +217,8 @@
               <button
                 v-for="i in 5"
                 :key="i"
-                :class="['difficulty-btn', { active: difficulty === i }]"
+                class="difficulty-btn"
+                :class="[{ active: difficulty === i }]"
                 @click="difficulty = i"
               >
                 {{ i }}
@@ -165,11 +227,22 @@
           </div>
           <div class="card-editor-dialog__field">
             <label class="field-label">状态</label>
-            <select v-model="status" class="status-select">
-              <option value="new">新卡片</option>
-              <option value="learning">学习中</option>
-              <option value="review">复习中</option>
-              <option value="suspended">已暂停</option>
+            <select
+              v-model="status"
+              class="status-select"
+            >
+              <option value="new">
+                新卡片
+              </option>
+              <option value="learning">
+                学习中
+              </option>
+              <option value="review">
+                复习中
+              </option>
+              <option value="suspended">
+                已暂停
+              </option>
             </select>
           </div>
         </div>
@@ -178,15 +251,24 @@
       <!-- 底部操作栏 -->
       <div class="card-editor-dialog__footer">
         <div class="footer-left">
-          <button class="footer-btn footer-btn--secondary" @click="handleCancel">
+          <button
+            class="footer-btn footer-btn--secondary"
+            @click="handleCancel"
+          >
             取消
           </button>
         </div>
         <div class="footer-right">
-          <button class="footer-btn footer-btn--secondary" @click="handleSaveAndNew">
+          <button
+            class="footer-btn footer-btn--secondary"
+            @click="handleSaveAndNew"
+          >
             保存并新建
           </button>
-          <button class="footer-btn footer-btn--primary" @click="handleSave">
+          <button
+            class="footer-btn footer-btn--primary"
+            @click="handleSave"
+          >
             {{ isEditMode ? '保存' : '创建' }}
           </button>
         </div>
@@ -194,11 +276,23 @@
     </div>
 
     <!-- 创建学习集对话框 -->
-    <div v-if="showCreateSetDialog" class="create-set-dialog-overlay" @click="showCreateSetDialog = false">
-      <div class="create-set-dialog" @click.stop>
+    <div
+      v-if="showCreateSetDialog"
+      class="create-set-dialog-overlay"
+      @click="showCreateSetDialog = false"
+    >
+      <div
+        class="create-set-dialog"
+        @click.stop
+      >
         <div class="create-set-dialog__header">
           <span>创建学习集</span>
-          <button class="create-set-dialog__close" @click="showCreateSetDialog = false">✕</button>
+          <button
+            class="create-set-dialog__close"
+            @click="showCreateSetDialog = false"
+          >
+            ✕
+          </button>
         </div>
         <div class="create-set-dialog__body">
           <div class="form-field">
@@ -220,8 +314,18 @@
           </div>
         </div>
         <div class="create-set-dialog__footer">
-          <button class="footer-btn footer-btn--secondary" @click="showCreateSetDialog = false">取消</button>
-          <button class="footer-btn footer-btn--primary" @click="handleCreateSet">创建</button>
+          <button
+            class="footer-btn footer-btn--secondary"
+            @click="showCreateSetDialog = false"
+          >
+            取消
+          </button>
+          <button
+            class="footer-btn footer-btn--primary"
+            @click="handleCreateSet"
+          >
+            创建
+          </button>
         </div>
       </div>
     </div>
@@ -229,20 +333,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useLearningSetStore } from '../stores/learningSetStore';
-import type { Card, FlashCard, CardType, CardStatus } from '../types/card';
+import type {
+  Card,
+  CardStatus,
+  CardType,
+  FlashCard,
+} from '../types/card'
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import { useLearningSetStore } from '../stores/learningSetStore'
 
 interface Props {
-  modelValue: boolean;
-  excerptText?: string;
-  pdfPath?: string;
-  page?: number;
-  rect?: [number, number, number, number];
-  blockId?: string;
-  isImage?: boolean;
-  imagePath?: string;
-  editCard?: Card | FlashCard | null;
+  modelValue: boolean
+  excerptText?: string
+  pdfPath?: string
+  page?: number
+  rect?: [number, number, number, number]
+  blockId?: string
+  isImage?: boolean
+  imagePath?: string
+  editCard?: Card | FlashCard | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -255,219 +369,219 @@ const props = withDefaults(defineProps<Props>(), {
   isImage: false,
   imagePath: '',
   editCard: null,
-});
+})
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'save', data: CardCreateData): void;
-  (e: 'update', data: CardUpdateData): void;
-}>();
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'save', data: CardCreateData): void
+  (e: 'update', data: CardUpdateData): void
+}>()
 
 interface CardCreateData {
-  type: CardType;
-  content: string;
-  studySetId: string;
-  tags: string[];
-  note?: string;
-  difficulty: number;
-  status: CardStatus;
+  type: CardType
+  content: string
+  studySetId: string
+  tags: string[]
+  note?: string
+  difficulty: number
+  status: CardStatus
   sourceLocation: {
-    pdfPath?: string;
-    page?: number;
-    rect?: [number, number, number, number];
-    blockId?: string;
-  };
+    pdfPath?: string
+    page?: number
+    rect?: [number, number, number, number]
+    blockId?: string
+  }
   flashcard?: {
-    front: string;
-    back: string;
-  };
+    front: string
+    back: string
+  }
 }
 
 interface CardUpdateData {
-  id: string;
-  type: CardType;
-  content: string;
-  studySetId: string;
-  tags: string[];
-  note?: string;
-  difficulty: number;
-  status: CardStatus;
+  id: string
+  type: CardType
+  content: string
+  studySetId: string
+  tags: string[]
+  note?: string
+  difficulty: number
+  status: CardStatus
   flashcard?: {
-    front: string;
-    back: string;
-  };
+    front: string
+    back: string
+  }
 }
 
-const learningSetStore = useLearningSetStore();
+const learningSetStore = useLearningSetStore()
 
 // 对话框状态
-const isExpanded = ref(false);
-const showCreateSetDialog = ref(false);
-const newSetName = ref('');
-const newSetDescription = ref('');
+const isExpanded = ref(false)
+const showCreateSetDialog = ref(false)
+const newSetName = ref('')
+const newSetDescription = ref('')
 
 // 表单数据
-const cardType = ref<CardType>('card');
-const selectedStudySetId = ref('');
-const tags = ref<string[]>([]);
-const tagInput = ref('');
-const note = ref('');
-const difficulty = ref(3);
-const status = ref<CardStatus>('new');
+const cardType = ref<CardType>('card')
+const selectedStudySetId = ref('')
+const tags = ref<string[]>([])
+const tagInput = ref('')
+const note = ref('')
+const difficulty = ref(3)
+const status = ref<CardStatus>('new')
 
 // 闪卡数据
-const flashcardFront = ref('');
-const flashcardBack = ref('');
+const flashcardFront = ref('')
+const flashcardBack = ref('')
 
 // 计算属性
-const dialogWidth = computed(() => isExpanded.value ? '80%' : '520px');
-const dialogHeight = computed(() => isExpanded.value ? '85%' : 'auto');
+const dialogWidth = computed(() => isExpanded.value ? '80%' : '520px')
+const dialogHeight = computed(() => isExpanded.value ? '85%' : 'auto')
 
-const learningSets = computed(() => learningSetStore.learningSets);
+const learningSets = computed(() => learningSetStore.learningSets)
 
 const suggestedTags = computed(() => {
   // 从所有学习集的标签中推荐
-  const allTags = new Set<string>();
-  learningSets.value.forEach(set => {
-    set.cardIds?.forEach(cardId => {
+  const allTags = new Set<string>()
+  learningSets.value.forEach((set) => {
+    set.cardIds?.forEach((cardId) => {
       // 这里可以扩展获取卡片标签
-    });
-  });
+    })
+  })
   // 常用标签
-  const commonTags = ['重点', '难点', '考点', '概念', '公式', '定义'];
-  return [...commonTags, ...Array.from(allTags)].slice(0, 10);
-});
+  const commonTags = ['重点', '难点', '考点', '概念', '公式', '定义']
+  return [...commonTags, ...Array.from(allTags)].slice(0, 10)
+})
 
 // 监听编辑模式
-const isEditMode = computed(() => !!props.editCard);
+const isEditMode = computed(() => !!props.editCard)
 
 // 监听属性变化，初始化表单
 watch(() => props.editCard, (card) => {
   if (card) {
     // 编辑模式：填充表单
-    cardType.value = card.type as CardType;
-    selectedStudySetId.value = card.studySetId;
-    tags.value = [...card.tags];
-    note.value = '';
-    difficulty.value = card.difficulty;
-    status.value = card.status;
+    cardType.value = card.type as CardType
+    selectedStudySetId.value = card.studySetId
+    tags.value = [...card.tags]
+    note.value = ''
+    difficulty.value = card.difficulty
+    status.value = card.status
 
     if (card.type === 'flashcard') {
-      const flashCard = card as FlashCard;
-      flashcardFront.value = flashCard.front;
-      flashcardBack.value = flashCard.back;
+      const flashCard = card as FlashCard
+      flashcardFront.value = flashCard.front
+      flashcardBack.value = flashCard.back
     }
   } else {
     // 新建模式：重置表单
-    resetForm();
+    resetForm()
   }
-}, { immediate: true });
+}, { immediate: true })
 
 // 重置表单
 function resetForm() {
-  cardType.value = 'card';
-  selectedStudySetId.value = '';
-  tags.value = [];
-  tagInput.value = '';
-  note.value = '';
-  difficulty.value = 3;
-  status.value = 'new';
-  flashcardFront.value = '';
-  flashcardBack.value = '';
+  cardType.value = 'card'
+  selectedStudySetId.value = ''
+  tags.value = []
+  tagInput.value = ''
+  note.value = ''
+  difficulty.value = 3
+  status.value = 'new'
+  flashcardFront.value = ''
+  flashcardBack.value = ''
 }
 
 // 获取文件名
 function getFileName(path: string): string {
-  return path.split('/').pop() || path;
+  return path.split('/').pop() || path
 }
 
 // 切换对话框大小
 function toggleSize() {
-  isExpanded.value = !isExpanded.value;
+  isExpanded.value = !isExpanded.value
 }
 
 // 添加标签
 function addTag() {
-  const tag = tagInput.value.trim();
+  const tag = tagInput.value.trim()
   if (tag && !tags.value.includes(tag)) {
-    tags.value.push(tag);
-    tagInput.value = '';
+    tags.value.push(tag)
+    tagInput.value = ''
   }
 }
 
 // 移除标签
 function removeTag(index: number) {
-  tags.value.splice(index, 1);
+  tags.value.splice(index, 1)
 }
 
 // 切换建议标签
 function toggleSuggestedTag(tag: string) {
-  const index = tags.value.indexOf(tag);
+  const index = tags.value.indexOf(tag)
   if (index >= 0) {
-    tags.value.splice(index, 1);
+    tags.value.splice(index, 1)
   } else {
-    tags.value.push(tag);
+    tags.value.push(tag)
   }
 }
 
 // 关闭处理
 function handleClose() {
-  emit('update:modelValue', false);
+  emit('update:modelValue', false)
 }
 
 // 取消处理
 function handleCancel() {
-  emit('update:modelValue', false);
+  emit('update:modelValue', false)
 }
 
 // 保存处理
 function handleSave() {
-  if (!validateForm()) return;
+  if (!validateForm()) return
 
-  const data = buildCardData();
+  const data = buildCardData()
   if (props.editCard) {
     emit('update', {
       id: props.editCard.id,
       ...data,
-    } as CardUpdateData);
+    } as CardUpdateData)
   } else {
-    emit('save', data);
+    emit('save', data)
   }
-  emit('update:modelValue', false);
+  emit('update:modelValue', false)
 }
 
 // 保存并新建
 function handleSaveAndNew() {
-  if (!validateForm()) return;
+  if (!validateForm()) return
 
-  const data = buildCardData();
+  const data = buildCardData()
   if (props.editCard) {
     emit('update', {
       id: props.editCard.id,
       ...data,
-    } as CardUpdateData);
+    } as CardUpdateData)
   } else {
-    emit('save', data);
+    emit('save', data)
   }
-  resetForm();
+  resetForm()
 }
 
 // 验证表单
 function validateForm(): boolean {
   if (!selectedStudySetId.value) {
-    alert('请选择学习集');
-    return false;
+    alert('请选择学习集')
+    return false
   }
   if (cardType.value === 'flashcard' && (!flashcardFront.value.trim() || !flashcardBack.value.trim())) {
-    alert('请填写闪卡的正面和反面内容');
-    return false;
+    alert('请填写闪卡的正面和反面内容')
+    return false
   }
-  return true;
+  return true
 }
 
 // 构建卡片数据
 function buildCardData(): Omit<CardCreateData, 'sourceLocation'> & { sourceLocation: CardCreateData['sourceLocation'] } {
-  const content = props.excerptText || '';
+  const content = props.excerptText || ''
 
   const data: CardCreateData = {
     type: cardType.value,
@@ -483,43 +597,43 @@ function buildCardData(): Omit<CardCreateData, 'sourceLocation'> & { sourceLocat
       rect: props.rect,
       blockId: props.blockId,
     },
-  };
+  }
 
   if (cardType.value === 'flashcard') {
     data.flashcard = {
       front: flashcardFront.value,
       back: flashcardBack.value,
-    };
+    }
   }
 
-  return data;
+  return data
 }
 
 // 创建学习集
 async function handleCreateSet() {
   if (!newSetName.value.trim()) {
-    alert('请输入学习集名称');
-    return;
+    alert('请输入学习集名称')
+    return
   }
 
   try {
-    await learningSetStore.createStudySet(newSetName.value, newSetDescription.value);
-    selectedStudySetId.value = learningSetStore.learningSets[0]?.id || '';
-    showCreateSetDialog.value = false;
-    newSetName.value = '';
-    newSetDescription.value = '';
+    await learningSetStore.createStudySet(newSetName.value, newSetDescription.value)
+    selectedStudySetId.value = learningSetStore.learningSets[0]?.id || ''
+    showCreateSetDialog.value = false
+    newSetName.value = ''
+    newSetDescription.value = ''
   } catch (error) {
-    console.error('创建学习集失败:', error);
-    alert('创建学习集失败，请重试');
+    console.error('创建学习集失败:', error)
+    alert('创建学习集失败，请重试')
   }
 }
 
 // 加载学习集列表
 onMounted(async () => {
   if (learningSets.value.length === 0) {
-    await learningSetStore.fetchStudySets();
+    await learningSetStore.fetchStudySets()
   }
-});
+})
 </script>
 
 <style scoped lang="scss">

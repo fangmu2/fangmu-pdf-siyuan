@@ -1,13 +1,30 @@
 <!-- src/components/ReviewExportDialog.vue - 复习导出对话框组件 -->
 <template>
-  <div v-if="visible" class="review-export-dialog-overlay" @click="close">
-    <div class="review-export-dialog" @click.stop>
+  <div
+    v-if="visible"
+    class="review-export-dialog-overlay"
+    @click="close"
+  >
+    <div
+      class="review-export-dialog"
+      @click.stop
+    >
       <!-- 头部 -->
       <div class="dialog-header">
-        <h3 class="dialog-title">📤 导出复习数据</h3>
-        <button class="close-btn" @click="close">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        <h3 class="dialog-title">
+          📤 导出复习数据
+        </h3>
+        <button
+          class="close-btn"
+          @click="close"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="currentColor"
+          >
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>
         </button>
       </div>
@@ -61,13 +78,17 @@
         </div>
 
         <!-- 时间范围选择 -->
-        <div v-if="exportRange === 'recent'" class="export-section">
+        <div
+          v-if="exportRange === 'recent'"
+          class="export-section"
+        >
           <label class="section-label">最近时间</label>
           <div class="recent-options">
             <button
               v-for="option in recentOptions"
               :key="option.value"
-              :class="['recent-btn', { active: recentDays === option.value }]"
+              class="recent-btn"
+              :class="[{ active: recentDays === option.value }]"
               @click="recentDays = option.value"
             >
               {{ option.label }}
@@ -76,7 +97,10 @@
         </div>
 
         <!-- 自定义日期范围 -->
-        <div v-if="exportRange === 'custom'" class="export-section">
+        <div
+          v-if="exportRange === 'custom'"
+          class="export-section"
+        >
           <label class="section-label">日期范围</label>
           <div class="date-range-inputs">
             <div class="date-input-group">
@@ -155,30 +179,34 @@
           <label class="section-label">导出格式</label>
           <div class="format-options">
             <button
-              :class="['format-btn', { active: exportFormat === 'json' }]"
+              class="format-btn"
+              :class="[{ active: exportFormat === 'json' }]"
               @click="exportFormat = 'json'"
             >
               <span class="format-icon">📋</span>
               <span class="format-label">JSON</span>
             </button>
             <button
-              :class="['format-btn', { active: exportFormat === 'csv' }]"
+              class="format-btn"
+              :class="[{ active: exportFormat === 'csv' }]"
               @click="exportFormat = 'csv'"
             >
               <span class="format-icon">📊</span>
               <span class="format-label">CSV</span>
             </button>
             <button
-              :class="['format-btn', { active: exportFormat === 'markdown' }]"
+              class="format-btn"
+              :class="[{ active: exportFormat === 'markdown' }]"
               @click="exportFormat = 'markdown'"
             >
               <span class="format-icon">📝</span>
               <span class="format-label">Markdown</span>
             </button>
             <button
-              :class="['format-btn', { active: exportFormat === 'pdf' }]"
-              @click="exportFormat = 'pdf'"
+              class="format-btn"
+              :class="[{ active: exportFormat === 'pdf' }]"
               :disabled="!pdfSupported"
+              @click="exportFormat = 'pdf'"
             >
               <span class="format-icon">📄</span>
               <span class="format-label">PDF</span>
@@ -204,9 +232,21 @@
           <span class="file-size">预计文件大小：{{ estimatedSize }}</span>
         </div>
         <div class="footer-actions">
-          <button class="cancel-btn" @click="close">取消</button>
-          <button class="export-btn" @click="exportData" :disabled="isExporting">
-            <span v-if="isExporting" class="loading-spinner"></span>
+          <button
+            class="cancel-btn"
+            @click="close"
+          >
+            取消
+          </button>
+          <button
+            class="export-btn"
+            :disabled="isExporting"
+            @click="exportData"
+          >
+            <span
+              v-if="isExporting"
+              class="loading-spinner"
+            ></span>
             <span>{{ isExporting ? '导出中...' : '导出' }}</span>
           </button>
         </div>
@@ -216,84 +256,106 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
 
 interface Props {
-  visible?: boolean;
-  studySetId?: string;
+  visible?: boolean
+  studySetId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   studySetId: '',
-});
+})
 
 const emit = defineEmits<{
-  (e: 'close'): void;
+  (e: 'close'): void
   (e: 'export', data: {
-    range: string;
-    startDate?: string;
-    endDate?: string;
-    recentDays?: number;
-    content: Record<string, boolean>;
-    format: string;
-  }): void;
-}>();
+    range: string
+    startDate?: string
+    endDate?: string
+    recentDays?: number
+    content: Record<string, boolean>
+    format: string
+  }): void
+}>()
 
 // 状态
-const exportRange = ref<'all' | 'recent' | 'custom'>('all');
-const recentDays = ref(7);
-const startDate = ref('');
-const endDate = ref('');
-const exportFormat = ref<'json' | 'csv' | 'markdown' | 'pdf'>('json');
+const exportRange = ref<'all' | 'recent' | 'custom'>('all')
+const recentDays = ref(7)
+const startDate = ref('')
+const endDate = ref('')
+const exportFormat = ref<'json' | 'csv' | 'markdown' | 'pdf'>('json')
 const exportContent = ref({
   reviewStats: true,
   cardDetails: true,
   learningSetInfo: true,
   achievements: false,
-});
-const isExporting = ref(false);
+})
+const isExporting = ref(false)
 
-const pdfSupported = ref(false); // PDF 导出需要额外库
+const pdfSupported = ref(false) // PDF 导出需要额外库
 
 const recentOptions = [
-  { value: 1, label: '今天' },
-  { value: 3, label: '最近 3 天' },
-  { value: 7, label: '最近 7 天' },
-  { value: 14, label: '最近 2 周' },
-  { value: 30, label: '最近 1 月' },
-  { value: 90, label: '最近 3 月' },
-];
+  {
+    value: 1,
+    label: '今天',
+  },
+  {
+    value: 3,
+    label: '最近 3 天',
+  },
+  {
+    value: 7,
+    label: '最近 7 天',
+  },
+  {
+    value: 14,
+    label: '最近 2 周',
+  },
+  {
+    value: 30,
+    label: '最近 1 月',
+  },
+  {
+    value: 90,
+    label: '最近 3 月',
+  },
+]
 
 // 计算属性
 const estimatedRecords = computed(() => {
   // 模拟估算记录数
-  const baseRecords = 50;
+  const baseRecords = 50
   switch (exportRange.value) {
     case 'all':
-      return baseRecords * 30;
+      return baseRecords * 30
     case 'recent':
-      return baseRecords * recentDays.value;
+      return baseRecords * recentDays.value
     case 'custom':
-      return baseRecords * 14;
+      return baseRecords * 14
     default:
-      return baseRecords;
+      return baseRecords
   }
-});
+})
 
 const estimatedSize = computed(() => {
-  const records = estimatedRecords.value;
-  let size = records * 0.5; // KB per record
+  const records = estimatedRecords.value
+  let size = records * 0.5 // KB per record
 
-  if (exportContent.value.cardDetails) size *= 2;
-  if (exportContent.value.learningSetInfo) size += 10;
-  if (exportContent.value.achievements) size += 5;
+  if (exportContent.value.cardDetails) size *= 2
+  if (exportContent.value.learningSetInfo) size += 10
+  if (exportContent.value.achievements) size += 5
 
   if (size >= 1024) {
-    return `${(size / 1024).toFixed(1)} MB`;
+    return `${(size / 1024).toFixed(1)} MB`
   }
-  return `${Math.round(size)} KB`;
-});
+  return `${Math.round(size)} KB`
+})
 
 const previewData = computed(() => {
   const preview = {
@@ -302,30 +364,30 @@ const previewData = computed(() => {
     range: exportRange.value,
     format: exportFormat.value,
     recordCount: estimatedRecords.value,
-  };
+  }
 
   if (exportFormat.value === 'json') {
-    return JSON.stringify(preview, null, 2);
+    return JSON.stringify(preview, null, 2)
   } else if (exportFormat.value === 'csv') {
-    return 'date,studySet,range,format,records\n' +
-      `${preview.exportDate},${preview.studySetId},${preview.range},${preview.format},${preview.recordCount}`;
+    return 'date,studySet,range,format,records\n'
+      + `${preview.exportDate},${preview.studySetId},${preview.range},${preview.format},${preview.recordCount}`
   } else {
-    return `# 复习数据导出\n\n` +
-      `导出日期：${preview.exportDate}\n` +
-      `学习集：${preview.studySetId}\n` +
-      `范围：${preview.range}\n` +
-      `格式：${preview.format}\n` +
-      `记录数：${preview.recordCount}`;
+    return `# 复习数据导出\n\n`
+      + `导出日期：${preview.exportDate}\n`
+      + `学习集：${preview.studySetId}\n`
+      + `范围：${preview.range}\n`
+      + `格式：${preview.format}\n`
+      + `记录数：${preview.recordCount}`
   }
-});
+})
 
 // 方法
 function close() {
-  emit('close');
+  emit('close')
 }
 
 function exportData() {
-  isExporting.value = true;
+  isExporting.value = true
 
   const exportData = {
     range: exportRange.value,
@@ -334,14 +396,14 @@ function exportData() {
     recentDays: exportRange.value === 'recent' ? recentDays.value : undefined,
     content: exportContent.value,
     format: exportFormat.value,
-  };
+  }
 
   // 模拟导出延迟
   setTimeout(() => {
-    emit('export', exportData);
-    isExporting.value = false;
-    close();
-  }, 1000);
+    emit('export', exportData)
+    isExporting.value = false
+    close()
+  }, 1000)
 }
 
 // 监听 visible 变化，初始化日期
@@ -349,13 +411,13 @@ watch(
   () => props.visible,
   (newVal) => {
     if (newVal) {
-      const today = new Date();
-      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      startDate.value = weekAgo.toISOString().split('T')[0];
-      endDate.value = today.toISOString().split('T')[0];
+      const today = new Date()
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+      startDate.value = weekAgo.toISOString().split('T')[0]
+      endDate.value = today.toISOString().split('T')[0]
     }
-  }
-);
+  },
+)
 </script>
 
 <style scoped lang="scss">

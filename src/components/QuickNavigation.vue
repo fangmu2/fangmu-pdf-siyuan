@@ -1,15 +1,30 @@
 <template>
-  <div class="quick-navigation" v-if="visible">
+  <div
+    v-if="visible"
+    class="quick-navigation"
+  >
     <!-- 遮罩层 -->
-    <div class="overlay" @click="close"></div>
+    <div
+      class="overlay"
+      @click="close"
+    ></div>
 
     <!-- 导航面板 -->
-    <div class="navigation-panel" :class="{ 'show-bookmarks': showBookmarks }">
+    <div
+      class="navigation-panel"
+      :class="{ 'show-bookmarks': showBookmarks }"
+    >
       <!-- 搜索区域 -->
       <div class="search-area">
         <div class="search-input-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <svg
+            class="search-icon"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="currentColor"
+          >
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
           <input
             ref="searchInput"
@@ -30,7 +45,8 @@
           <button
             v-for="type in filterTypes"
             :key="type.value"
-            :class="['filter-tab', { active: selectedTypes.includes(type.value) }]"
+            class="filter-tab"
+            :class="[{ active: selectedTypes.includes(type.value) }]"
             @click="toggleType(type.value)"
           >
             <span class="tab-icon">{{ type.icon }}</span>
@@ -42,13 +58,25 @@
       <!-- 搜索结果 / 书签 -->
       <div class="results-area">
         <!-- 书签面板 -->
-        <div v-if="showBookmarks" class="bookmarks-panel">
+        <div
+          v-if="showBookmarks"
+          class="bookmarks-panel"
+        >
           <div class="panel-header">
             <h3>书签</h3>
             <div class="header-actions">
-              <button @click="showBookmarks = false" class="back-btn" title="返回搜索">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                  <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+              <button
+                class="back-btn"
+                title="返回搜索"
+                @click="showBookmarks = false"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="currentColor"
+                >
+                  <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
                 </svg>
               </button>
             </div>
@@ -57,56 +85,107 @@
             <div
               v-for="bookmark in filteredBookmarks"
               :key="bookmark.id"
-              :class="['bookmark-item', { selected: selectedIndex === bookmark.id }]"
+              class="bookmark-item"
+              :class="[{ selected: selectedIndex === bookmark.id }]"
               @click="navigateTo(bookmark)"
               @mouseenter="selectedIndex = bookmark.id"
             >
-              <div class="item-icon" :class="bookmark.type">
+              <div
+                class="item-icon"
+                :class="bookmark.type"
+              >
                 <span v-if="bookmark.type === 'card'">📝</span>
                 <span v-else-if="bookmark.type === 'mindmap'">🧠</span>
                 <span v-else-if="bookmark.type === 'document'">📄</span>
                 <span v-else-if="bookmark.type === 'annotation'">🏷️</span>
               </div>
               <div class="item-content">
-                <div class="item-title">{{ bookmark.title }}</div>
+                <div class="item-title">
+                  {{ bookmark.title }}
+                </div>
                 <div class="item-meta">
                   <span class="item-type">{{ getTypeLabel(bookmark.type) }}</span>
-                  <span v-if="bookmark.tags?.length" class="item-tags">
-                    <span v-for="tag in bookmark.tags.slice(0, 3)" :key="tag" class="tag">{{ tag }}</span>
+                  <span
+                    v-if="bookmark.tags?.length"
+                    class="item-tags"
+                  >
+                    <span
+                      v-for="tag in bookmark.tags.slice(0, 3)"
+                      :key="tag"
+                      class="tag"
+                    >{{ tag }}</span>
                   </span>
                 </div>
               </div>
               <div class="item-actions">
-                <button @click.stop="removeBookmark(bookmark.id)" class="remove-btn" title="删除书签">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <button
+                  class="remove-btn"
+                  title="删除书签"
+                  @click.stop="removeBookmark(bookmark.id)"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                   </svg>
                 </button>
               </div>
             </div>
-            <div v-if="filteredBookmarks.length === 0" class="empty-state">
+            <div
+              v-if="filteredBookmarks.length === 0"
+              class="empty-state"
+            >
               <p>暂无书签</p>
-              <p class="hint">在搜索结果中点击 ⭐ 添加书签</p>
+              <p class="hint">
+                在搜索结果中点击 ⭐ 添加书签
+              </p>
             </div>
           </div>
         </div>
 
         <!-- 搜索结果面板 -->
-        <div v-else class="search-results-panel">
+        <div
+          v-else
+          class="search-results-panel"
+        >
           <!-- 无搜索内容时显示历史记录 -->
-          <div v-if="!searchQuery" class="recent-section">
+          <div
+            v-if="!searchQuery"
+            class="recent-section"
+          >
             <div class="section-header">
               <h3>最近访问</h3>
               <div class="section-actions">
-                <button @click="showBookmarks = true" class="bookmarks-link" title="查看书签">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                <button
+                  class="bookmarks-link"
+                  title="查看书签"
+                  @click="showBookmarks = true"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" />
                   </svg>
                   书签
                 </button>
-                <button @click="clearHistory" class="clear-link" title="清除历史记录">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l7.58-4.81c.54-.34.54-1.12 0-1.46L9.54 6.98c-.67-.43-1.54.05-1.54.84z"/>
+                <button
+                  class="clear-link"
+                  title="清除历史记录"
+                  @click="clearHistory"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l7.58-4.81c.54-.34.54-1.12 0-1.46L9.54 6.98c-.67-.43-1.54.05-1.54.84z" />
                   </svg>
                   清除
                 </button>
@@ -116,18 +195,24 @@
               <div
                 v-for="item in recentHistory"
                 :key="item.id"
-                :class="['history-item', { selected: selectedIndex === item.id }]"
+                class="history-item"
+                :class="[{ selected: selectedIndex === item.id }]"
                 @click="navigateTo(item)"
                 @mouseenter="selectedIndex = item.id"
               >
-                <div class="item-icon" :class="item.type">
+                <div
+                  class="item-icon"
+                  :class="item.type"
+                >
                   <span v-if="item.type === 'card'">📝</span>
                   <span v-else-if="item.type === 'mindmap'">🧠</span>
                   <span v-else-if="item.type === 'document'">📄</span>
                   <span v-else-if="item.type === 'annotation'">🏷️</span>
                 </div>
                 <div class="item-content">
-                  <div class="item-title">{{ item.title }}</div>
+                  <div class="item-title">
+                    {{ item.title }}
+                  </div>
                   <div class="item-meta">
                     <span class="item-type">{{ getTypeLabel(item.type) }}</span>
                     <span class="item-time">{{ formatTime(item.timestamp) }}</span>
@@ -138,7 +223,10 @@
           </div>
 
           <!-- 搜索结果显示 -->
-          <div v-else class="search-results">
+          <div
+            v-else
+            class="search-results"
+          >
             <div class="results-header">
               <span class="results-count">{{ searchResults.length }} 个结果</span>
             </div>
@@ -146,29 +234,44 @@
               <div
                 v-for="(result, index) in searchResults"
                 :key="result.targetId"
-                :class="['result-item', { selected: selectedIndex === result.targetId }]"
+                class="result-item"
+                :class="[{ selected: selectedIndex === result.targetId }]"
                 @click="navigateTo(result)"
                 @mouseenter="selectedIndex = result.targetId"
               >
-                <div class="item-icon" :class="result.type">
+                <div
+                  class="item-icon"
+                  :class="result.type"
+                >
                   <span v-if="result.type === 'card'">📝</span>
                   <span v-else-if="result.type === 'mindmap'">🧠</span>
                   <span v-else-if="result.type === 'document'">📄</span>
                   <span v-else-if="result.type === 'annotation'">🏷️</span>
                 </div>
                 <div class="item-content">
-                  <div class="item-title" v-html="highlightMatch(result.label)"></div>
-                  <div class="item-description" v-html="highlightMatch(result.description || '')"></div>
+                  <div
+                    class="item-title"
+                    v-html="highlightMatch(result.label)"
+                  ></div>
+                  <div
+                    class="item-description"
+                    v-html="highlightMatch(result.description || '')"
+                  ></div>
                 </div>
                 <div class="item-actions">
                   <button
-                    @click.stop="toggleBookmark(result)"
                     class="bookmark-btn"
                     :class="{ active: isBookmarked(result.targetId) }"
                     :title="isBookmarked(result.targetId) ? '删除书签' : '添加书签'"
+                    @click.stop="toggleBookmark(result)"
                   >
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="currentColor"
+                    >
+                      <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z" />
                     </svg>
                   </button>
                 </div>
@@ -189,107 +292,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { navigationService, type NavigationHistoryItem, type BookmarkItem } from '../services/navigationService';
+import type {
+  BookmarkItem,
+  NavigationHistoryItem,
+} from '../services/navigationService'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from 'vue'
+import {
+
+
+  navigationService,
+} from '../services/navigationService'
 
 const props = defineProps<{
-  studySetId?: string;
-}>();
+  studySetId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'navigate', item: NavigationHistoryItem | { targetId: string; type: string }): void;
-  (e: 'close'): void;
-}>();
+  (e: 'navigate', item: NavigationHistoryItem | { targetId: string, type: string }): void
+  (e: 'close'): void
+}>()
 
 // 可见性
-const visible = ref(false);
-const showBookmarks = ref(false);
+const visible = ref(false)
+const showBookmarks = ref(false)
 
 // 搜索状态
-const searchQuery = ref('');
-const searchResults = ref<any[]>([]);
-const selectedIndex = ref<string | null>(null);
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchQuery = ref('')
+const searchResults = ref<any[]>([])
+const selectedIndex = ref<string | null>(null)
+const searchInput = ref<HTMLInputElement | null>(null)
 
 // 筛选类型
 const filterTypes = [
-  { value: 'card', label: '卡片', icon: '📝' },
-  { value: 'mindmap', label: '脑图', icon: '🧠' },
-  { value: 'document', label: '文档', icon: '📄' },
-  { value: 'annotation', label: '标注', icon: '🏷️' }
-];
+  {
+    value: 'card',
+    label: '卡片',
+    icon: '📝',
+  },
+  {
+    value: 'mindmap',
+    label: '脑图',
+    icon: '🧠',
+  },
+  {
+    value: 'document',
+    label: '文档',
+    icon: '📄',
+  },
+  {
+    value: 'annotation',
+    label: '标注',
+    icon: '🏷️',
+  },
+]
 
-const selectedTypes = ref<string[]>(['card', 'mindmap', 'document', 'annotation']);
+const selectedTypes = ref<string[]>(['card', 'mindmap', 'document', 'annotation'])
 
 // 历史记录
-const recentHistory = ref<NavigationHistoryItem[]>([]);
+const recentHistory = ref<NavigationHistoryItem[]>([])
 
 // 书签
-const bookmarks = ref<BookmarkItem[]>([]);
+const bookmarks = ref<BookmarkItem[]>([])
 
 const filteredBookmarks = computed(() => {
-  if (!searchQuery.value) return bookmarks.value;
-  return bookmarks.value.filter(b =>
-    b.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
-});
+  if (!searchQuery.value) return bookmarks.value
+  return bookmarks.value.filter((b) =>
+    b.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
+  )
+})
 
 // 加载数据
 onMounted(async () => {
-  await loadData();
-  setupKeyboardListener();
-});
+  await loadData()
+  setupKeyboardListener()
+})
 
 onUnmounted(() => {
-  removeKeyboardListener();
-});
+  removeKeyboardListener()
+})
 
 // 监听搜索
 watch(searchQuery, async (newQuery) => {
   if (newQuery) {
-    await performSearch();
+    await performSearch()
   } else {
-    searchResults.value = [];
+    searchResults.value = []
   }
-  selectedIndex.value = null;
-});
+  selectedIndex.value = null
+})
 
 // 加载数据
 async function loadData() {
-  recentHistory.value = navigationService.getHistory(10);
-  bookmarks.value = navigationService.getBookmarks();
+  recentHistory.value = navigationService.getHistory(10)
+  bookmarks.value = navigationService.getBookmarks()
 }
 
 // 设置键盘监听
 function setupKeyboardListener() {
-  document.addEventListener('keydown', handleGlobalKeydown);
+  document.addEventListener('keydown', handleGlobalKeydown)
 }
 
 function removeKeyboardListener() {
-  document.removeEventListener('keydown', handleGlobalKeydown);
+  document.removeEventListener('keydown', handleGlobalKeydown)
 }
 
 function handleGlobalKeydown(e: KeyboardEvent) {
   // Ctrl+K 或 Cmd+K 打开搜索
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    open();
+    e.preventDefault()
+    open()
   }
 }
 
 // 打开/关闭
 function open() {
-  visible.value = true;
-  searchQuery.value = '';
-  showBookmarks.value = false;
-  selectedIndex.value = null;
-  loadData();
-  setTimeout(() => searchInput.value?.focus(), 100);
+  visible.value = true
+  searchQuery.value = ''
+  showBookmarks.value = false
+  selectedIndex.value = null
+  loadData()
+  setTimeout(() => searchInput.value?.focus(), 100)
 }
 
 function close() {
-  visible.value = false;
-  emit('close');
+  visible.value = false
+  emit('close')
 }
 
 // 搜索
@@ -297,43 +430,46 @@ async function performSearch() {
   const results = await navigationService.search(searchQuery.value, {
     studySetId: props.studySetId,
     types: selectedTypes.value as any[],
-    limit: 20
-  });
-  searchResults.value = results;
+    limit: 20,
+  })
+  searchResults.value = results
 }
 
 // 导航
 function navigateUp() {
-  const items = getNavigableItems();
-  const currentIndex = items.findIndex(i => i.id === selectedIndex.value);
-  const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-  selectedIndex.value = items[prevIndex]?.id || null;
+  const items = getNavigableItems()
+  const currentIndex = items.findIndex((i) => i.id === selectedIndex.value)
+  const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1
+  selectedIndex.value = items[prevIndex]?.id || null
 }
 
 function navigateDown() {
-  const items = getNavigableItems();
-  const currentIndex = items.findIndex(i => i.id === selectedIndex.value);
-  const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-  selectedIndex.value = items[nextIndex]?.id || null;
+  const items = getNavigableItems()
+  const currentIndex = items.findIndex((i) => i.id === selectedIndex.value)
+  const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0
+  selectedIndex.value = items[nextIndex]?.id || null
 }
 
 function getNavigableItems() {
   if (showBookmarks.value) {
-    return filteredBookmarks.value.map(b => ({ id: b.id, ...b }));
+    return filteredBookmarks.value.map((b) => ({
+      id: b.id,
+      ...b,
+    }))
   }
   if (searchQuery.value) {
-    return searchResults.value;
+    return searchResults.value
   }
-  return recentHistory.value;
+  return recentHistory.value
 }
 
 function selectCurrent() {
-  const items = getNavigableItems();
-  const selectedItem = items.find(i => i.id === selectedIndex.value);
+  const items = getNavigableItems()
+  const selectedItem = items.find((i) => i.id === selectedIndex.value)
   if (selectedItem) {
-    navigateTo(selectedItem);
+    navigateTo(selectedItem)
   } else if (items.length > 0) {
-    navigateTo(items[0]);
+    navigateTo(items[0])
   }
 }
 
@@ -346,57 +482,57 @@ function navigateTo(item: any) {
       title: item.title,
       blockId: item.blockId || item.targetId,
       studySetId: item.studySetId,
-      preview: item.description
-    });
+      preview: item.description,
+    })
   }
 
-  emit('navigate', item);
-  close();
+  emit('navigate', item)
+  close()
 }
 
 // 书签操作
 function toggleBookmark(item: any) {
-  const isBookmarked = bookmarks.value.some(b => b.blockId === item.targetId);
+  const isBookmarked = bookmarks.value.some((b) => b.blockId === item.targetId)
   if (isBookmarked) {
-    const bookmark = bookmarks.value.find(b => b.blockId === item.targetId);
+    const bookmark = bookmarks.value.find((b) => b.blockId === item.targetId)
     if (bookmark) {
-      navigationService.removeBookmark(bookmark.id);
-      bookmarks.value = bookmarks.value.filter(b => b.id !== bookmark.id);
+      navigationService.removeBookmark(bookmark.id)
+      bookmarks.value = bookmarks.value.filter((b) => b.id !== bookmark.id)
     }
   } else {
     const newBookmark = navigationService.addBookmark({
       type: item.type,
       title: item.label,
       blockId: item.targetId,
-      studySetId: props.studySetId
-    });
-    bookmarks.value.push(newBookmark);
+      studySetId: props.studySetId,
+    })
+    bookmarks.value.push(newBookmark)
   }
 }
 
 function isBookmarked(targetId: string): boolean {
-  return bookmarks.value.some(b => b.blockId === targetId);
+  return bookmarks.value.some((b) => b.blockId === targetId)
 }
 
 function removeBookmark(id: string) {
-  navigationService.removeBookmark(id);
-  bookmarks.value = bookmarks.value.filter(b => b.id !== id);
+  navigationService.removeBookmark(id)
+  bookmarks.value = bookmarks.value.filter((b) => b.id !== id)
 }
 
 // 类型筛选
 function toggleType(type: string) {
-  const index = selectedTypes.value.indexOf(type);
+  const index = selectedTypes.value.indexOf(type)
   if (index > -1) {
-    selectedTypes.value = selectedTypes.value.filter(t => t !== type);
+    selectedTypes.value = selectedTypes.value.filter((t) => t !== type)
   } else {
-    selectedTypes.value.push(type);
+    selectedTypes.value.push(type)
   }
 }
 
 // 清除历史记录
 function clearHistory() {
-  navigationService.clearHistory();
-  recentHistory.value = [];
+  navigationService.clearHistory()
+  recentHistory.value = []
 }
 
 // 工具函数
@@ -405,33 +541,36 @@ function getTypeLabel(type: string): string {
     card: '卡片',
     mindmap: '脑图',
     document: '文档',
-    annotation: '标注'
-  };
-  return typeMap[type] || type;
+    annotation: '标注',
+  }
+  return typeMap[type] || type
 }
 
 function formatTime(timestamp: number): string {
-  const now = Date.now();
-  const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+  const now = Date.now()
+  const diff = now - timestamp
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
 
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return `${minutes}分钟前`;
-  if (hours < 24) return `${hours}小时前`;
-  if (days < 7) return `${days}天前`;
-  return new Date(timestamp).toLocaleDateString('zh-CN');
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  if (hours < 24) return `${hours}小时前`
+  if (days < 7) return `${days}天前`
+  return new Date(timestamp).toLocaleDateString('zh-CN')
 }
 
 function highlightMatch(text: string): string {
-  if (!searchQuery.value || !text) return text;
-  const regex = new RegExp(`(${searchQuery.value})`, 'gi');
-  return text.replace(regex, '<mark>$1</mark>');
+  if (!searchQuery.value || !text) return text
+  const regex = new RegExp(`(${searchQuery.value})`, 'gi')
+  return text.replace(regex, '<mark>$1</mark>')
 }
 
 // 暴露方法给父组件
-defineExpose({ open, close });
+defineExpose({
+  open,
+  close,
+})
 </script>
 
 <style scoped lang="scss">

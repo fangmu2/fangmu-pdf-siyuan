@@ -1,13 +1,16 @@
 <template>
-  <div class="handwriting-layer-container" :class="{ 'layer-hidden': !isVisible }">
+  <div
+    class="handwriting-layer-container"
+    :class="{ 'layer-hidden': !isVisible }"
+  >
     <div class="handwriting-controls">
       <div class="control-group">
         <label>笔刷大小:</label>
         <input
+          v-model="brushSize"
           type="range"
           min="1"
           max="20"
-          v-model="brushSize"
           class="brush-size-slider"
         />
         <span class="brush-size-value">{{ brushSize }}px</span>
@@ -26,11 +29,24 @@
         </div>
       </div>
       <div class="control-group">
-        <button @click="clearCanvas" class="clear-btn">清空画布</button>
-        <button @click="toggleVisibility" class="visibility-btn">
+        <button
+          class="clear-btn"
+          @click="clearCanvas"
+        >
+          清空画布
+        </button>
+        <button
+          class="visibility-btn"
+          @click="toggleVisibility"
+        >
           {{ isVisible ? '隐藏图层' : '显示图层' }}
         </button>
-        <button @click="resetLearning" class="reset-btn">重置学习</button>
+        <button
+          class="reset-btn"
+          @click="resetLearning"
+        >
+          重置学习
+        </button>
       </div>
     </div>
     <canvas
@@ -48,26 +64,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import {
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
 
 const props = defineProps<{
-  pdfPath: string;
-  page: number;
-  isVisible: boolean;
-}>();
+  pdfPath: string
+  page: number
+  isVisible: boolean
+}>()
 
 const emit = defineEmits<{
-  (e: 'drawing-start'): void;
-  (e: 'drawing-end'): void;
-  (e: 'reset-learning'): void;
-}>();
+  (e: 'drawing-start'): void
+  (e: 'drawing-end'): void
+  (e: 'reset-learning'): void
+}>()
 
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const isDrawing = ref(false);
-const brushSize = ref(5);
-const selectedColor = ref('#ff0000'); // 默认红色
-const lastX = ref(0);
-const lastY = ref(0);
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+const isDrawing = ref(false)
+const brushSize = ref(5)
+const selectedColor = ref('#ff0000') // 默认红色
+const lastX = ref(0)
+const lastY = ref(0)
 
 // 颜色选项
 const colors = [
@@ -77,138 +98,138 @@ const colors = [
   '#ffff00', // 黄色
   '#ff00ff', // 紫色
   '#00ffff', // 青色
-  '#000000'  // 黑色
-];
+  '#000000', // 黑色
+]
 
 // 初始化画布
 const initCanvas = async () => {
-  await nextTick();
-  if (!canvasRef.value) return;
+  await nextTick()
+  if (!canvasRef.value) return
 
-  const canvas = canvasRef.value;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const canvas = canvasRef.value
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
   // 设置画布尺寸
-  const container = canvas.parentElement;
+  const container = canvas.parentElement
   if (container) {
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
+    canvas.width = container.clientWidth
+    canvas.height = container.clientHeight
   }
 
   // 设置初始绘图样式
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.lineWidth = brushSize.value;
-  ctx.strokeStyle = selectedColor.value;
-};
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = brushSize.value
+  ctx.strokeStyle = selectedColor.value
+}
 
 // 开始绘制
 const startDrawing = (e: MouseEvent) => {
-  if (!canvasRef.value) return;
+  if (!canvasRef.value) return
 
-  const canvas = canvasRef.value;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const canvas = canvasRef.value
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-  isDrawing.value = true;
-  const rect = canvas.getBoundingClientRect();
-  lastX.value = e.clientX - rect.left;
-  lastY.value = e.clientY - rect.top;
+  isDrawing.value = true
+  const rect = canvas.getBoundingClientRect()
+  lastX.value = e.clientX - rect.left
+  lastY.value = e.clientY - rect.top
 
-  emit('drawing-start');
-};
+  emit('drawing-start')
+}
 
 // 绘制
 const draw = (e: MouseEvent) => {
-  if (!isDrawing.value || !canvasRef.value) return;
+  if (!isDrawing.value || !canvasRef.value) return
 
-  const canvas = canvasRef.value;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  const canvas = canvasRef.value
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-  const rect = canvas.getBoundingClientRect();
-  const currentX = e.clientX - rect.left;
-  const currentY = e.clientY - rect.top;
+  const rect = canvas.getBoundingClientRect()
+  const currentX = e.clientX - rect.left
+  const currentY = e.clientY - rect.top
 
-  ctx.beginPath();
-  ctx.moveTo(lastX.value, lastY.value);
-  ctx.lineTo(currentX, currentY);
-  ctx.stroke();
+  ctx.beginPath()
+  ctx.moveTo(lastX.value, lastY.value)
+  ctx.lineTo(currentX, currentY)
+  ctx.stroke()
 
-  lastX.value = currentX;
-  lastY.value = currentY;
-};
+  lastX.value = currentX
+  lastY.value = currentY
+}
 
 // 停止绘制
 const stopDrawing = () => {
-  isDrawing.value = false;
-  emit('drawing-end');
-};
+  isDrawing.value = false
+  emit('drawing-end')
+}
 
 // 触摸事件处理
 const handleTouchStart = (e: TouchEvent) => {
   if (e.touches.length > 0) {
-    const touch = e.touches[0];
+    const touch = e.touches[0]
     const mouseEvent = new MouseEvent('mousedown', {
       clientX: touch.clientX,
-      clientY: touch.clientY
-    });
-    canvasRef.value?.dispatchEvent(mouseEvent);
+      clientY: touch.clientY,
+    })
+    canvasRef.value?.dispatchEvent(mouseEvent)
   }
-};
+}
 
 const handleTouchMove = (e: TouchEvent) => {
   if (e.touches.length > 0) {
-    const touch = e.touches[0];
+    const touch = e.touches[0]
     const mouseEvent = new MouseEvent('mousemove', {
       clientX: touch.clientX,
-      clientY: touch.clientY
-    });
-    canvasRef.value?.dispatchEvent(mouseEvent);
+      clientY: touch.clientY,
+    })
+    canvasRef.value?.dispatchEvent(mouseEvent)
   }
-  e.preventDefault();
-};
+  e.preventDefault()
+}
 
 const handleTouchEnd = () => {
-  const mouseEvent = new MouseEvent('mouseup');
-  canvasRef.value?.dispatchEvent(mouseEvent);
-};
+  const mouseEvent = new MouseEvent('mouseup')
+  canvasRef.value?.dispatchEvent(mouseEvent)
+}
 
 // 清空画布
 const clearCanvas = () => {
-  if (!canvasRef.value) return;
+  if (!canvasRef.value) return
 
-  const ctx = canvasRef.value.getContext('2d');
+  const ctx = canvasRef.value.getContext('2d')
   if (ctx) {
-    ctx.clearRect(0, 0, canvasRef.value.width, canvasRef.value.height);
+    ctx.clearRect(0, 0, canvasRef.value.width, canvasRef.value.height)
   }
-};
+}
 
 // 切换可见性
 const toggleVisibility = () => {
   // 通过props传递给父组件处理
-};
+}
 
 // 重置学习
 const resetLearning = () => {
-  clearCanvas();
-  emit('reset-learning');
-};
+  clearCanvas()
+  emit('reset-learning')
+}
 
 // 监听窗口大小变化
 const handleResize = () => {
-  initCanvas();
-};
+  initCanvas()
+}
 
 onMounted(() => {
-  initCanvas();
-  window.addEventListener('resize', handleResize);
-});
+  initCanvas()
+  window.addEventListener('resize', handleResize)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-});
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>

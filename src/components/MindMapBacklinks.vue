@@ -1,25 +1,45 @@
 <template>
   <div class="mindmap-backlinks">
     <!-- 卡片反向链接 -->
-    <div v-if="cardId" class="backlinks-section">
+    <div
+      v-if="cardId"
+      class="backlinks-section"
+    >
       <div class="section-header">
         <h4 class="section-title">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
           </svg>
           脑图引用
         </h4>
         <span class="backlink-count">{{ backlinks.length }}</span>
       </div>
 
-      <div v-if="backlinks.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="empty-icon">
-          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+      <div
+        v-if="backlinks.length === 0"
+        class="empty-state"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="48"
+          height="48"
+          fill="currentColor"
+          class="empty-icon"
+        >
+          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z" />
         </svg>
         <p>暂无脑图引用此卡片</p>
       </div>
 
-      <div v-else class="backlinks-list">
+      <div
+        v-else
+        class="backlinks-list"
+      >
         <div
           v-for="backlink in backlinks"
           :key="`${backlink.mindMapId}-${backlink.nodeId}`"
@@ -27,20 +47,34 @@
           @click="navigateToMindMap(backlink)"
         >
           <div class="backlink-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              fill="currentColor"
+            >
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
           </div>
           <div class="backlink-content">
-            <div class="backlink-name">{{ backlink.mindMapName }}</div>
+            <div class="backlink-name">
+              {{ backlink.mindMapName }}
+            </div>
             <div class="backlink-node">
               <span class="node-label">节点：</span>
               <span class="node-title">{{ backlink.nodeTitle }}</span>
             </div>
-            <div class="backlink-path" v-if="backlink.nodePath.length > 1">
+            <div
+              v-if="backlink.nodePath.length > 1"
+              class="backlink-path"
+            >
               <span class="path-label">路径：</span>
               <span class="path-items">
-                <span v-for="(item, idx) in backlink.nodePath.slice(0, -1)" :key="idx" class="path-item">
+                <span
+                  v-for="(item, idx) in backlink.nodePath.slice(0, -1)"
+                  :key="idx"
+                  class="path-item"
+                >
                   {{ item }}
                   <span class="path-separator">/</span>
                 </span>
@@ -48,8 +82,13 @@
             </div>
           </div>
           <div class="backlink-action">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="currentColor"
+            >
+              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
             </svg>
           </div>
         </div>
@@ -57,35 +96,67 @@
     </div>
 
     <!-- 节点反向链接（显示哪些卡片关联了这个节点） -->
-    <div v-if="mindMapId && nodeId" class="node-backlinks-section">
+    <div
+      v-if="mindMapId && nodeId"
+      class="node-backlinks-section"
+    >
       <div class="section-header">
         <h4 class="section-title">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+          <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+          >
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
           </svg>
           关联的卡片
         </h4>
         <span class="backlink-count">{{ nodeCards.length }}</span>
       </div>
 
-      <div v-if="nodeCards.length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor" class="empty-icon">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+      <div
+        v-if="nodeCards.length === 0"
+        class="empty-state"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="48"
+          height="48"
+          fill="currentColor"
+          class="empty-icon"
+        >
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
         </svg>
         <p>暂无卡片关联到此节点</p>
-        <sy-button @click="showCardSelector = true" size="small" type="primary">
+        <SyButton
+          size="small"
+          type="primary"
+          @click="showCardSelector = true"
+        >
           关联卡片
-        </sy-button>
+        </SyButton>
       </div>
 
-      <div v-else class="node-cards-list">
+      <div
+        v-else
+        class="node-cards-list"
+      >
         <div class="cards-header">
-          <sy-button @click="showCardSelector = true" size="small" icon="plus">
+          <SyButton
+            size="small"
+            icon="plus"
+            @click="showCardSelector = true"
+          >
             添加关联
-          </sy-button>
-          <sy-button @click="showManageCards = true" size="small" icon="edit">
+          </SyButton>
+          <SyButton
+            size="small"
+            icon="edit"
+            @click="showManageCards = true"
+          >
             管理
-          </sy-button>
+          </SyButton>
         </div>
 
         <div
@@ -94,15 +165,32 @@
           class="card-item"
         >
           <div class="card-content">
-            <div class="card-text">{{ card.content.slice(0, 80) }}{{ card.content.length > 80 ? '...' : '' }}</div>
+            <div class="card-text">
+              {{ card.content.slice(0, 80) }}{{ card.content.length > 80 ? '...' : '' }}
+            </div>
             <div class="card-meta">
-              <span class="card-tag" v-if="card.tags?.length">{{ card.tags[0] }}</span>
-              <span class="card-status" :class="card.status">{{ formatStatus(card.status) }}</span>
+              <span
+                v-if="card.tags?.length"
+                class="card-tag"
+              >{{ card.tags[0] }}</span>
+              <span
+                class="card-status"
+                :class="card.status"
+              >{{ formatStatus(card.status) }}</span>
             </div>
           </div>
-          <button @click="removeCardAssociation(card.id)" class="remove-card" title="移除关联">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          <button
+            class="remove-card"
+            title="移除关联"
+            @click="removeCardAssociation(card.id)"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="currentColor"
+            >
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
           </button>
         </div>
@@ -110,14 +198,23 @@
     </div>
 
     <!-- 卡片选择器 -->
-    <div v-if="showCardSelector" class="dialog-overlay" @click.self="showCardSelector = false">
+    <div
+      v-if="showCardSelector"
+      class="dialog-overlay"
+      @click.self="showCardSelector = false"
+    >
       <div class="dialog card-selector-dialog">
         <div class="dialog-header">
           <h3>选择要关联的卡片</h3>
-          <button @click="showCardSelector = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showCardSelector = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
-          <sy-input
+          <SyInput
             v-model="cardSearchQuery"
             placeholder="搜索卡片..."
             prefix-icon="search"
@@ -131,31 +228,54 @@
               @click="toggleCardSelection(card.id)"
             >
               <div class="card-option-content">
-                <div class="card-option-text">{{ card.content.slice(0, 60) }}{{ card.content.length > 60 ? '...' : '' }}</div>
+                <div class="card-option-text">
+                  {{ card.content.slice(0, 60) }}{{ card.content.length > 60 ? '...' : '' }}
+                </div>
                 <div class="card-option-meta">
-                  <span class="card-tag" v-if="card.tags?.length">{{ card.tags[0] }}</span>
-                  <span class="card-status" :class="card.status">{{ formatStatus(card.status) }}</span>
+                  <span
+                    v-if="card.tags?.length"
+                    class="card-tag"
+                  >{{ card.tags[0] }}</span>
+                  <span
+                    class="card-status"
+                    :class="card.status"
+                  >{{ formatStatus(card.status) }}</span>
                 </div>
               </div>
-              <sy-checkbox :modelValue="selectedCardIds.includes(card.id)" />
+              <SyCheckbox :modelValue="selectedCardIds.includes(card.id)" />
             </div>
           </div>
         </div>
         <div class="dialog-footer">
-          <sy-button @click="showCardSelector = false">取消</sy-button>
-          <sy-button @click="confirmCardSelection" type="primary" :disabled="selectedCardIds.length === 0">
+          <SyButton @click="showCardSelector = false">
+            取消
+          </SyButton>
+          <SyButton
+            type="primary"
+            :disabled="selectedCardIds.length === 0"
+            @click="confirmCardSelection"
+          >
             确认关联 ({{ selectedCardIds.length }})
-          </sy-button>
+          </SyButton>
         </div>
       </div>
     </div>
 
     <!-- 管理卡片对话框 -->
-    <div v-if="showManageCards" class="dialog-overlay" @click.self="showManageCards = false">
+    <div
+      v-if="showManageCards"
+      class="dialog-overlay"
+      @click.self="showManageCards = false"
+    >
       <div class="dialog manage-cards-dialog">
         <div class="dialog-header">
           <h3>管理关联卡片</h3>
-          <button @click="showManageCards = false" class="close-btn">×</button>
+          <button
+            class="close-btn"
+            @click="showManageCards = false"
+          >
+            ×
+          </button>
         </div>
         <div class="dialog-body">
           <div class="selected-cards-list">
@@ -164,21 +284,29 @@
               :key="card.id"
               class="selected-card-item"
             >
-              <sy-checkbox
+              <SyCheckbox
                 :modelValue="!cardsToRemove.includes(card.id)"
                 @change="toggleCardToRemove(card.id)"
               />
               <div class="card-content">
-                <div class="card-text">{{ card.content.slice(0, 60) }}{{ card.content.length > 60 ? '...' : '' }}</div>
+                <div class="card-text">
+                  {{ card.content.slice(0, 60) }}{{ card.content.length > 60 ? '...' : '' }}
+                </div>
               </div>
             </div>
           </div>
         </div>
         <div class="dialog-footer">
-          <sy-button @click="showManageCards = false">取消</sy-button>
-          <sy-button @click="confirmRemoveCards" type="danger" :disabled="cardsToRemove.length === 0">
+          <SyButton @click="showManageCards = false">
+            取消
+          </SyButton>
+          <SyButton
+            type="danger"
+            :disabled="cardsToRemove.length === 0"
+            @click="confirmRemoveCards"
+          >
             移除选中 ({{ cardsToRemove.length }})
-          </sy-button>
+          </SyButton>
         </div>
       </div>
     </div>
@@ -186,187 +314,198 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import SyButton from './SiyuanTheme/SyButton.vue';
-import SyInput from './SiyuanTheme/SyInput.vue';
-import SyCheckbox from './SiyuanTheme/SyCheckbox.vue';
-import { mindmapEnhanceService, type MindMapBacklink } from '../services/mindmapEnhanceService';
-import type { Card } from '../types/card';
-import { cardService } from '../services/cardService';
-import { studySetService } from '../services/studySetService';
+import type { MindMapBacklink } from '../services/mindmapEnhanceService'
+import type { Card } from '../types/card'
+import {
+  computed,
+  ref,
+  watch,
+} from 'vue'
+import { cardService } from '../services/cardService'
+import {
+
+  mindmapEnhanceService,
+} from '../services/mindmapEnhanceService'
+import { studySetService } from '../services/studySetService'
+import SyButton from './SiyuanTheme/SyButton.vue'
+import SyCheckbox from './SiyuanTheme/SyCheckbox.vue'
+import SyInput from './SiyuanTheme/SyInput.vue'
 
 const props = defineProps<{
-  cardId?: string;
-  mindMapId?: string;
-  nodeId?: string;
-  studySetId?: string;
-}>();
+  cardId?: string
+  mindMapId?: string
+  nodeId?: string
+  studySetId?: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'navigate', data: { type: 'mindmap'; mindMapId: string; nodeId?: string }): void;
-  (e: 'update'): void;
-}>();
+  (e: 'navigate', data: { type: 'mindmap', mindMapId: string, nodeId?: string }): void
+  (e: 'update'): void
+}>()
 
 // 反向链接数据
-const backlinks = ref<MindMapBacklink[]>([]);
-const nodeCards = ref<Card[]>([]);
+const backlinks = ref<MindMapBacklink[]>([])
+const nodeCards = ref<Card[]>([])
 
 // 卡片选择器
-const showCardSelector = ref(false);
-const showManageCards = ref(false);
-const cardSearchQuery = ref('');
-const availableCards = ref<Card[]>([]);
-const selectedCardIds = ref<string[]>([]);
-const cardsToRemove = ref<string[]>([]);
+const showCardSelector = ref(false)
+const showManageCards = ref(false)
+const cardSearchQuery = ref('')
+const availableCards = ref<Card[]>([])
+const selectedCardIds = ref<string[]>([])
+const cardsToRemove = ref<string[]>([])
 
 // 加载卡片反向链接
 const loadCardBacklinks = async () => {
-  if (!props.cardId) return;
+  if (!props.cardId) return
 
-  backlinks.value = await mindmapEnhanceService.getCardBacklinks(props.cardId);
-};
+  backlinks.value = await mindmapEnhanceService.getCardBacklinks(props.cardId)
+}
 
 // 加载节点关联的卡片
 const loadNodeCards = async () => {
-  if (!props.mindMapId || !props.nodeId) return;
+  if (!props.mindMapId || !props.nodeId) return
 
   nodeCards.value = await mindmapEnhanceService.getNodeBacklinks(
     props.mindMapId,
-    props.nodeId
-  );
-};
+    props.nodeId,
+  )
+}
 
 // 加载可用卡片列表
 const loadAvailableCards = async () => {
-  if (!props.studySetId) return;
+  if (!props.studySetId) return
 
   try {
-    const studySet = await studySetService.getStudySet(props.studySetId);
-    availableCards.value = studySet.cardIds.map(id => ({
+    const studySet = await studySetService.getStudySet(props.studySetId)
+    availableCards.value = studySet.cardIds.map((id) => ({
       id,
       type: 'card',
       content: '',
-      sourceLocation: { docId: '', blockId: '' },
+      sourceLocation: {
+        docId: '',
+        blockId: '',
+      },
       studySetId: props.studySetId!,
       tags: [],
       status: 'new',
       difficulty: 1,
       createdAt: Date.now(),
-      updatedAt: Date.now()
-    }));
+      updatedAt: Date.now(),
+    }))
 
     // 查询卡片详情
     for (const card of availableCards.value) {
       try {
-        const block = await cardService.getCard(card.id);
+        const block = await cardService.getCard(card.id)
         if (block) {
-          card.content = block.content || '';
-          card.tags = block.tags || [];
-          card.status = block.status || 'new';
+          card.content = block.content || ''
+          card.tags = block.tags || []
+          card.status = block.status || 'new'
         }
       } catch (e) {
-        console.error('[loadAvailableCards] 加载卡片失败:', e);
+        console.error('[loadAvailableCards] 加载卡片失败:', e)
       }
     }
   } catch (error) {
-    console.error('[loadAvailableCards] 加载卡片列表失败:', error);
+    console.error('[loadAvailableCards] 加载卡片列表失败:', error)
   }
-};
+}
 
 // 过滤卡片
 const filteredCards = computed(() => {
-  if (!cardSearchQuery.value) return availableCards.value;
+  if (!cardSearchQuery.value) return availableCards.value
 
-  const query = cardSearchQuery.value.toLowerCase();
-  return availableCards.value.filter(card =>
-    card.content.toLowerCase().includes(query) ||
-    card.tags?.some(tag => tag.toLowerCase().includes(query))
-  );
-});
+  const query = cardSearchQuery.value.toLowerCase()
+  return availableCards.value.filter((card) =>
+    card.content.toLowerCase().includes(query)
+    || card.tags?.some((tag) => tag.toLowerCase().includes(query)),
+  )
+})
 
 // 格式化状态显示
 const formatStatus = (status: string) => {
   const map: Record<string, string> = {
-    'new': '新学',
-    'learning': '学习中',
-    'review': '待复习',
-    'suspended': '已暂停'
-  };
-  return map[status] || status;
-};
+    new: '新学',
+    learning: '学习中',
+    review: '待复习',
+    suspended: '已暂停',
+  }
+  return map[status] || status
+}
 
 // 跳转到脑图
 const navigateToMindMap = (backlink: MindMapBacklink) => {
   emit('navigate', {
     type: 'mindmap',
     mindMapId: backlink.mindMapId,
-    nodeId: backlink.nodeId
-  });
-};
+    nodeId: backlink.nodeId,
+  })
+}
 
 // 切换卡片选择
 const toggleCardSelection = (cardId: string) => {
-  const index = selectedCardIds.value.indexOf(cardId);
+  const index = selectedCardIds.value.indexOf(cardId)
   if (index > -1) {
-    selectedCardIds.value.splice(index, 1);
+    selectedCardIds.value.splice(index, 1)
   } else {
-    selectedCardIds.value.push(cardId);
+    selectedCardIds.value.push(cardId)
   }
-};
+}
 
 // 确认卡片选择
 const confirmCardSelection = async () => {
-  if (!props.mindMapId || !props.nodeId) return;
+  if (!props.mindMapId || !props.nodeId) return
 
   for (const cardId of selectedCardIds.value) {
-    await mindmapEnhanceService.addNodeCard(props.mindMapId, props.nodeId, cardId);
+    await mindmapEnhanceService.addNodeCard(props.mindMapId, props.nodeId, cardId)
   }
 
-  showCardSelector.value = false;
-  selectedCardIds.value = [];
-  await loadNodeCards();
-  emit('update');
-};
+  showCardSelector.value = false
+  selectedCardIds.value = []
+  await loadNodeCards()
+  emit('update')
+}
 
 // 移除卡片关联
 const removeCardAssociation = async (cardId: string) => {
-  if (!props.mindMapId || !props.nodeId) return;
+  if (!props.mindMapId || !props.nodeId) return
 
   if (confirm('确定要移除这个卡片的关联吗？')) {
-    await mindmapEnhanceService.removeNodeCard(props.mindMapId, props.nodeId, cardId);
-    await loadNodeCards();
-    emit('update');
+    await mindmapEnhanceService.removeNodeCard(props.mindMapId, props.nodeId, cardId)
+    await loadNodeCards()
+    emit('update')
   }
-};
+}
 
 // 切换移除选择
 const toggleCardToRemove = (cardId: string) => {
-  const index = cardsToRemove.value.indexOf(cardId);
+  const index = cardsToRemove.value.indexOf(cardId)
   if (index > -1) {
-    cardsToRemove.value.splice(index, 1);
+    cardsToRemove.value.splice(index, 1)
   } else {
-    cardsToRemove.value.push(cardId);
+    cardsToRemove.value.push(cardId)
   }
-};
+}
 
 // 确认移除卡片
 const confirmRemoveCards = async () => {
-  if (!props.mindMapId || !props.nodeId) return;
+  if (!props.mindMapId || !props.nodeId) return
 
   for (const cardId of cardsToRemove.value) {
-    await mindmapEnhanceService.removeNodeCard(props.mindMapId, props.nodeId, cardId);
+    await mindmapEnhanceService.removeNodeCard(props.mindMapId, props.nodeId, cardId)
   }
 
-  showManageCards.value = false;
-  cardsToRemove.value = [];
-  await loadNodeCards();
-  emit('update');
-};
+  showManageCards.value = false
+  cardsToRemove.value = []
+  await loadNodeCards()
+  emit('update')
+}
 
 // 监听属性变化
-watch(() => props.cardId, loadCardBacklinks, { immediate: true });
-watch([() => props.mindMapId, () => props.nodeId], loadNodeCards, { immediate: true });
-watch(() => props.studySetId, loadAvailableCards, { immediate: true });
+watch(() => props.cardId, loadCardBacklinks, { immediate: true })
+watch([() => props.mindMapId, () => props.nodeId], loadNodeCards, { immediate: true })
+watch(() => props.studySetId, loadAvailableCards, { immediate: true })
 </script>
 
 <style scoped lang="scss">

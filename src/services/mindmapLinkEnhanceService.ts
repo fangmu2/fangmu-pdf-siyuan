@@ -5,14 +5,17 @@
 
 import type {
   CrossBranchLink,
-  RemoteKnowledgeLink,
-  NodeLinkRelation,
-  ViewportFocusConfig,
-  LayoutSuggestion,
+  FreeMindMapEdge,
   FreeMindMapNode,
-  FreeMindMapEdge
+  LayoutSuggestion,
+  NodeLinkRelation,
+  RemoteKnowledgeLink,
+  ViewportFocusConfig,
 } from '@/types/mindmapFree'
-import { getBlockAttrs, setBlockAttrs } from '@/api'
+import {
+  getBlockAttrs,
+  setBlockAttrs,
+} from '@/api'
 
 /**
  * 思源块属性键名
@@ -57,7 +60,7 @@ export async function createCrossBranchLink(
   sourceNodeId: string,
   targetNodeId: string,
   linkType: 'relation' | 'seeAlso' | 'contrast' | 'cause' | 'example' = 'relation',
-  label?: string
+  label?: string,
 ): Promise<CrossBranchLink | null> {
   // 验证块 ID
   if (!isValidBlockId(mindMapBlockId)) {
@@ -77,9 +80,9 @@ export async function createCrossBranchLink(
         stroke: getLinkColorByType(linkType),
         strokeWidth: 2,
         hasArrow: true,
-        arrowColor: getLinkColorByType(linkType)
+        arrowColor: getLinkColorByType(linkType),
       },
-      createdAt: now()
+      createdAt: now(),
     }
 
     // 保存到思源块属性
@@ -127,7 +130,7 @@ export async function getCrossBranchLinks(mindMapBlockId: string): Promise<Cross
  */
 export async function deleteCrossBranchLink(
   mindMapBlockId: string,
-  linkId: string
+  linkId: string,
 ): Promise<boolean> {
   // 验证块 ID
   if (!isValidBlockId(mindMapBlockId)) {
@@ -137,10 +140,10 @@ export async function deleteCrossBranchLink(
 
   try {
     const links = await getCrossBranchLinks(mindMapBlockId)
-    const filteredLinks = links.filter(l => l.id !== linkId)
+    const filteredLinks = links.filter((l) => l.id !== linkId)
 
     await setBlockAttrs(mindMapBlockId, {
-      [CROSS_LINKS_KEY]: JSON.stringify(filteredLinks)
+      [CROSS_LINKS_KEY]: JSON.stringify(filteredLinks),
     })
 
     return true
@@ -155,11 +158,11 @@ export async function deleteCrossBranchLink(
  */
 function getLinkColorByType(type: string): string {
   const colors: Record<string, string> = {
-    relation: '#409eff',    // 蓝色 - 关联
-    seeAlso: '#67c23a',     // 绿色 - 参见
-    contrast: '#e6a23c',    // 橙色 - 对比
-    cause: '#f56c6c',       // 红色 - 因果
-    example: '#909399'      // 灰色 - 示例
+    relation: '#409eff', // 蓝色 - 关联
+    seeAlso: '#67c23a', // 绿色 - 参见
+    contrast: '#e6a23c', // 橙色 - 对比
+    cause: '#f56c6c', // 红色 - 因果
+    example: '#909399', // 灰色 - 示例
   }
   return colors[type] || '#409eff'
 }
@@ -172,7 +175,7 @@ async function saveCrossLinksToBlock(mindMapBlockId: string, link: CrossBranchLi
   links.push(link)
 
   await setBlockAttrs(mindMapBlockId, {
-    [CROSS_LINKS_KEY]: JSON.stringify(links)
+    [CROSS_LINKS_KEY]: JSON.stringify(links),
   })
 }
 
@@ -196,7 +199,7 @@ export async function createRemoteKnowledgeLink(
   targetType: 'node' | 'annotation' | 'document' | 'external',
   linkType: 'reference' | 'relation' | 'seeAlso' | 'quote' = 'relation',
   description?: string,
-  targetTitle?: string
+  targetTitle?: string,
 ): Promise<RemoteKnowledgeLink | null> {
   // 验证块 ID
   if (!isValidBlockId(mindMapBlockId)) {
@@ -213,7 +216,7 @@ export async function createRemoteKnowledgeLink(
       linkType,
       description,
       targetTitle,
-      createdAt: now()
+      createdAt: now(),
     }
 
     // 保存到思源块属性
@@ -261,7 +264,7 @@ export async function getRemoteKnowledgeLinks(mindMapBlockId: string): Promise<R
  */
 export async function deleteRemoteKnowledgeLink(
   mindMapBlockId: string,
-  linkId: string
+  linkId: string,
 ): Promise<boolean> {
   // 验证块 ID
   if (!isValidBlockId(mindMapBlockId)) {
@@ -271,10 +274,10 @@ export async function deleteRemoteKnowledgeLink(
 
   try {
     const links = await getRemoteKnowledgeLinks(mindMapBlockId)
-    const filteredLinks = links.filter(l => l.id !== linkId)
+    const filteredLinks = links.filter((l) => l.id !== linkId)
 
     await setBlockAttrs(mindMapBlockId, {
-      [REMOTE_LINKS_KEY]: JSON.stringify(filteredLinks)
+      [REMOTE_LINKS_KEY]: JSON.stringify(filteredLinks),
     })
 
     return true
@@ -292,7 +295,7 @@ async function saveRemoteLinksToBlock(mindMapBlockId: string, link: RemoteKnowle
   links.push(link)
 
   await setBlockAttrs(mindMapBlockId, {
-    [REMOTE_LINKS_KEY]: JSON.stringify(links)
+    [REMOTE_LINKS_KEY]: JSON.stringify(links),
   })
 }
 
@@ -312,7 +315,7 @@ export function analyzeNodeLinks(
   nodes: FreeMindMapNode[],
   edges: FreeMindMapEdge[],
   crossLinks: CrossBranchLink[],
-  remoteLinks: RemoteKnowledgeLink[]
+  remoteLinks: RemoteKnowledgeLink[],
 ): NodeLinkRelation {
   // 防护：检查数组是否有效
   const safeNodes = nodes || []
@@ -322,24 +325,24 @@ export function analyzeNodeLinks(
 
   // 直接关联（通过 edges）
   const directLinks = safeEdges
-    .filter(e => e.source === nodeId || e.target === nodeId)
-    .map(e => e.source === nodeId ? e.target : e.source)
+    .filter((e) => e.source === nodeId || e.target === nodeId)
+    .map((e) => e.source === nodeId ? e.target : e.source)
 
   // 跨分支关联
   const crossLinksNodeIds = safeCrossLinks
-    .filter(l => l.sourceNodeId === nodeId || l.targetNodeId === nodeId)
-    .map(l => l.sourceNodeId === nodeId ? l.targetNodeId : l.sourceNodeId)
+    .filter((l) => l.sourceNodeId === nodeId || l.targetNodeId === nodeId)
+    .map((l) => l.sourceNodeId === nodeId ? l.targetNodeId : l.sourceNodeId)
 
   // 远程知识联系
-  const nodeRemoteLinks = safeRemoteLinks.filter(l => l.sourceNodeId === nodeId)
+  const nodeRemoteLinks = safeRemoteLinks.filter((l) => l.sourceNodeId === nodeId)
 
   // 父节点
-  const parentNode = safeNodes.find(n => n.id === safeNodes.find(node => node.id === nodeId)?.parentId)
+  const parentNode = safeNodes.find((n) => n.id === safeNodes.find((node) => node.id === nodeId)?.parentId)
 
   // 子节点
   const childIds = safeNodes
-    .filter(n => n.parentId === nodeId)
-    .map(n => n.id)
+    .filter((n) => n.parentId === nodeId)
+    .map((n) => n.id)
 
   return {
     nodeId,
@@ -347,7 +350,7 @@ export function analyzeNodeLinks(
     crossLinks: crossLinksNodeIds,
     remoteLinks: nodeRemoteLinks,
     parentId: parentNode?.id,
-    childIds
+    childIds,
   }
 }
 
@@ -365,14 +368,14 @@ export function createViewportFocusConfig(
   currentZoom?: number,
   highlight: boolean = true,
   highlightColor?: string,
-  duration: number = 500
+  duration: number = 500,
 ): ViewportFocusConfig {
   return {
     targetNodeId,
     zoom: currentZoom || 1.2,
     highlight,
     highlightColor: highlightColor || '#409eff',
-    duration
+    duration,
   }
 }
 
@@ -384,14 +387,14 @@ export function createViewportFocusConfig(
  */
 export function getNodePosition(
   nodeId: string,
-  nodes: FreeMindMapNode[]
-): { x: number; y: number } | null {
+  nodes: FreeMindMapNode[],
+): { x: number, y: number } | null {
   // 防护：检查 nodes 是否有效
   if (!nodes || !Array.isArray(nodes)) {
     return null
   }
 
-  const node = nodes.find(n => n.id === nodeId)
+  const node = nodes.find((n) => n.id === nodeId)
   if (!node) return null
 
   return node.position
@@ -407,7 +410,7 @@ export function getNodePosition(
  */
 export function generateLayoutSuggestions(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
+  edges: FreeMindMapEdge[],
 ): LayoutSuggestion[] {
   // 防护：检查输入是否有效
   if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
@@ -426,16 +429,16 @@ export function generateLayoutSuggestions(
       id: generateId(),
       type: 'cluster',
       description: `发现 ${clusters.length} 个节点聚类`,
-      nodeIds: clusters.flatMap(c => c.nodeIds),
+      nodeIds: clusters.flatMap((c) => c.nodeIds),
       layoutConfig: {
         direction: 'horizontal',
         groups: clusters.map((c, i) => ({
           groupId: `cluster-${i}`,
           nodeIds: c.nodeIds,
-          title: `聚类 ${i + 1}`
-        }))
+          title: `聚类 ${i + 1}`,
+        })),
       },
-      confidence: clusters.length > 1 ? 0.8 : 0.5
+      confidence: clusters.length > 1 ? 0.8 : 0.5,
     })
   }
 
@@ -451,9 +454,9 @@ export function generateLayoutSuggestions(
           nodeIds: seq.nodeIds,
           layoutConfig: {
             direction: seq.direction,
-            rootId: seq.nodeIds[0]
+            rootId: seq.nodeIds[0],
           },
-          confidence: Math.min(0.9, seq.nodeIds.length * 0.15)
+          confidence: Math.min(0.9, seq.nodeIds.length * 0.15),
         })
       }
     }
@@ -469,9 +472,9 @@ export function generateLayoutSuggestions(
       nodeIds: hierarchy.nodeIds,
       layoutConfig: {
         direction: 'vertical',
-        rootId: hierarchy.rootIds[0]
+        rootId: hierarchy.rootIds[0],
       },
-      confidence: 0.7
+      confidence: 0.7,
     })
   }
 
@@ -485,9 +488,9 @@ export function generateLayoutSuggestions(
       nodeIds: radial.nodeIds,
       layoutConfig: {
         direction: 'radial',
-        rootId: radial.centerNodeId
+        rootId: radial.centerNodeId,
       },
-      confidence: radial.connectedNodes / radial.totalNodes
+      confidence: radial.connectedNodes / radial.totalNodes,
     })
   }
 
@@ -497,14 +500,14 @@ export function generateLayoutSuggestions(
 /**
  * 检测节点聚类
  */
-function detectNodeClusters(nodes: FreeMindMapNode[]): { nodeIds: string[]; centroid: { x: number; y: number } }[] {
+function detectNodeClusters(nodes: FreeMindMapNode[]): { nodeIds: string[], centroid: { x: number, y: number } }[] {
   // 防护：检查 nodes 是否有效
   if (!nodes || !Array.isArray(nodes) || nodes.length === 0) {
     return []
   }
 
   // 简单的基于距离的聚类
-  const clusters: { nodeIds: string[]; centroid: { x: number; y: number } }[] = []
+  const clusters: { nodeIds: string[], centroid: { x: number, y: number } }[] = []
   const used = new Set<string>()
 
   for (const node of nodes) {
@@ -512,7 +515,10 @@ function detectNodeClusters(nodes: FreeMindMapNode[]): { nodeIds: string[]; cent
 
     const cluster = {
       nodeIds: [node.id],
-      centroid: { x: node.position.x, y: node.position.y }
+      centroid: {
+        x: node.position.x,
+        y: node.position.y,
+      },
     }
     used.add(node.id)
 
@@ -521,8 +527,8 @@ function detectNodeClusters(nodes: FreeMindMapNode[]): { nodeIds: string[]; cent
       if (used.has(other.id)) continue
 
       const distance = Math.sqrt(
-        Math.pow(other.position.x - node.position.x, 2) +
-        Math.pow(other.position.y - node.position.y, 2)
+        (other.position.x - node.position.x) ** 2
+        + (other.position.y - node.position.y) ** 2,
       )
 
       if (distance < 200) { // 阈值
@@ -546,9 +552,9 @@ function detectNodeClusters(nodes: FreeMindMapNode[]): { nodeIds: string[]; cent
  */
 function detectNodeSequences(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
-): { nodeIds: string[]; direction: 'horizontal' | 'vertical' }[] {
-  const sequences: { nodeIds: string[]; direction: 'horizontal' | 'vertical' }[] = []
+  edges: FreeMindMapEdge[],
+): { nodeIds: string[], direction: 'horizontal' | 'vertical' }[] {
+  const sequences: { nodeIds: string[], direction: 'horizontal' | 'vertical' }[] = []
   const visited = new Set<string>()
 
   // 构建邻接表
@@ -564,14 +570,14 @@ function detectNodeSequences(
   function findPath(startId: string, path: string[]): void {
     if (path.length > 1) {
       // 判断方向
-      const firstNode = nodes.find(n => n.id === path[0])
-      const lastNode = nodes.find(n => n.id === path[path.length - 1])
+      const firstNode = nodes.find((n) => n.id === path[0])
+      const lastNode = nodes.find((n) => n.id === path[path.length - 1])
       if (firstNode && lastNode) {
         const dx = Math.abs(lastNode.position.x - firstNode.position.x)
         const dy = Math.abs(lastNode.position.y - firstNode.position.y)
         sequences.push({
           nodeIds: [...path],
-          direction: dx > dy ? 'horizontal' : 'vertical'
+          direction: dx > dy ? 'horizontal' : 'vertical',
         })
       }
     }
@@ -599,10 +605,10 @@ function detectNodeSequences(
  */
 function detectHierarchy(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
-): { rootIds: string[]; nodeIds: string[] } {
+  edges: FreeMindMapEdge[],
+): { rootIds: string[], nodeIds: string[] } {
   const rootIds: string[] = []
-  const allNodeIds = new Set(nodes.map(n => n.id))
+  const allNodeIds = new Set(nodes.map((n) => n.id))
   const childIds = new Set<string>()
 
   // 找出所有有子节点的节点
@@ -619,7 +625,7 @@ function detectHierarchy(
 
   return {
     rootIds,
-    nodeIds: Array.from(allNodeIds)
+    nodeIds: Array.from(allNodeIds),
   }
 }
 
@@ -628,8 +634,8 @@ function detectHierarchy(
  */
 function detectRadialPattern(
   nodes: FreeMindMapNode[],
-  edges: FreeMindMapEdge[]
-): { centerNodeId: string | null; centerNodeTitle: string; nodeIds: string[]; connectedNodes: number; totalNodes: number } {
+  edges: FreeMindMapEdge[],
+): { centerNodeId: string | null, centerNodeTitle: string, nodeIds: string[], connectedNodes: number, totalNodes: number } {
   // 找出连接数最多的节点
   const connectionCount = new Map<string, number>()
 
@@ -649,10 +655,16 @@ function detectRadialPattern(
   }
 
   if (!centerNodeId || maxConnections < 3) {
-    return { centerNodeId: null, centerNodeTitle: '', nodeIds: [], connectedNodes: 0, totalNodes: nodes.length }
+    return {
+      centerNodeId: null,
+      centerNodeTitle: '',
+      nodeIds: [],
+      connectedNodes: 0,
+      totalNodes: nodes.length,
+    }
   }
 
-  const centerNode = nodes.find(n => n.id === centerNodeId)
+  const centerNode = nodes.find((n) => n.id === centerNodeId)
   const connectedNodeIds = new Set<string>()
 
   // 找出与中心节点直接相连的节点
@@ -666,7 +678,7 @@ function detectRadialPattern(
     centerNodeTitle: centerNode?.data.title || '',
     nodeIds: [centerNodeId, ...Array.from(connectedNodeIds)],
     connectedNodes: connectedNodeIds.size,
-    totalNodes: nodes.length
+    totalNodes: nodes.length,
   }
 }
 
@@ -687,8 +699,8 @@ export function crossLinkToVueFlowEdge(crossLink: CrossBranchLink): Partial<Free
     style: {
       stroke: crossLink.style.stroke,
       strokeWidth: crossLink.style.strokeWidth,
-      strokeDasharray: crossLink.style.strokeDasharray
-    }
+      strokeDasharray: crossLink.style.strokeDasharray,
+    },
   }
 }
 
@@ -702,7 +714,7 @@ export function remoteLinkToVueFlowEdge(remoteLink: RemoteKnowledgeLink): Partia
     reference: '#909399',
     relation: '#409eff',
     seeAlso: '#67c23a',
-    quote: '#e6a23c'
+    quote: '#e6a23c',
   }
 
   return {
@@ -714,7 +726,7 @@ export function remoteLinkToVueFlowEdge(remoteLink: RemoteKnowledgeLink): Partia
     style: {
       stroke: colors[remoteLink.linkType] || '#909399',
       strokeWidth: 1.5,
-      strokeDasharray: '3,3'
-    }
+      strokeDasharray: '3,3',
+    },
   }
 }

@@ -17,15 +17,25 @@
             @click="selectTemplate(template.id)"
             @dblclick="confirmSelection"
           >
-            <div class="card-icon" :style="{ backgroundColor: template.color }">
+            <div
+              class="card-icon"
+              :style="{ backgroundColor: template.color }"
+            >
               <SyIcon :icon="template.icon" />
             </div>
             <div class="card-content">
-              <h4 class="card-title">{{ template.name }}</h4>
-              <p class="card-description">{{ template.description }}</p>
+              <h4 class="card-title">
+                {{ template.name }}
+              </h4>
+              <p class="card-description">
+                {{ template.description }}
+              </p>
               <div class="card-meta">
                 <span class="card-type">{{ getTemplateTypeLabel(template.type) }}</span>
-                <span class="card-usage" v-if="template.usageCount > 0">
+                <span
+                  v-if="template.usageCount > 0"
+                  class="card-usage"
+                >
                   使用 {{ template.usageCount }} 次
                 </span>
               </div>
@@ -35,13 +45,19 @@
       </div>
 
       <!-- 自定义模板 -->
-      <div class="template-section" v-if="customTemplates.length > 0">
+      <div
+        v-if="customTemplates.length > 0"
+        class="template-section"
+      >
         <div class="section-header">
           <h3 class="section-title">
             <SyIcon icon="folder" />
             自定义模板
           </h3>
-          <SyButton size="small" @click="showImportDialog = true">
+          <SyButton
+            size="small"
+            @click="showImportDialog = true"
+          >
             <SyIcon icon="upload" />
             导入
           </SyButton>
@@ -56,22 +72,39 @@
             @dblclick="confirmSelection"
           >
             <div class="card-actions">
-              <SyButton size="small" @click.stop="editTemplate(template)">
+              <SyButton
+                size="small"
+                @click.stop="editTemplate(template)"
+              >
                 <SyIcon icon="edit" />
               </SyButton>
-              <SyButton size="small" variant="danger" @click.stop="deleteTemplate(template.id)">
+              <SyButton
+                size="small"
+                variant="danger"
+                @click.stop="deleteTemplate(template.id)"
+              >
                 <SyIcon icon="delete" />
               </SyButton>
             </div>
-            <div class="card-icon" :style="{ backgroundColor: template.color }">
+            <div
+              class="card-icon"
+              :style="{ backgroundColor: template.color }"
+            >
               <SyIcon :icon="template.icon" />
             </div>
             <div class="card-content">
-              <h4 class="card-title">{{ template.name }}</h4>
-              <p class="card-description">{{ template.description }}</p>
+              <h4 class="card-title">
+                {{ template.name }}
+              </h4>
+              <p class="card-description">
+                {{ template.description }}
+              </p>
               <div class="card-meta">
                 <span class="card-type">{{ getTemplateTypeLabel(template.type) }}</span>
-                <span class="card-usage" v-if="template.usageCount > 0">
+                <span
+                  v-if="template.usageCount > 0"
+                  class="card-usage"
+                >
                   使用 {{ template.usageCount }} 次
                 </span>
               </div>
@@ -81,14 +114,23 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="allTemplates.length === 0" class="empty-state">
-        <SyIcon icon="description" size="64" />
+      <div
+        v-if="allTemplates.length === 0"
+        class="empty-state"
+      >
+        <SyIcon
+          icon="description"
+          size="64"
+        />
         <p>暂无模板</p>
       </div>
     </div>
 
     <!-- 预览面板 -->
-    <div class="preview-panel" v-if="selectedTemplate">
+    <div
+      v-if="selectedTemplate"
+      class="preview-panel"
+    >
       <h4>模板预览</h4>
       <div class="preview-content">
         <div class="preview-nodes">
@@ -113,8 +155,14 @@
         从当前脑图创建模板
       </SyButton>
       <div class="action-spacer"></div>
-      <SyButton @click="handleCancel">取消</SyButton>
-      <SyButton type="primary" @click="confirmSelection" :disabled="!selectedTemplateId">
+      <SyButton @click="handleCancel">
+        取消
+      </SyButton>
+      <SyButton
+        type="primary"
+        :disabled="!selectedTemplateId"
+        @click="confirmSelection"
+      >
         <SyIcon icon="check" />
         使用模板
       </SyButton>
@@ -129,28 +177,52 @@
       <div class="create-form">
         <div class="form-item">
           <label>模板名称</label>
-          <SyInput v-model="newTemplate.name" placeholder="输入模板名称" />
+          <SyInput
+            v-model="newTemplate.name"
+            placeholder="输入模板名称"
+          />
         </div>
         <div class="form-item">
           <label>描述</label>
-          <SyTextarea v-model="newTemplate.description" placeholder="模板描述" :rows="3" />
+          <SyTextarea
+            v-model="newTemplate.description"
+            placeholder="模板描述"
+            :rows="3"
+          />
         </div>
         <div class="form-item">
           <label>类型</label>
-          <SySelect v-model="newTemplate.type" :options="templateTypeOptions" />
+          <SySelect
+            v-model="newTemplate.type"
+            :options="templateTypeOptions"
+          />
         </div>
         <div class="form-item">
           <label>颜色</label>
-          <input type="color" v-model="newTemplate.color" class="color-picker" />
+          <input
+            v-model="newTemplate.color"
+            type="color"
+            class="color-picker"
+          />
         </div>
         <div class="form-item">
           <label>图标</label>
-          <SyInput v-model="newTemplate.icon" placeholder="Material Icons 名称" />
+          <SyInput
+            v-model="newTemplate.icon"
+            placeholder="Material Icons 名称"
+          />
         </div>
       </div>
       <template #footer>
-        <SyButton @click="showCreateDialog = false">取消</SyButton>
-        <SyButton type="primary" @click="createTemplate">创建</SyButton>
+        <SyButton @click="showCreateDialog = false">
+          取消
+        </SyButton>
+        <SyButton
+          type="primary"
+          @click="createTemplate"
+        >
+          创建
+        </SyButton>
       </template>
     </Dialog>
 
@@ -171,72 +243,119 @@
         </div>
       </div>
       <template #footer>
-        <SyButton @click="showImportDialog = false">取消</SyButton>
-        <SyButton type="primary" @click="importTemplate">导入</SyButton>
+        <SyButton @click="showImportDialog = false">
+          取消
+        </SyButton>
+        <SyButton
+          type="primary"
+          @click="importTemplate"
+        >
+          导入
+        </SyButton>
       </template>
     </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { mindmapTemplateService, type MindMapTemplate, type MindMapTemplateType } from '@/services/mindmapTemplateService';
-import { mindmapVersionService } from '@/services/mindmapVersionService';
-import type { MindMapNode } from '@/types/mindmap';
-import SyButton from './SiyuanTheme/SyButton.vue';
-import SyIcon from './SiyuanTheme/SyIcon.vue';
-import SyInput from './SiyuanTheme/SyInput.vue';
-import SyTextarea from './SiyuanTheme/SyTextarea.vue';
-import SySelect from './SiyuanTheme/SySelect.vue';
-import Dialog from './SiyuanTheme/SyDialog.vue';
-import MindMapNodePreview from './MindMapNodePreview.vue';
+import type {
+  MindMapTemplate,
+  MindMapTemplateType,
+} from '@/services/mindmapTemplateService'
+import type { MindMapNode } from '@/types/mindmap'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
+import {
 
+  mindmapTemplateService,
+
+} from '@/services/mindmapTemplateService'
+import MindMapNodePreview from './MindMapNodePreview.vue'
+import SyButton from './SiyuanTheme/SyButton.vue'
+import Dialog from './SiyuanTheme/SyDialog.vue'
+import SyIcon from './SiyuanTheme/SyIcon.vue'
+import SyInput from './SiyuanTheme/SyInput.vue'
+import SySelect from './SiyuanTheme/SySelect.vue'
+import SyTextarea from './SiyuanTheme/SyTextarea.vue'
+
+// Props & Emit
+const props = defineProps<{
+  currentNodes?: MindMapNode[]
+}>()
+const emit = defineEmits<{
+  apply: [nodes: MindMapNode[]]
+  cancel: []
+}>()
 // 状态
-const systemTemplates = ref<MindMapTemplate[]>([]);
-const customTemplates = ref<MindMapTemplate[]>([]);
-const selectedTemplateId = ref<string>('');
-const showCreateDialog = ref(false);
-const showImportDialog = ref(false);
-const importJson = ref('');
+const systemTemplates = ref<MindMapTemplate[]>([])
+const customTemplates = ref<MindMapTemplate[]>([])
+const selectedTemplateId = ref<string>('')
+const showCreateDialog = ref(false)
+const showImportDialog = ref(false)
+const importJson = ref('')
 
 const newTemplate = ref({
   name: '',
   description: '',
   type: 'custom' as MindMapTemplateType,
   color: '#4CAF50',
-  icon: 'star'
-});
+  icon: 'star',
+})
 
 // 计算属性
-const allTemplates = computed(() => [...systemTemplates.value, ...customTemplates.value]);
+const allTemplates = computed(() => [...systemTemplates.value, ...customTemplates.value])
 
 const selectedTemplate = computed(() =>
-  allTemplates.value.find(t => t.id === selectedTemplateId.value)
-);
+  allTemplates.value.find((t) => t.id === selectedTemplateId.value),
+)
 
 const templateTypeOptions = computed(() => [
-  { label: '大纲型', value: 'outline' },
-  { label: '时间线型', value: 'timeline' },
-  { label: '鱼骨图型', value: 'fishbone' },
-  { label: '概念图型', value: 'concept' },
-  { label: '层级图型', value: 'hierarchy' },
-  { label: '循环图型', value: 'cycle' },
-  { label: '自定义型', value: 'custom' }
-]);
+  {
+    label: '大纲型',
+    value: 'outline',
+  },
+  {
+    label: '时间线型',
+    value: 'timeline',
+  },
+  {
+    label: '鱼骨图型',
+    value: 'fishbone',
+  },
+  {
+    label: '概念图型',
+    value: 'concept',
+  },
+  {
+    label: '层级图型',
+    value: 'hierarchy',
+  },
+  {
+    label: '循环图型',
+    value: 'cycle',
+  },
+  {
+    label: '自定义型',
+    value: 'custom',
+  },
+])
 
 // 生命周期
 onMounted(async () => {
-  await loadTemplates();
-});
+  await loadTemplates()
+})
 
 // 方法
 async function loadTemplates() {
-  systemTemplates.value = mindmapTemplateService.getSystemTemplates();
-  customTemplates.value = await mindmapTemplateService.getCustomTemplates();
+  systemTemplates.value = mindmapTemplateService.getSystemTemplates()
+  customTemplates.value = await mindmapTemplateService.getCustomTemplates()
 }
 
 function selectTemplate(templateId: string) {
-  selectedTemplateId.value = templateId;
+  selectedTemplateId.value = templateId
 }
 
 function getTemplateTypeLabel(type: MindMapTemplateType): string {
@@ -247,52 +366,52 @@ function getTemplateTypeLabel(type: MindMapTemplateType): string {
     concept: '概念图',
     hierarchy: '层级图',
     cycle: '循环图',
-    custom: '自定义'
-  };
-  return labels[type] || type;
+    custom: '自定义',
+  }
+  return labels[type] || type
 }
 
 async function confirmSelection() {
-  if (!selectedTemplateId.value) return;
+  if (!selectedTemplateId.value) return
 
   try {
-    const nodes = await mindmapTemplateService.applyTemplate(selectedTemplateId.value, '');
-    emit('apply', nodes);
+    const nodes = await mindmapTemplateService.applyTemplate(selectedTemplateId.value, '')
+    emit('apply', nodes)
   } catch (error) {
-    console.error('应用模板失败:', error);
+    console.error('应用模板失败:', error)
   }
 }
 
 function handleCancel() {
-  emit('cancel');
+  emit('cancel')
 }
 
 async function createTemplate() {
   if (!newTemplate.value.name) {
-    alert('请输入模板名称');
-    return;
+    alert('请输入模板名称')
+    return
   }
 
   try {
     // 从父组件获取当前脑图节点
-    const currentNodes = props.currentNodes || [];
+    const currentNodes = props.currentNodes || []
     await mindmapTemplateService.createTemplateFromMindMap(
       newTemplate.value.name,
       newTemplate.value.description,
       currentNodes,
-      newTemplate.value.type
-    );
-    await loadTemplates();
-    showCreateDialog.value = false;
+      newTemplate.value.type,
+    )
+    await loadTemplates()
+    showCreateDialog.value = false
     newTemplate.value = {
       name: '',
       description: '',
       type: 'custom',
       color: '#4CAF50',
-      icon: 'star'
-    };
+      icon: 'star',
+    }
   } catch (error) {
-    console.error('创建模板失败:', error);
+    console.error('创建模板失败:', error)
   }
 }
 
@@ -302,44 +421,35 @@ async function editTemplate(template: MindMapTemplate) {
     description: template.description,
     type: template.type,
     color: template.color,
-    icon: template.icon
-  };
-  selectedTemplateId.value = template.id;
-  showCreateDialog.value = true;
+    icon: template.icon,
+  }
+  selectedTemplateId.value = template.id
+  showCreateDialog.value = true
 }
 
 async function deleteTemplate(templateId: string) {
-  if (!confirm('确定要删除此模板吗？')) return;
+  if (!confirm('确定要删除此模板吗？')) return
 
-  await mindmapTemplateService.deleteCustomTemplate(templateId);
-  await loadTemplates();
+  await mindmapTemplateService.deleteCustomTemplate(templateId)
+  await loadTemplates()
 }
 
 async function importTemplate() {
   if (!importJson.value.trim()) {
-    alert('请输入模板 JSON');
-    return;
+    alert('请输入模板 JSON')
+    return
   }
 
   try {
-    await mindmapTemplateService.importTemplate(importJson.value);
-    await loadTemplates();
-    showImportDialog.value = false;
-    importJson.value = '';
+    await mindmapTemplateService.importTemplate(importJson.value)
+    await loadTemplates()
+    showImportDialog.value = false
+    importJson.value = ''
   } catch (error) {
-    alert('导入失败：' + (error as Error).message);
+    alert(`导入失败：${(error as Error).message}`)
   }
 }
 
-// Props & Emit
-const props = defineProps<{
-  currentNodes?: MindMapNode[];
-}>();
-
-const emit = defineEmits<{
-  apply: [nodes: MindMapNode[]];
-  cancel: [];
-}>();
 </script>
 
 <style scoped lang="scss">

@@ -2,18 +2,25 @@
  * PDF 跳转服务测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type { PDFLocation } from '../../services/pdfJumpService'
 import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
+import {
+  extractPDFLocationFromNode,
   jumpToPDF,
+
   queryPDFFromAnnotation,
   queryPDFFromCard,
-  extractPDFLocationFromNode,
-  type PDFLocation
 } from '../../services/pdfJumpService'
 
 // Mock postApi
 vi.mock('@/api/siyuanApi', () => ({
-  postApi: vi.fn()
+  postApi: vi.fn(),
 }))
 
 const { postApi } = await import('@/api/siyuanApi')
@@ -31,8 +38,8 @@ describe('pdfJumpService', () => {
         type: 'NodeTextMark',
         content: '测试标注内容',
         ial: {
-          'file-annotation-ref': 'assets/test.pdf?path=/data/assets/test.pdf&page=5&rect=100,200,300,400'
-        }
+          'file-annotation-ref': 'assets/test.pdf?path=/data/assets/test.pdf&page=5&rect=100,200,300,400',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -43,7 +50,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/test.pdf',
         page: 5,
         rect: [100, 200, 300, 400],
-        blockId: mockAnnotationId
+        blockId: mockAnnotationId,
       })
       expect(postApi).toHaveBeenCalledWith('/api/block/getBlock', { id: mockAnnotationId })
     })
@@ -57,8 +64,8 @@ describe('pdfJumpService', () => {
         ial: {
           'custom-annotation-pdf-path': '/data/assets/custom.pdf',
           'custom-annotation-page': '10',
-          'custom-annotation-rect': '[50,100,200,300]'
-        }
+          'custom-annotation-rect': '[50,100,200,300]',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -69,7 +76,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/custom.pdf',
         page: 10,
         rect: [50, 100, 200, 300],
-        blockId: mockAnnotationId
+        blockId: mockAnnotationId,
       })
     })
 
@@ -86,7 +93,7 @@ describe('pdfJumpService', () => {
         id: '20240101120000-abc1234',
         type: 'p',
         content: '普通段落',
-        ial: {}
+        ial: {},
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -111,9 +118,9 @@ describe('pdfJumpService', () => {
         type: 'NodeTextMark',
         textMarkType: 'file-annotation-ref',
         textMarkData: {
-          ref: 'assets/test.pdf?path=/data/assets/test.pdf&page=3&rect=80,150,280,350'
+          ref: 'assets/test.pdf?path=/data/assets/test.pdf&page=3&rect=80,150,280,350',
         },
-        ial: {}
+        ial: {},
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -124,7 +131,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/test.pdf',
         page: 3,
         rect: [80, 150, 280, 350],
-        blockId: mockAnnotationId
+        blockId: mockAnnotationId,
       })
     })
   })
@@ -139,8 +146,8 @@ describe('pdfJumpService', () => {
         ial: {
           'custom-pdf-path': '/data/assets/card-pdf.pdf',
           'custom-page': '7',
-          'custom-rect': '[120,220,320,420]'
-        }
+          'custom-rect': '[120,220,320,420]',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -151,22 +158,22 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/card-pdf.pdf',
         page: 7,
         rect: [120, 220, 320, 420],
-        blockId: mockCardId
+        blockId: mockCardId,
       })
     })
 
     it('should query PDF location from cloned card via source-node-id', async () => {
       const mockCardId = '20240101120000-card001'
       const mockSourceId = '20240101120000-ann001'
-      
+
       // 第一次调用返回卡片信息（包含 source-node-id）
       const mockCardBlock = {
         id: mockCardId,
         type: 'p',
         content: '克隆卡片',
         ial: {
-          'custom-source-node-id': mockSourceId
-        }
+          'custom-source-node-id': mockSourceId,
+        },
       }
 
       // 第二次调用返回源标注信息
@@ -175,8 +182,8 @@ describe('pdfJumpService', () => {
         type: 'NodeTextMark',
         content: '原始标注',
         ial: {
-          'file-annotation-ref': 'assets/original.pdf?path=/data/assets/original.pdf&page=2&rect=60,180,260,380'
-        }
+          'file-annotation-ref': 'assets/original.pdf?path=/data/assets/original.pdf&page=2&rect=60,180,260,380',
+        },
       }
 
       vi.mocked(postApi)
@@ -189,7 +196,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/original.pdf',
         page: 2,
         rect: [60, 180, 260, 380],
-        blockId: mockCardId
+        blockId: mockCardId,
       })
       expect(postApi).toHaveBeenCalledTimes(2)
     })
@@ -207,7 +214,7 @@ describe('pdfJumpService', () => {
         id: '20240101120000-card001',
         type: 'p',
         content: '普通卡片',
-        ial: {}
+        ial: {},
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -224,8 +231,8 @@ describe('pdfJumpService', () => {
         type: 'p',
         content: '直接引用 PDF 的卡片',
         ial: {
-          'file-annotation-ref': 'assets/direct.pdf?path=/data/assets/direct.pdf&page=1&rect=0,0,100,100'
-        }
+          'file-annotation-ref': 'assets/direct.pdf?path=/data/assets/direct.pdf&page=1&rect=0,0,100,100',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -236,7 +243,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/direct.pdf',
         page: 1,
         rect: [0, 0, 100, 100],
-        blockId: mockCardId
+        blockId: mockCardId,
       })
     })
   })
@@ -247,8 +254,8 @@ describe('pdfJumpService', () => {
         docRef: {
           pdfPath: '/data/assets/docref.pdf',
           page: 4,
-          rect: [10, 20, 30, 40]
-        }
+          rect: [10, 20, 30, 40],
+        },
       }
 
       const result = await extractPDFLocationFromNode(nodeData)
@@ -257,7 +264,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/docref.pdf',
         page: 4,
         rect: [10, 20, 30, 40],
-        blockId: undefined
+        blockId: undefined,
       })
       // 不应该调用 API
       expect(postApi).not.toHaveBeenCalled()
@@ -265,7 +272,7 @@ describe('pdfJumpService', () => {
 
     it('should query from annotationId when present', async () => {
       const nodeData = {
-        annotationId: '20240101120000-ann001'
+        annotationId: '20240101120000-ann001',
       }
 
       const mockBlock = {
@@ -273,8 +280,8 @@ describe('pdfJumpService', () => {
         type: 'NodeTextMark',
         content: '标注',
         ial: {
-          'file-annotation-ref': 'assets/from-node.pdf?path=/data/assets/from-node.pdf&page=6&rect=11,22,33,44'
-        }
+          'file-annotation-ref': 'assets/from-node.pdf?path=/data/assets/from-node.pdf&page=6&rect=11,22,33,44',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -285,13 +292,13 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/from-node.pdf',
         page: 6,
         rect: [11, 22, 33, 44],
-        blockId: nodeData.annotationId
+        blockId: nodeData.annotationId,
       })
     })
 
     it('should query from cardId when present', async () => {
       const nodeData = {
-        cardId: '20240101120000-card001'
+        cardId: '20240101120000-card001',
       }
 
       const mockBlock = {
@@ -300,8 +307,8 @@ describe('pdfJumpService', () => {
         content: '卡片',
         ial: {
           'custom-pdf-path': '/data/assets/card-node.pdf',
-          'custom-page': '8'
-        }
+          'custom-page': '8',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockBlock)
@@ -311,13 +318,13 @@ describe('pdfJumpService', () => {
       expect(result).toEqual({
         pdfPath: '/data/assets/card-node.pdf',
         page: 8,
-        blockId: nodeData.cardId
+        blockId: nodeData.cardId,
       })
     })
 
     it('should return null when no valid data', async () => {
       const nodeData = {
-        randomField: 'value'
+        randomField: 'value',
       }
 
       const result = await extractPDFLocationFromNode(nodeData)
@@ -328,7 +335,7 @@ describe('pdfJumpService', () => {
     it('should prioritize annotationId over cardId when both present', async () => {
       const nodeData = {
         annotationId: '20240101120000-ann001',
-        cardId: '20240101120000-card001'
+        cardId: '20240101120000-card001',
       }
 
       const mockAnnotationBlock = {
@@ -336,8 +343,8 @@ describe('pdfJumpService', () => {
         type: 'NodeTextMark',
         content: '标注',
         ial: {
-          'file-annotation-ref': 'assets/priority.pdf?path=/data/assets/priority.pdf&page=9&rect=99,88,77,66'
-        }
+          'file-annotation-ref': 'assets/priority.pdf?path=/data/assets/priority.pdf&page=9&rect=99,88,77,66',
+        },
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(mockAnnotationBlock)
@@ -348,7 +355,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/priority.pdf',
         page: 9,
         rect: [99, 88, 77, 66],
-        blockId: nodeData.annotationId
+        blockId: nodeData.annotationId,
       })
       // 不应该查询 cardId
       expect(postApi).toHaveBeenCalledTimes(1)
@@ -361,7 +368,7 @@ describe('pdfJumpService', () => {
         pdfPath: '/data/assets/test.pdf',
         page: 5,
         rect: [100, 200, 300, 400],
-        blockId: '20240101120000-abc1234'
+        blockId: '20240101120000-abc1234',
       }
 
       // Mock postApi for openPDFDocument
@@ -379,7 +386,7 @@ describe('pdfJumpService', () => {
     it('should handle jump without rect', async () => {
       const location: PDFLocation = {
         pdfPath: '/data/assets/test.pdf',
-        page: 3
+        page: 3,
       }
 
       const postMessageSpy = vi.spyOn(window, 'postMessage').mockImplementation(() => {})
@@ -394,7 +401,7 @@ describe('pdfJumpService', () => {
     it('should return false when opening PDF fails', async () => {
       const location: PDFLocation = {
         pdfPath: '/data/assets/nonexistent.pdf',
-        page: 1
+        page: 1,
       }
 
       vi.mocked(postApi).mockResolvedValueOnce(null)
@@ -407,7 +414,7 @@ describe('pdfJumpService', () => {
     it('should handle errors gracefully', async () => {
       const location: PDFLocation = {
         pdfPath: '/data/assets/error.pdf',
-        page: 1
+        page: 1,
       }
 
       vi.mocked(postApi).mockRejectedValueOnce(new Error('Network error'))

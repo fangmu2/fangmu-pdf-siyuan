@@ -3,37 +3,40 @@
  * 提供卡片模板、合并、拆分、链接、版本、评论、分享、收集等功能
  */
 
-import { updateBlockAttrs, getBlock } from '../api';
-import type { Card } from '../types/card';
+import type { Card } from '../types/card'
+import {
+  getBlock,
+  updateBlockAttrs,
+} from '../api/siyuanApi'
 
 /**
  * 卡片模板接口
  */
 export interface CardTemplate {
   /** 模板 ID */
-  id: string;
+  id: string
   /** 模板名称 */
-  name: string;
+  name: string
   /** 模板描述 */
-  description?: string;
+  description?: string
   /** 模板图标 */
-  icon?: string;
+  icon?: string
   /** 模板类型 */
-  category: 'default' | 'exam' | 'language' | 'concept' | 'formula' | 'quote';
+  category: 'default' | 'exam' | 'language' | 'concept' | 'formula' | 'quote'
   /** 正面模板内容 */
-  frontTemplate: string;
+  frontTemplate: string
   /** 反面模板内容 */
-  backTemplate?: string;
+  backTemplate?: string
   /** 预设标签 */
-  defaultTags?: string[];
+  defaultTags?: string[]
   /** 预设难度 */
-  defaultDifficulty?: number;
+  defaultDifficulty?: number
   /** 是否系统模板 */
-  isSystem?: boolean;
+  isSystem?: boolean
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
   /** 更新时间 */
-  updatedAt: number;
+  updatedAt: number
 }
 
 /**
@@ -41,19 +44,19 @@ export interface CardTemplate {
  */
 export interface CardLink {
   /** 链接 ID */
-  id: string;
+  id: string
   /** 源卡片 ID */
-  fromCardId: string;
+  fromCardId: string
   /** 目标卡片 ID */
-  toCardId: string;
+  toCardId: string
   /** 链接类型 */
-  linkType: 'reference' | 'related' | 'prerequisite' | 'example' | 'counterexample';
+  linkType: 'reference' | 'related' | 'prerequisite' | 'example' | 'counterexample'
   /** 链接说明 */
-  label?: string;
+  label?: string
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
   /** 创建者 */
-  createdBy?: string;
+  createdBy?: string
 }
 
 /**
@@ -61,19 +64,19 @@ export interface CardLink {
  */
 export interface CardComment {
   /** 评论 ID */
-  id: string;
+  id: string
   /** 卡片 ID */
-  cardId: string;
+  cardId: string
   /** 评论内容 */
-  content: string;
+  content: string
   /** 评论者 */
-  author?: string;
+  author?: string
   /** 父评论 ID（用于回复） */
-  parentId?: string;
+  parentId?: string
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
   /** 更新时间 */
-  updatedAt: number;
+  updatedAt: number
 }
 
 /**
@@ -81,21 +84,21 @@ export interface CardComment {
  */
 export interface CardVersion {
   /** 版本 ID */
-  id: string;
+  id: string
   /** 卡片 ID */
-  cardId: string;
+  cardId: string
   /** 版本内容 */
-  content: string;
+  content: string
   /** 闪卡正面 */
-  front?: string;
+  front?: string
   /** 闪卡反面 */
-  back?: string;
+  back?: string
   /** 版本说明 */
-  note?: string;
+  note?: string
   /** 保存时间 */
-  savedAt: number;
+  savedAt: number
   /** 保存者 */
-  savedBy?: string;
+  savedBy?: string
 }
 
 /**
@@ -103,19 +106,19 @@ export interface CardVersion {
  */
 export interface CardCollection {
   /** 收集组 ID */
-  id: string;
+  id: string
   /** 收集组名称 */
-  name: string;
+  name: string
   /** 收集组描述 */
-  description?: string;
+  description?: string
   /** 卡片 ID 列表 */
-  cardIds: string[];
+  cardIds: string[]
   /** 所属学习集 ID */
-  studySetId?: string;
+  studySetId?: string
   /** 创建时间 */
-  createdAt: number;
+  createdAt: number
   /** 更新时间 */
-  updatedAt: number;
+  updatedAt: number
 }
 
 /**
@@ -123,15 +126,15 @@ export interface CardCollection {
  */
 export interface CardMergeOptions {
   /** 合并后的卡片 ID（使用其中一张卡片的 ID） */
-  targetCardId: string;
+  targetCardId: string
   /** 要合并的卡片 ID 列表 */
-  sourceCardIds: string[];
+  sourceCardIds: string[]
   /** 合并方式 */
-  mergeMode: 'append' | 'prepend' | 'custom';
+  mergeMode: 'append' | 'prepend' | 'custom'
   /** 自定义合并内容 */
-  customContent?: string;
+  customContent?: string
   /** 是否保留源卡片 */
-  keepSourceCards: boolean;
+  keepSourceCards: boolean
 }
 
 /**
@@ -139,15 +142,15 @@ export interface CardMergeOptions {
  */
 export interface CardSplitOptions {
   /** 要拆分的卡片 ID */
-  cardId: string;
+  cardId: string
   /** 拆分方式 */
-  splitMode: 'byParagraph' | 'bySentence' | 'bySeparator' | 'manual';
+  splitMode: 'byParagraph' | 'bySentence' | 'bySeparator' | 'manual'
   /** 分隔符（bySeparator 时使用） */
-  separator?: string;
+  separator?: string
   /** 手动指定的拆分点（manual 时使用） */
-  splitPoints?: number[];
+  splitPoints?: number[]
   /** 目标学习集 ID */
-  targetStudySetId: string;
+  targetStudySetId: string
 }
 
 /**
@@ -155,15 +158,15 @@ export interface CardSplitOptions {
  */
 export interface CardShareOptions {
   /** 卡片 ID */
-  cardId: string;
+  cardId: string
   /** 分享格式 */
-  format: 'markdown' | 'html' | 'image' | 'json' | 'anki';
+  format: 'markdown' | 'html' | 'image' | 'json' | 'anki'
   /** 包含答案 */
-  includeAnswer: boolean;
+  includeAnswer: boolean
   /** 包含元数据 */
-  includeMetadata: boolean;
+  includeMetadata: boolean
   /** 分享标题 */
-  title?: string;
+  title?: string
 }
 
 // ==================== 卡片模板服务 ====================
@@ -184,7 +187,7 @@ const SYSTEM_TEMPLATES: CardTemplate[] = [
     defaultDifficulty: 2,
     isSystem: true,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   },
   {
     id: 'template_exam',
@@ -198,7 +201,7 @@ const SYSTEM_TEMPLATES: CardTemplate[] = [
     defaultDifficulty: 3,
     isSystem: true,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   },
   {
     id: 'template_language',
@@ -212,7 +215,7 @@ const SYSTEM_TEMPLATES: CardTemplate[] = [
     defaultDifficulty: 2,
     isSystem: true,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   },
   {
     id: 'template_concept',
@@ -226,7 +229,7 @@ const SYSTEM_TEMPLATES: CardTemplate[] = [
     defaultDifficulty: 3,
     isSystem: true,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   },
   {
     id: 'template_formula',
@@ -240,7 +243,7 @@ const SYSTEM_TEMPLATES: CardTemplate[] = [
     defaultDifficulty: 4,
     isSystem: true,
     createdAt: Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   },
   {
     id: 'template_quote',
@@ -254,29 +257,29 @@ const SYSTEM_TEMPLATES: CardTemplate[] = [
     defaultDifficulty: 2,
     isSystem: true,
     createdAt: Date.now(),
-    updatedAt: Date.now()
-  }
-];
+    updatedAt: Date.now(),
+  },
+]
 
 /**
  * 卡片模板服务
  */
 export class CardTemplateService {
-  private static storageKey = 'card-templates';
+  private static storageKey = 'card-templates'
 
   /**
    * 获取所有模板
    */
   static getAllTemplates(): CardTemplate[] {
-    const customTemplates = this.getCustomTemplates();
-    return [...SYSTEM_TEMPLATES, ...customTemplates];
+    const customTemplates = this.getCustomTemplates()
+    return [...SYSTEM_TEMPLATES, ...customTemplates]
   }
 
   /**
    * 获取系统模板
    */
   static getSystemTemplates(): CardTemplate[] {
-    return SYSTEM_TEMPLATES;
+    return SYSTEM_TEMPLATES
   }
 
   /**
@@ -284,11 +287,11 @@ export class CardTemplateService {
    */
   static getCustomTemplates(): CardTemplate[] {
     try {
-      const data = window.siyuan.storage.get(this.storageKey);
-      return data ? JSON.parse(data) : [];
+      const data = window.siyuan.storage.get(this.storageKey)
+      return data ? JSON.parse(data) : []
     } catch (e) {
-      console.error('Failed to load custom card templates:', e);
-      return [];
+      console.error('Failed to load custom card templates:', e)
+      return []
     }
   }
 
@@ -296,70 +299,70 @@ export class CardTemplateService {
    * 根据 ID 获取模板
    */
   static getTemplateById(templateId: string): CardTemplate | null {
-    const allTemplates = this.getAllTemplates();
-    return allTemplates.find(t => t.id === templateId) || null;
+    const allTemplates = this.getAllTemplates()
+    return allTemplates.find((t) => t.id === templateId) || null
   }
 
   /**
    * 根据分类获取模板
    */
   static getTemplatesByCategory(category: CardTemplate['category']): CardTemplate[] {
-    return this.getAllTemplates().filter(t => t.category === category);
+    return this.getAllTemplates().filter((t) => t.category === category)
   }
 
   /**
    * 保存自定义模板
    */
   static saveTemplate(template: Omit<CardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'isSystem'>): CardTemplate {
-    const customTemplates = this.getCustomTemplates();
+    const customTemplates = this.getCustomTemplates()
     const newTemplate: CardTemplate = {
       ...template,
       id: `custom_${Date.now()}`,
       isSystem: false,
       createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    customTemplates.push(newTemplate);
-    this.saveCustomTemplates(customTemplates);
-    return newTemplate;
+      updatedAt: Date.now(),
+    }
+    customTemplates.push(newTemplate)
+    this.saveCustomTemplates(customTemplates)
+    return newTemplate
   }
 
   /**
    * 更新自定义模板
    */
   static updateTemplate(templateId: string, updates: Partial<CardTemplate>): boolean {
-    const customTemplates = this.getCustomTemplates();
-    const index = customTemplates.findIndex(t => t.id === templateId);
+    const customTemplates = this.getCustomTemplates()
+    const index = customTemplates.findIndex((t) => t.id === templateId)
     if (index === -1) {
-      return false;
+      return false
     }
     customTemplates[index] = {
       ...customTemplates[index],
       ...updates,
-      updatedAt: Date.now()
-    };
-    this.saveCustomTemplates(customTemplates);
-    return true;
+      updatedAt: Date.now(),
+    }
+    this.saveCustomTemplates(customTemplates)
+    return true
   }
 
   /**
    * 删除自定义模板
    */
   static deleteTemplate(templateId: string): boolean {
-    const customTemplates = this.getCustomTemplates();
-    const filtered = customTemplates.filter(t => t.id !== templateId);
+    const customTemplates = this.getCustomTemplates()
+    const filtered = customTemplates.filter((t) => t.id !== templateId)
     if (filtered.length === customTemplates.length) {
-      return false;
+      return false
     }
-    this.saveCustomTemplates(filtered);
-    return true;
+    this.saveCustomTemplates(filtered)
+    return true
   }
 
   /**
    * 保存自定义模板列表
    */
   private static saveCustomTemplates(templates: CardTemplate[]): void {
-    window.siyuan.storage.set(this.storageKey, JSON.stringify(templates));
+    window.siyuan.storage.set(this.storageKey, JSON.stringify(templates))
   }
 
   /**
@@ -368,25 +371,25 @@ export class CardTemplateService {
   static createCardFromTemplate(
     template: CardTemplate,
     values: Record<string, string>,
-    studySetId: string
+    studySetId: string,
   ): Partial<Card> {
     // 替换模板变量
-    let frontContent = template.frontTemplate;
-    let backContent = template.backTemplate || '';
+    let frontContent = template.frontTemplate
+    let backContent = template.backTemplate || ''
 
     Object.entries(values).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      frontContent = frontContent.replace(regex, value);
-      backContent = backContent.replace(regex, value);
-    });
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
+      frontContent = frontContent.replace(regex, value)
+      backContent = backContent.replace(regex, value)
+    })
 
     return {
       content: frontContent,
       studySetId,
       tags: template.defaultTags || [],
       difficulty: template.defaultDifficulty || 2,
-      type: 'flashcard' as const
-    };
+      type: 'flashcard' as const,
+    }
   }
 }
 
@@ -396,7 +399,7 @@ export class CardTemplateService {
  * 卡片链接服务
  */
 export class CardLinkService {
-  private static storageKey = 'card-links';
+  private static storageKey = 'card-links'
 
   /**
    * 创建卡片链接
@@ -405,7 +408,7 @@ export class CardLinkService {
     fromCardId: string,
     toCardId: string,
     linkType: CardLink['linkType'],
-    label?: string
+    label?: string,
   ): CardLink {
     const link: CardLink = {
       id: `link_${Date.now()}`,
@@ -414,48 +417,48 @@ export class CardLinkService {
       linkType,
       label,
       createdAt: Date.now(),
-      createdBy: window.siyuan?.user?.name
-    };
-    this.saveLink(link);
-    return link;
+      createdBy: (window.siyuan as any)?.user?.userName,
+    }
+    this.saveLink(link)
+    return link
   }
 
   /**
    * 删除卡片链接
    */
   static deleteLink(linkId: string): boolean {
-    const links = this.getAllLinks();
-    const filtered = links.filter(l => l.id !== linkId);
+    const links = this.getAllLinks()
+    const filtered = links.filter((l) => l.id !== linkId)
     if (filtered.length === links.length) {
-      return false;
+      return false
     }
-    this.saveAllLinks(filtered);
-    return true;
+    this.saveAllLinks(filtered)
+    return true
   }
 
   /**
    * 获取卡片的所有链接
    */
-  static getCardLinks(cardId: string): { incoming: CardLink[]; outgoing: CardLink[] } {
-    const allLinks = this.getAllLinks();
+  static getCardLinks(cardId: string): { incoming: CardLink[], outgoing: CardLink[] } {
+    const allLinks = this.getAllLinks()
     return {
-      incoming: allLinks.filter(l => l.toCardId === cardId),
-      outgoing: allLinks.filter(l => l.fromCardId === cardId)
-    };
+      incoming: allLinks.filter((l) => l.toCardId === cardId),
+      outgoing: allLinks.filter((l) => l.fromCardId === cardId),
+    }
   }
 
   /**
    * 获取卡片的反向链接（指向该卡片的链接）
    */
   static getBacklinks(cardId: string): CardLink[] {
-    return this.getAllLinks().filter(l => l.toCardId === cardId);
+    return this.getAllLinks().filter((l) => l.toCardId === cardId)
   }
 
   /**
    * 获取卡片的出链（从该卡片出发的链接）
    */
   static getOutgoingLinks(cardId: string): CardLink[] {
-    return this.getAllLinks().filter(l => l.fromCardId === cardId);
+    return this.getAllLinks().filter((l) => l.fromCardId === cardId)
   }
 
   /**
@@ -463,11 +466,11 @@ export class CardLinkService {
    */
   static getAllLinks(): CardLink[] {
     try {
-      const data = window.siyuan.storage.get(this.storageKey);
-      return data ? JSON.parse(data) : [];
+      const data = window.siyuan.storage.get(this.storageKey)
+      return data ? JSON.parse(data) : []
     } catch (e) {
-      console.error('Failed to load card links:', e);
-      return [];
+      console.error('Failed to load card links:', e)
+      return []
     }
   }
 
@@ -475,16 +478,16 @@ export class CardLinkService {
    * 保存单个链接
    */
   private static saveLink(link: CardLink): void {
-    const links = this.getAllLinks();
-    links.push(link);
-    this.saveAllLinks(links);
+    const links = this.getAllLinks()
+    links.push(link)
+    this.saveAllLinks(links)
   }
 
   /**
    * 保存所有链接
    */
   private static saveAllLinks(links: CardLink[]): void {
-    window.siyuan.storage.set(this.storageKey, JSON.stringify(links));
+    window.siyuan.storage.set(this.storageKey, JSON.stringify(links))
   }
 
   /**
@@ -492,9 +495,9 @@ export class CardLinkService {
    */
   static clearCardLinks(cardId: string): void {
     const links = this.getAllLinks().filter(
-      l => l.fromCardId !== cardId && l.toCardId !== cardId
-    );
-    this.saveAllLinks(links);
+      (l) => l.fromCardId !== cardId && l.toCardId !== cardId,
+    )
+    this.saveAllLinks(links)
   }
 }
 
@@ -504,7 +507,7 @@ export class CardLinkService {
  * 卡片评论服务
  */
 export class CardCommentService {
-  private static storageKeyPrefix = 'card-comments-';
+  private static storageKeyPrefix = 'card-comments-'
 
   /**
    * 添加评论
@@ -513,47 +516,47 @@ export class CardCommentService {
     cardId: string,
     content: string,
     author?: string,
-    parentId?: string
+    parentId?: string,
   ): CardComment {
     const comment: CardComment = {
       id: `comment_${Date.now()}`,
       cardId,
       content,
-      author: author || window.siyuan?.user?.name,
+      author: author || (window.siyuan as any)?.user?.userName,
       parentId,
       createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    this.saveComment(cardId, comment);
-    return comment;
+      updatedAt: Date.now(),
+    }
+    this.saveComment(cardId, comment)
+    return comment
   }
 
   /**
    * 删除评论
    */
   static deleteComment(cardId: string, commentId: string): boolean {
-    const comments = this.getComments(cardId);
-    const filtered = comments.filter(c => c.id !== commentId);
+    const comments = this.getComments(cardId)
+    const filtered = comments.filter((c) => c.id !== commentId)
     if (filtered.length === comments.length) {
-      return false;
+      return false
     }
-    this.saveAllComments(cardId, filtered);
-    return true;
+    this.saveAllComments(cardId, filtered)
+    return true
   }
 
   /**
    * 更新评论
    */
   static updateComment(cardId: string, commentId: string, content: string): boolean {
-    const comments = this.getComments(cardId);
-    const comment = comments.find(c => c.id === commentId);
+    const comments = this.getComments(cardId)
+    const comment = comments.find((c) => c.id === commentId)
     if (!comment) {
-      return false;
+      return false
     }
-    comment.content = content;
-    comment.updatedAt = Date.now();
-    this.saveAllComments(cardId, comments);
-    return true;
+    comment.content = content
+    comment.updatedAt = Date.now()
+    this.saveAllComments(cardId, comments)
+    return true
   }
 
   /**
@@ -561,11 +564,11 @@ export class CardCommentService {
    */
   static getComments(cardId: string): CardComment[] {
     try {
-      const data = window.siyuan.storage.get(`${this.storageKeyPrefix}${cardId}`);
-      return data ? JSON.parse(data) : [];
+      const data = window.siyuan.storage.get(`${this.storageKeyPrefix}${cardId}`)
+      return data ? JSON.parse(data) : []
     } catch (e) {
-      console.error('Failed to load card comments:', e);
-      return [];
+      console.error('Failed to load card comments:', e)
+      return []
     }
   }
 
@@ -573,36 +576,36 @@ export class CardCommentService {
    * 获取评论树（带回复）
    */
   static getCommentTree(cardId: string): Array<CardComment & { replies: CardComment[] }> {
-    const comments = this.getComments(cardId);
-    const rootComments = comments.filter(c => !c.parentId);
+    const comments = this.getComments(cardId)
+    const rootComments = comments.filter((c) => !c.parentId)
 
-    return rootComments.map(root => ({
+    return rootComments.map((root) => ({
       ...root,
-      replies: comments.filter(c => c.parentId === root.id)
-    }));
+      replies: comments.filter((c) => c.parentId === root.id),
+    }))
   }
 
   /**
    * 保存评论
    */
   private static saveComment(cardId: string, comment: CardComment): void {
-    const comments = this.getComments(cardId);
-    comments.push(comment);
-    this.saveAllComments(cardId, comments);
+    const comments = this.getComments(cardId)
+    comments.push(comment)
+    this.saveAllComments(cardId, comments)
   }
 
   /**
    * 保存所有评论
    */
   private static saveAllComments(cardId: string, comments: CardComment[]): void {
-    window.siyuan.storage.set(`${this.storageKeyPrefix}${cardId}`, JSON.stringify(comments));
+    window.siyuan.storage.set(`${this.storageKeyPrefix}${cardId}`, JSON.stringify(comments))
   }
 
   /**
    * 清除卡片的所有评论
    */
   static clearComments(cardId: string): void {
-    window.siyuan.storage.remove(`${this.storageKeyPrefix}${cardId}`);
+    window.siyuan.storage.remove(`${this.storageKeyPrefix}${cardId}`)
   }
 }
 
@@ -612,14 +615,14 @@ export class CardCommentService {
  * 卡片版本服务
  */
 export class CardVersionService {
-  private static storageKeyPrefix = 'card-versions-';
+  private static storageKeyPrefix = 'card-versions-'
 
   /**
    * 保存当前版本
    */
   static saveVersion(
     card: Card,
-    note?: string
+    note?: string,
   ): CardVersion {
     const version: CardVersion = {
       id: `version_${Date.now()}`,
@@ -629,10 +632,10 @@ export class CardVersionService {
       back: (card as any).back,
       note,
       savedAt: Date.now(),
-      savedBy: window.siyuan?.user?.name
-    };
-    this.saveVersionToStorage(card.id, version);
-    return version;
+      savedBy: (window.siyuan as any)?.user?.userName,
+    }
+    this.saveVersionToStorage(card.id, version)
+    return version
   }
 
   /**
@@ -640,11 +643,11 @@ export class CardVersionService {
    */
   static getVersions(cardId: string): CardVersion[] {
     try {
-      const data = window.siyuan.storage.get(`${this.storageKeyPrefix}${cardId}`);
-      return data ? JSON.parse(data) : [];
+      const data = window.siyuan.storage.get(`${this.storageKeyPrefix}${cardId}`)
+      return data ? JSON.parse(data) : []
     } catch (e) {
-      console.error('Failed to load card versions:', e);
-      return [];
+      console.error('Failed to load card versions:', e)
+      return []
     }
   }
 
@@ -652,11 +655,11 @@ export class CardVersionService {
    * 恢复指定版本
    */
   static restoreVersion(cardId: string, versionId: string): Card | null {
-    const versions = this.getVersions(cardId);
-    const version = versions.find(v => v.id === versionId);
+    const versions = this.getVersions(cardId)
+    const version = versions.find((v) => v.id === versionId)
 
     if (!version) {
-      return null;
+      return null
     }
 
     return {
@@ -668,59 +671,59 @@ export class CardVersionService {
       status: 'new',
       difficulty: 1,
       createdAt: version.savedAt,
-      updatedAt: Date.now()
-    } as Card;
+      updatedAt: Date.now(),
+    } as Card
   }
 
   /**
    * 删除版本
    */
   static deleteVersion(cardId: string, versionId: string): boolean {
-    const versions = this.getVersions(cardId);
-    const filtered = versions.filter(v => v.id !== versionId);
+    const versions = this.getVersions(cardId)
+    const filtered = versions.filter((v) => v.id !== versionId)
     if (filtered.length === versions.length) {
-      return false;
+      return false
     }
-    this.saveAllVersions(cardId, filtered);
-    return true;
+    this.saveAllVersions(cardId, filtered)
+    return true
   }
 
   /**
    * 保存版本到存储
    */
   private static saveVersionToStorage(cardId: string, version: CardVersion): void {
-    const versions = this.getVersions(cardId);
-    versions.push(version);
-    this.saveAllVersions(cardId, versions);
+    const versions = this.getVersions(cardId)
+    versions.push(version)
+    this.saveAllVersions(cardId, versions)
   }
 
   /**
    * 保存所有版本
    */
   private static saveAllVersions(cardId: string, versions: CardVersion[]): void {
-    window.siyuan.storage.set(`${this.storageKeyPrefix}${cardId}`, JSON.stringify(versions));
+    window.siyuan.storage.set(`${this.storageKeyPrefix}${cardId}`, JSON.stringify(versions))
   }
 
   /**
    * 清除卡片的所有版本
    */
   static clearVersions(cardId: string): void {
-    window.siyuan.storage.remove(`${this.storageKeyPrefix}${cardId}`);
+    window.siyuan.storage.remove(`${this.storageKeyPrefix}${cardId}`)
   }
 
   /**
    * 获取版本数量
    */
   static getVersionCount(cardId: string): number {
-    return this.getVersions(cardId).length;
+    return this.getVersions(cardId).length
   }
 
   /**
    * 获取最新版本
    */
   static getLatestVersion(cardId: string): CardVersion | null {
-    const versions = this.getVersions(cardId);
-    return versions.length > 0 ? versions[versions.length - 1] : null;
+    const versions = this.getVersions(cardId)
+    return versions.length > 0 ? versions[versions.length - 1] : null
   }
 }
 
@@ -730,7 +733,7 @@ export class CardVersionService {
  * 卡片收集服务
  */
 export class CardCollectionService {
-  private static storageKey = 'card-collections';
+  private static storageKey = 'card-collections'
 
   /**
    * 创建收集组
@@ -739,7 +742,7 @@ export class CardCollectionService {
     name: string,
     cardIds: string[] = [],
     studySetId?: string,
-    description?: string
+    description?: string,
   ): CardCollection {
     const collection: CardCollection = {
       id: `collection_${Date.now()}`,
@@ -748,10 +751,10 @@ export class CardCollectionService {
       cardIds,
       studySetId,
       createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    this.saveCollection(collection);
-    return collection;
+      updatedAt: Date.now(),
+    }
+    this.saveCollection(collection)
+    return collection
   }
 
   /**
@@ -759,74 +762,74 @@ export class CardCollectionService {
    */
   static updateCollection(
     collectionId: string,
-    updates: Partial<CardCollection>
+    updates: Partial<CardCollection>,
   ): boolean {
-    const collections = this.getAllCollections();
-    const index = collections.findIndex(c => c.id === collectionId);
+    const collections = this.getAllCollections()
+    const index = collections.findIndex((c) => c.id === collectionId)
     if (index === -1) {
-      return false;
+      return false
     }
     collections[index] = {
       ...collections[index],
       ...updates,
-      updatedAt: Date.now()
-    };
-    this.saveAllCollections(collections);
-    return true;
+      updatedAt: Date.now(),
+    }
+    this.saveAllCollections(collections)
+    return true
   }
 
   /**
    * 删除收集组
    */
   static deleteCollection(collectionId: string): boolean {
-    const collections = this.getAllCollections();
-    const filtered = collections.filter(c => c.id !== collectionId);
+    const collections = this.getAllCollections()
+    const filtered = collections.filter((c) => c.id !== collectionId)
     if (filtered.length === collections.length) {
-      return false;
+      return false
     }
-    this.saveAllCollections(filtered);
-    return true;
+    this.saveAllCollections(filtered)
+    return true
   }
 
   /**
    * 添加卡片到收集组
    */
   static addCardToCollection(collectionId: string, cardId: string): boolean {
-    const collection = this.getCollectionById(collectionId);
+    const collection = this.getCollectionById(collectionId)
     if (!collection) {
-      return false;
+      return false
     }
     if (!collection.cardIds.includes(cardId)) {
-      collection.cardIds.push(cardId);
-      collection.updatedAt = Date.now();
-      this.updateCollection(collectionId, { cardIds: collection.cardIds });
+      collection.cardIds.push(cardId)
+      collection.updatedAt = Date.now()
+      this.updateCollection(collectionId, { cardIds: collection.cardIds })
     }
-    return true;
+    return true
   }
 
   /**
    * 从收集组移除卡片
    */
   static removeCardFromCollection(collectionId: string, cardId: string): boolean {
-    const collection = this.getCollectionById(collectionId);
+    const collection = this.getCollectionById(collectionId)
     if (!collection) {
-      return false;
+      return false
     }
-    const index = collection.cardIds.indexOf(cardId);
+    const index = collection.cardIds.indexOf(cardId)
     if (index === -1) {
-      return false;
+      return false
     }
-    collection.cardIds.splice(index, 1);
-    collection.updatedAt = Date.now();
-    this.updateCollection(collectionId, { cardIds: collection.cardIds });
-    return true;
+    collection.cardIds.splice(index, 1)
+    collection.updatedAt = Date.now()
+    this.updateCollection(collectionId, { cardIds: collection.cardIds })
+    return true
   }
 
   /**
    * 获取收集组
    */
   static getCollectionById(collectionId: string): CardCollection | null {
-    return this.getAllCollections().find(c => c.id === collectionId) || null;
+    return this.getAllCollections().find((c) => c.id === collectionId) || null
   }
 
   /**
@@ -834,11 +837,11 @@ export class CardCollectionService {
    */
   static getAllCollections(): CardCollection[] {
     try {
-      const data = window.siyuan.storage.get(this.storageKey);
-      return data ? JSON.parse(data) : [];
+      const data = window.siyuan.storage.get(this.storageKey)
+      return data ? JSON.parse(data) : []
     } catch (e) {
-      console.error('Failed to load card collections:', e);
-      return [];
+      console.error('Failed to load card collections:', e)
+      return []
     }
   }
 
@@ -846,16 +849,16 @@ export class CardCollectionService {
    * 保存收集组
    */
   private static saveCollection(collection: CardCollection): void {
-    const collections = this.getAllCollections();
-    collections.push(collection);
-    this.saveAllCollections(collections);
+    const collections = this.getAllCollections()
+    collections.push(collection)
+    this.saveAllCollections(collections)
   }
 
   /**
    * 保存所有收集组
    */
   private static saveAllCollections(collections: CardCollection[]): void {
-    window.siyuan.storage.set(this.storageKey, JSON.stringify(collections));
+    window.siyuan.storage.set(this.storageKey, JSON.stringify(collections))
   }
 }
 
@@ -869,72 +872,81 @@ export class CardMergeService {
    * 合并多张卡片
    */
   static async mergeCards(options: CardMergeOptions): Promise<{
-    success: boolean;
-    mergedCardId?: string;
-    message: string;
+    success: boolean
+    mergedCardId?: string
+    message: string
   }> {
     try {
-      const { targetCardId, sourceCardIds, mergeMode, customContent, keepSourceCards } = options;
+      const {
+        targetCardId,
+        sourceCardIds,
+        mergeMode,
+        customContent,
+        keepSourceCards,
+      } = options
 
       // 获取目标卡片
-      const targetBlock = await getBlock(targetCardId);
+      const targetBlock = await getBlock({ id: targetCardId })
       if (!targetBlock) {
-        return { success: false, message: '目标卡片不存在' };
+        return {
+          success: false,
+          message: '目标卡片不存在',
+        }
       }
 
       // 获取所有源卡片内容
-      const sourceContents: string[] = [];
+      const sourceContents: string[] = []
       for (const cardId of sourceCardIds) {
-        const block = await getBlock(cardId);
+        const block = await getBlock({ id: cardId })
         if (block) {
-          sourceContents.push(block.content as string || '');
+          sourceContents.push(block.content as string || '')
         }
       }
 
       // 根据合并方式生成新内容
-      let newContent: string;
+      let newContent: string
       switch (mergeMode) {
         case 'append':
-          newContent = `${targetBlock.content}\n\n---\n\n${sourceContents.join('\n\n---\n\n')}`;
-          break;
+          newContent = `${targetBlock.content}\n\n---\n\n${sourceContents.join('\n\n---\n\n')}`
+          break
         case 'prepend':
-          newContent = `${sourceContents.reverse().join('\n\n---\n\n')}\n\n---\n\n${targetBlock.content}`;
-          break;
+          newContent = `${sourceContents.reverse().join('\n\n---\n\n')}\n\n---\n\n${targetBlock.content}`
+          break
         case 'custom':
-          newContent = customContent || targetBlock.content;
-          break;
+          newContent = customContent || targetBlock.content
+          break
         default:
-          newContent = targetBlock.content;
+          newContent = targetBlock.content
       }
 
       // 更新目标卡片
       await updateBlockAttrs({
-        id: targetCardId,
+        blockId: targetCardId,
         attrs: {
-          content: newContent
-        }
-      });
+          content: newContent,
+        },
+      })
 
       // 如果不保留源卡片，删除它们
       if (!keepSourceCards) {
         for (const cardId of sourceCardIds) {
           // 这里需要调用思源的删除块 API
           // await deleteBlock({ id: cardId });
-          console.log('[CardMergeService] 源卡片待删除:', cardId);
+          console.log('[CardMergeService] 源卡片待删除:', cardId)
         }
       }
 
       return {
         success: true,
         mergedCardId: targetCardId,
-        message: `成功合并 ${sourceCardIds.length} 张卡片`
-      };
+        message: `成功合并 ${sourceCardIds.length} 张卡片`,
+      }
     } catch (error) {
-      console.error('[CardMergeService] 合并卡片失败:', error);
+      console.error('[CardMergeService] 合并卡片失败:', error)
       return {
         success: false,
-        message: `合并失败：${error}`
-      };
+        message: `合并失败：${error}`,
+      }
     }
   }
 }
@@ -949,75 +961,88 @@ export class CardSplitService {
    * 拆分卡片
    */
   static async splitCard(options: CardSplitOptions): Promise<{
-    success: boolean;
-    newCardIds?: string[];
-    message: string;
+    success: boolean
+    newCardIds?: string[]
+    message: string
   }> {
     try {
-      const { cardId, splitMode, separator } = options;
+      const {
+        cardId,
+        splitMode,
+        separator,
+      } = options
 
       // 获取原卡片
-      const block = await getBlock(cardId);
+      const block = await getBlock({ id: cardId })
       if (!block) {
-        return { success: false, message: '原卡片不存在' };
+        return {
+          success: false,
+          message: '原卡片不存在',
+        }
       }
 
-      const content = block.content as string || '';
-      const segments: string[] = [];
+      const content = block.content as string || ''
+      const segments: string[] = []
 
       // 根据拆分方式分割内容
       switch (splitMode) {
         case 'byParagraph':
           // 按段落拆分
-          segments.push(...content.split(/\n\n+/).filter(s => s.trim()));
-          break;
+          segments.push(...content.split(/\n{2,}/).filter((s) => s.trim()))
+          break
         case 'bySentence':
           // 按句子拆分
-          segments.push(...content.split(/(?<=[。！？.!?])\s*/).filter(s => s.trim()));
-          break;
+          segments.push(...content.split(/(?<=[。！？.!?])\s*/).filter((s) => s.trim()))
+          break
         case 'bySeparator':
           // 按指定分隔符拆分
-          segments.push(...content.split(separator || '\n').filter(s => s.trim()));
-          break;
+          segments.push(...content.split(separator || '\n').filter((s) => s.trim()))
+          break
         case 'manual':
           // 手动指定拆分点
-          const splitPoints = options.splitPoints || [];
+          const splitPoints = options.splitPoints || []
           if (splitPoints.length === 0) {
-            return { success: false, message: '未指定拆分点' };
+            return {
+              success: false,
+              message: '未指定拆分点',
+            }
           }
-          let lastPos = 0;
+          let lastPos = 0
           for (const point of splitPoints) {
-            segments.push(content.substring(lastPos, point));
-            lastPos = point;
+            segments.push(content.substring(lastPos, point))
+            lastPos = point
           }
-          segments.push(content.substring(lastPos));
-          break;
+          segments.push(content.substring(lastPos))
+          break
       }
 
       if (segments.length < 2) {
-        return { success: false, message: '无法拆分，内容不足以分成多张卡片' };
+        return {
+          success: false,
+          message: '无法拆分，内容不足以分成多张卡片',
+        }
       }
 
       // 创建新卡片（这里需要调用思源的创建块 API）
-      const newCardIds: string[] = [];
+      const newCardIds: string[] = []
       for (const segment of segments) {
         // 模拟创建新卡片
         // const newCard = await createBlock({ ... });
         // newCardIds.push(newCard.id);
-        console.log('[CardSplitService] 待创建卡片内容:', segment);
+        console.log('[CardSplitService] 待创建卡片内容:', segment)
       }
 
       return {
         success: true,
         newCardIds,
-        message: `成功拆分为 ${segments.length} 张卡片`
-      };
+        message: `成功拆分为 ${segments.length} 张卡片`,
+      }
     } catch (error) {
-      console.error('[CardSplitService] 拆分卡片失败:', error);
+      console.error('[CardSplitService] 拆分卡片失败:', error)
       return {
         success: false,
-        message: `拆分失败：${error}`
-      };
+        message: `拆分失败：${error}`,
+      }
     }
   }
 }
@@ -1032,53 +1057,63 @@ export class CardShareService {
    * 分享卡片
    */
   static async shareCard(options: CardShareOptions): Promise<{
-    success: boolean;
-    content?: string;
-    format: string;
+    success: boolean
+    content?: string
+    format: string
   }> {
     try {
-      const { cardId, format, includeAnswer, includeMetadata, title } = options;
+      const {
+        cardId,
+        format,
+        includeAnswer,
+        includeMetadata,
+        title,
+      } = options
 
-      const block = await getBlock(cardId);
+      const block = await getBlock({ id: cardId })
       if (!block) {
-        return { success: false, format, content: '卡片不存在' };
+        return {
+          success: false,
+          format,
+          content: '卡片不存在',
+        }
       }
 
-      let content: string;
+      let content: string
 
       switch (format) {
         case 'markdown':
-          content = this.exportToMarkdown(block, includeAnswer, includeMetadata, title);
-          break;
+          content = this.exportToMarkdown(block, includeAnswer, includeMetadata, title)
+          break
         case 'html':
-          content = this.exportToHTML(block, includeAnswer, includeMetadata, title);
-          break;
+          content = this.exportToHTML(block, includeAnswer, includeMetadata, title)
+          break
         case 'json':
-          content = this.exportToJSON(block, includeAnswer, includeMetadata);
-          break;
+          content = this.exportToJSON(block, includeAnswer, includeMetadata)
+          break
         case 'anki':
-          content = this.exportToAnki(block, includeAnswer);
-          break;
+          content = this.exportToAnki(block, includeAnswer)
+          break
         case 'image':
           // 图片导出需要 canvas 渲染，返回提示信息
-          content = '图片导出功能需要在浏览器环境中使用 canvas 渲染';
-          break;
+          content = '图片导出功能需要在浏览器环境中使用 canvas 渲染'
+          break
         default:
-          content = this.exportToMarkdown(block, includeAnswer, includeMetadata, title);
+          content = this.exportToMarkdown(block, includeAnswer, includeMetadata, title)
       }
 
       return {
         success: true,
         content,
-        format
-      };
+        format,
+      }
     } catch (error) {
-      console.error('[CardShareService] 分享卡片失败:', error);
+      console.error('[CardShareService] 分享卡片失败:', error)
       return {
         success: false,
         format: options.format,
-        content: `分享失败：${error}`
-      };
+        content: `分享失败：${error}`,
+      }
     }
   }
 
@@ -1089,28 +1124,28 @@ export class CardShareService {
     block: any,
     includeAnswer: boolean,
     includeMetadata: boolean,
-    title?: string
+    title?: string,
   ): string {
-    let md = title ? `# ${title}\n\n` : '';
-    md += `## 卡片内容\n\n${block.content}\n\n`;
+    let md = title ? `# ${title}\n\n` : ''
+    md += `## 卡片内容\n\n${block.content}\n\n`
 
     if (includeAnswer && block['custom-card-answer']) {
-      md += `## 答案\n\n${block['custom-card-answer']}\n\n`;
+      md += `## 答案\n\n${block['custom-card-answer']}\n\n`
     }
 
     if (includeMetadata) {
-      md += `---\n\n`;
-      md += `**创建时间**: ${new Date(block.created).toLocaleString()}\n`;
-      md += `**更新时间**: ${new Date(block.updated).toLocaleString()}\n`;
+      md += `---\n\n`
+      md += `**创建时间**: ${new Date(block.created).toLocaleString()}\n`
+      md += `**更新时间**: ${new Date(block.updated).toLocaleString()}\n`
       if (block['custom-card-tags']) {
-        md += `**标签**: ${block['custom-card-tags']}\n`;
+        md += `**标签**: ${block['custom-card-tags']}\n`
       }
       if (block['custom-card-difficulty']) {
-        md += `**难度**: ${block['custom-card-difficulty']}\n`;
+        md += `**难度**: ${block['custom-card-difficulty']}\n`
       }
     }
 
-    return md;
+    return md
   }
 
   /**
@@ -1120,7 +1155,7 @@ export class CardShareService {
     block: any,
     includeAnswer: boolean,
     includeMetadata: boolean,
-    title?: string
+    title?: string,
   ): string {
     return `<!DOCTYPE html>
 <html>
@@ -1140,17 +1175,19 @@ export class CardShareService {
   <div class="card">
     <div class="card-content">${block.content}</div>
     ${includeAnswer && block['custom-card-answer'] ? `<div class="card-answer"><strong>答案：</strong>${block['custom-card-answer']}</div>` : ''}
-    ${includeMetadata ? `
+    ${includeMetadata
+      ? `
     <div class="card-meta">
       <div>创建时间：${new Date(block.created).toLocaleString()}</div>
       <div>更新时间：${new Date(block.updated).toLocaleString()}</div>
       ${block['custom-card-tags'] ? `<div>标签：${block['custom-card-tags']}</div>` : ''}
       ${block['custom-card-difficulty'] ? `<div>难度：${block['custom-card-difficulty']}</div>` : ''}
     </div>
-    ` : ''}
+    `
+      : ''}
   </div>
 </body>
-</html>`;
+</html>`
   }
 
   /**
@@ -1159,15 +1196,15 @@ export class CardShareService {
   private static exportToJSON(
     block: any,
     includeAnswer: boolean,
-    includeMetadata: boolean
+    includeMetadata: boolean,
   ): string {
     const data: any = {
       id: block.id,
-      content: block.content
-    };
+      content: block.content,
+    }
 
     if (includeAnswer) {
-      data.answer = block['custom-card-answer'];
+      data.answer = block['custom-card-answer']
     }
 
     if (includeMetadata) {
@@ -1176,41 +1213,41 @@ export class CardShareService {
         updatedAt: block.updated,
         tags: block['custom-card-tags'],
         difficulty: block['custom-card-difficulty'],
-        studySetId: block['custom-card-study-set-id']
-      };
+        studySetId: block['custom-card-study-set-id'],
+      }
     }
 
-    return JSON.stringify(data, null, 2);
+    return JSON.stringify(data, null, 2)
   }
 
   /**
    * 导出为 Anki 格式
    */
   private static exportToAnki(block: any, includeAnswer: boolean): string {
-    const front = block.content || '';
-    const back = block['custom-card-answer'] || '';
+    const front = block.content || ''
+    const back = block['custom-card-answer'] || ''
 
     if (!includeAnswer || !back) {
-      return front;
+      return front
     }
 
     // Anki 导入格式：正面;背面
-    return `${front}\t${back}`;
+    return `${front}\t${back}`
   }
 
   /**
    * 下载为文件
    */
   static downloadFile(content: string, filename: string, mimeType: string = 'text/plain'): void {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 }
 
@@ -1239,7 +1276,7 @@ export const cardEnhancedService = {
   CardSplitService,
 
   // 分享服务
-  CardShareService
-};
+  CardShareService,
+}
 
-export default cardEnhancedService;
+export default cardEnhancedService

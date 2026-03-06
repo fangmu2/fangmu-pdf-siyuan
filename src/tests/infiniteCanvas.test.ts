@@ -3,11 +3,19 @@
  * 测试动态边界、虚拟渲染和网格渲染功能
  */
 
-import { describe, it, expect } from 'vitest'
+import type { FreeMindMapNode } from '@/types/mindmapFree'
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import { ref } from 'vue'
 import { useVirtualRendering } from '@/composables/useVirtualRendering'
-import { calculateGridRange, renderInfiniteGrid, getGridStats } from '@/utils/gridRenderer'
-import type { FreeMindMapNode } from '@/types/mindmapFree'
+import {
+  calculateGridRange,
+  getGridStats,
+  renderInfiniteGrid,
+} from '@/utils/gridRenderer'
 
 describe('无限画布功能', () => {
   describe('useVirtualRendering', () => {
@@ -17,29 +25,50 @@ describe('无限画布功能', () => {
           id: '1',
           type: 'textCard',
           data: { title: 'Node 1' },
-          position: { x: 0, y: 0 },
-          style: { width: '200px', height: '60px' }
+          position: {
+            x: 0,
+            y: 0,
+          },
+          style: {
+            width: '200px',
+            height: '60px',
+          },
         },
         {
           id: '2',
           type: 'textCard',
           data: { title: 'Node 2' },
-          position: { x: 1000, y: 1000 },
-          style: { width: '200px', height: '60px' }
+          position: {
+            x: 1000,
+            y: 1000,
+          },
+          style: {
+            width: '200px',
+            height: '60px',
+          },
         },
         {
           id: '3',
           type: 'textCard',
           data: { title: 'Node 3' },
-          position: { x: 5000, y: 5000 }, // 超出视口
-          style: { width: '200px', height: '60px' }
-        }
+          position: {
+            x: 5000,
+            y: 5000,
+          }, // 超出视口
+          style: {
+            width: '200px',
+            height: '60px',
+          },
+        },
       ])
 
-      const { visibleNodes, updateViewport } = useVirtualRendering(nodes, {
+      const {
+        visibleNodes,
+        updateViewport,
+      } = useVirtualRendering(nodes, {
         bufferSize: 100,
         enabled: true,
-        minNodeThreshold: 1
+        minNodeThreshold: 1,
       })
 
       // 设置视口
@@ -47,14 +76,14 @@ describe('无限画布功能', () => {
         x: 0,
         y: 0,
         width: 800,
-        height: 600
+        height: 600,
       })
 
       // 应该只显示视口内的节点
       expect(visibleNodes.value.length).toBe(2)
-      expect(visibleNodes.value.map(n => n.id)).toContain('1')
-      expect(visibleNodes.value.map(n => n.id)).toContain('2')
-      expect(visibleNodes.value.map(n => n.id)).not.toContain('3')
+      expect(visibleNodes.value.map((n) => n.id)).toContain('1')
+      expect(visibleNodes.value.map((n) => n.id)).toContain('2')
+      expect(visibleNodes.value.map((n) => n.id)).not.toContain('3')
     })
 
     it('should disable virtual rendering when node count is low', () => {
@@ -63,15 +92,21 @@ describe('无限画布功能', () => {
           id: '1',
           type: 'textCard',
           data: { title: 'Node 1' },
-          position: { x: 0, y: 0 },
-          style: { width: '200px', height: '60px' }
-        }
+          position: {
+            x: 0,
+            y: 0,
+          },
+          style: {
+            width: '200px',
+            height: '60px',
+          },
+        },
       ])
 
       const { visibleNodes } = useVirtualRendering(nodes, {
         bufferSize: 100,
         enabled: true,
-        minNodeThreshold: 50 // 阈值设为 50
+        minNodeThreshold: 50, // 阈值设为 50
       })
 
       // 节点数量少于阈值，应该返回所有节点
@@ -85,10 +120,15 @@ describe('无限画布功能', () => {
         x: 0,
         y: 0,
         width: 800,
-        height: 600
+        height: 600,
       }
 
-      const { startCol, endCol, startRow, endRow } = calculateGridRange(viewport, 20)
+      const {
+        startCol,
+        endCol,
+        startRow,
+        endRow,
+      } = calculateGridRange(viewport, 20)
 
       // 计算网格范围
       expect(startCol).toBe(-1)
@@ -102,7 +142,7 @@ describe('无限画布功能', () => {
         x: 0,
         y: 0,
         width: 800,
-        height: 600
+        height: 600,
       }
 
       const result = renderInfiniteGrid(viewport, { gridSize: 20 })
@@ -118,7 +158,7 @@ describe('无限画布功能', () => {
         x: 0,
         y: 0,
         width: 800,
-        height: 600
+        height: 600,
       }
 
       const stats = getGridStats(viewport, 20)
@@ -135,14 +175,17 @@ describe('无限画布功能', () => {
         minX: -1000,
         minY: -1000,
         maxX: 1000,
-        maxY: 1000
+        maxY: 1000,
       }
 
       const threshold = 200
       const expandAmount = 2000
 
       // 模拟位置在左边界附近
-      const position = { x: bounds.minX + 100, y: 0 }
+      const position = {
+        x: bounds.minX + 100,
+        y: 0,
+      }
 
       let expanded = false
       if (position.x < bounds.minX + threshold) {

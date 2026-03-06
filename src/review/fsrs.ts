@@ -11,7 +11,7 @@
 /**
  * 卡片难度等级
  */
-export type Difficulty = 1 | 2 | 3 | 4 | 5;
+export type Difficulty = 1 | 2 | 3 | 4 | 5
 
 /**
  * 复习评分
@@ -20,24 +20,24 @@ export type Difficulty = 1 | 2 | 3 | 4 | 5;
  * - 2: Good (良好)
  * - 3: Easy (简单)
  */
-export type Rating = 0 | 1 | 2 | 3;
+export type Rating = 0 | 1 | 2 | 3
 
 /**
  * FSRS 卡片状态
  */
 export interface CardState {
   /** 难度 (1-5) */
-  difficulty: Difficulty;
+  difficulty: Difficulty
   /** 稳定性 (天数) */
-  stability: number;
+  stability: number
   /** 可提取强度 (0-1) */
-  retrievability: number;
+  retrievability: number
   /** 下次复习间隔 (天数) */
-  interval: number;
+  interval: number
   /** 延迟天数 */
-  delay: number;
+  delay: number
   /** 距离上次复习的天数 */
-  elapsedDays: number;
+  elapsedDays: number
 }
 
 /**
@@ -45,13 +45,13 @@ export interface CardState {
  */
 export interface ReviewLog {
   /** 复习时间戳 */
-  reviewTime: number;
+  reviewTime: number
   /** 复习评分 */
-  rating: Rating;
+  rating: Rating
   /** 复习前的状态 */
-  state: CardState;
+  state: CardState
   /** 复习后的状态 */
-  newState: CardState;
+  newState: CardState
 }
 
 /**
@@ -59,25 +59,25 @@ export interface ReviewLog {
  */
 export interface FSRSParameters {
   /** 请求保留率 (默认 0.9) */
-  requestRetention: number;
+  requestRetention: number
   /** 最大间隔 (默认 365 天) */
-  maximumInterval: number;
+  maximumInterval: number
   /** 最小间隔 (默认 1 天) */
-  minimumInterval: number;
+  minimumInterval: number
   /** 学习步长 (默认 [1, 2, 3, 4] 天) */
-  learningSteps: number[];
+  learningSteps: number[]
   /** 遗忘学习步长 (默认 [1, 2, 3] 天) */
-  forgetSteps: number[];
+  forgetSteps: number[]
   /** 难度衰减 (默认 0.5) */
-  decay: number;
+  decay: number
   /** 难度因子 (默认 1.5) */
-  factor: number;
+  factor: number
   /** 初始难度 (默认 5) */
-  initialDifficulty: Difficulty;
+  initialDifficulty: Difficulty
   /** 初始稳定性 (默认 0.4) */
-  initialStability: number;
+  initialStability: number
   /** 难度范围 (默认 [1, 10]) */
-  difficultyRange: [number, number];
+  difficultyRange: [number, number]
 }
 
 /**
@@ -93,16 +93,19 @@ export const DEFAULT_PARAMS: FSRSParameters = {
   factor: 1.5,
   initialDifficulty: 5,
   initialStability: 0.4,
-  difficultyRange: [1, 10]
-};
+  difficultyRange: [1, 10],
+}
 
 /**
  * 计算记忆保持率
  * 使用指数衰减模型：R = (1 + decay * days / stability) ^ (-factor)
  */
 export function calculateRetrievability(stability: number, elapsedDays: number): number {
-  const { decay, factor } = DEFAULT_PARAMS;
-  return Math.pow(1 + (decay * elapsedDays) / stability, -factor);
+  const {
+    decay,
+    factor,
+  } = DEFAULT_PARAMS
+  return (1 + (decay * elapsedDays) / stability) ** -factor
 }
 
 /**
@@ -110,16 +113,21 @@ export function calculateRetrievability(stability: number, elapsedDays: number):
  */
 export function calculateInterval(
   stability: number,
-  requestRetention: number = DEFAULT_PARAMS.requestRetention
+  requestRetention: number = DEFAULT_PARAMS.requestRetention,
 ): number {
-  const { decay, factor, maximumInterval, minimumInterval } = DEFAULT_PARAMS;
+  const {
+    decay,
+    factor,
+    maximumInterval,
+    minimumInterval,
+  } = DEFAULT_PARAMS
 
   // 根据保留率反推间隔
   // R = (1 + decay * days / stability) ^ (-factor)
   // days = stability * ((R ^ (-1/factor)) - 1) / decay
-  const interval = stability * (Math.pow(requestRetention, -1 / factor) - 1) / decay;
+  const interval = stability * (requestRetention ** (-1 / factor) - 1) / decay
 
-  return Math.max(minimumInterval, Math.min(maximumInterval, Math.round(interval)));
+  return Math.max(minimumInterval, Math.min(maximumInterval, Math.round(interval)))
 }
 
 /**
@@ -127,34 +135,37 @@ export function calculateInterval(
  */
 export function calculateNextDifficulty(
   currentDifficulty: Difficulty,
-  rating: Rating
+  rating: Rating,
 ): Difficulty {
-  const { factor, difficultyRange } = DEFAULT_PARAMS;
+  const {
+    factor,
+    difficultyRange,
+  } = DEFAULT_PARAMS
 
   // 难度变化公式
-  let difficultyChange = 0;
+  let difficultyChange = 0
 
   switch (rating) {
     case 0: // Again
-      difficultyChange = -2;
-      break;
+      difficultyChange = -2
+      break
     case 1: // Hard
-      difficultyChange = -1;
-      break;
+      difficultyChange = -1
+      break
     case 2: // Good
-      difficultyChange = 0;
-      break;
+      difficultyChange = 0
+      break
     case 3: // Easy
-      difficultyChange = 1;
-      break;
+      difficultyChange = 1
+      break
   }
 
   // 应用难度因子调整
-  const newDifficulty = currentDifficulty + difficultyChange * (factor / 2);
+  const newDifficulty = currentDifficulty + difficultyChange * (factor / 2)
 
   // 限制在有效范围内
-  const [minDiff, maxDiff] = difficultyRange;
-  return Math.max(minDiff, Math.min(maxDiff, Math.round(newDifficulty))) as Difficulty;
+  const [minDiff, maxDiff] = difficultyRange
+  return Math.max(minDiff, Math.min(maxDiff, Math.round(newDifficulty))) as Difficulty
 }
 
 /**
@@ -164,38 +175,39 @@ export function calculateNextStability(
   currentStability: number,
   currentDifficulty: Difficulty,
   rating: Rating,
-  elapsedDays: number
+  elapsedDays: number,
 ): number {
-  const { decay, factor } = DEFAULT_PARAMS;
+  // 不使用 DEFAULT_PARAMS 中的 decay 和 factor
+  // const { decay, factor } = DEFAULT_PARAMS
 
   // 基础稳定性变化
-  let stabilityMultiplier = 1;
+  let stabilityMultiplier = 1
 
   // 根据评分调整
   switch (rating) {
     case 0: // Again - 重置稳定性
-      return currentStability * 0.5;
+      return currentStability * 0.5
     case 1: // Hard - 小幅增加
-      stabilityMultiplier = 1.2;
-      break;
+      stabilityMultiplier = 1.2
+      break
     case 2: // Good - 正常增加
-      stabilityMultiplier = 1.5;
-      break;
+      stabilityMultiplier = 1.5
+      break
     case 3: // Easy - 大幅增加
-      stabilityMultiplier = 2.0;
-      break;
+      stabilityMultiplier = 2.0
+      break
   }
 
   // 考虑难度影响（难度越高，稳定性增长越慢）
-  const difficultyFactor = 1 + (currentDifficulty - 5) * 0.1;
+  const difficultyFactor = 1 + (currentDifficulty - 5) * 0.1
 
   // 考虑延迟影响（延迟越长，稳定性增长越快）
-  const delayFactor = elapsedDays > 0 ? 1 + Math.min(elapsedDays / 30, 0.5) : 1;
+  const delayFactor = elapsedDays > 0 ? 1 + Math.min(elapsedDays / 30, 0.5) : 1
 
   // 计算新稳定性
-  const newStability = currentStability * stabilityMultiplier * difficultyFactor * delayFactor;
+  const newStability = currentStability * stabilityMultiplier * difficultyFactor * delayFactor
 
-  return Math.max(0.1, newStability);
+  return Math.max(0.1, newStability)
 }
 
 /**
@@ -208,29 +220,29 @@ export function calculateNextStability(
 export function processReview(
   state: CardState,
   rating: Rating,
-  reviewTime: number = Date.now()
-): { state: CardState; log: ReviewLog } {
-  const oldState = { ...state };
+  reviewTime: number = Date.now(),
+): { state: CardState, log: ReviewLog } {
+  const oldState = { ...state }
 
   // 计算延迟天数
-  const delay = Math.max(0, state.delay + (reviewTime - state.elapsedDays * 86400000) / 86400000);
+  const delay = Math.max(0, state.delay + (reviewTime - state.elapsedDays * 86400000) / 86400000)
 
   // 计算新的难度
-  const newDifficulty = calculateNextDifficulty(state.difficulty, rating);
+  const newDifficulty = calculateNextDifficulty(state.difficulty, rating)
 
   // 计算新的稳定性
   const newStability = calculateNextStability(
     state.stability,
     state.difficulty,
     rating,
-    state.elapsedDays
-  );
+    state.elapsedDays,
+  )
 
   // 计算新的间隔
-  const newInterval = calculateInterval(newStability);
+  const newInterval = calculateInterval(newStability)
 
   // 计算新的可提取强度
-  const newRetrievability = rating === 0 ? 0 : calculateRetrievability(newStability, 0);
+  const newRetrievability = rating === 0 ? 0 : calculateRetrievability(newStability, 0)
 
   const newState: CardState = {
     difficulty: newDifficulty,
@@ -238,24 +250,30 @@ export function processReview(
     retrievability: newRetrievability,
     interval: newInterval,
     delay,
-    elapsedDays: newInterval
-  };
+    elapsedDays: newInterval,
+  }
 
   const log: ReviewLog = {
     reviewTime,
     rating,
     state: oldState,
-    newState
-  };
+    newState,
+  }
 
-  return { state: newState, log };
+  return {
+    state: newState,
+    log,
+  }
 }
 
 /**
  * 初始化新卡片状态
  */
 export function initializeCardState(): CardState {
-  const { initialDifficulty, initialStability } = DEFAULT_PARAMS;
+  const {
+    initialDifficulty,
+    initialStability,
+  } = DEFAULT_PARAMS
 
   return {
     difficulty: initialDifficulty,
@@ -263,26 +281,28 @@ export function initializeCardState(): CardState {
     retrievability: 1,
     interval: 0,
     delay: 0,
-    elapsedDays: 0
-  };
+    elapsedDays: 0,
+  }
 }
 
 /**
  * 从 SM-2 状态转换为 FSRS 状态
  */
 export function fromSM2State(sm2State: {
-  easeFactor: number;
-  interval: number;
-  repetitions: number;
-  nextReview: number;
+  easeFactor: number
+  interval: number
+  repetitions: number
+  nextReview: number
 }): CardState {
-  const { easeFactor, interval, repetitions } = sm2State;
+  const easeFactor = sm2State.easeFactor
+  const interval = sm2State.interval
+  // repetitions 未使用，但保留在参数中用于未来扩展
 
   // 将 SM-2 的 EF 因子映射到 FSRS 难度
-  const difficulty = Math.max(1, Math.min(5, Math.round((5.5 - easeFactor) * 2))) as Difficulty;
+  const difficulty = Math.max(1, Math.min(5, Math.round((5.5 - easeFactor) * 2))) as Difficulty
 
   // 估算稳定性（基于间隔）
-  const stability = Math.max(0.1, interval * 0.8);
+  const stability = Math.max(0.1, interval * 0.8)
 
   return {
     difficulty,
@@ -290,31 +310,31 @@ export function fromSM2State(sm2State: {
     retrievability: calculateRetrievability(stability, interval),
     interval,
     delay: 0,
-    elapsedDays: interval
-  };
+    elapsedDays: interval,
+  }
 }
 
 /**
  * 转换为 SM-2 状态
  */
 export function toSM2State(state: CardState, nextReview: number): {
-  easeFactor: number;
-  interval: number;
-  repetitions: number;
-  nextReview: number;
+  easeFactor: number
+  interval: number
+  repetitions: number
+  nextReview: number
 } {
   // 将 FSRS 难度映射回 SM-2 的 EF 因子
-  const easeFactor = 5.5 - (state.difficulty / 2);
+  const easeFactor = 5.5 - (state.difficulty / 2)
 
   // 估算重复次数（基于稳定性）
-  const repetitions = Math.max(0, Math.round(state.stability / 2));
+  const repetitions = Math.max(0, Math.round(state.stability / 2))
 
   return {
     easeFactor,
     interval: state.interval,
     repetitions,
-    nextReview
-  };
+    nextReview,
+  }
 }
 
 /**
@@ -322,9 +342,9 @@ export function toSM2State(state: CardState, nextReview: number): {
  */
 export function predictRetrievability(
   stability: number,
-  daysFromNow: number
+  daysFromNow: number,
 ): number {
-  return calculateRetrievability(stability, daysFromNow);
+  return calculateRetrievability(stability, daysFromNow)
 }
 
 /**
@@ -332,7 +352,7 @@ export function predictRetrievability(
  * 当记忆保持率降到请求保留率时，即为最佳复习时间
  */
 export function calculateOptimalReviewTime(stability: number): number {
-  return calculateInterval(stability);
+  return calculateInterval(stability)
 }
 
 /**
@@ -340,18 +360,21 @@ export function calculateOptimalReviewTime(stability: number): number {
  */
 export function batchProcessReviews(
   initialState: CardState,
-  reviews: Array<{ rating: Rating; timestamp: number }>
-): { finalState: CardState; logs: ReviewLog[] } {
-  let currentState = { ...initialState };
-  const logs: ReviewLog[] = [];
+  reviews: Array<{ rating: Rating, timestamp: number }>,
+): { finalState: CardState, logs: ReviewLog[] } {
+  let currentState = { ...initialState }
+  const logs: ReviewLog[] = []
 
   for (const review of reviews) {
-    const result = processReview(currentState, review.rating, review.timestamp);
-    currentState = result.state;
-    logs.push(result.log);
+    const result = processReview(currentState, review.rating, review.timestamp)
+    currentState = result.state
+    logs.push(result.log)
   }
 
-  return { finalState: currentState, logs };
+  return {
+    finalState: currentState,
+    logs,
+  }
 }
 
 /**
@@ -360,18 +383,18 @@ export function batchProcessReviews(
  */
 export function calculateLearningCurve(
   stability: number,
-  maxDays: number = 30
-): Array<{ day: number; retrievability: number }> {
-  const curve: Array<{ day: number; retrievability: number }> = [];
+  maxDays: number = 30,
+): Array<{ day: number, retrievability: number }> {
+  const curve: Array<{ day: number, retrievability: number }> = []
 
   for (let day = 0; day <= maxDays; day++) {
     curve.push({
       day,
-      retrievability: calculateRetrievability(stability, day)
-    });
+      retrievability: calculateRetrievability(stability, day),
+    })
   }
 
-  return curve;
+  return curve
 }
 
 /**
@@ -399,5 +422,5 @@ export const fsrsService = {
   batchProcessReviews,
 
   // 常量
-  DEFAULT_PARAMS
-};
+  DEFAULT_PARAMS,
+}

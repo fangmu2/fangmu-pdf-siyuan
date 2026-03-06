@@ -3,21 +3,29 @@
  * @fileoverview 封装自由画布思维导图的常用操作，包括键盘快捷键
  */
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { Ref } from 'vue'
-import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
 import type {
-  FreeMindMapNode,
-  FreeMindMapEdge,
-  FreeMindMapNodeType,
-  CreateNodeParams,
-  UpdateNodeParams,
   CreateEdgeParams,
+  CreateNodeParams,
   ExportOptions,
   ExportResult,
-  FreeMindMapLayout
+  FreeMindMapEdge,
+  FreeMindMapLayout,
+  FreeMindMapNode,
+  FreeMindMapNodeType,
+  UpdateNodeParams,
 } from '@/types/mindmapFree'
-import { exportMindMap as exportMindMapUtil, autoLayout as autoLayoutUtil } from '@/services/freeMindMapService'
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue'
+import {
+  autoLayout as autoLayoutUtil,
+  exportMindMap as exportMindMapUtil,
+} from '@/services/freeMindMapService'
+import { useFreeMindMapStore } from '@/stores/freeMindMapStore'
 
 interface UseFreeMindMapOptions {
   /** 思维导图块 ID */
@@ -50,7 +58,7 @@ interface UseFreeMindMapReturn {
   create: (blockId: string, studySetId: string) => Promise<void>
 
   // 节点操作
-  addNode: (params: Omit<CreateNodeParams, 'position'> & { position?: { x: number; y: number } }) => FreeMindMapNode
+  addNode: (params: Omit<CreateNodeParams, 'position'> & { position?: { x: number, y: number } }) => FreeMindMapNode
   updateNode: (nodeId: string, params: UpdateNodeParams) => void
   removeNode: (nodeId: string) => void
   removeNodes: (nodeIds: string[]) => void
@@ -92,14 +100,14 @@ interface UseFreeMindMapReturn {
  * @returns 思维导图操作 API
  */
 export function useFreeMindMap(
-  options: UseFreeMindMapOptions
+  options: UseFreeMindMapOptions,
 ): UseFreeMindMapReturn {
   const {
     blockId,
-    studySetId = '',
+    _studySetId = '',
     autoLoad = true,
     enableKeyboardShortcuts = true,
-    containerRef: externalContainerRef
+    containerRef: externalContainerRef,
   } = options
 
   // 使用 Store
@@ -109,13 +117,13 @@ export function useFreeMindMap(
   const internalContainerRef = ref<HTMLElement | null>(null)
   const containerRef = externalContainerRef || internalContainerRef
 
-  // 从 Store 获取状态
-  const nodes = computed(() => store.nodes).value as Ref<FreeMindMapNode[]>
-  const edges = computed(() => store.edges).value as Ref<FreeMindMapEdge[]>
-  const isLoading = computed(() => store.isLoading).value as Ref<boolean>
-  const isLoaded = computed(() => store.isLoaded).value as Ref<boolean>
-  const errorMessage = computed(() => store.errorMessage).value as Ref<string>
-  const selectedNodes = computed(() => store.selectedNodes).value as Ref<FreeMindMapNode[]>
+  // 从 Store 获取状态（直接使用 computed，不需要额外包装）
+  const nodes = computed(() => store.nodes)
+  const edges = computed(() => store.edges)
+  const isLoading = computed(() => store.isLoading)
+  const isLoaded = computed(() => store.isLoaded)
+  const errorMessage = computed(() => store.errorMessage)
+  const selectedNodes = computed(() => store.selectedNodes)
 
   // 计算属性
   const nodeCount = computed(() => store.nodeCount)
@@ -213,7 +221,10 @@ export function useFreeMindMap(
       // T: 添加文本卡片
       if (e.key === 't' || e.key === 'T') {
         e.preventDefault()
-        addNode({ type: 'textCard', title: '新卡片' })
+        addNode({
+          type: 'textCard',
+          title: '新卡片',
+        })
       }
 
       // G: 添加分组
@@ -222,12 +233,12 @@ export function useFreeMindMap(
         // 在画布中心添加分组
         const position = {
           x: 200,
-          y: 200
+          y: 200,
         }
         store.createNode({
           type: 'group',
           title: '新分组',
-          position
+          position,
         })
       }
     }
@@ -263,17 +274,17 @@ export function useFreeMindMap(
    * 添加节点
    */
   function addNode(
-    params: Omit<CreateNodeParams, 'position'> & { position?: { x: number; y: number } }
+    params: Omit<CreateNodeParams, 'position'> & { position?: { x: number, y: number } },
   ): FreeMindMapNode {
     // 默认位置在画布中心附近
     const position = params.position || {
       x: Math.random() * 200 + 100,
-      y: Math.random() * 200 + 100
+      y: Math.random() * 200 + 100,
     }
 
     return store.createNode({
       ...params,
-      position
+      position,
     })
   }
 
@@ -281,26 +292,26 @@ export function useFreeMindMap(
    * 复制节点
    */
   function duplicateNode(nodeId: string): FreeMindMapNode | null {
-    const sourceNode = nodes.value.find(n => n.id === nodeId)
+    const sourceNode = nodes.value.find((n) => n.id === nodeId)
     if (!sourceNode) return null
 
     const newNode = store.createNode({
       type: sourceNode.type as FreeMindMapNodeType,
-      title: sourceNode.data.title + ' (副本)',
+      title: `${sourceNode.data.title} (副本)`,
       content: sourceNode.data.content,
       position: {
         x: sourceNode.position.x + 30,
-        y: sourceNode.position.y + 30
+        y: sourceNode.position.y + 30,
       },
       annotationId: sourceNode.data.annotationId,
-      cardId: sourceNode.data.cardId
+      cardId: sourceNode.data.cardId,
     })
 
     // 复制样式
     if (sourceNode.data.color) {
       store.updateNode({
         id: newNode.id,
-        color: sourceNode.data.color
+        color: sourceNode.data.color,
       })
     }
 
@@ -367,7 +378,7 @@ export function useFreeMindMap(
    * 全选
    */
   function selectAll(): void {
-    nodes.value.forEach(node => {
+    nodes.value.forEach((node) => {
       store.selectNode(node.id, true)
     })
   }
@@ -390,7 +401,11 @@ export function useFreeMindMap(
    * 重置缩放
    */
   function zoomReset(): void {
-    store.updateViewport({ zoom: 1, x: 0, y: 0 })
+    store.updateViewport({
+      zoom: 1,
+      x: 0,
+      y: 0,
+    })
   }
 
   /**
@@ -405,7 +420,7 @@ export function useFreeMindMap(
         direction,
         nodeSpacing: 250,
         levelSpacing: 150,
-        center: true
+        center: true,
       })
       // 更新节点位置
       layoutNodes.forEach((node, index) => {
@@ -470,6 +485,6 @@ export function useFreeMindMap(
     save,
     reset,
     setupKeyboardShortcuts,
-    cleanupKeyboardShortcuts
+    cleanupKeyboardShortcuts,
   }
 }

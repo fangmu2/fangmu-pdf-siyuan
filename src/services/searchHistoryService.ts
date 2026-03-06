@@ -4,43 +4,43 @@
  */
 
 import {
+  DEFAULT_SEARCH_HISTORY_CONFIG,
+  SearchHistoryConfig,
   SearchHistoryItem,
   SearchOptions,
   SearchScope,
-  SearchHistoryConfig,
-  DEFAULT_SEARCH_HISTORY_CONFIG
-} from '../types/search';
-import { generateUUID } from '../utils';
+} from '../types/search'
+import { generateUUID } from '../utils'
 
 /** 本地存储键名 */
-const STORAGE_KEY = 'siyuan-marginnote-search-history';
+const STORAGE_KEY = 'siyuan-marginnote-search-history'
 
 /**
  * 搜索历史服务类
  */
 export class SearchHistoryService {
-  private static instance: SearchHistoryService;
-  private config: SearchHistoryConfig;
-  private history: SearchHistoryItem[] = [];
-  private listeners: Set<() => void> = new Set();
+  private static instance: SearchHistoryService
+  private config: SearchHistoryConfig
+  private history: SearchHistoryItem[] = []
+  private listeners: Set<() => void> = new Set()
 
   private constructor() {
-    this.config = { ...DEFAULT_SEARCH_HISTORY_CONFIG };
-    this.loadHistory();
+    this.config = { ...DEFAULT_SEARCH_HISTORY_CONFIG }
+    this.loadHistory()
   }
 
   static getInstance(): SearchHistoryService {
     if (!SearchHistoryService.instance) {
-      SearchHistoryService.instance = new SearchHistoryService();
+      SearchHistoryService.instance = new SearchHistoryService()
     }
-    return SearchHistoryService.instance;
+    return SearchHistoryService.instance
   }
 
   /**
    * 生成唯一 ID
    */
   private generateId(): string {
-    return generateUUID();
+    return generateUUID()
   }
 
   /**
@@ -49,7 +49,7 @@ export class SearchHistoryService {
    * 这里使用 localStorage 作为临时方案
    */
   private getStorage(): Storage {
-    return localStorage;
+    return localStorage
   }
 
   /**
@@ -57,18 +57,18 @@ export class SearchHistoryService {
    */
   private loadHistory(): void {
     try {
-      const storage = this.getStorage();
-      const data = storage.getItem(STORAGE_KEY);
+      const storage = this.getStorage()
+      const data = storage.getItem(STORAGE_KEY)
       if (data) {
-        this.history = JSON.parse(data);
+        this.history = JSON.parse(data)
         // 清理过期记录
-        this.cleanExpiredHistory();
+        this.cleanExpiredHistory()
       } else {
-        this.history = [];
+        this.history = []
       }
     } catch (error) {
-      console.error('[SearchHistoryService] 加载历史记录失败:', error);
-      this.history = [];
+      console.error('[SearchHistoryService] 加载历史记录失败:', error)
+      this.history = []
     }
   }
 
@@ -77,12 +77,12 @@ export class SearchHistoryService {
    */
   private saveHistory(): void {
     try {
-      const storage = this.getStorage();
-      storage.setItem(STORAGE_KEY, JSON.stringify(this.history));
+      const storage = this.getStorage()
+      storage.setItem(STORAGE_KEY, JSON.stringify(this.history))
       // 通知监听者
-      this.listeners.forEach(listener => listener());
+      this.listeners.forEach((listener) => listener())
     } catch (error) {
-      console.error('[SearchHistoryService] 保存历史记录失败:', error);
+      console.error('[SearchHistoryService] 保存历史记录失败:', error)
     }
   }
 
@@ -90,19 +90,19 @@ export class SearchHistoryService {
    * 清理过期历史记录
    */
   private cleanExpiredHistory(): void {
-    const now = Date.now();
-    const maxAge = this.config.historyDays * 24 * 60 * 60 * 1000;
+    const now = Date.now()
+    const maxAge = this.config.historyDays * 24 * 60 * 60 * 1000
 
-    this.history = this.history.filter(item => {
-      return now - item.timestamp < maxAge;
-    });
+    this.history = this.history.filter((item) => {
+      return now - item.timestamp < maxAge
+    })
 
     // 限制数量
     if (this.history.length > this.config.maxHistory) {
-      this.history = this.history.slice(0, this.config.maxHistory);
+      this.history = this.history.slice(0, this.config.maxHistory)
     }
 
-    this.saveHistory();
+    this.saveHistory()
   }
 
   /**
@@ -116,22 +116,22 @@ export class SearchHistoryService {
     query: string,
     resultCount: number,
     options?: Partial<SearchOptions>,
-    scope?: SearchScope
+    scope?: SearchScope,
   ): SearchHistoryItem {
     if (!this.config.autoSave) {
-      return {} as SearchHistoryItem;
+      return {} as SearchHistoryItem
     }
 
-    const trimmedQuery = query.trim();
+    const trimmedQuery = query.trim()
     if (!trimmedQuery) {
-      return {} as SearchHistoryItem;
+      return {} as SearchHistoryItem
     }
 
     // 检查是否已存在相同的搜索
     const existingIndex = this.history.findIndex(
-      item => item.query === trimmedQuery &&
-              item.scope === (scope || 'current')
-    );
+      (item) => item.query === trimmedQuery
+        && item.scope === (scope || 'current'),
+    )
 
     const newItem: SearchHistoryItem = {
       id: this.generateId(),
@@ -144,30 +144,30 @@ export class SearchHistoryService {
         useRegex: options?.useRegex ?? false,
       },
       scope: scope || 'current',
-    };
+    }
 
     if (existingIndex !== -1) {
       // 更新现有记录的时间戳
-      this.history.splice(existingIndex, 1);
+      this.history.splice(existingIndex, 1)
     }
 
     // 添加到开头
-    this.history.unshift(newItem);
+    this.history.unshift(newItem)
 
     // 限制数量
     if (this.history.length > this.config.maxHistory) {
-      this.history = this.history.slice(0, this.config.maxHistory);
+      this.history = this.history.slice(0, this.config.maxHistory)
     }
 
-    this.saveHistory();
-    return newItem;
+    this.saveHistory()
+    return newItem
   }
 
   /**
    * 获取所有历史记录
    */
   getHistory(): SearchHistoryItem[] {
-    return [...this.history];
+    return [...this.history]
   }
 
   /**
@@ -175,7 +175,7 @@ export class SearchHistoryService {
    * @param limit 最大数量
    */
   getRecentHistory(limit: number = 10): SearchHistoryItem[] {
-    return this.history.slice(0, limit);
+    return this.history.slice(0, limit)
   }
 
   /**
@@ -183,10 +183,10 @@ export class SearchHistoryService {
    * @param id 历史记录 ID
    */
   deleteHistory(id: string): void {
-    const index = this.history.findIndex(item => item.id === id);
+    const index = this.history.findIndex((item) => item.id === id)
     if (index !== -1) {
-      this.history.splice(index, 1);
-      this.saveHistory();
+      this.history.splice(index, 1)
+      this.saveHistory()
     }
   }
 
@@ -194,8 +194,8 @@ export class SearchHistoryService {
    * 清空所有历史记录
    */
   clearHistory(): void {
-    this.history = [];
-    this.saveHistory();
+    this.history = []
+    this.saveHistory()
   }
 
   /**
@@ -203,9 +203,9 @@ export class SearchHistoryService {
    * @param query 搜索关键词
    */
   deleteByQuery(query: string): void {
-    const trimmedQuery = query.trim();
-    this.history = this.history.filter(item => item.query !== trimmedQuery);
-    this.saveHistory();
+    const trimmedQuery = query.trim()
+    this.history = this.history.filter((item) => item.query !== trimmedQuery)
+    this.saveHistory()
   }
 
   /**
@@ -214,14 +214,14 @@ export class SearchHistoryService {
    * @param limit 最大建议数
    */
   getSuggestions(input: string, limit: number = 5): SearchHistoryItem[] {
-    const trimmedInput = input.trim().toLowerCase();
+    const trimmedInput = input.trim().toLowerCase()
     if (!trimmedInput) {
-      return this.getRecentHistory(limit);
+      return this.getRecentHistory(limit)
     }
 
     return this.history
-      .filter(item => item.query.toLowerCase().includes(trimmedInput))
-      .slice(0, limit);
+      .filter((item) => item.query.toLowerCase().includes(trimmedInput))
+      .slice(0, limit)
   }
 
   /**
@@ -229,15 +229,18 @@ export class SearchHistoryService {
    * @param config 新配置
    */
   updateConfig(config: Partial<SearchHistoryConfig>): void {
-    this.config = { ...this.config, ...config };
-    this.cleanExpiredHistory();
+    this.config = {
+      ...this.config,
+      ...config,
+    }
+    this.cleanExpiredHistory()
   }
 
   /**
    * 获取当前配置
    */
   getConfig(): SearchHistoryConfig {
-    return { ...this.config };
+    return { ...this.config }
   }
 
   /**
@@ -245,17 +248,17 @@ export class SearchHistoryService {
    * @param listener 监听函数
    */
   subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
+    this.listeners.add(listener)
     return () => {
-      this.listeners.delete(listener);
-    };
+      this.listeners.delete(listener)
+    }
   }
 
   /**
    * 导出历史记录
    */
   exportHistory(): string {
-    return JSON.stringify(this.history, null, 2);
+    return JSON.stringify(this.history, null, 2)
   }
 
   /**
@@ -265,33 +268,33 @@ export class SearchHistoryService {
    */
   importHistory(data: string, merge: boolean = false): void {
     try {
-      const imported = JSON.parse(data);
+      const imported = JSON.parse(data)
       if (!Array.isArray(imported)) {
-        throw new Error('无效的历史记录格式');
+        throw new TypeError('无效的历史记录格式')
       }
 
       if (merge) {
         // 合并时去重
-        const existingQueries = new Set(this.history.map(item => item.query));
+        const existingQueries = new Set(this.history.map((item) => item.query))
         for (const item of imported) {
           if (!existingQueries.has(item.query)) {
-            this.history.push(item);
+            this.history.push(item)
           }
         }
-        this.cleanExpiredHistory();
+        this.cleanExpiredHistory()
       } else {
-        this.history = imported;
-        this.saveHistory();
+        this.history = imported
+        this.saveHistory()
       }
     } catch (error) {
-      console.error('[SearchHistoryService] 导入历史记录失败:', error);
-      throw error;
+      console.error('[SearchHistoryService] 导入历史记录失败:', error)
+      throw error
     }
   }
 }
 
 // 导出单例
-export const searchHistoryService = SearchHistoryService.getInstance();
+export const searchHistoryService = SearchHistoryService.getInstance()
 
 /**
  * 便捷函数：添加搜索历史
@@ -300,9 +303,9 @@ export function addSearchHistory(
   query: string,
   resultCount: number,
   options?: Partial<SearchOptions>,
-  scope?: SearchScope
+  scope?: SearchScope,
 ): SearchHistoryItem {
-  return searchHistoryService.addHistory(query, resultCount, options, scope);
+  return searchHistoryService.addHistory(query, resultCount, options, scope)
 }
 
 /**
@@ -310,14 +313,14 @@ export function addSearchHistory(
  */
 export function getSearchHistory(limit?: number): SearchHistoryItem[] {
   if (limit) {
-    return searchHistoryService.getRecentHistory(limit);
+    return searchHistoryService.getRecentHistory(limit)
   }
-  return searchHistoryService.getHistory();
+  return searchHistoryService.getHistory()
 }
 
 /**
  * 便捷函数：获取搜索建议
  */
 export function getSearchSuggestions(input: string, limit?: number): SearchHistoryItem[] {
-  return searchHistoryService.getSuggestions(input, limit);
+  return searchHistoryService.getSuggestions(input, limit)
 }
